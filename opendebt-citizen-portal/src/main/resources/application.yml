@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: opendebt-citizen-portal
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/opendebt}
+      client:
+        registration:
+          tastselv:
+            client-id: opendebt-citizen
+            client-secret: ${TASTSELV_CLIENT_SECRET}
+            scope: openid,profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          tastselv:
+            issuer-uri: ${TASTSELV_ISSUER_URI}
+            authorization-uri: ${TASTSELV_AUTH_URI}
+            token-uri: ${TASTSELV_TOKEN_URI}
+            user-info-uri: ${TASTSELV_USERINFO_URI}
+            jwk-set-uri: ${TASTSELV_JWK_URI}
+
+server:
+  port: 8086
+  servlet:
+    context-path: /borger
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    dk.ufst.opendebt: INFO
+
+opendebt:
+  citizen:
+    tastselv-integration:
+      enabled: true
+      base-url: ${TASTSELV_BASE_URL:https://www.tastselv.skat.dk}
+  services:
+    debt-service:
+      url: ${DEBT_SERVICE_URL:http://localhost:8082}
+    case-service:
+      url: ${CASE_SERVICE_URL:http://localhost:8081}
+    payment-service:
+      url: ${PAYMENT_SERVICE_URL:http://localhost:8083}

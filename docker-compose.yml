@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: opendebt
+      POSTGRES_PASSWORD: opendebt
+      POSTGRES_MULTIPLE_DATABASES: opendebt_person,opendebt_case,opendebt_debt,opendebt_payment,opendebt_letter,opendebt_offsetting,opendebt_wage_garnishment
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opendebt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/keycloak:/opt/keycloak/data/import
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  person-registry:
+    build: ./opendebt-person-registry
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_person
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-changeme-generate-32-byte-key}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  case-service:
+    build: ./opendebt-case-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_case
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/opendebt/protocol/openid-connect/certs
+      PERSON_REGISTRY_URL: http://person-registry:8090
+      DEBT_SERVICE_URL: http://debt-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8083
+      LETTER_SERVICE_URL: http://letter-service:8084
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      person-registry:
+        condition: service_started
+
+  debt-service:
+    build: ./opendebt-debt-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_debt
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      PERSON_REGISTRY_URL: http://person-registry:8090
+      CASE_SERVICE_URL: http://case-service:8081
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      person-registry:
+        condition: service_started
+
+  payment-service:
+    build: ./opendebt-payment-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_payment
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      DEBT_SERVICE_URL: http://debt-service:8082
+      CASE_SERVICE_URL: http://case-service:8081
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  letter-service:
+    build: ./opendebt-letter-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_letter
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      CASE_SERVICE_URL: http://case-service:8081
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  creditor-portal:
+    build: ./opendebt-creditor-portal
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      DEBT_SERVICE_URL: http://debt-service:8082
+      CASE_SERVICE_URL: http://case-service:8081
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  citizen-portal:
+    build: ./opendebt-citizen-portal
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      DEBT_SERVICE_URL: http://debt-service:8082
+      CASE_SERVICE_URL: http://case-service:8081
+      PAYMENT_SERVICE_URL: http://payment-service:8083
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: opendebt-network

@@ -1,0 +1,419 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Debt Service API
+  description: |
+    API for managing debts and validating readiness for collection (indrivelsesparathed).
+    
+    This API is exposed via UFST DUPLA and follows the Fællesoffentlige Arkitekturprincipper.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.opendebt.dk/debt-service
+    description: Production
+  - url: https://api-staging.opendebt.dk/debt-service
+    description: Staging
+
+security:
+  - bearerAuth: []
+  - oces3Certificate: []
+
+tags:
+  - name: Debts
+    description: Debt management operations
+  - name: Readiness
+    description: Debt readiness validation (indrivelsesparathed)
+  - name: Debt Types
+    description: Debt type reference data
+
+paths:
+  /api/v1/debts:
+    get:
+      tags: [Debts]
+      summary: List debts
+      description: Returns a paginated list of debts with optional filters
+      operationId: listDebts
+      parameters:
+        - name: creditorId
+          in: query
+          description: Filter by creditor CVR number
+          schema:
+            type: string
+            pattern: '^[0-9]{8}$'
+        - name: debtorId
+          in: query
+          description: Filter by debtor CPR/CVR number
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DebtStatus'
+        - name: readinessStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReadinessStatus'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Debts]
+      summary: Register a new debt
+      description: |
+        Registers a new debt for collection. The debt will be validated for
+        readiness (indrivelsesparathed) before being accepted for collection.
+      operationId: createDebt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtCreateRequest'
+      responses:
+        '201':
+          description: Debt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /api/v1/debts/{id}:
+    get:
+      tags: [Debts]
+      summary: Get debt by ID
+      operationId: getDebt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Debts]
+      summary: Update a debt
+      operationId: updateDebt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtUpdateRequest'
+      responses:
+        '200':
+          description: Debt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/validate-readiness:
+    post:
+      tags: [Readiness]
+      summary: Validate debt readiness for collection
+      description: |
+        Validates if a debt meets the requirements for collection (indrivelsesparat).
+        
+        Requirements include:
+        - Valid debtor identification
+        - Correct debt type classification
+        - Proper documentation
+        - Passed due date
+        - No active disputes
+      operationId: validateReadiness
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debt-types:
+    get:
+      tags: [Debt Types]
+      summary: List all debt types
+      description: Returns the list of ~600 supported debt types
+      operationId: listDebtTypes
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DebtType'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Keycloak
+    oces3Certificate:
+      type: mutualTLS
+      description: OCES3 certificate for system-to-system communication
+
+  parameters:
+    PageNumber:
+      name: page
+      in: query
+      description: Page number (0-based)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    PageSize:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+  schemas:
+    Debt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtorId:
+          type: string
+          description: CPR or CVR number of the debtor
+        creditorId:
+          type: string
+          description: CVR number of the creditor institution
+        debtTypeCode:
+          type: string
+          description: Code identifying the type of debt
+        principalAmount:
+          type: number
+          format: decimal
+          description: Original debt amount in DKK
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+        dueDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/DebtStatus'
+        readinessStatus:
+          $ref: '#/components/schemas/ReadinessStatus'
+        readinessRejectionReason:
+          type: string
+        externalReference:
+          type: string
+          description: Creditor's external reference
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DebtStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - IN_COLLECTION
+        - PARTIALLY_PAID
+        - PAID
+        - WRITTEN_OFF
+        - DISPUTED
+        - CANCELLED
+
+    ReadinessStatus:
+      type: string
+      enum:
+        - PENDING_REVIEW
+        - READY_FOR_COLLECTION
+        - NOT_READY
+        - UNDER_APPEAL
+
+    DebtCreateRequest:
+      type: object
+      required:
+        - debtorId
+        - creditorId
+        - debtTypeCode
+        - principalAmount
+        - dueDate
+      properties:
+        debtorId:
+          type: string
+          minLength: 8
+          maxLength: 11
+        creditorId:
+          type: string
+          pattern: '^[0-9]{8}$'
+        debtTypeCode:
+          type: string
+        principalAmount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+        dueDate:
+          type: string
+          format: date
+        externalReference:
+          type: string
+          maxLength: 100
+
+    DebtUpdateRequest:
+      type: object
+      properties:
+        principalAmount:
+          type: number
+          format: decimal
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+
+    DebtType:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        legalBasis:
+          type: string
+
+    DebtPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Debt'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    ValidationError:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        errorCode:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,71 @@
+package dk.ufst.opendebt.rules
+
+import dk.ufst.opendebt.rules.model.CollectionPriorityRequest
+import dk.ufst.opendebt.rules.model.CollectionPriorityResult
+
+global CollectionPriorityResult result
+
+// Priority 1: Child support (boernebidrag) has highest priority
+rule "Child Support Priority"
+    when
+        $request : CollectionPriorityRequest(isChildSupport == true)
+    then
+        result.setPriorityRank(CollectionPriorityResult.PRIORITY_CHILD_SUPPORT);
+        result.setPriorityCategory("CHILD_SUPPORT");
+        result.setLegalBasis("Inddrivelsesloven § 10 - Boernebidrag har foerste prioritet");
+end
+
+// Priority 2: Tax debts
+rule "Tax Debt Priority"
+    when
+        $request : CollectionPriorityRequest(isTaxDebt == true, isChildSupport == false)
+    then
+        result.setPriorityRank(CollectionPriorityResult.PRIORITY_TAX);
+        result.setPriorityCategory("TAX");
+        result.setLegalBasis("Skattegaeld - anden prioritet efter boernebidrag");
+end
+
+// Priority 3: Fines (boeder)
+rule "Fine Priority"
+    when
+        $request : CollectionPriorityRequest(
+            isFine == true, 
+            isChildSupport == false, 
+            isTaxDebt == false
+        )
+    then
+        result.setPriorityRank(CollectionPriorityResult.PRIORITY_FINES);
+        result.setPriorityCategory("FINE");
+        result.setLegalBasis("Boeder og afgifter - tredje prioritet");
+end
+
+// Priority 4: Court ordered debts
+rule "Court Ordered Priority"
+    when
+        $request : CollectionPriorityRequest(
+            isCourtOrdered == true,
+            isChildSupport == false,
+            isTaxDebt == false,
+            isFine == false
+        )
+    then
+        result.setPriorityRank(CollectionPriorityResult.PRIORITY_COURT_ORDERED);
+        result.setPriorityCategory("COURT_ORDERED");
+        result.setLegalBasis("Retsafgoerelser - fjerde prioritet");
+end
+
+// Priority 5: Other public debts
+rule "Other Public Debt Priority"
+    salience -100
+    when
+        $request : CollectionPriorityRequest(
+            isChildSupport == false,
+            isTaxDebt == false,
+            isFine == false,
+            isCourtOrdered == false
+        )
+    then
+        result.setPriorityRank(CollectionPriorityResult.PRIORITY_OTHER_PUBLIC);
+        result.setPriorityCategory("OTHER_PUBLIC");
+        result.setLegalBasis("Oevrig offentlig gaeld");
+end

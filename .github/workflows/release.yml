@@ -1,0 +1,77 @@
+name: OpenDebt Release
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        type: string
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  release:
+    name: Build Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Set release version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "RELEASE_VERSION=${VERSION#v}" >> $GITHUB_ENV
+          mvn versions:set -DnewVersion=${VERSION#v} -B
+
+      - name: Build release
+        run: mvn clean deploy -B -DskipTests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker images
+        run: |
+          for service in opendebt-case-service opendebt-debt-service opendebt-creditor-portal \
+                         opendebt-citizen-portal opendebt-payment-service opendebt-letter-service \
+                         opendebt-offsetting-service opendebt-wage-garnishment-service \
+                         opendebt-integration-gateway; do
+            docker build -t ${{ secrets.CONTAINER_REGISTRY }}/opendebt/${service}:${{ env.RELEASE_VERSION }} ./${service}
+            docker push ${{ secrets.CONTAINER_REGISTRY }}/opendebt/${service}:${{ env.RELEASE_VERSION }}
+          done
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: release
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy to staging
+        run: |
+          kubectl apply -k k8s/overlays/staging/
+          kubectl rollout status deployment -n opendebt-staging --timeout=300s

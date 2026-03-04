@@ -1,0 +1,129 @@
+{
+  "realm": "opendebt",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "CITIZEN",
+        "description": "Citizen accessing own debt information"
+      },
+      {
+        "name": "CREDITOR",
+        "description": "Creditor institution user submitting debts"
+      },
+      {
+        "name": "CASEWORKER",
+        "description": "Internal caseworker handling debt collection"
+      },
+      {
+        "name": "SUPERVISOR",
+        "description": "Supervisor with approval rights"
+      },
+      {
+        "name": "ADMIN",
+        "description": "System administrator"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "opendebt-case-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "opendebt-debt-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "opendebt-creditor-portal",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8085/*",
+        "https://creditor.opendebt.dk/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8085",
+        "https://creditor.opendebt.dk"
+      ]
+    },
+    {
+      "clientId": "opendebt-citizen-portal",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8086/*",
+        "https://borger.opendebt.dk/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8086",
+        "https://borger.opendebt.dk"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "caseworker",
+      "enabled": true,
+      "email": "caseworker@test.dk",
+      "firstName": "Test",
+      "lastName": "Caseworker",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "caseworker123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CASEWORKER"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@test.dk",
+      "firstName": "Test",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    },
+    {
+      "username": "creditor",
+      "enabled": true,
+      "email": "creditor@test.dk",
+      "firstName": "Test",
+      "lastName": "Creditor",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "creditor123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CREDITOR"]
+    }
+  ]
+}

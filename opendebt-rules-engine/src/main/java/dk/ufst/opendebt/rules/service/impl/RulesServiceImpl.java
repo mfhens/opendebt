@@ -1,0 +1,102 @@
+package dk.ufst.opendebt.rules.service.impl;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
+import org.springframework.stereotype.Service;
+
+import dk.ufst.opendebt.rules.model.*;
+import dk.ufst.opendebt.rules.service.RulesService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RulesServiceImpl implements RulesService {
+
+  private final KieContainer kieContainer;
+
+  @Override
+  public DebtReadinessResult evaluateReadiness(DebtReadinessRequest request) {
+    log.debug("Evaluating readiness for debt: {}", request.getDebtId());
+
+    DebtReadinessResult result =
+        DebtReadinessResult.builder()
+            .debtId(request.getDebtId())
+            .ready(true)
+            .status(DebtReadinessResult.ReadinessStatus.READY_FOR_COLLECTION)
+            .build();
+
+    KieSession kieSession = kieContainer.newKieSession();
+    try {
+      kieSession.setGlobal("result", result);
+      kieSession.insert(request);
+      kieSession.fireAllRules();
+    } finally {
+      kieSession.dispose();
+    }
+
+    log.info(
+        "Readiness evaluation for debt {}: ready={}, status={}",
+        request.getDebtId(),
+        result.isReady(),
+        result.getStatus());
+
+    return result;
+  }
+
+  @Override
+  public InterestCalculationResult calculateInterest(InterestCalculationRequest request) {
+    log.debug("Calculating interest for debt type: {}", request.getDebtTypeCode());
+
+    InterestCalculationResult result =
+        InterestCalculationResult.builder().daysCalculated(request.getDaysPastDue()).build();
+
+    KieSession kieSession = kieContainer.newKieSession();
+    try {
+      kieSession.setGlobal("result", result);
+      kieSession.insert(request);
+      kieSession.fireAllRules();
+    } finally {
+      kieSession.dispose();
+    }
+
+    return result;
+  }
+
+  @Override
+  public CollectionPriorityResult determineCollectionPriority(CollectionPriorityRequest request) {
+    log.debug("Determining collection priority for debt: {}", request.getDebtId());
+
+    CollectionPriorityResult result =
+        CollectionPriorityResult.builder()
+            .debtId(request.getDebtId())
+            .priorityRank(CollectionPriorityResult.PRIORITY_DEFAULT)
+            .build();
+
+    KieSession kieSession = kieContainer.newKieSession();
+    try {
+      kieSession.setGlobal("result", result);
+      kieSession.insert(request);
+      kieSession.fireAllRules();
+    } finally {
+      kieSession.dispose();
+    }
+
+    return result;
+  }
+
+  @Override
+  public List<CollectionPriorityResult> sortByCollectionPriority(
+      List<CollectionPriorityRequest> debts) {
+    return debts.stream()
+        .map(this::determineCollectionPriority)
+        .sorted(Comparator.comparingInt(CollectionPriorityResult::getPriorityRank))
+        .collect(Collectors.toList());
+  }
+}

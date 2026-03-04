@@ -1,0 +1,274 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Case Service API
+  description: |
+    API for managing debt collection cases and workflows.
+    
+    This API is exposed via UFST DUPLA and follows the Fællesoffentlige Arkitekturprincipper.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+
+servers:
+  - url: https://api.opendebt.dk/case-service
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Cases
+    description: Case management operations
+  - name: Workflow
+    description: Case workflow and assignment
+
+paths:
+  /api/v1/cases:
+    get:
+      tags: [Cases]
+      summary: List cases
+      operationId: listCases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CaseStatus'
+        - name: caseworkerId
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CasePage'
+    post:
+      tags: [Cases]
+      summary: Create a new case
+      operationId: createCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaseCreateRequest'
+      responses:
+        '201':
+          description: Case created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+
+  /api/v1/cases/{id}:
+    get:
+      tags: [Cases]
+      summary: Get case by ID
+      operationId: getCase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+
+  /api/v1/cases/{id}/assign:
+    post:
+      tags: [Workflow]
+      summary: Assign case to caseworker
+      operationId: assignCase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: caseworkerId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+
+  /api/v1/cases/{id}/strategy:
+    post:
+      tags: [Workflow]
+      summary: Set collection strategy
+      operationId: setStrategy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: strategy
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CollectionStrategy'
+      responses:
+        '200':
+          description: Strategy set successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+
+  /api/v1/cases/debtor/{debtorId}:
+    get:
+      tags: [Cases]
+      summary: Get cases by debtor
+      description: Returns all cases for a specific debtor (CPR/CVR)
+      operationId: getCasesByDebtor
+      parameters:
+        - name: debtorId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Case'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageNumber:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+    PageSize:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  schemas:
+    Case:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        caseNumber:
+          type: string
+        debtorId:
+          type: string
+        debtorName:
+          type: string
+        status:
+          $ref: '#/components/schemas/CaseStatus'
+        totalDebt:
+          type: number
+          format: decimal
+        totalPaid:
+          type: number
+          format: decimal
+        totalRemaining:
+          type: number
+          format: decimal
+        debtIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        activeStrategy:
+          $ref: '#/components/schemas/CollectionStrategy'
+        assignedCaseworkerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CaseStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - AWAITING_PAYMENT
+        - PAYMENT_PLAN_ACTIVE
+        - WAGE_GARNISHMENT_ACTIVE
+        - OFFSETTING_PENDING
+        - UNDER_APPEAL
+        - CLOSED_PAID
+        - CLOSED_WRITTEN_OFF
+        - CLOSED_CANCELLED
+
+    CollectionStrategy:
+      type: string
+      enum:
+        - VOLUNTARY_PAYMENT
+        - PAYMENT_PLAN
+        - WAGE_GARNISHMENT
+        - OFFSETTING
+        - LEGAL_ACTION
+
+    CaseCreateRequest:
+      type: object
+      required:
+        - debtorId
+      properties:
+        debtorId:
+          type: string
+        debtIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        notes:
+          type: string
+
+    CasePage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Case'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer

@@ -1,0 +1,16 @@
+# OpenDebt - mise configuration
+# This file defines the development environment tools and versions
+#
+# Install mise via scoop: scoop install mise
+# Then run: mise install
+#
+# Or use scoop directly:
+#   scoop bucket add java
+#   scoop install temurin21-jdk maven
+
+[tools]
+java = "temurin-21"
+maven = "3.9"
+
+[env]
+JAVA_HOME = "{{env.MISE_JAVA_HOME}}"

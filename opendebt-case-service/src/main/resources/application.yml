@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: opendebt-case-service
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/opendebt_case}
+    username: ${DATABASE_USERNAME:opendebt}
+    password: ${DATABASE_PASSWORD:opendebt}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # Flowable workflow engine
+  flowable:
+    database-schema-update: true
+    async-executor-activate: true
+    history-level: audit
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/opendebt}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8080/realms/opendebt/protocol/openid-connect/certs}
+
+server:
+  port: 8081
+  servlet:
+    context-path: /case-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    dk.ufst.opendebt: INFO
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+opendebt:
+  services:
+    debt-service:
+      url: ${DEBT_SERVICE_URL:http://localhost:8082}
+    payment-service:
+      url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+    letter-service:
+      url: ${LETTER_SERVICE_URL:http://localhost:8084}

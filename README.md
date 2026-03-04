@@ -1,1 +1,150 @@
-# opendebt
+# OpenDebt
+
+Open source system for Danish public debt collection (Offentlig Gældsinddrivelse).
+
+[![CI](https://github.com/ufst/opendebt/actions/workflows/ci.yml/badge.svg)](https://github.com/ufst/opendebt/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+## Overview
+
+OpenDebt is a modern, microservices-based debt collection system designed for Danish public institutions. It handles:
+
+- **~600 debt types** from **~1,200 public institutions**
+- Debt registration and readiness validation (indrivelsesparathed)
+- Case management and workflow
+- Payment processing
+- Offsetting (modregning)
+- Wage garnishment (loenindeholdelse)
+- Letter management via Digital Post
+
+## Architecture
+
+```
+                              Creditor Portal     Citizen Portal      DUPLA API
+                              (Fordringshaver)       (Borger)          Gateway
+                                    |                  |                  |
+                                    +------------------+------------------+
+                                                       |
+                                          +------------+------------+
+                                          |     Keycloak (JWT)      |
+                                          +------------+------------+
+                                                       |
+    +----------------+----------------+----------------+----------------+
+    |                |                |                |                |
++---+---+      +-----+-----+    +-----+-----+    +-----+-----+    +-----+-----+
+| Case  |      |   Debt    |    | Payment   |    |  Letter   |    |Offsetting |
+|Service|      |  Service  |    |  Service  |    |  Service  |    |  Service  |
++-------+      +-----------+    +-----------+    +-----------+    +-----------+
+```
+
+## Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **person-registry** | 8090 | **GDPR data store** - single source of truth for all PII |
+| **rules-engine** | 8091 | **Business rules** - Drools-based rule evaluation |
+| case-service | 8081 | Case management and workflow (Flowable BPMN) |
+| debt-service | 8082 | Debt registration, readiness validation |
+| payment-service | 8083 | Payment processing |
+| letter-service | 8084 | Letter generation, Digital Post |
+| creditor-portal | 8085 | Portal for fordringshavere |
+| citizen-portal | 8086 | Portal for borgere (TastSelv integration) |
+| offsetting-service | 8087 | Modregning processing |
+| wage-garnishment-service | 8088 | Loenindeholdelse processing |
+| integration-gateway | 8089 | DUPLA and external integrations |
+
+### GDPR Architecture
+
+All personal data (CPR, CVR, names, addresses) is isolated in the **Person Registry**. Other services store only technical UUIDs:
+
+```
+Person Registry (PII)          Other Services (NO PII)
++------------------+           +------------------+
+| person_id (UUID) | <-------- | debtor_person_id |
+| CPR (encrypted)  |           | (UUID only)      |
+| Name (encrypted) |           |                  |
+| Address (enc.)   |           |                  |
++------------------+           +------------------+
+```
+
+## Technology Stack
+
+- **Runtime**: Java 21, Spring Boot 3.3
+- **Database**: PostgreSQL 16 (enterprise grade with audit/history)
+- **Rules Engine**: Drools 9.x (business rules, decision tables)
+- **Workflow**: Flowable 7.x (BPMN 2.0 case management)
+- **Build**: Maven with Spotless, JaCoCo, OWASP
+- **API**: OpenAPI 3.1, REST
+- **Auth**: OAuth2/OIDC via Keycloak
+- **Deployment**: Kubernetes (Horizontale Driftsplatform)
+
+## Getting Started
+
+### Prerequisites
+
+- Java 21 or later
+- Maven 3.9+
+- Docker (for local development)
+
+### Build
+
+```bash
+# Build all modules
+mvn clean install
+
+# Skip tests
+mvn clean install -DskipTests
+
+# Format code
+mvn spotless:apply
+```
+
+### Run Locally
+
+```bash
+# Start infrastructure (Keycloak)
+docker-compose up -d keycloak
+
+# Run a service
+cd opendebt-case-service
+mvn spring-boot:run
+```
+
+### Run All Services
+
+```bash
+docker-compose up -d
+```
+
+## API Documentation
+
+Each service exposes OpenAPI documentation:
+
+- Case Service: http://localhost:8081/case-service/swagger-ui.html
+- Debt Service: http://localhost:8082/debt-service/swagger-ui.html
+- Payment Service: http://localhost:8083/payment-service/swagger-ui.html
+
+## Architecture Decision Records
+
+Key architectural decisions are documented in [docs/adr/](docs/adr/):
+
+- [ADR-0002: Microservices Architecture](docs/adr/0002-microservices-architecture.md)
+- [ADR-0003: Java/Spring Boot Stack](docs/adr/0003-java-spring-boot-technology-stack.md)
+- [ADR-0007: No Direct Database Connections](docs/adr/0007-no-direct-database-connections.md)
+- [ADR-0010: Faellesoffentlige Arkitekturprincipper](docs/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
+
+## Compliance
+
+OpenDebt complies with:
+
+- **Faellesoffentlige Arkitekturprincipper** - Danish public sector architecture principles
+- **GDPR** - Privacy by design
+- **DUPLA** - UFST data exchange platform standards
+
+## Contributing
+
+See [agents.md](agents.md) for development guidelines.
+
+## License
+
+Apache License 2.0 - see [LICENSE](LICENSE) for details

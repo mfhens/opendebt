@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: opendebt-integration-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/opendebt}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8080/realms/opendebt/protocol/openid-connect/certs}
+
+server:
+  port: 8089
+  servlet:
+    context-path: /integration-gateway
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    dk.ufst.opendebt: INFO
+
+opendebt:
+  integration:
+    dupla:
+      enabled: true
+      base-url: ${DUPLA_BASE_URL:https://dupla.ufst.dk}
+      certificate-path: ${DUPLA_CERT_PATH}
+      logging:
+        enabled: true
+        cls-endpoint: ${CLS_ENDPOINT}
+    cpr-register:
+      enabled: true
+      endpoint: ${CPR_ENDPOINT}
+    cvr-register:
+      enabled: true
+      endpoint: ${CVR_ENDPOINT}
+    digital-post:
+      enabled: true
+      endpoint: ${DIGITAL_POST_ENDPOINT}
+  services:
+    debt-service:
+      url: ${DEBT_SERVICE_URL:http://localhost:8082}
+    case-service:
+      url: ${CASE_SERVICE_URL:http://localhost:8081}

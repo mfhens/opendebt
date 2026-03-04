@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://opendebt.ufst.dk/case">
+
+    <process id="debtCollectionCase" name="Debt Collection Case Workflow" isExecutable="true">
+
+        <documentation>
+            Main workflow for debt collection case management.
+            Handles the lifecycle from case creation to closure.
+        </documentation>
+
+        <!-- Start Event -->
+        <startEvent id="startCase" name="Case Created">
+            <documentation>Case is created when debt(s) are ready for collection</documentation>
+        </startEvent>
+
+        <!-- Initial Assessment -->
+        <sequenceFlow id="flow1" sourceRef="startCase" targetRef="assessCase"/>
+        
+        <serviceTask id="assessCase" name="Assess Case"
+                     flowable:delegateExpression="${caseAssessmentDelegate}">
+            <documentation>Automatic assessment of case characteristics</documentation>
+        </serviceTask>
+
+        <!-- Gateway: Determine Collection Strategy -->
+        <sequenceFlow id="flow2" sourceRef="assessCase" targetRef="strategyGateway"/>
+        
+        <exclusiveGateway id="strategyGateway" name="Determine Strategy"/>
+
+        <!-- Path 1: Voluntary Payment -->
+        <sequenceFlow id="flowVoluntary" sourceRef="strategyGateway" targetRef="sendPaymentReminder">
+            <conditionExpression xsi:type="tFormalExpression">
+                ${collectionStrategy == 'VOLUNTARY_PAYMENT'}
+            </conditionExpression>
+        </sequenceFlow>
+
+        <serviceTask id="sendPaymentReminder" name="Send Payment Reminder"
+                     flowable:delegateExpression="${sendLetterDelegate}">
+            <extensionElements>
+                <flowable:field name="letterType" stringValue="PAYMENT_REMINDER"/>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flow3" sourceRef="sendPaymentReminder" targetRef="waitForPayment"/>
+
+        <intermediateCatchEvent id="waitForPayment" name="Wait for Payment">
+            <timerEventDefinition>
+                <timeDuration>P30D</timeDuration>
+            </timerEventDefinition>
+        </intermediateCatchEvent>
+
+        <sequenceFlow id="flow4" sourceRef="waitForPayment" targetRef="checkPayment"/>
+
+        <serviceTask id="checkPayment" name="Check Payment Status"
+                     flowable:delegateExpression="${checkPaymentDelegate}"/>
+
+        <sequenceFlow id="flow5" sourceRef="checkPayment" targetRef="paymentGateway"/>
+
+        <exclusiveGateway id="paymentGateway" name="Payment Received?"/>
+
+        <sequenceFlow id="flowPaid" sourceRef="paymentGateway" targetRef="closeCase">
+            <conditionExpression xsi:type="tFormalExpression">${paid == true}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowNotPaid" sourceRef="paymentGateway" targetRef="escalateStrategy">
+            <conditionExpression xsi:type="tFormalExpression">${paid == false}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- Path 2: Offsetting (Modregning) -->
+        <sequenceFlow id="flowOffsetting" sourceRef="strategyGateway" targetRef="initiateOffsetting">
+            <conditionExpression xsi:type="tFormalExpression">
+                ${collectionStrategy == 'OFFSETTING'}
+            </conditionExpression>
+        </sequenceFlow>
+
+        <serviceTask id="initiateOffsetting" name="Initiate Offsetting"
+                     flowable:delegateExpression="${offsettingDelegate}"/>
+
+        <sequenceFlow id="flow6" sourceRef="initiateOffsetting" targetRef="sendOffsettingNotice"/>
+
+        <serviceTask id="sendOffsettingNotice" name="Send Offsetting Notice"
+                     flowable:delegateExpression="${sendLetterDelegate}">
+            <extensionElements>
+                <flowable:field name="letterType" stringValue="OFFSETTING_NOTICE"/>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flow7" sourceRef="sendOffsettingNotice" targetRef="waitForOffsetting"/>
+
+        <intermediateCatchEvent id="waitForOffsetting" name="Wait for Offsetting">
+            <timerEventDefinition>
+                <timeDuration>P14D</timeDuration>
+            </timerEventDefinition>
+        </intermediateCatchEvent>
+
+        <sequenceFlow id="flow8" sourceRef="waitForOffsetting" targetRef="checkOffsettingResult"/>
+
+        <serviceTask id="checkOffsettingResult" name="Check Offsetting Result"
+                     flowable:delegateExpression="${checkOffsettingDelegate}"/>
+
+        <sequenceFlow id="flow9" sourceRef="checkOffsettingResult" targetRef="offsettingGateway"/>
+
+        <exclusiveGateway id="offsettingGateway" name="Fully Offset?"/>
+
+        <sequenceFlow id="flowFullyOffset" sourceRef="offsettingGateway" targetRef="closeCase">
+            <conditionExpression xsi:type="tFormalExpression">${fullyPaid == true}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowPartialOffset" sourceRef="offsettingGateway" targetRef="escalateStrategy">
+            <conditionExpression xsi:type="tFormalExpression">${fullyPaid == false}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- Path 3: Wage Garnishment (Loenindeholdelse) -->
+        <sequenceFlow id="flowGarnishment" sourceRef="strategyGateway" targetRef="initiateGarnishment">
+            <conditionExpression xsi:type="tFormalExpression">
+                ${collectionStrategy == 'WAGE_GARNISHMENT'}
+            </conditionExpression>
+        </sequenceFlow>
+
+        <serviceTask id="initiateGarnishment" name="Initiate Wage Garnishment"
+                     flowable:delegateExpression="${wageGarnishmentDelegate}"/>
+
+        <sequenceFlow id="flow10" sourceRef="initiateGarnishment" targetRef="sendGarnishmentNotice"/>
+
+        <serviceTask id="sendGarnishmentNotice" name="Send Garnishment Notice"
+                     flowable:delegateExpression="${sendLetterDelegate}">
+            <extensionElements>
+                <flowable:field name="letterType" stringValue="WAGE_GARNISHMENT_NOTICE"/>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flow11" sourceRef="sendGarnishmentNotice" targetRef="monitorGarnishment"/>
+
+        <userTask id="monitorGarnishment" name="Monitor Garnishment Payments"
+                  flowable:assignee="${assignedCaseworker}">
+            <documentation>Caseworker monitors ongoing garnishment payments</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow12" sourceRef="monitorGarnishment" targetRef="garnishmentGateway"/>
+
+        <exclusiveGateway id="garnishmentGateway" name="Debt Cleared?"/>
+
+        <sequenceFlow id="flowGarnishmentComplete" sourceRef="garnishmentGateway" targetRef="closeCase">
+            <conditionExpression xsi:type="tFormalExpression">${debtCleared == true}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowGarnishmentContinue" sourceRef="garnishmentGateway" targetRef="monitorGarnishment">
+            <conditionExpression xsi:type="tFormalExpression">${debtCleared == false}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- Escalation Task -->
+        <userTask id="escalateStrategy" name="Review and Escalate Strategy"
+                  flowable:candidateGroups="supervisors">
+            <documentation>Supervisor reviews case and determines next collection strategy</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow13" sourceRef="escalateStrategy" targetRef="strategyGateway"/>
+
+        <!-- Close Case -->
+        <serviceTask id="closeCase" name="Close Case"
+                     flowable:delegateExpression="${closeCaseDelegate}"/>
+
+        <sequenceFlow id="flow14" sourceRef="closeCase" targetRef="sendClosureNotice"/>
+
+        <serviceTask id="sendClosureNotice" name="Send Closure Notice"
+                     flowable:delegateExpression="${sendLetterDelegate}">
+            <extensionElements>
+                <flowable:field name="letterType" stringValue="CASE_CLOSURE"/>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flow15" sourceRef="sendClosureNotice" targetRef="endCase"/>
+
+        <!-- End Event -->
+        <endEvent id="endCase" name="Case Closed"/>
+
+        <!-- Boundary Events for Appeals -->
+        <boundaryEvent id="appealReceived" attachedToRef="monitorGarnishment" cancelActivity="true">
+            <signalEventDefinition signalRef="appealSignal"/>
+        </boundaryEvent>
+
+        <sequenceFlow id="flowAppeal" sourceRef="appealReceived" targetRef="handleAppeal"/>
+
+        <userTask id="handleAppeal" name="Handle Appeal"
+                  flowable:candidateGroups="appeals_team">
+            <documentation>Appeals team reviews and processes the appeal</documentation>
+        </userTask>
+
+        <sequenceFlow id="flow16" sourceRef="handleAppeal" targetRef="appealGateway"/>
+
+        <exclusiveGateway id="appealGateway" name="Appeal Outcome"/>
+
+        <sequenceFlow id="flowAppealUpheld" sourceRef="appealGateway" targetRef="closeCase">
+            <conditionExpression xsi:type="tFormalExpression">${appealUpheld == true}</conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flowAppealDenied" sourceRef="appealGateway" targetRef="strategyGateway">
+            <conditionExpression xsi:type="tFormalExpression">${appealUpheld == false}</conditionExpression>
+        </sequenceFlow>
+
+    </process>
+
+    <signal id="appealSignal" name="Appeal Received"/>
+
+</definitions>
