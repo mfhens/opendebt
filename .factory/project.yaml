@@ -16,11 +16,11 @@ test:
   coverage: "mvn -q verify"
 
 bdd:
-  framework: none
-  runner: ""
-  dry_run: ""
-  features_dir: petitions
-  steps_dir: ""
+  framework: cucumber-jvm
+  runner: "mvn test -Dcucumber.filter.tags=@acceptance"
+  dry_run: "mvn test -Dcucumber.execution.dry-run=true"
+  features_dir: src/test/resources/features
+  steps_dir: src/test/java
 
 lint:
   runner: "mvn -q spotless:check"

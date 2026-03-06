@@ -3,7 +3,6 @@ package dk.ufst.opendebt.gateway.skb.service.impl;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SkbEdifactServiceImpl implements dk.ufst.opendebt.gateway.skb.service.SkbEdifactService {
+public class SkbEdifactServiceImpl
+    implements dk.ufst.opendebt.gateway.skb.service.SkbEdifactService {
 
   private static final DateTimeFormatter EDIFACT_DATE_FORMAT =
       DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -73,16 +73,18 @@ public class SkbEdifactServiceImpl implements dk.ufst.opendebt.gateway.skb.servi
 
   private List<CreditAdvice> parseSegments(String rawContent) {
     List<CreditAdvice> advices = new ArrayList<>();
-    // Smooks EDI cartridge handles the actual EDIFACT segment parsing.
-    // This method delegates to the Smooks pipeline configured in
-    // classpath:smooks/cremul-config.xml
-    //
-    // TODO: Wire Smooks filter pipeline once SKB CREMUL sample files are available
-    // for mapping validation. Segments: UNB, UNH, BGM, DTM, LIN, MOA, FII, RFF, UNT, UNZ
+    // AIDEV-TODO: Wire Smooks filter pipeline. Blocked on receiving real CREMUL sample files from
+    // SKB for segment mapping validation. Expected segments: UNB UNH BGM DTM LIN MOA FII RFF UNT
+    // UNZ
+    // AIDEV-NOTE: Returning empty list is intentional during integration phase — callers must
+    // handle
+    // empty CREMUL gracefully (no NPE, no silent data loss).
     log.debug("Parsing EDIFACT segments from raw content ({} chars)", rawContent.length());
     return advices;
   }
 
+  // AIDEV-TODO: Interchange sender/receiver IDs ("OPENDEBT", "SKB") must come from configuration,
+  // not be hardcoded. The UNB qualifier UNOC:3 also needs confirming with SKB test specs.
   private String buildInterchangeHeader() {
     return "UNB+UNOC:3+OPENDEBT+SKB+"
         + LocalDate.now().format(EDIFACT_DATE_FORMAT)

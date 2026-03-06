@@ -17,9 +17,11 @@ import dk.ufst.opendebt.debtservice.entity.DebtEntity.ReadinessStatus;
 @Repository
 public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
 
-  List<DebtEntity> findByDebtorId(String debtorId);
+  @Query("SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId")
+  List<DebtEntity> findByDebtorPersonId(UUID debtorPersonId);
 
-  List<DebtEntity> findByCreditorId(String creditorId);
+  @Query("SELECT d FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId")
+  List<DebtEntity> findByCreditorOrgId(UUID creditorOrgId);
 
   Page<DebtEntity> findByStatus(DebtStatus status, Pageable pageable);
 
@@ -27,24 +29,27 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
 
   @Query(
       "SELECT d FROM DebtEntity d WHERE "
-          + "(:creditorId IS NULL OR d.creditorId = :creditorId) AND "
-          + "(:debtorId IS NULL OR d.debtorId = :debtorId) AND "
+          + "(:creditorOrgId IS NULL OR d.creditorOrgId = :creditorOrgId) AND "
+          + "(:debtorPersonId IS NULL OR d.debtorPersonId = :debtorPersonId) AND "
           + "(:status IS NULL OR d.status = :status) AND "
           + "(:readinessStatus IS NULL OR d.readinessStatus = :readinessStatus)")
   Page<DebtEntity> findByFilters(
-      @Param("creditorId") String creditorId,
-      @Param("debtorId") String debtorId,
+      @Param("creditorOrgId") UUID creditorOrgId,
+      @Param("debtorPersonId") UUID debtorPersonId,
       @Param("status") DebtStatus status,
       @Param("readinessStatus") ReadinessStatus readinessStatus,
       Pageable pageable);
 
   @Query(
-      "SELECT COUNT(d) FROM DebtEntity d WHERE d.creditorId = :creditorId AND d.readinessStatus = :status")
+      "SELECT COUNT(d) FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId AND d.readinessStatus = :status")
   long countByCreditorAndReadinessStatus(
-      @Param("creditorId") String creditorId, @Param("status") ReadinessStatus status);
+      @Param("creditorOrgId") UUID creditorOrgId, @Param("status") ReadinessStatus status);
 
-  List<DebtEntity> findByCreditorIdAndReadinessStatus(
-      String creditorId, ReadinessStatus readinessStatus);
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId AND d.readinessStatus = :readinessStatus")
+  List<DebtEntity> findByCreditorOrgIdAndReadinessStatus(
+      @Param("creditorOrgId") UUID creditorOrgId,
+      @Param("readinessStatus") ReadinessStatus readinessStatus);
 
   List<DebtEntity> findByOcrLine(String ocrLine);
 }

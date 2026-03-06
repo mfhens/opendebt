@@ -1,0 +1,48 @@
+# Petition 003: Formalization of fordring, restance, and overdragelse til inddrivelse
+
+## Summary
+
+OpenDebt shall distinguish formally between `fordring`, `restance`, and `overdragelse til inddrivelse`. A submitted or created claim starts as a `fordring` with a `kravgrundlag` and `betalingsfrist`. If the betalingsfrist is exceeded without timely payment, the claim becomes a `restance`. Only a `restance` may be transferred to the `restanceinddrivelsesmyndighed`, and that transfer shall be recorded as an explicit business action with audit information.
+
+## Context and motivation
+
+The current codebase represents most claim semantics through `DebtEntity`, but the begrebsmodel requires a clearer business distinction:
+
+- a `fordring` exists before it is overdue
+- a `restance` is an overdue `fordring`
+- `overdragelse til inddrivelse` is a separate legal and operational action
+
+Without that distinction, OpenDebt cannot correctly express when a claim is merely registered, when it has become overdue, and when it is lawfully handed over for public collection.
+
+## Functional requirements
+
+1. OpenDebt shall represent a `fordring` as a claim with at least:
+   - a `kravgrundlag`
+   - a `betalingsfrist`
+   - one `fordringshaver`
+   - one or more `skyldnere`
+2. A `fordring` shall remain a `fordring` until its betalingsfrist is exceeded without sufficient payment.
+3. When the betalingsfrist is exceeded and the claim is not fully paid, OpenDebt shall classify the claim as a `restance`.
+4. If a claim is fully paid before or by the betalingsfrist, OpenDebt shall not classify it as a `restance`.
+5. OpenDebt shall support an explicit `overdragelse til inddrivelse` action performed by a `fordringshaver` for a `restance`.
+6. An `overdragelse til inddrivelse` shall be allowed only for a `restance`, not for a non-overdue `fordring`.
+7. When a `restance` is transferred to collection, OpenDebt shall record:
+   - the transferred `restance`
+   - the transferring `fordringshaver`
+   - the receiving `restanceinddrivelsesmyndighed`
+   - the tidspunkt for transfer
+8. When a `restance` is transferred to collection, OpenDebt shall make it eligible for subsequent `inddrivelsesskridt` and case handling.
+
+## Constraints and assumptions
+
+- This petition defines the business distinction and lifecycle, not the final persistence strategy.
+- This petition does not define the full attribute set for `kravgrundlag`.
+- This petition does not define the detailed legal rules for whether a specific `restance` may be transferred beyond the overdue-state requirement.
+- This petition assumes payment evaluation already exists and can determine whether the claim is fully paid.
+
+## Out of scope
+
+- Detailed modelling of `hæftelse`
+- Detailed handling of `indsigelse`
+- Detailed implementation of `inddrivelsesskridt`
+- Detailed authority integration flows after transfer

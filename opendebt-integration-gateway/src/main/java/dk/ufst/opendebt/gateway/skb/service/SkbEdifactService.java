@@ -3,7 +3,6 @@ package dk.ufst.opendebt.gateway.skb.service;
 import java.io.InputStream;
 import java.util.List;
 
-import dk.ufst.opendebt.gateway.skb.model.CreditAdvice;
 import dk.ufst.opendebt.gateway.skb.model.DebitAdvice;
 import dk.ufst.opendebt.gateway.skb.model.SkbMessage;
 

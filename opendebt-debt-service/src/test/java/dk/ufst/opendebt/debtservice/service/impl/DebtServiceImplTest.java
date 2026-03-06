@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
@@ -33,6 +38,205 @@ class DebtServiceImplTest {
   @BeforeEach
   void setUp() {
     service = new DebtServiceImpl(debtRepository);
+  }
+
+  @Test
+  void listDebts_mapsAllFiltersAndResults() {
+    UUID creditorId = UUID.randomUUID();
+    UUID debtorId = UUID.randomUUID();
+    Pageable pageable = PageRequest.of(0, 10);
+    DebtEntity entity = debtEntity("OCR-LIST", new BigDecimal("1000"));
+    entity.setCreditorOrgId(creditorId);
+    entity.setDebtorPersonId(debtorId);
+    when(debtRepository.findByFilters(
+            creditorId,
+            debtorId,
+            DebtEntity.DebtStatus.ACTIVE,
+            DebtEntity.ReadinessStatus.READY_FOR_COLLECTION,
+            pageable))
+        .thenReturn(new PageImpl<>(List.of(entity), pageable, 1));
+
+    Page<DebtDto> result =
+        service.listDebts(
+            creditorId.toString(),
+            debtorId.toString(),
+            DebtDto.DebtStatus.ACTIVE,
+            DebtDto.ReadinessStatus.READY_FOR_COLLECTION,
+            pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).getCreditorId()).isEqualTo(creditorId.toString());
+    assertThat(result.getContent().get(0).getDebtorId()).isEqualTo(debtorId.toString());
+  }
+
+  @Test
+  void listDebts_allowsNullFilters() {
+    Pageable pageable = PageRequest.of(0, 5);
+    when(debtRepository.findByFilters(null, null, null, null, pageable))
+        .thenReturn(Page.empty(pageable));
+
+    Page<DebtDto> result = service.listDebts(null, null, null, null, pageable);
+
+    assertThat(result.getContent()).isEmpty();
+    verify(debtRepository).findByFilters(null, null, null, null, pageable);
+  }
+
+  @Test
+  void getDebtById_returnsMappedDebt() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-ID", new BigDecimal("1200"));
+    entity.setId(debtId);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+
+    DebtDto result = service.getDebtById(debtId);
+
+    assertThat(result.getId()).isEqualTo(debtId);
+    assertThat(result.getOcrLine()).isEqualTo("OCR-ID");
+  }
+
+  @Test
+  void getDebtById_mapsNullOptionalFieldsToNull() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-NULL", new BigDecimal("200"));
+    entity.setId(debtId);
+    entity.setDebtorPersonId(null);
+    entity.setCreditorOrgId(null);
+    entity.setStatus(null);
+    entity.setReadinessStatus(null);
+    entity.setCreatedAt(LocalDateTime.of(2026, 3, 6, 12, 0));
+    entity.setUpdatedAt(LocalDateTime.of(2026, 3, 6, 12, 30));
+    entity.setCreatedBy("caseworker");
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+
+    DebtDto result = service.getDebtById(debtId);
+
+    assertThat(result.getDebtorId()).isNull();
+    assertThat(result.getCreditorId()).isNull();
+    assertThat(result.getStatus()).isNull();
+    assertThat(result.getReadinessStatus()).isNull();
+    assertThat(result.getCreatedBy()).isEqualTo("caseworker");
+  }
+
+  @Test
+  void getDebtsByDebtor_parsesUuidAndMapsResults() {
+    UUID debtorId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-DEBTOR", new BigDecimal("300"));
+    entity.setDebtorPersonId(debtorId);
+    when(debtRepository.findByDebtorPersonId(debtorId)).thenReturn(List.of(entity));
+
+    List<DebtDto> result = service.getDebtsByDebtor(debtorId.toString());
+
+    assertThat(result)
+        .singleElement()
+        .extracting(DebtDto::getDebtorId)
+        .isEqualTo(debtorId.toString());
+  }
+
+  @Test
+  void getDebtsByCreditor_parsesUuidAndMapsResults() {
+    UUID creditorId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-CREDITOR", new BigDecimal("300"));
+    entity.setCreditorOrgId(creditorId);
+    when(debtRepository.findByCreditorOrgId(creditorId)).thenReturn(List.of(entity));
+
+    List<DebtDto> result = service.getDebtsByCreditor(creditorId.toString());
+
+    assertThat(result)
+        .singleElement()
+        .extracting(DebtDto::getCreditorId)
+        .isEqualTo(creditorId.toString());
+  }
+
+  @Test
+  void createDebt_persistsPendingDebtWithCalculatedOutstandingBalance() {
+    DebtDto input =
+        debtDto()
+            .principalAmount(new BigDecimal("1000"))
+            .interestAmount(new BigDecimal("50"))
+            .feesAmount(new BigDecimal("25"))
+            .dueDate(LocalDate.of(2026, 4, 1))
+            .originalDueDate(LocalDate.of(2026, 3, 1))
+            .externalReference("EXT-1")
+            .ocrLine("OCR-CREATE")
+            .build();
+    when(debtRepository.save(any(DebtEntity.class)))
+        .thenAnswer(
+            invocation -> {
+              DebtEntity saved = invocation.getArgument(0);
+              saved.setId(UUID.randomUUID());
+              return saved;
+            });
+
+    DebtDto result = service.createDebt(input);
+
+    ArgumentCaptor<DebtEntity> captor = ArgumentCaptor.forClass(DebtEntity.class);
+    verify(debtRepository).save(captor.capture());
+    assertThat(captor.getValue().getOutstandingBalance()).isEqualByComparingTo("1075");
+    assertThat(captor.getValue().getStatus()).isEqualTo(DebtEntity.DebtStatus.PENDING);
+    assertThat(captor.getValue().getReadinessStatus())
+        .isEqualTo(DebtEntity.ReadinessStatus.PENDING_REVIEW);
+    assertThat(result.getOutstandingBalance()).isEqualByComparingTo("1075");
+  }
+
+  @Test
+  void createDebt_usesZeroWhenAllAmountsAreMissing() {
+    DebtDto input = debtDto().principalAmount(null).interestAmount(null).feesAmount(null).build();
+    when(debtRepository.save(any(DebtEntity.class)))
+        .thenAnswer(
+            invocation -> {
+              DebtEntity saved = invocation.getArgument(0);
+              saved.setId(UUID.randomUUID());
+              return saved;
+            });
+
+    DebtDto result = service.createDebt(input);
+
+    assertThat(result.getOutstandingBalance()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  @Test
+  void updateDebt_updatesMutableFields() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-OLD", new BigDecimal("900"));
+    entity.setId(debtId);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+    when(debtRepository.save(any(DebtEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    DebtDto update =
+        debtDto()
+            .debtTypeCode("700")
+            .principalAmount(new BigDecimal("800"))
+            .interestAmount(new BigDecimal("20"))
+            .feesAmount(new BigDecimal("10"))
+            .dueDate(LocalDate.of(2026, 5, 1))
+            .externalReference("EXT-UPDATED")
+            .ocrLine("OCR-UPDATED")
+            .build();
+
+    DebtDto result = service.updateDebt(debtId, update);
+
+    assertThat(result.getDebtTypeCode()).isEqualTo("700");
+    assertThat(result.getPrincipalAmount()).isEqualByComparingTo("800");
+    assertThat(result.getOcrLine()).isEqualTo("OCR-UPDATED");
+  }
+
+  @Test
+  void cancelDebt_marksDebtCancelled() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-CANCEL", new BigDecimal("900"));
+    entity.setId(debtId);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+
+    service.cancelDebt(debtId);
+
+    assertThat(entity.getStatus()).isEqualTo(DebtEntity.DebtStatus.CANCELLED);
+    verify(debtRepository).save(entity);
+  }
+
+  @Test
+  void getDebtTypes_returnsStandardCode() {
+    assertThat(service.getDebtTypes()).containsExactly("600");
   }
 
   // =========================================================================
@@ -146,9 +350,36 @@ class DebtServiceImplTest {
     assertThat(captor.getValue().getOutstandingBalance()).isEqualByComparingTo("700");
   }
 
+  @Test
+  void writeDown_usesTotalAmountWhenOutstandingBalanceIsMissing() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-TOTAL", null);
+    entity.setId(debtId);
+    entity.setPrincipalAmount(new BigDecimal("1000"));
+    entity.setInterestAmount(new BigDecimal("50"));
+    entity.setFeesAmount(new BigDecimal("25"));
+    entity.setOutstandingBalance(null);
+    entity.setStatus(DebtEntity.DebtStatus.ACTIVE);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+    when(debtRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    DebtDto result = service.writeDown(debtId, new BigDecimal("75"));
+
+    assertThat(result.getOutstandingBalance()).isEqualByComparingTo("1000");
+    assertThat(result.getStatus()).isEqualTo(DebtDto.DebtStatus.PARTIALLY_PAID);
+  }
+
   // =========================================================================
   // Helpers
   // =========================================================================
+
+  private DebtDto.DebtDtoBuilder debtDto() {
+    return DebtDto.builder()
+        .debtorId(UUID.randomUUID().toString())
+        .creditorId(UUID.randomUUID().toString())
+        .debtTypeCode("600")
+        .dueDate(LocalDate.of(2025, 12, 1));
+  }
 
   private DebtEntity debtEntity(String ocrLine, BigDecimal outstandingBalance) {
     return DebtEntity.builder()

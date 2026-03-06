@@ -62,6 +62,11 @@ public class DebtEntity {
   @Column(name = "external_reference", length = 100)
   private String externalReference;
 
+  // AIDEV-NOTE: OCR-linje is the primary key for auto-matching incoming CREMUL payments
+  // (petition001).
+  // It must be unique across active debts; uniqueness is not DB-enforced yet — consider adding
+  // a partial unique index (WHERE status NOT IN ('PAID','CANCELLED','WRITTEN_OFF')).
+  // AIDEV-TODO: Add partial unique index on ocr_line for non-terminal debts via Flyway migration.
   /** Betalingsservice OCR-linje for automatic payment matching. */
   @Column(name = "ocr_line", length = 50)
   private String ocrLine;

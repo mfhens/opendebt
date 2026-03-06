@@ -36,8 +36,12 @@ public class DebtServiceImpl implements DebtService {
     DebtEntity.DebtStatus entityStatus = status != null ? mapStatus(status) : null;
     DebtEntity.ReadinessStatus entityReadiness =
         readinessStatus != null ? mapReadiness(readinessStatus) : null;
+
+    UUID creditorOrgId = creditorId != null ? UUID.fromString(creditorId) : null;
+    UUID debtorPersonId = debtorId != null ? UUID.fromString(debtorId) : null;
+
     return debtRepository
-        .findByFilters(creditorId, debtorId, entityStatus, entityReadiness, pageable)
+        .findByFilters(creditorOrgId, debtorPersonId, entityStatus, entityReadiness, pageable)
         .map(this::toDto);
   }
 
@@ -48,14 +52,16 @@ public class DebtServiceImpl implements DebtService {
 
   @Override
   public List<DebtDto> getDebtsByDebtor(String debtorId) {
-    return debtRepository.findByDebtorId(debtorId).stream()
+    UUID debtorPersonId = UUID.fromString(debtorId);
+    return debtRepository.findByDebtorPersonId(debtorPersonId).stream()
         .map(this::toDto)
         .collect(Collectors.toList());
   }
 
   @Override
   public List<DebtDto> getDebtsByCreditor(String creditorId) {
-    return debtRepository.findByCreditorId(creditorId).stream()
+    UUID creditorOrgId = UUID.fromString(creditorId);
+    return debtRepository.findByCreditorOrgId(creditorOrgId).stream()
         .map(this::toDto)
         .collect(Collectors.toList());
   }
@@ -115,6 +121,8 @@ public class DebtServiceImpl implements DebtService {
 
   @Override
   public List<String> getDebtTypes() {
+    // AIDEV-TODO: Load debt type codes from a configuration table or ingest_specs equivalent.
+    // "600" is the SAP FI-CA debt type code for standard public-sector claims (EFI/PSRM).
     return List.of("600");
   }
 
@@ -163,6 +171,8 @@ public class DebtServiceImpl implements DebtService {
                     OpenDebtException.ErrorSeverity.WARNING));
   }
 
+  // AIDEV-NOTE: debtorId and creditorId are serialised as UUID strings in DebtDto (no PII).
+  // Per ADR-0014, names/addresses are never stored here — only person-registry UUIDs.
   private DebtDto toDto(DebtEntity entity) {
     return DebtDto.builder()
         .id(entity.getId())

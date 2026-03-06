@@ -17,6 +17,13 @@ import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+// AIDEV-NOTE: Implements double-entry bookkeeping (ADR-0018). Every financial event produces
+// exactly two LedgerEntryEntity rows (debit + credit) sharing the same transactionId.
+// AIDEV-NOTE: postingDate is always LocalDate.now() (system date). effectiveDate is the economic
+// date supplied by the caller. These two dates enable bi-temporal querying.
+// AIDEV-TODO: Add balance validation (debit sum == credit sum per transactionId) as a
+// @Transactional
+// post-commit assertion or a scheduled reconciliation job.
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -13,6 +13,12 @@ import dk.ufst.opendebt.common.dto.DebtDto;
 
 import lombok.extern.slf4j.Slf4j;
 
+// AIDEV-NOTE: This is the only permitted way for payment-service to read/write debt data
+// (ADR-0007).
+// Never add a DebtRepository dependency to payment-service — all access must go through this
+// client.
+// AIDEV-TODO: Add Resilience4j @CircuitBreaker and @Retry on findByOcrLine and writeDown.
+// A dead debt-service must not block payment ingestion; consider a fallback queue.
 /** REST client for the debt-service API. No cross-service database access (ADR-0007). */
 @Slf4j
 @Component
@@ -23,6 +29,9 @@ public class DebtServiceClient {
   public DebtServiceClient(
       RestClient.Builder restClientBuilder,
       @Value("${opendebt.services.debt-service.url}") String debtServiceUrl) {
+    // AIDEV-NOTE: Base URL includes "/debt-service" context path matching the K8s ingress config.
+    // If running locally without ingress, set
+    // opendebt.services.debt-service.url=http://localhost:8081
     this.restClient =
         restClientBuilder.baseUrl(debtServiceUrl + "/debt-service/api/v1/debts").build();
   }

@@ -38,8 +38,7 @@ class SkbEdifactServiceImplTest {
 
   @Test
   void parseCremul_handlesEmptyInput() {
-    ByteArrayInputStream stream =
-        new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
+    ByteArrayInputStream stream = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
 
     SkbMessage message = service.parseCremul(stream);
 

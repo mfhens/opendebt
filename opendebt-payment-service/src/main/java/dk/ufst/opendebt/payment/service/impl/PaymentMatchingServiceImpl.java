@@ -80,9 +80,15 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
     if (ocrLine == null || ocrLine.isBlank()) {
       return List.of();
     }
+    // AIDEV-NOTE: Calls debt-service REST API — no shared DB (ADR-0007). Circuit-breaker/retry
+    // should be added once Resilience4j is wired (currently fails fast on network errors).
     return debtServiceClient.findByOcrLine(ocrLine);
   }
 
+  // AIDEV-NOTE: Manual matching routes to the case (sag) in opendebt-case-service.
+  // Currently only records the payment entity with PENDING status; the case-service integration
+  // (Flowable task creation) is not yet implemented.
+  // AIDEV-TODO: Emit an event or call case-service to create a caseworker matching task.
   private PaymentMatchResult routeToManualMatching(IncomingPaymentDto incomingPayment) {
     PaymentEntity payment = createPaymentRecord(incomingPayment, null);
     payment.setStatus(PaymentEntity.PaymentStatus.PENDING);
@@ -123,7 +129,10 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
     payment.setProcessedAt(LocalDateTime.now());
     PaymentEntity saved = paymentRepository.save(payment);
 
-    // Record bookkeeping entry
+    // AIDEV-NOTE: Bookkeeping is recorded before the write-down call so that a failed write-down
+    // (network error to debt-service) does not leave an unrecorded ledger entry.
+    // AIDEV-TODO: Both operations must eventually be wrapped in a saga/outbox pattern to guarantee
+    // consistency across payment-service and debt-service (ADR-0019 orchestration).
     bookkeepingService.recordPaymentReceived(
         matchedDebt.getId(),
         paidAmount,

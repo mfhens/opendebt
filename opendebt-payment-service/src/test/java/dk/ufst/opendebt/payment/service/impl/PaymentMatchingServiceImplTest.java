@@ -29,7 +29,7 @@ import dk.ufst.opendebt.payment.service.OverpaymentRulesService;
 
 /**
  * Unit tests for {@link PaymentMatchingServiceImpl}, covering all scenarios from
- * petitions/petition001.feature:
+ * petitions/petition001-ocr-payment-matching.feature:
  *
  * <ol>
  *   <li>Unique OCR auto-match even when the amount differs

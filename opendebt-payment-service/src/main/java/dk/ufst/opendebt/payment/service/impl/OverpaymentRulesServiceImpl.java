@@ -17,19 +17,21 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Currently defaults to {@link OverpaymentOutcome#PAYOUT}.
  */
+// AIDEV-NOTE: Deliberate placeholder — DO NOT add business logic here. Outcome rules belong in
+// Drools (.drl) once sagstype/frivillig indbetaling classification is formally specified.
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OverpaymentRulesServiceImpl implements OverpaymentRulesService {
 
-  // TODO: Inject RulesService from opendebt-rules-engine once sagstype/frivillig rules are defined
+  // AIDEV-TODO: Inject RulesService from opendebt-rules-engine and replace the hardcoded default.
+  // Blocked on: case type (sagstype) model and frivillig indbetaling flag in DebtEntity.
 
   @Override
   public OverpaymentOutcome resolveOutcome(UUID debtId) {
     log.info(
         "Resolving overpayment outcome for debt {} (placeholder: defaulting to PAYOUT)", debtId);
-    // Placeholder: default to PAYOUT until Drools rules for sagstype / frivillig indbetaling
-    // are implemented in a future petition.
+    // AIDEV-NOTE: Defaults to PAYOUT — safe fallback; real rules will cover COVER_OTHER_DEBTS path.
     return OverpaymentOutcome.PAYOUT;
   }
 }
