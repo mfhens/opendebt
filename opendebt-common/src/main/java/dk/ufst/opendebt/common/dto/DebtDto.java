@@ -42,6 +42,10 @@ public class DebtDto {
 
   private String externalReference;
 
+  private String ocrLine;
+
+  private BigDecimal outstandingBalance;
+
   private DebtStatus status;
 
   private ReadinessStatus readinessStatus;

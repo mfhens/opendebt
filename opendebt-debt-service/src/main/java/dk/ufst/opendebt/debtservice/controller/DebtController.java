@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.debtservice.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -111,5 +112,23 @@ public class DebtController {
   public ResponseEntity<Void> cancelDebt(@PathVariable UUID id) {
     debtService.cancelDebt(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/by-ocr")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('SERVICE')")
+  @Operation(
+      summary = "Find debts by OCR-linje",
+      description = "Returns debts matching the given Betalingsservice OCR-linje")
+  public ResponseEntity<List<DebtDto>> findByOcrLine(@RequestParam String ocrLine) {
+    return ResponseEntity.ok(debtService.findByOcrLine(ocrLine));
+  }
+
+  @PostMapping("/{id}/write-down")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('SERVICE')")
+  @Operation(
+      summary = "Write down a debt",
+      description = "Reduces the outstanding balance of a debt by the specified amount")
+  public ResponseEntity<DebtDto> writeDown(@PathVariable UUID id, @RequestParam BigDecimal amount) {
+    return ResponseEntity.ok(debtService.writeDown(id, amount));
   }
 }

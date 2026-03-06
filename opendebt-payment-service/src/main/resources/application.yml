@@ -67,8 +67,12 @@ opendebt:
         enabled: true
     reconciliation:
       schedule: "0 0 2 * * ?"
+  bookkeeping:
+    enabled: true
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
     case-service:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
+    integration-gateway:
+      url: ${INTEGRATION_GATEWAY_URL:http://localhost:8089}

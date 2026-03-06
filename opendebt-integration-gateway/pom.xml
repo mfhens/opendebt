@@ -48,6 +48,20 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+        <!-- Smooks EDIFACT (CREMUL/DEBMUL parsing) -->
+        <dependency>
+            <groupId>org.smooks</groupId>
+            <artifactId>smooks-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.smooks.cartridges.edi</groupId>
+            <artifactId>smooks-edi-cartridge</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.smooks.cartridges</groupId>
+            <artifactId>smooks-javabean-cartridge</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>

@@ -45,4 +45,6 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
 
   List<DebtEntity> findByCreditorIdAndReadinessStatus(
       String creditorId, ReadinessStatus readinessStatus);
+
+  List<DebtEntity> findByOcrLine(String ocrLine);
 }

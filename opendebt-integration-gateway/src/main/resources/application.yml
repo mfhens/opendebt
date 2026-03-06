@@ -51,8 +51,19 @@ opendebt:
     digital-post:
       enabled: true
       endpoint: ${DIGITAL_POST_ENDPOINT}
+  skb:
+    enabled: true
+    cremul:
+      input-directory: ${SKB_CREMUL_INPUT_DIR:/var/opendebt/skb/cremul/input}
+      processed-directory: ${SKB_CREMUL_PROCESSED_DIR:/var/opendebt/skb/cremul/processed}
+      error-directory: ${SKB_CREMUL_ERROR_DIR:/var/opendebt/skb/cremul/error}
+      poll-interval: ${SKB_CREMUL_POLL_INTERVAL:60000}
+    debmul:
+      output-directory: ${SKB_DEBMUL_OUTPUT_DIR:/var/opendebt/skb/debmul/output}
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
     case-service:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
+    payment-service:
+      url: ${PAYMENT_SERVICE_URL:http://localhost:8083}

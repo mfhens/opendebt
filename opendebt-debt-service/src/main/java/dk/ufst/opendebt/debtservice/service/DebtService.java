@@ -30,4 +30,8 @@ public interface DebtService {
   void cancelDebt(UUID id);
 
   List<String> getDebtTypes();
+
+  List<DebtDto> findByOcrLine(String ocrLine);
+
+  DebtDto writeDown(UUID id, java.math.BigDecimal amount);
 }

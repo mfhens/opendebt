@@ -54,6 +54,8 @@
         <flyway.version>10.15.0</flyway.version>
         <drools.version>9.44.0.Final</drools.version>
         <flowable.version>7.0.1</flowable.version>
+        <smooks.version>2.0.1</smooks.version>
+        <bookkeeping.version>4.3.0</bookkeeping.version>
 
         <!-- Code quality thresholds -->
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
@@ -116,6 +118,30 @@
                 <groupId>org.flowable</groupId>
                 <artifactId>flowable-spring-boot-starter-dmn</artifactId>
                 <version>${flowable.version}</version>
+            </dependency>
+
+            <!-- Smooks EDIFACT (CREMUL/DEBMUL) -->
+            <dependency>
+                <groupId>org.smooks</groupId>
+                <artifactId>smooks-core</artifactId>
+                <version>${smooks.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.smooks.cartridges.edi</groupId>
+                <artifactId>smooks-edi-cartridge</artifactId>
+                <version>${smooks.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.smooks.cartridges</groupId>
+                <artifactId>smooks-javabean-cartridge</artifactId>
+                <version>${smooks.version}</version>
+            </dependency>
+
+            <!-- Double-Entry Bookkeeping -->
+            <dependency>
+                <groupId>com.yanimetaxas</groupId>
+                <artifactId>bookkeeping</artifactId>
+                <version>${bookkeeping.version}</version>
             </dependency>
 
             <!-- Mapping -->

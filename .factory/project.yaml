@@ -1,0 +1,36 @@
+# OpenDebt Factory project configuration
+# Monorepo: Maven parent with multiple Spring Boot services.
+
+language: java
+runtime: java 21
+
+# Source and tests live under each Maven module, e.g. opendebt-*/src/main/java and src/test/java.
+source_dir: .
+test_dir: .
+
+test:
+  framework: junit
+  runner: "mvn -q test"
+  discovery: "mvn -q -DskipTests test-compile"
+  compile_check: "mvn -q -DskipTests test-compile"
+  coverage: "mvn -q verify"
+
+bdd:
+  framework: none
+  runner: ""
+  dry_run: ""
+  features_dir: petitions
+  steps_dir: ""
+
+lint:
+  runner: "mvn -q spotless:check"
+  fix: "mvn -q spotless:apply"
+
+format:
+  runner: "mvn -q spotless:apply"
+
+build:
+  runner: "mvn -q -DskipTests package"
+
+package_manager: maven
+install: "mvn -q -DskipTests test-compile"

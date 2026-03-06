@@ -31,7 +31,7 @@ public class PaymentEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "case_id", nullable = false)
+  @Column(name = "case_id")
   private UUID caseId;
 
   @Column(name = "debt_id")
@@ -53,6 +53,10 @@ public class PaymentEntity {
 
   @Column(name = "external_payment_id", length = 100)
   private String externalPaymentId;
+
+  /** Betalingsservice OCR-linje used for automatic matching. */
+  @Column(name = "ocr_line", length = 50)
+  private String ocrLine;
 
   @Column(name = "payment_date")
   private LocalDateTime paymentDate;

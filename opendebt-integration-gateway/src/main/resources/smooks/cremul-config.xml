@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Smooks configuration for parsing CREMUL (Multiple Credit Advice) EDIFACT messages.
+  
+  This configuration maps UN/EDIFACT CREMUL segments to CreditAdvice Java beans.
+  Adjust the mapping model version (e.g., d93a, d03b) to match the SKB EDIFACT 
+  directory version in use.
+  
+  See ADR-0017 for architecture context.
+-->
+<smooks-resource-list xmlns="https://www.smooks.org/xsd/smooks-2.0.xsd"
+                      xmlns:edi="https://www.smooks.org/xsd/smooks/edi-2.0.xsd"
+                      xmlns:jb="https://www.smooks.org/xsd/smooks/javabean-1.6.xsd">
+
+    <!-- UN/EDIFACT reader configuration -->
+    <!-- TODO: Configure with correct EDIFACT directory version matching SKB -->
+    <!--
+    <edi:reader mappingModel="urn:org.milyn.edi.unedifact:d03b-mapping:*" />
+    
+    <jb:bean beanId="creditAdvice" 
+             class="dk.ufst.opendebt.gateway.skb.model.CreditAdvice" 
+             createOnElement="CREMUL/SG1">
+        <jb:value property="messageReference" data="CREMUL/SG1/RFF/C506/e1154" />
+        <jb:value property="amount" data="CREMUL/SG1/MOA/C516/e5004" decoder="BigDecimal" />
+        <jb:value property="currency" data="CREMUL/SG1/MOA/C516/e6345" default="DKK" />
+        <jb:value property="paymentReference" data="CREMUL/SG1/RFF+PQ/C506/e1154" />
+    </jb:bean>
+    -->
+
+</smooks-resource-list>

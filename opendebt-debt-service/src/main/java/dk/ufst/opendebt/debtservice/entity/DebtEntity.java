@@ -62,6 +62,14 @@ public class DebtEntity {
   @Column(name = "external_reference", length = 100)
   private String externalReference;
 
+  /** Betalingsservice OCR-linje for automatic payment matching. */
+  @Column(name = "ocr_line", length = 50)
+  private String ocrLine;
+
+  /** Remaining balance after payments (write-downs). */
+  @Column(name = "outstanding_balance", precision = 15, scale = 2)
+  private BigDecimal outstandingBalance;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)
   private DebtStatus status;

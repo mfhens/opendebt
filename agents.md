@@ -17,7 +17,14 @@ OpenDebt is an open-source debt collection system for Danish public institutions
 ## Tools
 
 ### Diagrams
-Use the **draw.io MCP** for creating architecture diagrams, entity relationship diagrams, and flow charts. Generate draw.io XML format for all visual documentation.
+Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagrams). Embed Mermaid blocks directly in Markdown files using ` ```mermaid ` fenced code blocks. Do NOT use ASCII art or draw.io.
+
+### Documentation Maintenance (CRITICAL)
+**Every time source code is changed, check and update the following documentation if affected:**
+- `docs/architecture-overview.md` - Service inventory, implementation status, diagrams, endpoint lists
+- `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
+- `agents.md` - ADR references, package structure, patterns
+- Relevant ADR in `docs/adr/` if an architectural decision is affected
 
 ## Architecture Principles
 
@@ -274,6 +281,9 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0014: GDPR Data Isolation - Person Registry
 - ADR-0015: Drools Rules Engine
 - ADR-0016: Flowable Workflow Engine
+- ADR-0017: Smooks EDIFACT CREMUL/DEBMUL (SKB Integration)
+- ADR-0018: Double-Entry Bookkeeping
+- ADR-0019: Orchestration over Event-Driven Architecture
 
 ## Standard Components
 
@@ -319,9 +329,10 @@ workflowService.completeTask(taskId, variables);
 - Include security annotations on all endpoints
 - Write meaningful commit messages
 - Update ADRs for significant decisions
-- Use draw.io MCP for architecture diagrams
+- Use Mermaid for all diagrams in documentation
 - Store PII only in Person Registry
 - Use technical UUIDs to reference persons/organizations
+- Update `docs/architecture-overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
 - Store CPR, CVR, names, addresses outside Person Registry
@@ -333,3 +344,5 @@ workflowService.completeTask(taskId, variables);
 - Commit without running tests
 - Add dependencies without security review
 - Log PII data (use person_id instead)
+- Use ASCII art or draw.io for diagrams (use Mermaid)
+- Change source code without checking if documentation needs updating
