@@ -2,7 +2,6 @@ package dk.ufst.opendebt.common.exception;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -48,7 +47,7 @@ public class GlobalExceptionHandler {
     List<String> errors =
         ex.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
-            .collect(Collectors.toList());
+            .toList();
 
     ErrorResponse response =
         ErrorResponse.builder()
@@ -67,7 +66,7 @@ public class GlobalExceptionHandler {
     List<String> errors =
         ex.getConstraintViolations().stream()
             .map(v -> v.getPropertyPath() + ": " + v.getMessage())
-            .collect(Collectors.toList());
+            .toList();
 
     ErrorResponse response =
         ErrorResponse.builder()

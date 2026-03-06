@@ -16,23 +16,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
 @ExtendWith(MockitoExtension.class)
 class ReadinessValidationServiceImplTest {
 
   @Mock private DebtRepository debtRepository;
   @Mock private DebtServiceImpl debtService;
+  @Mock private ObjectProvider<ReadinessValidationService> readinessValidationServiceProvider;
 
   private ReadinessValidationServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new ReadinessValidationServiceImpl(debtRepository, debtService);
+    service =
+        new ReadinessValidationServiceImpl(
+            debtRepository, debtService, readinessValidationServiceProvider);
   }
 
   @Test
@@ -118,6 +123,7 @@ class ReadinessValidationServiceImplTest {
     UUID creditorId = UUID.randomUUID();
     DebtEntity first = debtEntity(UUID.randomUUID());
     DebtEntity second = debtEntity(UUID.randomUUID());
+    when(readinessValidationServiceProvider.getObject()).thenReturn(service);
     when(debtRepository.findByCreditorOrgIdAndReadinessStatus(
             creditorId, DebtEntity.ReadinessStatus.PENDING_REVIEW))
         .thenReturn(List.of(first, second));

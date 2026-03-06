@@ -1,7 +1,9 @@
 package dk.ufst.opendebt.personregistry.service;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -25,8 +27,10 @@ public class EncryptionService {
   private static final String ALGORITHM = "AES/GCM/NoPadding";
   private static final int GCM_IV_LENGTH = 12;
   private static final int GCM_TAG_LENGTH = 128;
+  private static final byte[] EMPTY_BYTES = new byte[0];
 
   private final SecretKey secretKey;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public EncryptionService(@Value("${opendebt.encryption.key}") String base64Key) {
     byte[] keyBytes = Base64.getDecoder().decode(base64Key);
@@ -44,11 +48,11 @@ public class EncryptionService {
    */
   public byte[] encrypt(String plaintext) {
     if (plaintext == null) {
-      return null;
+      return EMPTY_BYTES;
     }
     try {
       byte[] iv = new byte[GCM_IV_LENGTH];
-      new SecureRandom().nextBytes(iv);
+      secureRandom.nextBytes(iv);
 
       Cipher cipher = Cipher.getInstance(ALGORITHM);
       GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
@@ -62,9 +66,9 @@ public class EncryptionService {
       System.arraycopy(ciphertext, 0, result, iv.length, ciphertext.length);
 
       return result;
-    } catch (Exception e) {
+    } catch (GeneralSecurityException e) {
       log.error("Encryption failed", e);
-      throw new RuntimeException("Encryption failed", e);
+      throw new EncryptionOperationException("Encryption failed", e);
     }
   }
 
@@ -77,6 +81,12 @@ public class EncryptionService {
   public String decrypt(byte[] encrypted) {
     if (encrypted == null) {
       return null;
+    }
+    if (encrypted.length == 0) {
+      return null;
+    }
+    if (encrypted.length <= GCM_IV_LENGTH) {
+      throw new EncryptionOperationException("Encrypted payload is too short");
     }
     try {
       // Extract IV from beginning
@@ -93,9 +103,9 @@ public class EncryptionService {
 
       byte[] plaintext = cipher.doFinal(ciphertext);
       return new String(plaintext, StandardCharsets.UTF_8);
-    } catch (Exception e) {
+    } catch (GeneralSecurityException e) {
       log.error("Decryption failed", e);
-      throw new RuntimeException("Decryption failed", e);
+      throw new EncryptionOperationException("Decryption failed", e);
     }
   }
 
@@ -116,9 +126,9 @@ public class EncryptionService {
       digest.update(salt.getBytes(StandardCharsets.UTF_8));
       byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
       return bytesToHex(hash);
-    } catch (Exception e) {
+    } catch (NoSuchAlgorithmException e) {
       log.error("Hashing failed", e);
-      throw new RuntimeException("Hashing failed", e);
+      throw new EncryptionOperationException("Hashing failed", e);
     }
   }
 
@@ -128,5 +138,16 @@ public class EncryptionService {
       sb.append(String.format("%02x", b));
     }
     return sb.toString();
+  }
+
+  static final class EncryptionOperationException extends RuntimeException {
+
+    EncryptionOperationException(String message) {
+      super(message);
+    }
+
+    EncryptionOperationException(String message, Throwable cause) {
+      super(message, cause);
+    }
   }
 }

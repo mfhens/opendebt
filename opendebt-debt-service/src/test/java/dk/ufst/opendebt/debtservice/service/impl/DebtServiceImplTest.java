@@ -327,9 +327,10 @@ class DebtServiceImplTest {
   @Test
   void writeDown_throwsWhenDebtNotFound() {
     UUID debtId = UUID.randomUUID();
+    BigDecimal amount = new BigDecimal("100");
     when(debtRepository.findById(debtId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.writeDown(debtId, new BigDecimal("100")))
+    assertThatThrownBy(() -> service.writeDown(debtId, amount))
         .isInstanceOf(OpenDebtException.class)
         .hasMessageContaining("Debt not found");
   }

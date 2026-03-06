@@ -39,14 +39,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     log.info("BOGFOERING: Debt registered, debtId={}, amount={}", debtId, principalAmount);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.RECEIVABLES,
-            AccountCode.COLLECTION_REVENUE,
-            principalAmount,
-            effectiveDate,
-            reference,
-            "Fordring registreret",
-            LedgerEntryEntity.EntryCategory.DEBT_REGISTRATION);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.RECEIVABLES,
+                AccountCode.COLLECTION_REVENUE,
+                principalAmount,
+                effectiveDate,
+                reference,
+                "Fordring registreret",
+                LedgerEntryEntity.EntryCategory.DEBT_REGISTRATION));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.DEBT_REGISTERED,
@@ -68,14 +69,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
         cremulReference);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.SKB_BANK,
-            AccountCode.RECEIVABLES,
-            amount,
-            effectiveDate,
-            cremulReference,
-            "Betaling modtaget via CREMUL",
-            LedgerEntryEntity.EntryCategory.PAYMENT);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.SKB_BANK,
+                AccountCode.RECEIVABLES,
+                amount,
+                effectiveDate,
+                cremulReference,
+                "Betaling modtaget via CREMUL",
+                LedgerEntryEntity.EntryCategory.PAYMENT));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.PAYMENT_RECEIVED,
@@ -93,14 +95,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     log.info("BOGFOERING: Interest accrued, debtId={}, amount={}", debtId, interestAmount);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.INTEREST_RECEIVABLE,
-            AccountCode.INTEREST_REVENUE,
-            interestAmount,
-            effectiveDate,
-            reference,
-            "Rente tilskrevet",
-            LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.INTEREST_RECEIVABLE,
+                AccountCode.INTEREST_REVENUE,
+                interestAmount,
+                effectiveDate,
+                reference,
+                "Rente tilskrevet",
+                LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.INTEREST_ACCRUED,
@@ -118,14 +121,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     log.info("BOGFOERING: Offsetting, debtId={}, amount={}", debtId, amount);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.OFFSETTING_CLEARING,
-            AccountCode.RECEIVABLES,
-            amount,
-            effectiveDate,
-            reference,
-            "Modregning gennemfoert",
-            LedgerEntryEntity.EntryCategory.OFFSETTING);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.OFFSETTING_CLEARING,
+                AccountCode.RECEIVABLES,
+                amount,
+                effectiveDate,
+                reference,
+                "Modregning gennemfoert",
+                LedgerEntryEntity.EntryCategory.OFFSETTING));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.OFFSETTING_EXECUTED,
@@ -143,14 +147,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     log.info("BOGFOERING: Write-off, debtId={}, amount={}", debtId, amount);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.WRITE_OFF_EXPENSE,
-            AccountCode.RECEIVABLES,
-            amount,
-            effectiveDate,
-            reference,
-            "Fordring afskrevet",
-            LedgerEntryEntity.EntryCategory.WRITE_OFF);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.WRITE_OFF_EXPENSE,
+                AccountCode.RECEIVABLES,
+                amount,
+                effectiveDate,
+                reference,
+                "Fordring afskrevet",
+                LedgerEntryEntity.EntryCategory.WRITE_OFF));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.WRITE_OFF,
@@ -172,14 +177,15 @@ public class BookkeepingServiceImpl implements BookkeepingService {
         debmulReference);
     UUID txnId =
         postDoubleEntry(
-            debtId,
-            AccountCode.RECEIVABLES,
-            AccountCode.SKB_BANK,
-            amount,
-            effectiveDate,
-            debmulReference,
-            "Tilbagebetaling via DEBMUL",
-            LedgerEntryEntity.EntryCategory.REFUND);
+            new DoubleEntryRequest(
+                debtId,
+                AccountCode.RECEIVABLES,
+                AccountCode.SKB_BANK,
+                amount,
+                effectiveDate,
+                debmulReference,
+                "Tilbagebetaling via DEBMUL",
+                LedgerEntryEntity.EntryCategory.REFUND));
     recordEvent(
         debtId,
         DebtEventEntity.EventType.REFUND,
@@ -190,15 +196,7 @@ public class BookkeepingServiceImpl implements BookkeepingService {
         txnId);
   }
 
-  private UUID postDoubleEntry(
-      UUID debtId,
-      AccountCode debitAccount,
-      AccountCode creditAccount,
-      BigDecimal amount,
-      LocalDate effectiveDate,
-      String reference,
-      String description,
-      LedgerEntryEntity.EntryCategory category) {
+  private UUID postDoubleEntry(DoubleEntryRequest request) {
 
     UUID transactionId = UUID.randomUUID();
     LocalDate postingDate = LocalDate.now();
@@ -206,31 +204,31 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     LedgerEntryEntity debitEntry =
         LedgerEntryEntity.builder()
             .transactionId(transactionId)
-            .debtId(debtId)
-            .accountCode(debitAccount.getCode())
-            .accountName(debitAccount.getName())
+            .debtId(request.debtId())
+            .accountCode(request.debitAccount().getCode())
+            .accountName(request.debitAccount().getName())
             .entryType(LedgerEntryEntity.EntryType.DEBIT)
-            .amount(amount)
-            .effectiveDate(effectiveDate)
+            .amount(request.amount())
+            .effectiveDate(request.effectiveDate())
             .postingDate(postingDate)
-            .reference(reference)
-            .description(description)
-            .entryCategory(category)
+            .reference(request.reference())
+            .description(request.description())
+            .entryCategory(request.category())
             .build();
 
     LedgerEntryEntity creditEntry =
         LedgerEntryEntity.builder()
             .transactionId(transactionId)
-            .debtId(debtId)
-            .accountCode(creditAccount.getCode())
-            .accountName(creditAccount.getName())
+            .debtId(request.debtId())
+            .accountCode(request.creditAccount().getCode())
+            .accountName(request.creditAccount().getName())
             .entryType(LedgerEntryEntity.EntryType.CREDIT)
-            .amount(amount)
-            .effectiveDate(effectiveDate)
+            .amount(request.amount())
+            .effectiveDate(request.effectiveDate())
             .postingDate(postingDate)
-            .reference(reference)
-            .description(description)
-            .entryCategory(category)
+            .reference(request.reference())
+            .description(request.description())
+            .entryCategory(request.category())
             .build();
 
     ledgerEntryRepository.save(debitEntry);
@@ -239,14 +237,24 @@ public class BookkeepingServiceImpl implements BookkeepingService {
     log.debug(
         "BOGFOERING: Posted txn={}, debit={} credit={} amount={}, effective={}, posting={}",
         transactionId,
-        debitAccount.getCode(),
-        creditAccount.getCode(),
-        amount,
-        effectiveDate,
+        request.debitAccount().getCode(),
+        request.creditAccount().getCode(),
+        request.amount(),
+        request.effectiveDate(),
         postingDate);
 
     return transactionId;
   }
+
+  private record DoubleEntryRequest(
+      UUID debtId,
+      AccountCode debitAccount,
+      AccountCode creditAccount,
+      BigDecimal amount,
+      LocalDate effectiveDate,
+      String reference,
+      String description,
+      LedgerEntryEntity.EntryCategory category) {}
 
   private void recordEvent(
       UUID debtId,

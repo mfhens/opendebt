@@ -3,6 +3,7 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class ReadinessValidationServiceImpl implements ReadinessValidationServic
 
   private final DebtRepository debtRepository;
   private final DebtServiceImpl debtService;
+  private final ObjectProvider<ReadinessValidationService> readinessValidationServiceProvider;
 
   @Override
   @Transactional
@@ -77,9 +79,11 @@ public class ReadinessValidationServiceImpl implements ReadinessValidationServic
     var debts =
         debtRepository.findByCreditorOrgIdAndReadinessStatus(
             creditorOrgId, DebtEntity.ReadinessStatus.PENDING_REVIEW);
+    ReadinessValidationService readinessValidationService =
+        readinessValidationServiceProvider.getObject();
     // AIDEV-NOTE: Sequential iteration — acceptable for now; consider parallel stream or async
     // processing once batch sizes from real fordringshavere are known.
-    debts.forEach(d -> validateReadiness(d.getId()));
+    debts.forEach(d -> readinessValidationService.validateReadiness(d.getId()));
     log.info("Validated batch readiness for creditor {}: {} debts", creditorId, debts.size());
     return debts.size();
   }

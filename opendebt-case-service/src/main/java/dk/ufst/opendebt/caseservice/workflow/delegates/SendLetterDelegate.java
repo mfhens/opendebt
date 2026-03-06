@@ -23,8 +23,7 @@ public class SendLetterDelegate implements JavaDelegate {
 
     log.info("Sending letter type {} for case: {}", type, caseId);
 
-    // TODO: Call letter service to send the letter
-    // letterServiceClient.sendLetter(caseId, type);
+    // TODO: Integrate with the letter service when outbound dispatch is implemented.
 
     execution.setVariable("letterSent_" + type, true);
     log.info("Letter {} sent for case: {}", type, caseId);

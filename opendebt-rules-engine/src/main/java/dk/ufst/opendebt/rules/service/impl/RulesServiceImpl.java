@@ -2,7 +2,6 @@ package dk.ufst.opendebt.rules.service.impl;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
@@ -19,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RulesServiceImpl implements RulesService {
 
+  private static final String RESULT_GLOBAL = "result";
+
   private final KieContainer kieContainer;
 
   @Override
@@ -34,7 +35,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal("result", result);
+      kieSession.setGlobal(RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {
@@ -59,7 +60,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal("result", result);
+      kieSession.setGlobal(RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {
@@ -81,7 +82,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal("result", result);
+      kieSession.setGlobal(RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {
@@ -97,6 +98,6 @@ public class RulesServiceImpl implements RulesService {
     return debts.stream()
         .map(this::determineCollectionPriority)
         .sorted(Comparator.comparingInt(CollectionPriorityResult::getPriorityRank))
-        .collect(Collectors.toList());
+        .toList();
   }
 }

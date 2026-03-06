@@ -3,7 +3,6 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,17 +52,13 @@ public class DebtServiceImpl implements DebtService {
   @Override
   public List<DebtDto> getDebtsByDebtor(String debtorId) {
     UUID debtorPersonId = UUID.fromString(debtorId);
-    return debtRepository.findByDebtorPersonId(debtorPersonId).stream()
-        .map(this::toDto)
-        .collect(Collectors.toList());
+    return debtRepository.findByDebtorPersonId(debtorPersonId).stream().map(this::toDto).toList();
   }
 
   @Override
   public List<DebtDto> getDebtsByCreditor(String creditorId) {
     UUID creditorOrgId = UUID.fromString(creditorId);
-    return debtRepository.findByCreditorOrgId(creditorOrgId).stream()
-        .map(this::toDto)
-        .collect(Collectors.toList());
+    return debtRepository.findByCreditorOrgId(creditorOrgId).stream().map(this::toDto).toList();
   }
 
   @Override
@@ -129,9 +124,7 @@ public class DebtServiceImpl implements DebtService {
   @Override
   public List<DebtDto> findByOcrLine(String ocrLine) {
     log.debug("Finding debts by OCR-linje: {}", ocrLine);
-    return debtRepository.findByOcrLine(ocrLine).stream()
-        .map(this::toDto)
-        .collect(Collectors.toList());
+    return debtRepository.findByOcrLine(ocrLine).stream().map(this::toDto).toList();
   }
 
   @Override
