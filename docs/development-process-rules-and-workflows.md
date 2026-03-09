@@ -88,3 +88,45 @@ Qualiware (BPMN 2.0)          Excel (gældstype-regler)
 ```
 
 **Vigtigt:** Ændringer i regler (Excel) eller processer (BPMN) kræver begge re-deploy af den respektive service, da de indlæses ved opstart. Der er ingen hot-reload i den nuværende arkitektur.
+
+## 4. Webtilgængelighed for alle UI-løsninger
+
+**Kilde:** Digitaliseringsstyrelsens vejledning om webtilgængelighed. Offentlige websteder og mobilapplikationer skal leve op til webtilgængelighedsloven og den harmoniserede standard **EN 301 549 v3.2.1**. For webprojekter bruges **WCAG 2.1 AA** som praktisk baseline, suppleret med øvrige relevante EN 301 549-krav.
+
+### Processen
+
+1. **Afklar scope tidligt**
+   - Afklar om løsningen er et selvstændigt websted, en mobilapplikation eller en brugerrettet del af et eksisterende websted.
+   - Afklar om løsningen viser dokumenter, video, tovejs-kommunikation eller andre funktioner med ekstra EN 301 549-krav.
+
+2. **Skriv tilgængelighedskrav ind i petition og acceptkriterier**
+   - Tastaturbetjening
+   - synlig fokusmarkering
+   - semantisk struktur og korrekte labels
+   - tilgængelige formularer og fejlbeskeder
+   - farve/kontrast må ikke være eneste informationsbærer
+   - tilgængelige dokumenter eller tilgængelige alternativer
+
+3. **Implementer med tilgængelighed som standard**
+   - Brug semantiske HTML-elementer frem for generiske `div`-strukturer, når det er muligt.
+   - Sørg for korrekt name/role/value til skærmlæsere.
+   - Understøt zoom, reflow og logisk tab-rækkefølge.
+   - Undgå utilgængelige verificeringsmekanismer i kontakt- og feedbackflows.
+
+4. **Test både automatisk og manuelt**
+   - Kør automatiske accessibility-checks i CI, når UI-projekterne er etableret.
+   - Verificér manuelt centrale flows med tastatur.
+   - Verificér manuelt kritiske formularer, fejlbeskeder og fokusstyring.
+   - Verificér skærmlæserkritiske flows før produktion.
+
+5. **Opret tilgængelighedserklæring per websted/app**
+   - Brug Digitaliseringsstyrelsens **WAS-Tool**.
+   - Hvert selvstændigt websted og hver mobilapplikation skal have sin egen erklæring.
+   - Erklæringen skal opdateres ved væsentlige ændringer og mindst én gang årligt.
+   - Erklæringen skal have både skriftlig og telefonisk kontaktinformation.
+   - Den skriftlige kontakt må ikke kræve MitID-login eller være bag utilgængelig CAPTCHA.
+   - Link til erklæringen skal være let at finde, helst i footer og hvor praktisk muligt via `/was`.
+
+6. **Release gate**
+   - En UI-release er ikke klar til produktion, hvis kendte kritiske tilgængelighedsbrud blokerer centrale brugerflows.
+   - Tilgængelighedserklæringen skal være opdateret, hvis releasen ændrer dens indhold.

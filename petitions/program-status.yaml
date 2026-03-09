@@ -1,0 +1,202 @@
+schema_version: 1
+
+program:
+  name: OpenDebt petition implementation program
+  updated_at: 2026-03-09
+  updated_by: factory-droid
+  status_values:
+    - not_started
+    - architecture_ready
+    - blocked
+    - ready_for_implementation
+    - in_progress
+    - implemented
+    - validated
+  critical_path:
+    - petition008
+    - petition009
+    - petition010
+    - petition011
+    - petition012
+
+  phases:
+    - id: phase-0
+      name: Existing implemented foundation
+      objective: Preserve and validate already-built debt registration and payment-matching foundations.
+      petitions:
+        - petition001
+        - petition002
+      notes: Existing code indicates partial to full implementation, but petition002 still has channel gaps.
+
+    - id: phase-1
+      name: Core domain and creditor foundation
+      objective: Establish fordring lifecycle semantics and creditor master-data ownership.
+      petitions:
+        - petition003
+        - petition008
+        - petition009
+        - petition010
+
+    - id: phase-2
+      name: Creditor channels and UI compliance
+      objective: Establish M2M ingress, portal responsibility split, and accessibility baseline.
+      petitions:
+        - petition011
+        - petition012
+        - petition013
+        - petition014
+
+    - id: phase-3
+      name: Downstream collection model extensions
+      objective: Extend the begrebsmodel into notifications, liabilities, objections, and collection steps.
+      petitions:
+        - petition004
+        - petition005
+        - petition006
+        - petition007
+
+  petitions:
+    petition001:
+      title: OCR-based matching of incoming payments
+      status: implemented
+      phase: phase-0
+      depends_on: []
+      last_reviewed: 2026-03-09
+      evidence:
+        - opendebt-payment-service payment matching module is marked Done in docs/architecture-overview.md
+        - debt-service exposes OCR lookup and write-down endpoints
+      next_step: Revalidate against petition outcome contract during broader program review.
+
+    petition002:
+      title: Creditor creation of a new fordring
+      status: in_progress
+      phase: phase-0
+      depends_on:
+        - petition011
+        - petition012
+      last_reviewed: 2026-03-09
+      blockers:
+        - Portal path is not implemented.
+        - M2M ingress is being redirected to the integration-gateway target architecture.
+      notes: Debt creation exists in debt-service, but the petition is not fully satisfied end-to-end.
+      next_step: Complete petitions011 and 012, then reassess petition002 completion.
+
+    petition003:
+      title: Formalization of fordring, restance, and overdragelse til inddrivelse
+      status: ready_for_implementation
+      phase: phase-1
+      depends_on:
+        - petition002
+      last_reviewed: 2026-03-09
+      next_step: Implement lifecycle model and transfer audit trail in debt-service.
+
+    petition004:
+      title: Underretning, paakrav, and rykker
+      status: architecture_ready
+      phase: phase-3
+      depends_on:
+        - petition003
+      last_reviewed: 2026-03-09
+      next_step: Reassess after petition003 lifecycle model is implemented.
+
+    petition005:
+      title: Haeftelse for multiple skyldnere
+      status: architecture_ready
+      phase: phase-3
+      depends_on:
+        - petition003
+      last_reviewed: 2026-03-09
+      next_step: Define debtor liability model after claim lifecycle semantics are in place.
+
+    petition006:
+      title: Indsigelse workflow blockering
+      status: architecture_ready
+      phase: phase-3
+      depends_on:
+        - petition003
+      last_reviewed: 2026-03-09
+      next_step: Revisit once objection and workflow boundaries are modeled.
+
+    petition007:
+      title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
+      status: architecture_ready
+      phase: phase-3
+      depends_on:
+        - petition003
+      last_reviewed: 2026-03-09
+      next_step: Implement only after overdragelse til inddrivelse exists.
+
+    petition008:
+      title: Fordringshaver logical and physical data model
+      status: ready_for_implementation
+      phase: phase-1
+      depends_on: []
+      last_reviewed: 2026-03-09
+      evidence:
+        - petition008 outcome contract exists in petitions/petition008-fordringshaver-data-model-outcome-contract.md
+        - petition008 feature exists in petitions/petition008-fordringshaver-data-model.feature
+        - petition008 includes canonical invariant matrix and value-set decisions for W1 implementation
+      notes: Petition008 is now an executable specification for creditor master-data implementation and now has frozen API-boundary assumptions for W1.
+      next_step: Support W1-BOOT-01 and W1-BOOT-02 if implementation questions arise from the frozen model.
+
+    petition009:
+      title: Dedicated fordringshaver master data service
+      status: ready_for_implementation
+      phase: phase-1
+      depends_on:
+        - petition008
+      last_reviewed: 2026-03-09
+      evidence:
+        - api-specs/openapi-creditor-service.yaml defines the internal creditor-service boundary
+        - api-specs/openapi-person-registry-internal.yaml defines the organization lookup contract needed by creditor-service
+        - api-specs/openapi-debt-service.yaml now aligns creditorId with technical creditor_org_id UUID semantics
+      notes: Internal API boundaries and identifier semantics for petition009 are frozen for Wave 1.
+      next_step: Start W1-BOOT-01 to create the creditor-service module and W1-BOOT-02 to expose the minimum organization API in person-registry.
+
+    petition010:
+      title: Fordringshaver channel binding and access resolution
+      status: ready_for_implementation
+      phase: phase-1
+      depends_on:
+        - petition009
+      last_reviewed: 2026-03-09
+      next_step: Add channel binding model and access-resolution APIs in creditor-service.
+
+    petition011:
+      title: Fordringshaver M2M ingress via integration-gateway
+      status: ready_for_implementation
+      phase: phase-2
+      depends_on:
+        - petition009
+        - petition010
+      last_reviewed: 2026-03-09
+      next_step: Implement external creditor ingress in integration-gateway using creditor-service resolution.
+
+    petition012:
+      title: Fordringshaverportal as BFF and manual submission channel
+      status: ready_for_implementation
+      phase: phase-2
+      depends_on:
+        - petition009
+        - petition010
+        - petition013
+        - petition014
+      last_reviewed: 2026-03-09
+      next_step: Implement portal as BFF/manual channel only, with accessibility requirements included.
+
+    petition013:
+      title: UI webtilgaengelighed compliance
+      status: ready_for_implementation
+      phase: phase-2
+      depends_on: []
+      last_reviewed: 2026-03-09
+      next_step: Apply accessibility requirements to creditor-portal and citizen-portal implementation work.
+
+    petition014:
+      title: Accessibility statements and feedback for each UI
+      status: ready_for_implementation
+      phase: phase-2
+      depends_on:
+        - petition013
+      last_reviewed: 2026-03-09
+      next_step: Establish statement rollout and footer/was discoverability conventions for each UI.

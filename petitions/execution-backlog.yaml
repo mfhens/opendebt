@@ -1,0 +1,298 @@
+schema_version: 1
+
+backlog:
+  name: OpenDebt execution backlog
+  updated_at: 2026-03-09
+  updated_by: factory-droid
+  ticket_status_values:
+    - pending
+    - in_progress
+    - blocked
+    - done
+
+  waves:
+    - id: wave-1
+      phase: phase-1
+      name: Core domain and creditor foundation
+      objective: Establish executable creditor specifications, bootstrap creditor-service, and deliver creditor master-data ownership plus access resolution foundations.
+      sprints:
+        - sprint-1
+        - sprint-2
+
+  sprints:
+    - id: sprint-1
+      wave: wave-1
+      name: Creditor-service foundation
+      objective: Make petition008 executable and deliver the petition009 core.
+    - id: sprint-2
+      wave: wave-1
+      name: Access resolution and consumer wiring
+      objective: Deliver petition010 and wire shared access resolution into downstream consumers.
+
+  tickets:
+    W1-SPEC-01:
+      status: done
+      sprint: sprint-1
+      petitions:
+        - petition008
+      modules:
+        - petitions
+        - api-specs
+      objective: Turn petition008 into an executable engineering contract.
+      entry_criteria:
+        - ADR-0020 is accepted.
+        - petition008 remains the source model for creditor data.
+      deliverables:
+        - petition008 outcome contract
+        - petition008 feature file
+        - canonical creditor field and invariant matrix
+        - explicit enum and value-set decisions
+      depends_on: []
+      owner_role: Domain architect plus QA/BDD lead
+      parallelization: Must complete before coding starts.
+
+    W1-SPEC-02:
+      status: done
+      sprint: sprint-1
+      petitions:
+        - petition008
+        - petition009
+      modules:
+        - api-specs
+        - opendebt-person-registry
+        - opendebt-debt-service
+        - opendebt-creditor-service
+      objective: Freeze internal API boundaries and identifier semantics for creditor-service.
+      entry_criteria:
+        - W1-SPEC-01 is complete.
+      deliverables:
+        - draft openapi-creditor-service contract
+        - organization lookup contract for person-registry
+        - debt-service identifier alignment note for creditor_org_id usage
+        - consumer call-flow mapping
+      depends_on:
+        - W1-SPEC-01
+      owner_role: Solution architect or API lead
+      parallelization: Must complete before service and client coding starts.
+
+    W1-BOOT-01:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition009
+      modules:
+        - pom.xml
+        - docker-compose.yml
+        - opendebt-creditor-service
+      objective: Bootstrap a runnable creditor-service module in the monorepo.
+      entry_criteria:
+        - W1-SPEC-02 is complete.
+      deliverables:
+        - new Maven module
+        - Spring Boot application skeleton
+        - application.yml
+        - package structure following project conventions
+        - test skeleton
+        - local compose wiring
+      depends_on:
+        - W1-SPEC-02
+      owner_role: Platform or backend engineer
+      parallelization: Can run in parallel with W1-BOOT-02.
+
+    W1-BOOT-02:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition008
+        - petition009
+      modules:
+        - opendebt-person-registry
+        - opendebt-common
+      objective: Expose the minimum organization-reference API needed by creditor-service.
+      entry_criteria:
+        - W1-SPEC-02 is complete.
+      deliverables:
+        - organization DTOs where needed
+        - read and exists style organization endpoints or equivalent service API
+        - supporting tests
+      depends_on:
+        - W1-SPEC-02
+      owner_role: Backend engineer for person-registry
+      parallelization: Can run in parallel with W1-BOOT-01.
+
+    W1-CRD-01:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition009
+      modules:
+        - opendebt-creditor-service
+      objective: Implement the operational creditor persistence model.
+      entry_criteria:
+        - W1-BOOT-01 has created the module skeleton.
+        - petition008 field contract is frozen.
+      deliverables:
+        - creditor entities and enums
+        - Flyway V1 migration
+        - audit and history support
+        - indexes and check constraints
+        - parent-child hierarchy reference
+      depends_on:
+        - W1-BOOT-01
+        - W1-SPEC-01
+      owner_role: Backend engineer for creditor-service
+      parallelization: Starts as soon as the module exists.
+
+    W1-CRD-02:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition009
+      modules:
+        - opendebt-creditor-service
+      objective: Implement creditor lookup and administration APIs.
+      entry_criteria:
+        - W1-CRD-01 is mostly in place.
+        - W1-BOOT-02 organization API is available.
+      deliverables:
+        - repository and service layer
+        - controller endpoints for lookup and admin updates
+        - mapping logic
+        - unit tests
+      depends_on:
+        - W1-CRD-01
+        - W1-BOOT-02
+      owner_role: Backend engineer for creditor-service
+      parallelization: Can overlap late with W1-CRD-03 once signatures stabilize.
+
+    W1-CRD-03:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition009
+      modules:
+        - opendebt-creditor-service
+        - opendebt-debt-service
+        - opendebt-common
+      objective: Expose status and permission validation and enforce it in debt-service.
+      entry_criteria:
+        - W1-CRD-02 API signatures are stable.
+      deliverables:
+        - validate-action endpoint
+        - debt-service client
+        - pre-create and pre-update validation hook
+        - integration-style tests
+      depends_on:
+        - W1-CRD-02
+      owner_role: Backend integration engineer
+      parallelization: Can run in parallel with W1-CRD-04.
+
+    W1-CRD-04:
+      status: pending
+      sprint: sprint-1
+      petitions:
+        - petition009
+      modules:
+        - opendebt-creditor-service
+      objective: Make petition009 acceptance executable and protect the new service with tests.
+      entry_criteria:
+        - W1-CRD-02 and W1-CRD-03 are implemented.
+      deliverables:
+        - Cucumber acceptance coverage for petition009
+        - architecture tests
+        - service coverage gate
+      depends_on:
+        - W1-CRD-02
+        - W1-CRD-03
+      owner_role: QA automation plus backend engineer
+      parallelization: Can run alongside sprint hardening.
+
+    W1-ACC-01:
+      status: pending
+      sprint: sprint-2
+      petitions:
+        - petition010
+      modules:
+        - opendebt-creditor-service
+      objective: Add a first-class channel binding model for M2M and portal identities.
+      entry_criteria:
+        - petition009 core service exists.
+      deliverables:
+        - channel_bindings schema and entities
+        - channel type enums
+        - binding audit and history support
+      depends_on:
+        - W1-CRD-04
+      owner_role: Backend engineer for creditor-service
+      parallelization: Consumer teams can prep stubs in parallel once the contract is frozen.
+
+    W1-ACC-02:
+      status: pending
+      sprint: sprint-2
+      petitions:
+        - petition010
+      modules:
+        - opendebt-creditor-service
+        - api-specs
+      objective: Implement the access-resolution engine and API.
+      entry_criteria:
+        - W1-ACC-01 is complete.
+        - creditor lookup is already available.
+      deliverables:
+        - access resolve endpoint
+        - acting versus represented creditor resolution
+        - hierarchy-based rule enforcement
+        - audited resolution outcomes
+        - petition010 BDD coverage
+      depends_on:
+        - W1-ACC-01
+      owner_role: Senior backend engineer
+      parallelization: Blocks real downstream adoption.
+
+    W1-ACC-03:
+      status: pending
+      sprint: sprint-2
+      petitions:
+        - petition010
+      modules:
+        - opendebt-integration-gateway
+        - opendebt-creditor-portal
+        - opendebt-debt-service
+      objective: Make downstream consumers use shared access resolution.
+      entry_criteria:
+        - W1-ACC-02 contract is stable.
+      deliverables:
+        - creditor-service client in integration-gateway
+        - creditor-service client in creditor-portal
+        - creditor-service client in debt-service
+        - targeted module tests
+      depends_on:
+        - W1-ACC-02
+      owner_role: Backend integration engineers by module
+      parallelization: Split by module and run in parallel.
+
+    W1-ACC-04:
+      status: pending
+      sprint: sprint-2
+      petitions:
+        - petition009
+        - petition010
+      modules:
+        - docker-compose.yml
+        - pom.xml
+        - opendebt-creditor-service
+        - opendebt-integration-gateway
+        - opendebt-creditor-portal
+        - opendebt-debt-service
+      objective: Make Wave 1 runnable locally and in CI.
+      entry_criteria:
+        - W1-ACC-03 is complete.
+      deliverables:
+        - environment wiring for creditor-service
+        - compose updates
+        - CI inclusion and smoke path
+        - final hardening checklist
+      depends_on:
+        - W1-ACC-03
+      owner_role: Platform or backend engineer
+      parallelization: Final convergence ticket for Wave 1.

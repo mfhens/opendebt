@@ -1,0 +1,120 @@
+schema_name: petition-program-status
+schema_version: 1
+description: >
+  Canonical persisted state for dependency-aware implementation planning across
+  OpenDebt petitions. Petitions and ADRs remain the source of requirements;
+  this file stores execution/program state only.
+
+root:
+  type: map
+  required:
+    - schema_version
+    - program
+
+fields:
+  schema_version:
+    type: integer
+    allowed_values: [1]
+
+  program:
+    type: map
+    required:
+      - name
+      - updated_at
+      - status_values
+      - phases
+      - petitions
+    fields:
+      name:
+        type: string
+      updated_at:
+        type: date
+        format: YYYY-MM-DD
+      updated_by:
+        type: string
+        required: false
+      status_values:
+        type: list
+        allowed_values:
+          - not_started
+          - architecture_ready
+          - blocked
+          - ready_for_implementation
+          - in_progress
+          - implemented
+          - validated
+      critical_path:
+        type: list
+        item_type: string
+        required: false
+      phases:
+        type: list
+        item:
+          type: map
+          required:
+            - id
+            - name
+            - objective
+            - petitions
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+            objective:
+              type: string
+            petitions:
+              type: list
+              item_type: string
+            notes:
+              type: string
+              required: false
+      petitions:
+        type: map
+        key_format: petitionNNN
+        value:
+          type: map
+          required:
+            - title
+            - status
+            - phase
+            - depends_on
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+              allowed_values:
+                - not_started
+                - architecture_ready
+                - blocked
+                - ready_for_implementation
+                - in_progress
+                - implemented
+                - validated
+            phase:
+              type: string
+            depends_on:
+              type: list
+              item_type: string
+            owner:
+              type: string
+              required: false
+            last_reviewed:
+              type: date
+              format: YYYY-MM-DD
+              required: false
+            evidence:
+              type: list
+              item_type: string
+              required: false
+            blockers:
+              type: list
+              item_type: string
+              required: false
+            next_step:
+              type: string
+              required: false
+            notes:
+              type: string
+              required: false

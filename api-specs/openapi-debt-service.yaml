@@ -5,6 +5,10 @@ info:
     API for managing debts and validating readiness for collection (indrivelsesparathed).
     
     This API is exposed via UFST DUPLA and follows the Fællesoffentlige Arkitekturprincipper.
+
+    Identifier semantics frozen by W1-SPEC-02:
+    - `creditorId` serializes the technical `creditor_org_id` UUID reference.
+    - External CVR-based creditor resolution happens upstream in `person-registry`, `creditor-service`, or `integration-gateway`.
   version: 1.0.0
   contact:
     name: OpenDebt Team
@@ -41,10 +45,10 @@ paths:
       parameters:
         - name: creditorId
           in: query
-          description: Filter by creditor CVR number
+          description: Filter by creditor organization reference (technical UUID)
           schema:
             type: string
-            pattern: '^[0-9]{8}$'
+            format: uuid
         - name: debtorId
           in: query
           description: Filter by debtor CPR/CVR number
@@ -235,7 +239,8 @@ components:
           description: CPR or CVR number of the debtor
         creditorId:
           type: string
-          description: CVR number of the creditor institution
+          format: uuid
+          description: Technical UUID reference to the creditor organization (`creditor_org_id`)
         debtTypeCode:
           type: string
           description: Code identifying the type of debt
@@ -303,7 +308,7 @@ components:
           maxLength: 11
         creditorId:
           type: string
-          pattern: '^[0-9]{8}$'
+          format: uuid
         debtTypeCode:
           type: string
         principalAmount:

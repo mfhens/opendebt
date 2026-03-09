@@ -10,6 +10,7 @@ graph TB
         TastSelv["TastSelv<br/>(MitID)"]
         DigitalPost["Digital Post<br/>(e-Boks)"]
         SKB["Statens Koncernbetalinger<br/>(CREMUL/DEBMUL)"]
+        ES["Creditor systems<br/>(OCES3 / DUPLA)"]
     end
 
     subgraph Gateway["Integration Layer"]
@@ -25,6 +26,7 @@ graph TB
         DS["debt-service<br/>:8082<br/>Debt registration"]
         CS["case-service<br/>:8081<br/>Flowable BPMN"]
         PS["payment-service<br/>:8083<br/>Bookkeeping"]
+        CRS["creditor-service<br/>planned<br/>Creditor master data"]
     end
 
     subgraph Collection["Collection Services"]
@@ -41,12 +43,15 @@ graph TB
     TastSelv --> IG
     DigitalPost --> IG
     SKB --> IG
+    ES --> IG
 
     IG --> PS
     IG --> DS
+    IG --> CRS
 
     CP --> DS
     CP --> CS
+    CP --> CRS
     BP --> DS
     BP --> CS
     BP --> PS
@@ -60,9 +65,44 @@ graph TB
 
     DS --> RE
     DS --> PR
+    DS --> CRS
+    CRS --> PR
     CS --> PR
     PS --> DS
 ```
+
+### Creditor Interaction Target Architecture (ADR-0020)
+
+OpenDebt treats creditor interaction as two separate channels: **M2M/STP by default** and **portal/manual as a supplementary channel**. The target architecture is therefore:
+
+- `integration-gateway` owns external M2M ingress via DUPLA
+- `debt-service` owns `fordring` submission and lifecycle
+- `creditor-service` (planned) owns non-PII `fordringshaver` master data and channel binding
+- `creditor-portal` is a UI/BFF only, not a master-data system of record
+- `person-registry` remains the source of organization identity and PII-like data
+
+```mermaid
+flowchart LR
+    EXT[Creditor system] --> DUPLA[DUPLA]
+    DUPLA --> IG[integration-gateway]
+    IG --> CRS[creditor-service]
+    IG --> DS[debt-service]
+
+    CP[creditor-portal] --> CRS
+    CP --> DS
+    CP --> CS[case-service]
+
+    DS --> CRS
+    CRS --> PR[person-registry]
+```
+
+| Service | Target responsibility |
+|---------|-----------------------|
+| `creditor-portal` | Visualization, manual entry, and user interaction for creditor users |
+| `integration-gateway` | External M2M ingress, protocol/security adaptation, routing, error mapping |
+| `creditor-service` | Operational creditor master data, permissions, hierarchy, settlement setup, channel bindings |
+| `debt-service` | Submission and lifecycle of `fordringer`, `restancer`, and transfer to collection |
+| `person-registry` | Organization identity and PII-like reference data |
 
 ### Debt Collection Workflow (BPMN)
 
@@ -111,7 +151,9 @@ flowchart TD
 erDiagram
     PERSON_REGISTRY ||--o{ DEBTS : "debtor_person_id"
     PERSON_REGISTRY ||--o{ DEBTS : "creditor_org_id"
+    PERSON_REGISTRY ||--o{ CREDITORS : "creditor_org_id"
     PERSON_REGISTRY ||--o{ CASES : "debtor_person_id"
+    CREDITORS ||--o{ DEBTS : "creditor_org_id"
     DEBTS ||--o{ CASES : "debt_ids"
     CASES ||--o{ PAYMENTS : "case_id"
     DEBTS ||--o{ PAYMENTS : "debt_id"
@@ -141,6 +183,15 @@ erDiagram
         date due_date
         varchar status
         varchar readiness_status
+    }
+
+    CREDITORS {
+        uuid id PK
+        uuid creditor_org_id FK
+        uuid parent_creditor_id FK
+        varchar external_creditor_id UK
+        varchar activity_status
+        varchar connection_type
     }
 
     CASES {
@@ -292,9 +343,11 @@ flowchart LR
     IG -->|File poll| SKB[(SKB<br/>CREMUL/DEBMUL)]
     IG -->|REST| DUPLA[(DUPLA)]
     IG -->|REST| DP[(Digital Post)]
+    IG -->|REST| CRS[creditor-service]
 
     DS -->|REST| RE
     DS -->|REST| PR[person-registry]
+    DS -->|REST| CRS
 ```
 
 ## Technology Stack
@@ -346,7 +399,7 @@ flowchart LR
 
 ### debt-service (Port 8082)
 
-**Purpose:** Debt registration, debt type management, readiness validation (indrivelsesparathed).
+**Purpose:** Debt registration and lifecycle management for `fordringer`, `restancer`, and readiness validation (indrivelsesparathed). It remains the owning service for creditor-submitted claims.
 
 **Implementation status:** IMPLEMENTED
 
@@ -479,7 +532,7 @@ flowchart LR
 
 ### integration-gateway (Port 8089)
 
-**Purpose:** External system integration via DUPLA. SKB CREMUL/DEBMUL processing.
+**Purpose:** External system integration via DUPLA. This is the target M2M ingress for creditor systems as well as SKB CREMUL/DEBMUL processing.
 
 **Implementation status:** PARTIALLY IMPLEMENTED
 
@@ -493,6 +546,7 @@ flowchart LR
 | SkbController | Done | REST API for CREMUL upload + DEBMUL download |
 | cremul-config.xml (Smooks) | Done | Template (TODO: map to SKB directory version) |
 | **Unit tests** | **Done** | SkbEdifactServiceImplTest |
+| Creditor M2M ingress | Planned | DUPLA/OCES3 entry point for debt submission and status queries |
 | DUPLA client | Not started | OCES3 certificate integration |
 | CPR/CVR register client | Not started | External lookups |
 | Digital Post client | Not started | Letter delivery |
@@ -501,6 +555,27 @@ flowchart LR
 **API endpoints:**
 - `POST /api/v1/skb/cremul/parse` - Upload and parse CREMUL file
 - `POST /api/v1/skb/debmul/generate` - Generate DEBMUL file
+
+---
+
+### creditor-service (Planned)
+
+**Purpose:** Operational `fordringshaver` master data service. Owns non-PII creditor configuration, hierarchy, permissions, settlement setup, and channel access resolution.
+
+**Implementation status:** PLANNED
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| CreditorEntity / model | Planned | Implements Petition 008 operational data model |
+| ChannelBindingEntity / model | Planned | Binds M2M and portal identities to creditors |
+| CreditorController | Planned | Internal APIs for lookup and administration |
+| CreditorAccessResolutionService | Planned | Resolves acting creditor and acting-on-behalf rules |
+| Flyway migration V1 | Planned | `creditors`, bindings, audit, history |
+
+**Target API endpoints:**
+- `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference
+- `POST /api/v1/creditors/access/resolve` - Resolve channel/user identity to acting creditor
+- `POST /api/v1/creditors/{creditorOrgId}/validate-action` - Validate creditor status and permissions
 
 ---
 
@@ -550,7 +625,9 @@ flowchart LR
 
 ### creditor-portal (Port 8085)
 
-**Purpose:** UI/API for fordringshavere (creditors) to submit and manage debts.
+**Purpose:** UI/BFF for fordringshavere (creditors) to view data and perform manual interactions. It is not the system of record for creditor master data and not the primary M2M entry point.
+
+**Accessibility requirement:** Must comply with ADR-0021 and the applicable requirements from EN 301 549 / WCAG 2.1 AA, and must have its own accessibility statement.
 
 **Implementation status:** SCAFFOLD ONLY
 
@@ -558,6 +635,7 @@ flowchart LR
 |-----------|--------|-------|
 | CreditorPortalApplication | Done | Spring Boot app |
 | application.yml | Done | References debt-service, case-service |
+| BFF/API aggregation | Planned | Reads creditor master data from creditor-service |
 | Controllers/Views | Not started | |
 
 ---
@@ -565,6 +643,8 @@ flowchart LR
 ### citizen-portal (Port 8086)
 
 **Purpose:** UI/API for borgere (citizens) to view debts and make payments. TastSelv/MitID integration.
+
+**Accessibility requirement:** Must comply with ADR-0021 and the applicable requirements from EN 301 549 / WCAG 2.1 AA, and must have its own accessibility statement.
 
 **Implementation status:** SCAFFOLD ONLY
 
@@ -601,6 +681,7 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 | opendebt_person | person-registry | persons, organizations |
 | opendebt_case | case-service | cases, case_debt_ids, ACT_* (Flowable) |
 | opendebt_debt | debt-service | debts, debt_types |
+| opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
 | opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts |
 | opendebt_letter | letter-service | letters, letter_templates |
 | opendebt_rules | rules-engine | rule_audit |
@@ -624,6 +705,13 @@ See the Communication Pattern diagram above.
 - **Roles:** ADMIN, SUPERVISOR, CASEWORKER, CREDITOR, SERVICE, GDPR_OFFICER
 - **PII isolation:** All personal data encrypted in person-registry only (ADR-0014)
 - **Audit:** PostgreSQL trigger-based audit on all tables
+
+## Accessibility and digital inclusion
+
+- **Compliance baseline:** Public UIs must comply with ADR-0021 and applicable EN 301 549 v3.2.1 requirements; WCAG 2.1 AA is the practical baseline for web UI implementation.
+- **Accessibility statements:** Each web site and future mobile application must have its own accessibility statement created in WAS-Tool, updated on material change and at least annually.
+- **Engineering expectation:** Keyboard access, visible focus, semantic structure, accessible forms/error handling, sufficient contrast, and accessible documents are mandatory qualities for UI delivery.
+- **Operational expectation:** Each UI should expose a discoverable link to its accessibility statement, preferably in the footer and, where practical, via `/was`.
 
 ## Deployment
 
@@ -663,6 +751,8 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0017 | Smooks EDIFACT CREMUL/DEBMUL (SKB Integration) |
 | 0018 | Double-Entry Bookkeeping (Bi-Temporal with Storno) |
 | 0019 | Orchestration over Event-Driven Architecture |
+| 0020 | Creditor Channel and Master Data Architecture |
+| 0021 | UI Accessibility and Webtilgængelighed Compliance |
 
 ## Unit Tests
 
@@ -687,6 +777,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | rules-engine | Done | 7 | 4 | V1 |
 | payment-service | Partial | 22 | 1 | V1, V2, V3 |
 | integration-gateway | Partial | 7 | 2 | - |
+| creditor-service | Planned | 0 | 0 | - |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | Scaffold | 1 | 0 | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |

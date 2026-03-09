@@ -1,0 +1,348 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Creditor Service API
+  description: |
+    Internal API for operational `fordringshaver` master data and access resolution.
+
+    Identifier semantics frozen by W1-SPEC-02:
+    - `creditorOrgId` is the technical UUID reference to `person-registry.organizations.id`.
+    - `externalCreditorId` is a unique legacy/business identifier for the creditor, but not the cross-service foreign key.
+    - Downstream services shall use `creditorOrgId` when referencing a creditor organization.
+
+    Primary consumer call flows:
+    - `debt-service -> creditor-service`: validate creditor status and permissions before claim creation or mutation.
+    - `integration-gateway -> creditor-service`: resolve M2M actor and represented creditor before routing external requests.
+    - `creditor-portal -> creditor-service`: resolve portal actor and load creditor profile/configuration.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+
+servers:
+  - url: http://opendebt-creditor-service:8092
+    description: Internal cluster service
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Creditors
+    description: Creditor master-data operations
+  - name: Access Resolution
+    description: Shared channel binding and access-resolution operations
+
+paths:
+  /api/v1/creditors/{creditorOrgId}:
+    get:
+      tags: [Creditors]
+      summary: Resolve creditor master data by organization reference
+      operationId: getCreditorByOrganizationId
+      parameters:
+        - name: creditorOrgId
+          in: path
+          required: true
+          description: Technical UUID reference to person-registry organization
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Creditor resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Creditor'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/creditors/by-external-id/{externalCreditorId}:
+    get:
+      tags: [Creditors]
+      summary: Resolve creditor by legacy external identifier
+      operationId: getCreditorByExternalId
+      parameters:
+        - name: externalCreditorId
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 50
+      responses:
+        '200':
+          description: Creditor resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Creditor'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/creditors/{creditorOrgId}/validate-action:
+    post:
+      tags: [Creditors]
+      summary: Validate creditor status and permission for an action
+      operationId: validateCreditorAction
+      parameters:
+        - name: creditorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateActionRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateActionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/creditors/access/resolve:
+    post:
+      tags: [Access Resolution]
+      summary: Resolve acting and represented creditor for a channel request
+      operationId: resolveCreditorAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessResolutionRequest'
+      responses:
+        '200':
+          description: Access resolution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResolutionResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Internal service-to-service or trusted portal token
+
+  schemas:
+    Creditor:
+      type: object
+      required:
+        - id
+        - creditorOrgId
+        - externalCreditorId
+        - activityStatus
+        - connectionType
+      properties:
+        id:
+          type: string
+          format: uuid
+        creditorOrgId:
+          type: string
+          format: uuid
+          description: Technical UUID reference to person-registry organization
+        externalCreditorId:
+          type: string
+        parentCreditorId:
+          type: string
+          format: uuid
+          nullable: true
+        creditorType:
+          $ref: '#/components/schemas/CreditorType'
+        paymentType:
+          $ref: '#/components/schemas/PaymentType'
+        adjustmentTypeProfile:
+          $ref: '#/components/schemas/AdjustmentTypeProfile'
+        dcsStatus:
+          $ref: '#/components/schemas/DcsStatus'
+        activityStatus:
+          $ref: '#/components/schemas/ActivityStatus'
+        connectionType:
+          $ref: '#/components/schemas/ConnectionType'
+        usesDmi:
+          type: boolean
+        systemAgreementActive:
+          type: boolean
+        ipWhitelisted:
+          type: boolean
+
+    ValidateActionRequest:
+      type: object
+      required:
+        - requestedAction
+      properties:
+        requestedAction:
+          $ref: '#/components/schemas/CreditorAction'
+        representedCreditorOrgId:
+          type: string
+          format: uuid
+          nullable: true
+        channelType:
+          $ref: '#/components/schemas/ChannelType'
+
+    ValidateActionResponse:
+      type: object
+      required:
+        - allowed
+        - requestedAction
+      properties:
+        allowed:
+          type: boolean
+        requestedAction:
+          $ref: '#/components/schemas/CreditorAction'
+        reasonCode:
+          type: string
+        message:
+          type: string
+
+    AccessResolutionRequest:
+      type: object
+      required:
+        - channelType
+        - presentedIdentity
+      properties:
+        channelType:
+          $ref: '#/components/schemas/ChannelType'
+        presentedIdentity:
+          type: string
+          description: Certificate subject, client identifier, or user identifier
+        representedCreditorOrgId:
+          type: string
+          format: uuid
+          nullable: true
+        requestedAction:
+          $ref: '#/components/schemas/CreditorAction'
+
+    AccessResolutionResponse:
+      type: object
+      required:
+        - channelType
+        - actingCreditorOrgId
+        - allowed
+      properties:
+        channelType:
+          $ref: '#/components/schemas/ChannelType'
+        actingCreditorOrgId:
+          type: string
+          format: uuid
+        representedCreditorOrgId:
+          type: string
+          format: uuid
+          nullable: true
+        allowed:
+          type: boolean
+        reasonCode:
+          type: string
+        message:
+          type: string
+
+    CreditorAction:
+      type: string
+      enum:
+        - CREATE_CLAIM
+        - UPDATE_CLAIM
+        - VIEW_CREDITOR
+        - ADMINISTER_CREDITOR
+
+    ChannelType:
+      type: string
+      enum:
+        - M2M
+        - PORTAL
+
+    CreditorType:
+      type: string
+      enum:
+        - OTHER_PUBLIC
+        - MUNICIPAL
+        - PRIVATE
+        - REGIONAL
+        - SKAT
+        - STATE
+        - FOREIGN
+
+    PaymentType:
+      type: string
+      enum:
+        - EXTERNAL
+        - EXTERNAL_WITH_INCOME
+        - INTERNAL
+        - RIM
+
+    AdjustmentTypeProfile:
+      type: string
+      enum:
+        - ER
+        - EX
+        - IN
+        - RM
+        - SP
+
+    DcsStatus:
+      type: string
+      enum:
+        - SKAL_I_DCS
+        - INDSENDT
+        - OPRETTET
+        - OPSAMLING_SL
+        - SLETTET
+        - INTERN
+        - EJ_UDLAND
+
+    ActivityStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - DELETED
+        - TEMPORARILY_CLOSED
+        - NO_AGREEMENT
+        - DEACTIVATED_CEASED
+        - DEACTIVATED_NO_AGREEMENT
+        - DELETED_CEASED
+        - DELETED_NO_AGREEMENT
+
+    ConnectionType:
+      type: string
+      enum:
+        - SYSTEM
+        - HYBRID
+        - PORTAL
+        - PENDING
+        - NONE
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        errorCode:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+
+  responses:
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
