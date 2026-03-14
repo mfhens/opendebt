@@ -2,7 +2,7 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-09
+  updated_at: 2026-03-10
   updated_by: factory-droid
   ticket_status_values:
     - pending
@@ -19,6 +19,14 @@ backlog:
         - sprint-1
         - sprint-2
 
+    - id: wave-2
+      phase: phase-4
+      name: Fordring claim validation rules
+      objective: Implement Drools-based validation rules for fordring claim ingestion pipeline, covering core validation, authorization, lifecycle, and content validation phases.
+      sprints:
+        - sprint-3
+        - sprint-4
+
   sprints:
     - id: sprint-1
       wave: wave-1
@@ -28,6 +36,14 @@ backlog:
       wave: wave-1
       name: Access resolution and consumer wiring
       objective: Deliver petition010 and wire shared access resolution into downstream consumers.
+    - id: sprint-3
+      wave: wave-2
+      name: Fordring core validation and authorization
+      objective: Implement petition015 core validation infrastructure and petition016 authorization rules.
+    - id: sprint-4
+      wave: wave-2
+      name: Fordring lifecycle and content validation
+      objective: Implement petition017 lifecycle rules and petition018 content validation rules.
 
   tickets:
     W1-SPEC-01:
@@ -76,7 +92,7 @@ backlog:
       parallelization: Must complete before service and client coding starts.
 
     W1-BOOT-01:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition009
@@ -100,7 +116,7 @@ backlog:
       parallelization: Can run in parallel with W1-BOOT-02.
 
     W1-BOOT-02:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition008
@@ -121,7 +137,7 @@ backlog:
       parallelization: Can run in parallel with W1-BOOT-01.
 
     W1-CRD-01:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition009
@@ -144,7 +160,7 @@ backlog:
       parallelization: Starts as soon as the module exists.
 
     W1-CRD-02:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition009
@@ -166,7 +182,7 @@ backlog:
       parallelization: Can overlap late with W1-CRD-03 once signatures stabilize.
 
     W1-CRD-03:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition009
@@ -296,3 +312,282 @@ backlog:
         - W1-ACC-03
       owner_role: Platform or backend engineer
       parallelization: Final convergence ticket for Wave 1.
+
+    # Wave 2: Fordring Validation Rules
+
+    W2-SPEC-01:
+      status: done
+      sprint: sprint-3
+      petitions:
+        - petition015
+      modules:
+        - petitions
+        - rules-dmn
+      objective: Turn petition015 into an executable engineering contract for core fordring validation rules.
+      entry_criteria:
+        - Fordring rule specifications are extracted and understood.
+        - ADR-0015 Drools Rules Engine decision is in place.
+      deliverables:
+        - petition015 outcome contract
+        - petition015 feature file with 28 scenarios
+        - Fordring error code mapping to Danish descriptions
+        - validation rule categorization matrix
+      depends_on: []
+      owner_role: Domain architect plus QA/BDD lead
+      parallelization: Must complete before rules coding starts.
+
+    W2-SPEC-02:
+      status: done
+      sprint: sprint-3
+      petitions:
+        - petition016
+      modules:
+        - petitions
+        - rules-dmn
+      objective: Turn petition016 into an executable engineering contract for claimant authorization rules.
+      entry_criteria:
+        - W2-SPEC-01 is complete or in progress.
+        - Fordringhaveraftale permission model is understood.
+      deliverables:
+        - petition016 outcome contract
+        - petition016 feature file with 26 scenarios
+        - permission type enumeration
+        - ClaimantAgreementService contract definition
+      depends_on:
+        - W2-SPEC-01
+      owner_role: Domain architect plus QA/BDD lead
+      parallelization: Can run in parallel with W2-SPEC-01.
+
+    W2-SPEC-03:
+      status: done
+      sprint: sprint-4
+      petitions:
+        - petition017
+      modules:
+        - petitions
+        - rules-dmn
+      objective: Turn petition017 into an executable engineering contract for lifecycle and reference rules.
+      entry_criteria:
+        - petition015 and petition016 specifications exist.
+        - Claim state model is documented.
+      deliverables:
+        - petition017 outcome contract
+        - petition017 feature file with 32 scenarios
+        - claim lifecycle state diagram
+        - action reference relationship model
+      depends_on:
+        - W2-SPEC-01
+        - W2-SPEC-02
+      owner_role: Domain architect plus QA/BDD lead
+      parallelization: Can start while W2-RULE-01 is in progress.
+
+    W2-SPEC-04:
+      status: done
+      sprint: sprint-4
+      petitions:
+        - petition018
+      modules:
+        - petitions
+        - rules-dmn
+      objective: Turn petition018 into an executable engineering contract for content validation rules.
+      entry_criteria:
+        - petition015 through petition017 specifications exist.
+        - Configuration parameter model is documented.
+      deliverables:
+        - petition018 outcome contract
+        - petition018 feature file with 44 scenarios
+        - configurable threshold and limit specification
+        - routing constraint matrix
+      depends_on:
+        - W2-SPEC-03
+      owner_role: Domain architect plus QA/BDD lead
+      parallelization: Can start while W2-RULE-02 is in progress.
+
+    W2-BOOT-01:
+      status: pending
+      sprint: sprint-3
+      petitions:
+        - petition015
+        - petition016
+        - petition017
+        - petition018
+      modules:
+        - pom.xml
+        - opendebt-rules-engine
+        - opendebt-common
+      objective: Bootstrap Drools rules engine infrastructure for fordring validation.
+      entry_criteria:
+        - W2-SPEC-01 is complete.
+        - ADR-0015 Drools decision is approved.
+      deliverables:
+        - Drools KIE container configuration
+        - rule session management service
+        - Fordring error code enumeration
+        - validation result DTOs
+        - test infrastructure for rule evaluation
+      depends_on:
+        - W2-SPEC-01
+      owner_role: Rules engine engineer
+      parallelization: Can run in parallel with W2-SPEC-02.
+
+    W2-RULE-01:
+      status: pending
+      sprint: sprint-3
+      petitions:
+        - petition015
+      modules:
+        - opendebt-rules-engine
+        - rules-dmn
+      objective: Implement core fordring validation rules in Drools.
+      entry_criteria:
+        - W2-BOOT-01 is complete.
+        - W2-SPEC-01 is frozen.
+      deliverables:
+        - structure validation rules (10 rules)
+        - currency validation rule
+        - art type validation rule
+        - interest rate validation rule
+        - date validation rules (6 rules)
+        - agreement validation rules (3 rules)
+        - debtor validation rule
+        - unit tests for all 28 scenarios
+      depends_on:
+        - W2-BOOT-01
+        - W2-SPEC-01
+      owner_role: Rules engine engineer
+      parallelization: Starts as soon as infrastructure exists.
+
+    W2-RULE-02:
+      status: pending
+      sprint: sprint-3
+      petitions:
+        - petition016
+      modules:
+        - opendebt-rules-engine
+        - opendebt-creditor-service
+        - rules-dmn
+      objective: Implement claimant authorization rules in Drools.
+      entry_criteria:
+        - W2-RULE-01 is mostly complete.
+        - ClaimantAgreementService is available.
+      deliverables:
+        - system reporter validation rule
+        - INDR/MODR permission rules
+        - nedskriv permission rule
+        - tilbagekald permission rule
+        - portal submission permission rule
+        - opskrivning/nedskrivning correction permission rules (5 rules)
+        - hovedstol change permission rule
+        - genindsend permission rule
+        - SSO access validation rule
+        - unit tests for all 26 scenarios
+      depends_on:
+        - W2-RULE-01
+        - W2-SPEC-02
+      owner_role: Rules engine engineer
+      parallelization: Can overlap late with W2-RULE-01.
+
+    W2-RULE-03:
+      status: pending
+      sprint: sprint-4
+      petitions:
+        - petition017
+      modules:
+        - opendebt-rules-engine
+        - opendebt-debt-service
+        - rules-dmn
+      objective: Implement claim lifecycle and reference validation rules in Drools.
+      entry_criteria:
+        - W2-RULE-02 is complete.
+        - Claim repository lookups are available.
+      deliverables:
+        - genindsend rules (6 rules)
+        - tilbagekald rules (5 rules)
+        - action reference rules (5 rules)
+        - opskrivning/nedskrivning reference rules (12 rules)
+        - state validation rules (4 rules)
+        - unit tests for all 32 scenarios
+      depends_on:
+        - W2-RULE-02
+        - W2-SPEC-03
+      owner_role: Rules engine engineer
+      parallelization: Starts when authorization rules are stable.
+
+    W2-RULE-04:
+      status: pending
+      sprint: sprint-4
+      petitions:
+        - petition018
+      modules:
+        - opendebt-rules-engine
+        - rules-dmn
+      objective: Implement claim content validation rules in Drools.
+      entry_criteria:
+        - W2-RULE-03 is mostly complete.
+        - Configuration service for thresholds is available.
+      deliverables:
+        - claim amount validation rules (5 rules)
+        - sub-claim validation rules (4 rules)
+        - interest validation rules (4 rules)
+        - nedskriv reason validation rules (4 rules)
+        - document and note validation rules (6 rules)
+        - hovedstol validation rules (4 rules)
+        - hæftelse validation rules (6 rules)
+        - routing validation rules (4 rules)
+        - claim type validation rules (5 rules)
+        - identifier validation rules (3 rules)
+        - unit tests for all 44 scenarios
+      depends_on:
+        - W2-RULE-03
+        - W2-SPEC-04
+      owner_role: Rules engine engineer
+      parallelization: Can overlap late with W2-RULE-03.
+
+    W2-INT-01:
+      status: pending
+      sprint: sprint-4
+      petitions:
+        - petition015
+        - petition016
+        - petition017
+        - petition018
+      modules:
+        - opendebt-integration-gateway
+        - opendebt-rules-engine
+      objective: Wire fordring validation rules into integration-gateway claim ingestion.
+      entry_criteria:
+        - W2-RULE-04 is complete.
+        - Integration-gateway Fordring endpoint exists.
+      deliverables:
+        - validation pipeline orchestration
+        - error response transformation to fordring format
+        - validation metrics and logging
+        - integration tests
+      depends_on:
+        - W2-RULE-04
+      owner_role: Backend integration engineer
+      parallelization: Blocks production use of rules.
+
+    W2-ACC-01:
+      status: pending
+      sprint: sprint-4
+      petitions:
+        - petition015
+        - petition016
+        - petition017
+        - petition018
+      modules:
+        - opendebt-rules-engine
+        - opendebt-integration-gateway
+      objective: Make all fordring validation petition acceptance tests executable and protect with coverage.
+      entry_criteria:
+        - W2-INT-01 is complete.
+      deliverables:
+        - Cucumber acceptance coverage for all 130 scenarios
+        - architecture tests for rule organization
+        - rules coverage gate
+        - validation pipeline smoke tests
+      depends_on:
+        - W2-INT-01
+      owner_role: QA automation plus rules engineer
+      parallelization: Final convergence ticket for Wave 2.

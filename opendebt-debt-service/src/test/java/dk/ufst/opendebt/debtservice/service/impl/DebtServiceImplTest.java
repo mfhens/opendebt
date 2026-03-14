@@ -3,6 +3,7 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -25,19 +26,24 @@ import org.springframework.data.domain.Pageable;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
+import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
+import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
+import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 
 @ExtendWith(MockitoExtension.class)
 class DebtServiceImplTest {
 
   @Mock private DebtRepository debtRepository;
+  @Mock private CreditorServiceClient creditorServiceClient;
 
   private DebtServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new DebtServiceImpl(debtRepository);
+    service = new DebtServiceImpl(debtRepository, creditorServiceClient);
   }
 
   @Test
@@ -149,8 +155,10 @@ class DebtServiceImplTest {
 
   @Test
   void createDebt_persistsPendingDebtWithCalculatedOutstandingBalance() {
+    UUID creditorId = UUID.randomUUID();
     DebtDto input =
         debtDto()
+            .creditorId(creditorId.toString())
             .principalAmount(new BigDecimal("1000"))
             .interestAmount(new BigDecimal("50"))
             .feesAmount(new BigDecimal("25"))
@@ -159,6 +167,8 @@ class DebtServiceImplTest {
             .externalReference("EXT-1")
             .ocrLine("OCR-CREATE")
             .build();
+    when(creditorServiceClient.validateAction(eq(creditorId), any(ValidateActionRequest.class)))
+        .thenReturn(ValidateActionResponse.builder().allowed(true).build());
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(
             invocation -> {
@@ -180,7 +190,16 @@ class DebtServiceImplTest {
 
   @Test
   void createDebt_usesZeroWhenAllAmountsAreMissing() {
-    DebtDto input = debtDto().principalAmount(null).interestAmount(null).feesAmount(null).build();
+    UUID creditorId = UUID.randomUUID();
+    DebtDto input =
+        debtDto()
+            .creditorId(creditorId.toString())
+            .principalAmount(null)
+            .interestAmount(null)
+            .feesAmount(null)
+            .build();
+    when(creditorServiceClient.validateAction(eq(creditorId), any(ValidateActionRequest.class)))
+        .thenReturn(ValidateActionResponse.builder().allowed(true).build());
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(
             invocation -> {
@@ -195,11 +214,33 @@ class DebtServiceImplTest {
   }
 
   @Test
+  void createDebt_throwsWhenCreditorNotAllowed() {
+    UUID creditorId = UUID.randomUUID();
+    DebtDto input = debtDto().creditorId(creditorId.toString()).build();
+    when(creditorServiceClient.validateAction(eq(creditorId), any(ValidateActionRequest.class)))
+        .thenReturn(
+            ValidateActionResponse.builder()
+                .allowed(false)
+                .reasonCode("CREDITOR_INACTIVE")
+                .message("Creditor is not active")
+                .build());
+
+    assertThatThrownBy(() -> service.createDebt(input))
+        .isInstanceOf(CreditorValidationException.class)
+        .hasMessageContaining("Creditor is not active");
+    verify(debtRepository, never()).save(any());
+  }
+
+  @Test
   void updateDebt_updatesMutableFields() {
     UUID debtId = UUID.randomUUID();
+    UUID creditorId = UUID.randomUUID();
     DebtEntity entity = debtEntity("OCR-OLD", new BigDecimal("900"));
     entity.setId(debtId);
+    entity.setCreditorOrgId(creditorId);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+    when(creditorServiceClient.validateAction(eq(creditorId), any(ValidateActionRequest.class)))
+        .thenReturn(ValidateActionResponse.builder().allowed(true).build());
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -219,6 +260,30 @@ class DebtServiceImplTest {
     assertThat(result.getDebtTypeCode()).isEqualTo("700");
     assertThat(result.getPrincipalAmount()).isEqualByComparingTo("800");
     assertThat(result.getOcrLine()).isEqualTo("OCR-UPDATED");
+  }
+
+  @Test
+  void updateDebt_throwsWhenCreditorNotAllowed() {
+    UUID debtId = UUID.randomUUID();
+    UUID creditorId = UUID.randomUUID();
+    DebtEntity entity = debtEntity("OCR-OLD", new BigDecimal("900"));
+    entity.setId(debtId);
+    entity.setCreditorOrgId(creditorId);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
+    when(creditorServiceClient.validateAction(eq(creditorId), any(ValidateActionRequest.class)))
+        .thenReturn(
+            ValidateActionResponse.builder()
+                .allowed(false)
+                .reasonCode("ACTION_NOT_PERMITTED")
+                .message("Creditor does not have permission for action")
+                .build());
+
+    DebtDto update = debtDto().build();
+
+    assertThatThrownBy(() -> service.updateDebt(debtId, update))
+        .isInstanceOf(CreditorValidationException.class)
+        .hasMessageContaining("Creditor does not have permission");
+    verify(debtRepository, never()).save(any());
   }
 
   @Test

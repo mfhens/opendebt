@@ -10,9 +10,11 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
+import dk.ufst.opendebt.debtservice.config.TestConfig;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
@@ -26,6 +28,7 @@ import io.cucumber.spring.CucumberContextConfiguration;
 @CucumberContextConfiguration
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestConfig.class)
 public class Petition002Steps {
 
   @Autowired private DebtService debtService;

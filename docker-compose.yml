@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: opendebt
       POSTGRES_PASSWORD: opendebt
-      POSTGRES_MULTIPLE_DATABASES: opendebt_person,opendebt_case,opendebt_debt,opendebt_payment,opendebt_letter,opendebt_offsetting,opendebt_wage_garnishment
+      POSTGRES_MULTIPLE_DATABASES: opendebt_person,opendebt_case,opendebt_debt,opendebt_creditor,opendebt_payment,opendebt_letter,opendebt_offsetting,opendebt_wage_garnishment
     ports:
       - "5432:5432"
     volumes:
@@ -129,6 +129,25 @@ services:
       postgres:
         condition: service_healthy
 
+  creditor-service:
+    build: ./opendebt-creditor-service
+    ports:
+      - "8092:8092"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DATABASE_URL: jdbc:postgresql://postgres:5432/opendebt_creditor
+      DATABASE_USERNAME: opendebt
+      DATABASE_PASSWORD: opendebt
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      PERSON_REGISTRY_URL: http://person-registry:8090
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      person-registry:
+        condition: service_started
+
   creditor-portal:
     build: ./opendebt-creditor-portal
     ports:
@@ -138,9 +157,12 @@ services:
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
+      CREDITOR_SERVICE_URL: http://creditor-service:8092
     depends_on:
       keycloak:
         condition: service_healthy
+      creditor-service:
+        condition: service_started
 
   citizen-portal:
     build: ./opendebt-citizen-portal

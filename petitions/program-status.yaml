@@ -2,7 +2,7 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-09
+  updated_at: 2026-03-10
   updated_by: factory-droid
   status_values:
     - not_started
@@ -18,6 +18,11 @@ program:
     - petition010
     - petition011
     - petition012
+    - petition015
+    - petition016
+    - petition017
+    - petition018
+    - petition019
 
   phases:
     - id: phase-0
@@ -45,6 +50,7 @@ program:
         - petition012
         - petition013
         - petition014
+        - petition019
 
     - id: phase-3
       name: Downstream collection model extensions
@@ -54,6 +60,15 @@ program:
         - petition005
         - petition006
         - petition007
+
+    - id: phase-4
+      name: Fordring claim validation rules
+      objective: Implement comprehensive Drools-based validation rules for fordring claim ingestion, covering structure, authorization, lifecycle, and content validation.
+      petitions:
+        - petition015
+        - petition016
+        - petition017
+        - petition018
 
   petitions:
     petition001:
@@ -200,3 +215,78 @@ program:
         - petition013
       last_reviewed: 2026-03-09
       next_step: Establish statement rollout and footer/was discoverability conventions for each UI.
+
+    petition015:
+      title: Fordring core claim validation rules
+      status: ready_for_implementation
+      phase: phase-4
+      depends_on: []
+      last_reviewed: 2026-03-10
+      evidence:
+        - petition015 outcome contract exists in petitions/petition015-fordring-core-validation-rules-outcome-contract.md
+        - petition015 feature file exists with 28 scenarios in petitions/petition015-fordring-core-validation-rules.feature
+        - rules are derived from fordring integration API specification in rules-dmn/
+      notes: Foundational validation rules for fordring claim ingestion. Covers structure validation (10 rules), currency, art type, interest rate, dates (6 rules), agreement (3 rules), and debtor validation. Must be implemented first as it provides the validation infrastructure for petition016-018.
+      next_step: Start W2-BOOT-01 to bootstrap Drools rules engine infrastructure, then implement W2-RULE-01 core validation rules.
+
+    petition016:
+      title: Fordring claimant authorization rules
+      status: ready_for_implementation
+      phase: phase-4
+      depends_on:
+        - petition015
+      last_reviewed: 2026-03-10
+      evidence:
+        - petition016 outcome contract exists in petitions/petition016-fordring-claimant-authorization-rules-outcome-contract.md
+        - petition016 feature file exists with 26 scenarios in petitions/petition016-fordring-claimant-authorization-rules.feature
+        - rules validate permissions from fordringhaveraftale
+      notes: Authorization rules that validate fordringshaver permissions for specific action types. Requires ClaimantAgreementService integration. Depends on petition015 for core validation infrastructure.
+      next_step: Implement W2-RULE-02 after core validation rules are in place.
+
+    petition017:
+      title: Fordring claim lifecycle and reference rules
+      status: ready_for_implementation
+      phase: phase-4
+      depends_on:
+        - petition015
+        - petition016
+      last_reviewed: 2026-03-10
+      evidence:
+        - petition017 outcome contract exists in petitions/petition017-fordring-lifecycle-reference-rules-outcome-contract.md
+        - petition017 feature file exists with 32 scenarios in petitions/petition017-fordring-lifecycle-reference-rules.feature
+        - rules enforce claim state transitions and cross-references
+      notes: Lifecycle rules for genindsend (6 rules), tilbagekald (5 rules), action references (5 rules), opskrivning/nedskrivning references (12 rules), and state validation (4 rules). Requires claim repository lookups.
+      next_step: Implement W2-RULE-03 after authorization rules are stable.
+
+    petition018:
+      title: Fordring claim content validation rules
+      status: ready_for_implementation
+      phase: phase-4
+      depends_on:
+        - petition015
+        - petition016
+        - petition017
+      last_reviewed: 2026-03-10
+      evidence:
+        - petition018 outcome contract exists in petitions/petition018-fordring-content-validation-rules-outcome-contract.md
+        - petition018 feature file exists with 44 scenarios in petitions/petition018-fordring-content-validation-rules.feature
+        - rules validate amounts, types, documents, hovedstol, hæftelse, and routing
+      notes: Most comprehensive validation petition with 44 scenarios covering claim amounts (5 rules), sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules), hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and identifiers (3 rules). Requires configuration service for thresholds.
+      next_step: Implement W2-RULE-04 after lifecycle rules are mostly complete.
+
+    petition019:
+      title: Legacy SOAP endpoints for external creditors
+      status: ready_for_implementation
+      phase: phase-2
+      depends_on:
+        - petition015
+        - petition016
+        - petition017
+        - petition018
+      last_reviewed: 2026-03-13
+      evidence:
+        - petition019 outcome contract exists in petitions/petition019-legacy-soap-endpoints-outcome-contract.md
+        - petition019 feature file exists with 37 scenarios in petitions/petition019-legacy-soap-endpoints.feature
+        - defines 6 SOAP services (3 OIO + 3 SKAT/PSRM) for legacy system integration
+      notes: Provides backward-compatible SOAP endpoints for SKAT/DMI legacy systems. Requires OCES3 certificate authentication, CLS logging, and TLS 1.3. SOAP services delegate to same business logic as REST APIs. Depends on validation rules from petition015-018.
+      next_step: Implement Spring-WS endpoint handlers after validation rules are in place from Wave 2.

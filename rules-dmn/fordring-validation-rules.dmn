@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+             xmlns:feel="https://www.omg.org/spec/DMN/20191111/FEEL/"
+             id="Fordring_Claim_Validation_Rules"
+             name="Fordring Claim Validation Rules"
+             namespace="https://dk.rim.is/Fordring/dmn">
+
+  <!-- Input Data Definitions -->
+  <inputData id="inputAktionKode" name="AktionKode">
+    <variable id="var_aktionKode" name="AktionKode" typeRef="string"/>
+  </inputData>
+  
+  <inputData id="inputFordringhaverId" name="FordringhaverId">
+    <variable id="var_fordringhaverId" name="FordringhaverId" typeRef="number"/>
+  </inputData>
+  
+  <inputData id="inputArtType" name="ArtType">
+    <variable id="var_artType" name="ArtType" typeRef="string"/>
+  </inputData>
+  
+  <inputData id="inputValutaKode" name="ValutaKode">
+    <variable id="var_valutaKode" name="ValutaKode" typeRef="string"/>
+  </inputData>
+  
+  <inputData id="inputDocumentSize" name="DocumentSize">
+    <variable id="var_documentSize" name="DocumentSize" typeRef="number"/>
+  </inputData>
+  
+  <inputData id="inputNoteLength" name="NoteLength">
+    <variable id="var_noteLength" name="NoteLength" typeRef="number"/>
+  </inputData>
+  
+  <inputData id="inputRenteSats" name="RenteSats">
+    <variable id="var_renteSats" name="RenteSats" typeRef="number"/>
+  </inputData>
+  
+  <inputData id="inputVirkningsDato" name="VirkningsDato">
+    <variable id="var_virkningsDato" name="VirkningsDato" typeRef="date"/>
+  </inputData>
+  
+  <inputData id="inputModtagelsesTidspunkt" name="ModtagelsesTidspunkt">
+    <variable id="var_modtagelsesTidspunkt" name="ModtagelsesTidspunkt" typeRef="date"/>
+  </inputData>
+
+  <!-- Decision: Structure Validation Rules -->
+  <decision id="decision_structure_validation" name="Structure Validation">
+    <variable id="var_structure_result" name="StructureValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_structure_1">
+      <requiredInput href="#inputAktionKode"/>
+    </informationRequirement>
+    <decisionTable id="dt_structure_validation" hitPolicy="FIRST">
+      <input id="input_struktur_aktion">
+        <inputExpression id="ie_struktur_aktion" typeRef="string">
+          <text>AktionKode</text>
+        </inputExpression>
+      </input>
+      <output id="output_struktur_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_struktur_valid" name="IsValid" typeRef="boolean"/>
+      <!-- Rule 403: GenindsendFordring requires MFGenindsendFordringStruktur -->
+      <rule id="rule_403">
+        <description>Rule 403: AktionKode er GenindsendFordring men MFGenindsendFordringStruktur mangler</description>
+        <inputEntry id="ie_403"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <outputEntry id="oe_403_code"><text>"GENINDSEND_STRUCTURE_MISSING"</text></outputEntry>
+        <outputEntry id="oe_403_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 404: OpskrivningRegulering requires MFOpskrivningReguleringStruktur -->
+      <rule id="rule_404">
+        <description>Rule 404: AktionKode er OpskrivningRegulering men MFOpskrivningReguleringStruktur mangler</description>
+        <inputEntry id="ie_404"><text>"OPSKRIVNINGREGULERING"</text></inputEntry>
+        <outputEntry id="oe_404_code"><text>"OPSKRIV_REGULERING_STRUKTUR"</text></outputEntry>
+        <outputEntry id="oe_404_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 406: OpskrivningAnnulleretNedskrivningIndbetaling requires struktur -->
+      <rule id="rule_406">
+        <description>Rule 406: AktionKode er OpskrivningAnnulleretNedskrivningIndbetaling men struktur mangler</description>
+        <inputEntry id="ie_406"><text>"OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING"</text></inputEntry>
+        <outputEntry id="oe_406_code"><text>"OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INBETALING_STRUKTUR"</text></outputEntry>
+        <outputEntry id="oe_406_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 407: OpskrivningOmgjortNedskrivningRegulering requires struktur -->
+      <rule id="rule_407">
+        <description>Rule 407: AktionKode er OpskrivningOmgjortNedskrivningRegulering men struktur mangler</description>
+        <inputEntry id="ie_407"><text>"OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"</text></inputEntry>
+        <outputEntry id="oe_407_code"><text>"OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING"</text></outputEntry>
+        <outputEntry id="oe_407_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 412: NedskrivningAnnulleretOpskrivningRegulering requires struktur -->
+      <rule id="rule_412">
+        <description>Rule 412: AktionKode er NedskrivningAnnulleretReguleringOpskrivning men struktur mangler</description>
+        <inputEntry id="ie_412"><text>"NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING"</text></inputEntry>
+        <outputEntry id="oe_412_code"><text>"NEDSKRIVNING_ANNULLERET_OPSKRIVNING_REGULERING_STRUKTUR"</text></outputEntry>
+        <outputEntry id="oe_412_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 444: OpretFordring requires MFOpretFordringStruktur -->
+      <rule id="rule_444">
+        <description>Rule 444: AktionKode er MFOpretFordring men MFOpretFordringStruktur mangler</description>
+        <inputEntry id="ie_444"><text>"OPRETFORDRING"</text></inputEntry>
+        <outputEntry id="oe_444_code"><text>"OPRETFORDRING_STRUKTUR"</text></outputEntry>
+        <outputEntry id="oe_444_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 447: Nedskriv requires MFNedskrivFordringStruktur -->
+      <rule id="rule_447">
+        <description>Rule 447: AktionKode er MFNedskrivFordring men MFNedskrivFordringStruktur mangler</description>
+        <inputEntry id="ie_447"><text>"NEDSKRIV"</text></inputEntry>
+        <outputEntry id="oe_447_code"><text>"NEDSKRIV_STRUKTUR_MISSING"</text></outputEntry>
+        <outputEntry id="oe_447_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 448: Tilbagekald requires MFTilbagekaldFordringStruktur -->
+      <rule id="rule_448">
+        <description>Rule 448: AktionKode er MFTilbagekaldFordring men MFTilbagekaldFordringStruktur mangler</description>
+        <inputEntry id="ie_448"><text>"TILBAGEKALD"</text></inputEntry>
+        <outputEntry id="oe_448_code"><text>"TILBAGEKALD_STRUKTUR_MISSING"</text></outputEntry>
+        <outputEntry id="oe_448_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 458: AendrFordring requires MFAendrFordringStruktur -->
+      <rule id="rule_458">
+        <description>Rule 458: AktionKode er MFAendrFordring men MFAendrFordringStruktur mangler</description>
+        <inputEntry id="ie_458"><text>"AENDRFORDRING"</text></inputEntry>
+        <outputEntry id="oe_458_code"><text>"AENDRFORDRING_STRUKTUR_MISSING"</text></outputEntry>
+        <outputEntry id="oe_458_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 505: NedskrivningAnnulleretOpskrivningIndbetaling requires struktur -->
+      <rule id="rule_505">
+        <description>Rule 505: Aktionstype er NedskrivningAnnulleretOpskrivningIndbetaling men struktur er ikke udfyldt</description>
+        <inputEntry id="ie_505"><text>"NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING"</text></inputEntry>
+        <outputEntry id="oe_505_code"><text>"NEDSKRIVNING_ANNULLERET_OPSKRIVNING_INDBETALING_STRUKTUR"</text></outputEntry>
+        <outputEntry id="oe_505_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Default: Valid -->
+      <rule id="rule_struktur_default">
+        <description>Default: All other AktionKodes are valid</description>
+        <inputEntry id="ie_default"><text>-</text></inputEntry>
+        <outputEntry id="oe_default_code"><text>"NO_ERROR"</text></outputEntry>
+        <outputEntry id="oe_default_valid"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Currency Validation (Rule 152) -->
+  <decision id="decision_currency_validation" name="Currency Validation">
+    <variable id="var_currency_result" name="CurrencyValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_currency_1">
+      <requiredInput href="#inputAktionKode"/>
+    </informationRequirement>
+    <informationRequirement id="ir_currency_2">
+      <requiredInput href="#inputValutaKode"/>
+    </informationRequirement>
+    <decisionTable id="dt_currency_validation" hitPolicy="FIRST">
+      <input id="input_currency_aktion">
+        <inputExpression id="ie_currency_aktion" typeRef="string">
+          <text>AktionKode</text>
+        </inputExpression>
+      </input>
+      <input id="input_currency_valuta">
+        <inputExpression id="ie_currency_valuta" typeRef="string">
+          <text>ValutaKode</text>
+        </inputExpression>
+      </input>
+      <output id="output_currency_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_currency_valid" name="IsValid" typeRef="boolean"/>
+      <!-- Rule 152: Currency must be DKK for applicable action types -->
+      <rule id="rule_152_invalid">
+        <description>Rule 152: Invalid currency for claim creation/modification</description>
+        <inputEntry id="ie_152_aktion"><text>"GENINDSENDFORDRING", "OPRETFORDRING", "NEDSKRIV", "OPSKRIVNINGREGULERING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING", "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING", "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING"</text></inputEntry>
+        <inputEntry id="ie_152_not_dkk"><text>not("DKK")</text></inputEntry>
+        <outputEntry id="oe_152_code"><text>"INVALID_CURRENCY"</text></outputEntry>
+        <outputEntry id="oe_152_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Default: Valid -->
+      <rule id="rule_152_default">
+        <description>Default: Valid currency or non-applicable action</description>
+        <inputEntry id="ie_152_default_aktion"><text>-</text></inputEntry>
+        <inputEntry id="ie_152_default_valuta"><text>-</text></inputEntry>
+        <outputEntry id="oe_152_default_code"><text>"NO_ERROR"</text></outputEntry>
+        <outputEntry id="oe_152_default_valid"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Art Type Validation (Rule 411) -->
+  <decision id="decision_art_validation" name="Art Type Validation">
+    <variable id="var_art_result" name="ArtValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_art_1">
+      <requiredInput href="#inputAktionKode"/>
+    </informationRequirement>
+    <informationRequirement id="ir_art_2">
+      <requiredInput href="#inputArtType"/>
+    </informationRequirement>
+    <decisionTable id="dt_art_validation" hitPolicy="FIRST">
+      <input id="input_art_aktion">
+        <inputExpression id="ie_art_aktion" typeRef="string">
+          <text>AktionKode</text>
+        </inputExpression>
+      </input>
+      <input id="input_art_type">
+        <inputExpression id="ie_art_type" typeRef="string">
+          <text>ArtType</text>
+        </inputExpression>
+      </input>
+      <output id="output_art_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_art_valid" name="IsValid" typeRef="boolean"/>
+      <!-- Rule 411: Art type must be INDR or MODR for create/resubmit -->
+      <rule id="rule_411_invalid">
+        <description>Rule 411: Fordringsart må være inddrivelse eller modregning</description>
+        <inputEntry id="ie_411_aktion"><text>"OPRETFORDRING", "GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_411_invalid_art"><text>not("INDR", "MODR")</text></inputEntry>
+        <outputEntry id="oe_411_code"><text>"FORDRING_TYPE_ERROR"</text></outputEntry>
+        <outputEntry id="oe_411_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Default: Valid -->
+      <rule id="rule_411_default">
+        <description>Default: Valid art type or non-applicable action</description>
+        <inputEntry id="ie_411_default_aktion"><text>-</text></inputEntry>
+        <inputEntry id="ie_411_default_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_411_default_code"><text>"NO_ERROR"</text></outputEntry>
+        <outputEntry id="oe_411_default_valid"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Interest Rate Validation (Rule 438) -->
+  <decision id="decision_interest_validation" name="Interest Rate Validation">
+    <variable id="var_interest_result" name="InterestValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_interest_1">
+      <requiredInput href="#inputRenteSats"/>
+    </informationRequirement>
+    <decisionTable id="dt_interest_validation" hitPolicy="FIRST">
+      <input id="input_rentesats">
+        <inputExpression id="ie_rentesats" typeRef="number">
+          <text>RenteSats</text>
+        </inputExpression>
+      </input>
+      <output id="output_interest_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_interest_valid" name="IsValid" typeRef="boolean"/>
+      <!-- Rule 438: Interest rate must not be negative -->
+      <rule id="rule_438_invalid">
+        <description>Rule 438: MerRenteSats kan ikke være negativ</description>
+        <inputEntry id="ie_438_negative"><text>&lt; 0</text></inputEntry>
+        <outputEntry id="oe_438_code"><text>"NEGATIVE_INTEREST_RATE"</text></outputEntry>
+        <outputEntry id="oe_438_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Default: Valid -->
+      <rule id="rule_438_default">
+        <description>Default: Valid interest rate</description>
+        <inputEntry id="ie_438_default"><text>-</text></inputEntry>
+        <outputEntry id="oe_438_default_code"><text>"NO_ERROR"</text></outputEntry>
+        <outputEntry id="oe_438_default_valid"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Date Validation (Rules 464, 467, 548, 568) -->
+  <decision id="decision_date_validation" name="Date Validation">
+    <variable id="var_date_result" name="DateValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_date_1">
+      <requiredInput href="#inputVirkningsDato"/>
+    </informationRequirement>
+    <informationRequirement id="ir_date_2">
+      <requiredInput href="#inputModtagelsesTidspunkt"/>
+    </informationRequirement>
+    <decisionTable id="dt_date_validation" hitPolicy="FIRST">
+      <input id="input_virknings_dato">
+        <inputExpression id="ie_virknings_dato" typeRef="date">
+          <text>VirkningsDato</text>
+        </inputExpression>
+      </input>
+      <input id="input_modtagelse">
+        <inputExpression id="ie_modtagelse" typeRef="date">
+          <text>ModtagelsesTidspunkt</text>
+        </inputExpression>
+      </input>
+      <output id="output_date_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_date_valid" name="IsValid" typeRef="boolean"/>
+      <!-- Rule 568: Dates must be after 1900 -->
+      <rule id="rule_568">
+        <description>Rule 568: Der kan ikke indberettes datoer der ligger før år 1900</description>
+        <inputEntry id="ie_568_date"><text>&lt; date("1900-01-01")</text></inputEntry>
+        <inputEntry id="ie_568_modtagelse"><text>-</text></inputEntry>
+        <outputEntry id="oe_568_code"><text>"TIDLIGST_MULIG_DATO"</text></outputEntry>
+        <outputEntry id="oe_568_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 548: VirkningsDato must not be in the future -->
+      <rule id="rule_548">
+        <description>Rule 548: Den angivne virkningsdato må ikke være fremtidig</description>
+        <inputEntry id="ie_548_date"><text>&gt; today()</text></inputEntry>
+        <inputEntry id="ie_548_modtagelse"><text>-</text></inputEntry>
+        <outputEntry id="oe_548_code"><text>"NO_FUTURE_VIRKNINGDATO"</text></outputEntry>
+        <outputEntry id="oe_548_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Rule 464: VirkningsDato must not be later than ModtagelsesTidspunkt -->
+      <rule id="rule_464">
+        <description>Rule 464: Virkningsdato må ikke være senere end modtagelsestidspunktet</description>
+        <inputEntry id="ie_464_date"><text>-</text></inputEntry>
+        <inputEntry id="ie_464_modtagelse"><text>&lt; VirkningsDato</text></inputEntry>
+        <outputEntry id="oe_464_code"><text>"VIRKNINGSDATO_SENERE_END_MODTAGELSE"</text></outputEntry>
+        <outputEntry id="oe_464_valid"><text>false</text></outputEntry>
+      </rule>
+      <!-- Default: Valid -->
+      <rule id="rule_date_default">
+        <description>Default: Valid dates</description>
+        <inputEntry id="ie_date_default_virkning"><text>-</text></inputEntry>
+        <inputEntry id="ie_date_default_modtagelse"><text>-</text></inputEntry>
+        <outputEntry id="oe_date_default_code"><text>"NO_ERROR"</text></outputEntry>
+        <outputEntry id="oe_date_default_valid"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Claimant Permission Validation -->
+  <decision id="decision_claimant_permission" name="Claimant Permission Validation">
+    <variable id="var_claimant_result" name="ClaimantPermissionResult" typeRef="string"/>
+    <informationRequirement id="ir_claimant_1">
+      <requiredInput href="#inputAktionKode"/>
+    </informationRequirement>
+    <informationRequirement id="ir_claimant_2">
+      <requiredInput href="#inputArtType"/>
+    </informationRequirement>
+    <informationRequirement id="ir_claimant_3">
+      <requiredInput href="#inputFordringhaverId"/>
+    </informationRequirement>
+    <decisionTable id="dt_claimant_permission" hitPolicy="COLLECT">
+      <input id="input_perm_aktion">
+        <inputExpression id="ie_perm_aktion" typeRef="string">
+          <text>AktionKode</text>
+        </inputExpression>
+      </input>
+      <input id="input_perm_art">
+        <inputExpression id="ie_perm_art" typeRef="string">
+          <text>ArtType</text>
+        </inputExpression>
+      </input>
+      <output id="output_perm_rule" name="RuleId" typeRef="string"/>
+      <output id="output_perm_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_perm_description" name="Description" typeRef="string"/>
+      <!-- Rule 416: INDR claims permission -->
+      <rule id="rule_416">
+        <description>Rule 416: Den angivne fordringshaver må ikke indberette inddrivelsesfordringer</description>
+        <inputEntry id="ie_416_aktion"><text>"OPRETFORDRING", "GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_416_art"><text>"INDR"</text></inputEntry>
+        <outputEntry id="oe_416_rule"><text>"Rule416"</text></outputEntry>
+        <outputEntry id="oe_416_code"><text>"FORDRINGSHAVER_CANNOT_COLLECT"</text></outputEntry>
+        <outputEntry id="oe_416_desc"><text>"Claimant must have permission to send INDR claims"</text></outputEntry>
+      </rule>
+      <!-- Rule 419: MODR claims permission -->
+      <rule id="rule_419">
+        <description>Rule 419: Den angivne fordringshaver må ikke indberette modregningsfordringer</description>
+        <inputEntry id="ie_419_aktion"><text>"OPRETFORDRING", "GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_419_art"><text>"MODR"</text></inputEntry>
+        <outputEntry id="oe_419_rule"><text>"Rule419"</text></outputEntry>
+        <outputEntry id="oe_419_code"><text>"FORDRINGSHAVER_CANNOT_DEDUCT"</text></outputEntry>
+        <outputEntry id="oe_419_desc"><text>"Claimant must have permission to send MODR claims"</text></outputEntry>
+      </rule>
+      <!-- Rule 420: Nedskriv permission -->
+      <rule id="rule_420">
+        <description>Rule 420: Den angivne fordringshaver må ikke indberette nedskrivninger</description>
+        <inputEntry id="ie_420_aktion"><text>"NEDSKRIV"</text></inputEntry>
+        <inputEntry id="ie_420_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_420_rule"><text>"Rule420"</text></outputEntry>
+        <outputEntry id="oe_420_code"><text>"FORDRINGSHAVER_CANNOT_REDUCE"</text></outputEntry>
+        <outputEntry id="oe_420_desc"><text>"Claimant must have permission to reduce claims"</text></outputEntry>
+      </rule>
+      <!-- Rule 421: Tilbagekald permission -->
+      <rule id="rule_421">
+        <description>Rule 421: Den angivne fordringshaver må ikke indberette tilbagekald</description>
+        <inputEntry id="ie_421_aktion"><text>"TILBAGEKALD"</text></inputEntry>
+        <inputEntry id="ie_421_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_421_rule"><text>"Rule421"</text></outputEntry>
+        <outputEntry id="oe_421_code"><text>"FORDRINGSHAVER_CANNOT_CALL_BACK"</text></outputEntry>
+        <outputEntry id="oe_421_desc"><text>"Claimant must have permission to withdraw claims"</text></outputEntry>
+      </rule>
+      <!-- Rule 465: OANI permission -->
+      <rule id="rule_465">
+        <description>Rule 465: Den angivne fordringshaver må ikke indberette OpskrivningAnnulleretNedskrivningIndbetaling</description>
+        <inputEntry id="ie_465_aktion"><text>"OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING"</text></inputEntry>
+        <inputEntry id="ie_465_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_465_rule"><text>"Rule465"</text></outputEntry>
+        <outputEntry id="oe_465_code"><text>"ANNULLERE_NEDSKRIVNING_INDBETALING_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_465_desc"><text>"Claimant must have permission for OANI actions"</text></outputEntry>
+      </rule>
+      <!-- Rule 466: OpskrivningRegulering permission -->
+      <rule id="rule_466">
+        <description>Rule 466: Den angivne fordringshaver må ikke indberette Opskrivninger med årsag opskrivningRegulering</description>
+        <inputEntry id="ie_466_aktion"><text>"OPSKRIVNINGREGULERING"</text></inputEntry>
+        <inputEntry id="ie_466_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_466_rule"><text>"Rule466"</text></outputEntry>
+        <outputEntry id="oe_466_code"><text>"OPSKRIVNING_REGULERING_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_466_desc"><text>"Claimant must have permission for OpskrivningRegulering"</text></outputEntry>
+      </rule>
+      <!-- Rule 497: OONR permission -->
+      <rule id="rule_497">
+        <description>Rule 497: Den angivne fordringshaver må ikke indberette OpskrivningOmgjortNedskrivningRegulering</description>
+        <inputEntry id="ie_497_aktion"><text>"OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"</text></inputEntry>
+        <inputEntry id="ie_497_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_497_rule"><text>"Rule497"</text></outputEntry>
+        <outputEntry id="oe_497_code"><text>"OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_497_desc"><text>"Claimant must have permission for OONR actions"</text></outputEntry>
+      </rule>
+      <!-- Rule 501: NAOR permission -->
+      <rule id="rule_501">
+        <description>Rule 501: Den angivne fordringshaver må ikke indberette NedskrivningAnnulleretOpskrivningRegulering</description>
+        <inputEntry id="ie_501_aktion"><text>"NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING"</text></inputEntry>
+        <inputEntry id="ie_501_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_501_rule"><text>"Rule501"</text></outputEntry>
+        <outputEntry id="oe_501_code"><text>"ANNULLERE_OPSKRIVNING_REGULERING_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_501_desc"><text>"Claimant must have permission for NAOR actions"</text></outputEntry>
+      </rule>
+      <!-- Rule 508: NAOI permission -->
+      <rule id="rule_508">
+        <description>Rule 508: Den angivne fordringshaver må ikke indberette NedskrivningAnnulleretOpskrivningIndbetaling</description>
+        <inputEntry id="ie_508_aktion"><text>"NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING"</text></inputEntry>
+        <inputEntry id="ie_508_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_508_rule"><text>"Rule508"</text></outputEntry>
+        <outputEntry id="oe_508_code"><text>"ANNULLERE_OPSKRIVNING_INDBETALING_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_508_desc"><text>"Claimant must have permission for NAOI actions"</text></outputEntry>
+      </rule>
+      <!-- Rule 511: FHI permission -->
+      <rule id="rule_511">
+        <description>Rule 511: Den angivne fordringshaver må ikke indberette hovedstolændringer</description>
+        <inputEntry id="ie_511_aktion"><text>"AENDRFORDRING"</text></inputEntry>
+        <inputEntry id="ie_511_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_511_rule"><text>"Rule511"</text></outputEntry>
+        <outputEntry id="oe_511_code"><text>"MAA_IKKE_AENDRE_HOVEDSTOL"</text></outputEntry>
+        <outputEntry id="oe_511_desc"><text>"Claimant must have permission for hovedstol changes"</text></outputEntry>
+      </rule>
+      <!-- Rule 543: Genindsend permission -->
+      <rule id="rule_543">
+        <description>Rule 543: Den angivne fordringshaver må ikke indberette genindsend aktioner</description>
+        <inputEntry id="ie_543_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_543_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_543_rule"><text>"Rule543"</text></outputEntry>
+        <outputEntry id="oe_543_code"><text>"CLAIMANT_MAY_NOT_RESUBMIT_CLAIMS"</text></outputEntry>
+        <outputEntry id="oe_543_desc"><text>"Claimant must have permission to resubmit claims"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Decision: Genindsend (Resubmit) Validation -->
+  <decision id="decision_genindsend_validation" name="Genindsend Validation">
+    <variable id="var_genindsend_result" name="GenindsendValidationResult" typeRef="string"/>
+    <informationRequirement id="ir_genindsend_1">
+      <requiredInput href="#inputAktionKode"/>
+    </informationRequirement>
+    <informationRequirement id="ir_genindsend_2">
+      <requiredInput href="#inputArtType"/>
+    </informationRequirement>
+    <decisionTable id="dt_genindsend_validation" hitPolicy="COLLECT">
+      <input id="input_geni_aktion">
+        <inputExpression id="ie_geni_aktion" typeRef="string">
+          <text>AktionKode</text>
+        </inputExpression>
+      </input>
+      <input id="input_geni_art">
+        <inputExpression id="ie_geni_art" typeRef="string">
+          <text>ArtType</text>
+        </inputExpression>
+      </input>
+      <output id="output_geni_rule" name="RuleId" typeRef="string"/>
+      <output id="output_geni_error" name="ErrorCode" typeRef="string"/>
+      <output id="output_geni_description" name="Description" typeRef="string"/>
+      <!-- Rule 539: Genindsend valid withdrawal reason -->
+      <rule id="rule_539">
+        <description>Rule 539: Aktionen kan ikke genindsendes da fordringen er returneret eller tilbagekaldt med andet end HENS, KLAG, BORD eller HAFT</description>
+        <inputEntry id="ie_539_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_539_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_539_rule"><text>"Rule539"</text></outputEntry>
+        <outputEntry id="oe_539_code"><text>"GENINDSEND_OPRET_NOT_WITHDRAWN_WITH_VALID_REASON"</text></outputEntry>
+        <outputEntry id="oe_539_desc"><text>"Original claim must be withdrawn with HENS, KLAG, BORD, or HAFT"</text></outputEntry>
+      </rule>
+      <!-- Rule 540: Original claim must be withdrawn -->
+      <rule id="rule_540">
+        <description>Rule 540: Aktionen kan ikke genindsendes da fordringen ikke er tilbagekaldt</description>
+        <inputEntry id="ie_540_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_540_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_540_rule"><text>"Rule540"</text></outputEntry>
+        <outputEntry id="oe_540_code"><text>"GENINDSEND_CREATE_CLAIM_NOT_WITHDRAWN"</text></outputEntry>
+        <outputEntry id="oe_540_desc"><text>"Original claim must be withdrawn to resubmit"</text></outputEntry>
+      </rule>
+      <!-- Rule 541: Same claimant -->
+      <rule id="rule_541">
+        <description>Rule 541: Aktionen der genindsendes må genindsendes af samme fordringshaver</description>
+        <inputEntry id="ie_541_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_541_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_541_rule"><text>"Rule541"</text></outputEntry>
+        <outputEntry id="oe_541_code"><text>"GENINDSEND_MUST_HAVE_SAME_CLAIMANT"</text></outputEntry>
+        <outputEntry id="oe_541_desc"><text>"Resubmit must be from same claimant as original withdrawal"</text></outputEntry>
+      </rule>
+      <!-- Rule 542: Basic data must match -->
+      <rule id="rule_542">
+        <description>Rule 542: Stamdata på aktionen der genindsendes er forskellig fra stamdata på den oprindelige fordring</description>
+        <inputEntry id="ie_542_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_542_art"><text>-</text></inputEntry>
+        <outputEntry id="oe_542_rule"><text>"Rule542"</text></outputEntry>
+        <outputEntry id="oe_542_code"><text>"GENINDSEND_BASIC_DATA_NOT_EQUAL_TO_CREATE_CLAIM"</text></outputEntry>
+        <outputEntry id="oe_542_desc"><text>"Stamdata must match original claim"</text></outputEntry>
+      </rule>
+      <!-- Rule 544: Cannot resubmit MODR -->
+      <rule id="rule_544">
+        <description>Rule 544: Der kan ikke genindsendes modregningsfordringer</description>
+        <inputEntry id="ie_544_aktion"><text>"GENINDSENDFORDRING"</text></inputEntry>
+        <inputEntry id="ie_544_art"><text>"MODR"</text></inputEntry>
+        <outputEntry id="oe_544_rule"><text>"Rule544"</text></outputEntry>
+        <outputEntry id="oe_544_code"><text>"GENINDSEND_MODR_NOT_ALLOWED"</text></outputEntry>
+        <outputEntry id="oe_544_desc"><text>"Cannot resubmit MODR claims"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+</definitions>

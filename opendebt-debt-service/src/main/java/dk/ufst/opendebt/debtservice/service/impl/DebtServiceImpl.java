@@ -11,7 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.client.CreditorAction;
+import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
+import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
+import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
+import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DebtServiceImpl implements DebtService {
 
   private final DebtRepository debtRepository;
+  private final CreditorServiceClient creditorServiceClient;
 
   @Override
   public Page<DebtDto> listDebts(
@@ -64,10 +70,13 @@ public class DebtServiceImpl implements DebtService {
   @Override
   @Transactional
   public DebtDto createDebt(DebtDto dto) {
+    UUID creditorOrgId = UUID.fromString(dto.getCreditorId());
+    validateCreditorAction(creditorOrgId, CreditorAction.CREATE_CLAIM);
+
     DebtEntity entity =
         DebtEntity.builder()
             .debtorPersonId(UUID.fromString(dto.getDebtorId()))
-            .creditorOrgId(UUID.fromString(dto.getCreditorId()))
+            .creditorOrgId(creditorOrgId)
             .debtTypeCode(dto.getDebtTypeCode())
             .principalAmount(dto.getPrincipalAmount())
             .interestAmount(dto.getInterestAmount())
@@ -93,6 +102,8 @@ public class DebtServiceImpl implements DebtService {
   @Transactional
   public DebtDto updateDebt(UUID id, DebtDto dto) {
     DebtEntity entity = findEntityById(id);
+    validateCreditorAction(entity.getCreditorOrgId(), CreditorAction.UPDATE_CLAIM);
+
     entity.setDebtTypeCode(dto.getDebtTypeCode());
     entity.setPrincipalAmount(dto.getPrincipalAmount());
     entity.setInterestAmount(dto.getInterestAmount());
@@ -213,5 +224,22 @@ public class DebtServiceImpl implements DebtService {
 
   private DebtEntity.ReadinessStatus mapReadiness(DebtDto.ReadinessStatus status) {
     return DebtEntity.ReadinessStatus.valueOf(status.name());
+  }
+
+  private void validateCreditorAction(UUID creditorOrgId, CreditorAction action) {
+    log.debug("Validating creditor action {} for creditor {}", action, creditorOrgId);
+    ValidateActionRequest request = ValidateActionRequest.builder().requestedAction(action).build();
+    ValidateActionResponse response = creditorServiceClient.validateAction(creditorOrgId, request);
+
+    if (!response.isAllowed()) {
+      String reasonCode = response.getReasonCode() != null ? response.getReasonCode() : "UNKNOWN";
+      String message =
+          response.getMessage() != null
+              ? response.getMessage()
+              : "Creditor is not permitted to perform action: " + action;
+      log.warn("Creditor {} denied action {}: {} - {}", creditorOrgId, action, reasonCode, message);
+      throw new CreditorValidationException(message, reasonCode);
+    }
+    log.debug("Creditor {} authorized for action {}", creditorOrgId, action);
   }
 }

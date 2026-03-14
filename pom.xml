@@ -18,6 +18,7 @@
         <module>opendebt-rules-engine</module>
         <module>opendebt-case-service</module>
         <module>opendebt-debt-service</module>
+        <module>opendebt-creditor-service</module>
         <module>opendebt-creditor-portal</module>
         <module>opendebt-citizen-portal</module>
         <module>opendebt-payment-service</module>
