@@ -65,7 +65,7 @@ Feature: Creditor Service API for operational fordringshaver master data
     And the creditor does not have permission to perform action "ADMINISTER_CREDITOR"
     When a service validates action "ADMINISTER_CREDITOR" for creditorOrgId "e5f6a7b8-c9d0-1234-ef12-345678901234"
     Then the validation response indicates allowed is false
-    And the validation response contains reasonCode "PERMISSION_DENIED"
+    And the validation response contains reasonCode "ACTION_NOT_PERMITTED"
 
   Scenario: Validate action returns 404 for non-existent creditor
     Given no creditor exists with creditorOrgId "00000000-0000-0000-0000-000000000000"

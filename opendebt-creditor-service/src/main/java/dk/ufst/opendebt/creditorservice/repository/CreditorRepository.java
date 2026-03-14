@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.creditorservice.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface CreditorRepository extends JpaRepository<CreditorEntity, UUID> 
   boolean existsByExternalCreditorId(String externalCreditorId);
 
   Optional<CreditorEntity> findByCreditorOrgId(UUID creditorOrgId);
+
+  List<CreditorEntity> findByParentCreditorId(UUID parentCreditorId);
 }

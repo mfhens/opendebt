@@ -1,11 +1,11 @@
 # Fordring Validation Rules DMN Export
 
-This directory contains the extracted business rules from the Fordring Integration API in DMN (Decision Model and Notation) compatible formats.
+This directory contains the business rules for the Fordring Integration API in DMN (Decision Model and Notation) compatible formats.
 
 ## Files
 
 ### fordring-rules-decision-table.csv
-A comprehensive CSV file containing all 100+ validation rules extracted from the Java rule classes. This format is suitable for:
+A comprehensive CSV file containing 100+ validation rules derived from the law texts. This format is suitable for:
 - Import into DMN modeling tools (Camunda Modeler, Trisotech, Signavio)
 - Review and analysis in spreadsheet applications
 - Conversion to other DMN formats
