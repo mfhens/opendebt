@@ -191,6 +191,14 @@ public abstract class AbstractFordringRuleTest {
         .mfAftaleSystemIntegration(true)
         .systemToSystem(false)
         .debtorId("12345678")
+        // Authorization permissions (petition016)
+        .hasIndrPermission(true)
+        .hasModrPermission(true)
+        .portalSubmission(false)
+        // Content validation defaults (petition018)
+        .hovedfordringHasKategoriHf(true)
+        .subclaimTypeAllowed(true)
+        .fordringIdKnown(true)
         .build();
   }
 
@@ -216,6 +224,22 @@ public abstract class AbstractFordringRuleTest {
         .mfAftaleSystemIntegration(true)
         .systemToSystem(false)
         .debtorId("12345678")
+        // Authorization permissions (petition016)
+        .hasIndrPermission(true)
+        .hasModrPermission(true)
+        .hasGenindsendPermission(true)
+        .portalSubmission(false)
+        // Lifecycle context (petition017)
+        .originalClaimWithdrawn(true)
+        .originalWithdrawalReason("HENS")
+        .fordringshaverKode("FH001")
+        .originalFordringshaverKode("FH001")
+        .stamdataMatchesOriginal(true)
+        .originalClaimIsModr(false)
+        // Content validation defaults (petition018)
+        .hovedfordringHasKategoriHf(true)
+        .subclaimTypeAllowed(true)
+        .fordringIdKnown(true)
         .build();
   }
 
@@ -242,7 +266,25 @@ public abstract class AbstractFordringRuleTest {
         .claimTypeAllowedByAgreement(true)
         .mfAftaleSystemIntegration(true)
         .systemToSystem(false)
-        .debtorId("12345678");
+        .debtorId("12345678")
+        // Authorization permissions (petition016) - default to authorized
+        .hasIndrPermission(true)
+        .hasModrPermission(true)
+        .hasNedskrivPermission(true)
+        .hasTilbagekaldPermission(true)
+        .hasGenindsendPermission(true)
+        .hasHovedstolPermission(true)
+        .hasOaniPermission(true)
+        .hasOpskrivningReguleringPermission(true)
+        .hasOonrPermission(true)
+        .hasNaorPermission(true)
+        .hasNaoiPermission(true)
+        .portalSubmission(false)
+        .systemReporterAuthorized(true)
+        // Content validation defaults (petition018) - default to valid
+        .hovedfordringHasKategoriHf(true)
+        .subclaimTypeAllowed(true)
+        .fordringIdKnown(true);
   }
 
   // ===== Internal helpers =====

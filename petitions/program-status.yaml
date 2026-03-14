@@ -243,52 +243,64 @@ program:
         - existing RulesService interface covers readiness, interest, and collection priority but NOT fordring validation
         - W2-BOOT-01 complete — FordringErrorCode enum (22 codes), validation DTOs (Request/Result/Error), FordringValidationService interface and impl with isolated KIE session, placeholder DRL with fordring-validation agenda group, AbstractFordringRuleTest base class, 92 passing tests
       notes: W2-RULE-01 complete. All 23 core validation rules implemented in fordring-validation.drl covering structure (10 rules), currency (1 rule), art type (1 rule), interest rate (1 rule), dates (6 rules), agreement (3 rules), and debtor (1 rule). 43 new unit tests plus 92 existing tests all pass (135 total). Rules use the fordring-validation agenda group for isolation from existing rules.
-      next_step: Execute W2-RULE-02 to implement claimant authorization rules (petition016) using the established validation infrastructure.
+      next_step: Petition015 is complete. W2-RULE-02 (petition016) is also complete — see petition016 for authorization rules.
 
     petition016:
       title: Fordring claimant authorization rules
-      status: ready_for_implementation
+      status: implemented
       phase: phase-4
       depends_on:
         - petition015
-      last_reviewed: 2026-03-10
+      last_reviewed: 2026-03-14
       evidence:
         - petition016 outcome contract exists in petitions/petition016-fordring-claimant-authorization-rules-outcome-contract.md
         - petition016 feature file exists with 26 scenarios in petitions/petition016-fordring-claimant-authorization-rules.feature
-        - rules validate permissions from fordringhaveraftale
-      notes: Authorization rules that validate fordringshaver permissions for specific action types. Requires ClaimantAgreementService integration. Depends on petition015 for core validation infrastructure.
-      next_step: Implement W2-RULE-02 after core validation rules are in place.
+        - W2-RULE-02 complete — 14 authorization rules implemented in fordring-validation.drl
+        - 14 new FordringErrorCode entries for authorization failures (400, 416, 419, 420, 421, 437, 465, 466, 480, 497, 501, 508, 511, 543)
+        - FordringValidationRequest extended with 16 authorization fields for permission checks
+        - 33 unit tests covering all 26 feature scenarios plus combined authorization tests
+        - All 210 rules-engine tests pass
+      notes: W2-RULE-02 complete. Authorization rules implemented for system reporter validation, INDR/MODR permissions, nedskriv/tilbagekald permissions, portal agreement, complex correction actions (OANI/OONR/NAOR/NAOI), opskrivning regulering, hovedstol modification, genindsend permission, and SSO access validation. Rules use pre-resolved authorization flags in the validation request; actual permission lookup integration with ClaimantAgreementService deferred to service layer.
+      next_step: Execute W2-RULE-03 to implement lifecycle/reference rules (petition017).
 
     petition017:
       title: Fordring claim lifecycle and reference rules
-      status: ready_for_implementation
+      status: implemented
       phase: phase-4
       depends_on:
         - petition015
         - petition016
-      last_reviewed: 2026-03-10
+      last_reviewed: 2026-03-14
       evidence:
         - petition017 outcome contract exists in petitions/petition017-fordring-lifecycle-reference-rules-outcome-contract.md
         - petition017 feature file exists with 32 scenarios in petitions/petition017-fordring-lifecycle-reference-rules.feature
-        - rules enforce claim state transitions and cross-references
-      notes: Lifecycle rules for genindsend (6 rules), tilbagekald (5 rules), action references (5 rules), opskrivning/nedskrivning references (12 rules), and state validation (4 rules). Requires claim repository lookups.
-      next_step: Implement W2-RULE-03 after authorization rules are stable.
+        - W2-RULE-03 complete — 32 lifecycle/reference rules implemented in fordring-validation.drl
+        - 31 new FordringErrorCode entries for lifecycle/reference failures (418, 428, 429, 434, 469, 470, 471, 473, 474, 477, 488, 493, 494, 496, 498, 502, 503, 504, 506, 526, 527, 530, 538, 539, 540, 541, 542, 544, 546, 547, 570)
+        - FordringValidationRequest extended with 35 lifecycle context fields for state/reference validation
+        - 40 new unit tests covering all 32 feature scenarios plus combined lifecycle tests
+        - All 343 rules-engine tests pass
+      notes: W2-RULE-03 complete. Lifecycle rules implemented for genindsend (6 rules), tilbagekald (5 rules), action references (5 rules), opskrivning/nedskrivning references (12 rules), and state validation (4 rules). Rules use pre-resolved lifecycle context flags in the validation request; actual repository lookups integration deferred to service layer.
+      next_step: Execute W2-RULE-04 to implement content validation rules (petition018).
 
     petition018:
       title: Fordring claim content validation rules
-      status: ready_for_implementation
+      status: implemented
       phase: phase-4
       depends_on:
         - petition015
         - petition016
         - petition017
-      last_reviewed: 2026-03-10
+      last_reviewed: 2026-03-14
       evidence:
         - petition018 outcome contract exists in petitions/petition018-fordring-content-validation-rules-outcome-contract.md
         - petition018 feature file exists with 44 scenarios in petitions/petition018-fordring-content-validation-rules.feature
-        - rules validate amounts, types, documents, hovedstol, hæftelse, and routing
-      notes: Most comprehensive validation petition with 44 scenarios covering claim amounts (5 rules), sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules), hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and identifiers (3 rules). Requires configuration service for thresholds.
-      next_step: Implement W2-RULE-04 after lifecycle rules are mostly complete.
+        - W2-RULE-04 complete — 45 content validation rules implemented in fordring-validation.drl
+        - 45 new FordringErrorCode entries for content validation failures (164, 181, 201, 215, 220, 227, 270, 408, 410, 413, 415, 422, 423, 425, 426, 433, 436, 441, 442, 443, 459, 461, 486, 509, 510, 512, 516, 517, 518, 519, 528, 531, 532, 533, 537, 550, 557, 559, 565, 571, 572, 574, 575, 602, 603)
+        - FordringValidationRequest extended with 60+ content validation context fields
+        - ContentValidationRuleTest with 55 unit tests covering all 44+ feature scenarios
+        - All 534 rules-engine tests pass
+      notes: W2-RULE-04 complete. Content validation rules implemented for claim amounts (5 rules), sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules), hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and identifiers (3 rules). Rules use pre-resolved content context flags in the validation request; actual lookup integration with configuration service deferred to service layer.
+      next_step: Petition018 is complete. All fordring validation rules (petition015-018) are now implemented. W2-SOAP-01 (petition019) can proceed.
 
     petition019:
       title: Legacy SOAP endpoints for external creditors

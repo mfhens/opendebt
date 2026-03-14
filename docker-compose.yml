@@ -20,7 +20,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
-    command: start-dev --import-realm
+    command: start-dev --import-realm --health-enabled=true
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -29,10 +29,11 @@ services:
     volumes:
       - ./config/keycloak:/opt/keycloak/data/import
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   person-registry:
     build: ./opendebt-person-registry
@@ -44,7 +45,7 @@ services:
       DATABASE_USERNAME: opendebt
       DATABASE_PASSWORD: opendebt
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-changeme-generate-32-byte-key}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=}
     depends_on:
       keycloak:
         condition: service_healthy

@@ -26,7 +26,7 @@ graph TB
         DS["debt-service<br/>:8082<br/>Debt registration"]
         CS["case-service<br/>:8081<br/>Flowable BPMN"]
         PS["payment-service<br/>:8083<br/>Bookkeeping"]
-        CRS["creditor-service<br/>planned<br/>Creditor master data"]
+        CRS["creditor-service<br/>:8092<br/>Creditor master data"]
     end
 
     subgraph Collection["Collection Services"]
@@ -516,11 +516,40 @@ flowchart LR
 |-----------|--------|-------|
 | DroolsConfig | Done | Auto-loads .drl and .xlsx from classpath |
 | RulesService / RulesServiceImpl | Done | evaluateReadiness, calculateInterest, determinePriority |
+| FordringValidationService / Impl | Done | Fordring action validation (petition015-018) |
 | RulesController | Done | REST API for all rule types |
 | debt-readiness.drl | Done | 9 rules including manual review triggers |
 | interest-calculation.drl | Done | Standard rate, small amount exempt, not-due |
 | collection-priority.drl | Done | 5 priority levels (child support > tax > fines > court > other) |
+| fordring-validation.drl | Done | 114 rules: 23 core (petition015) + 14 authorization (petition016) + 32 lifecycle/reference (petition017) + 45 content (petition018) |
 | Flyway migration V1 | Done | Rules audit tables |
+
+**Fordring Validation Rules (petition015-018):**
+| Category | Rules | Error Codes |
+|----------|-------|-------------|
+| Structure validation | 10 | 403, 404, 406, 407, 412, 444, 447, 448, 458, 505 |
+| Currency validation | 1 | 152 |
+| Art type validation | 1 | 411 |
+| Interest rate validation | 1 | 438 |
+| Date validation | 6 | 409, 464, 467, 548, 568, 569 |
+| Agreement validation | 3 | 2, 151, 156 |
+| Debtor validation | 1 | 5 |
+| Authorization validation | 14 | 400, 416, 419, 420, 421, 437, 465, 466, 480, 497, 501, 508, 511, 543 |
+| Genindsend validation | 5 | 539, 540, 541, 542, 544 |
+| Tilbagekald validation | 5 | 434, 538, 546, 547, 570 |
+| Action reference validation | 5 | 418, 429, 526, 527, 530 |
+| Opskrivning/Nedskrivning | 13 | 469, 470, 471, 473, 474, 477, 493, 494, 502, 503, 504, 506 |
+| State validation | 4 | 428, 488, 496, 498 |
+| Document/Note validation | 6 | 164, 181, 220, 413, 415, 516 |
+| Claim amount validation | 5 | 201, 215, 227, 408, 425 |
+| Sub-claim validation | 4 | 270, 423, 459, 461 |
+| Interest validation | 4 | 436, 441, 442, 443 |
+| Nedskriv reason validation | 4 | 410, 433, 519, 571 |
+| Hovedstol validation | 4 | 510, 512, 517, 518 |
+| Hæftelse validation | 6 | 528, 531, 532, 533, 557, 559 |
+| Routing validation | 4 | 422, 426, 565, 572 |
+| Claim type validation | 5 | 509, 537, 550, 574, 575 |
+| Identifier validation | 3 | 486, 602, 603 |
 
 **API endpoints:**
 - `POST /api/v1/rules/readiness/evaluate` - Debt readiness check
@@ -558,23 +587,29 @@ flowchart LR
 
 ---
 
-### creditor-service (Planned)
+### creditor-service (Port 8092)
 
 **Purpose:** Operational `fordringshaver` master data service. Owns non-PII creditor configuration, hierarchy, permissions, settlement setup, and channel access resolution.
 
-**Implementation status:** PLANNED
+**Implementation status:** IMPLEMENTED
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| CreditorEntity / model | Planned | Implements Petition 008 operational data model |
-| ChannelBindingEntity / model | Planned | Binds M2M and portal identities to creditors |
-| CreditorController | Planned | Internal APIs for lookup and administration |
-| CreditorAccessResolutionService | Planned | Resolves acting creditor and acting-on-behalf rules |
-| Flyway migration V1 | Planned | `creditors`, bindings, audit, history |
+| CreditorEntity / model | Done | Implements Petition 008 operational data model |
+| ChannelBindingEntity / model | Done | Binds M2M and portal identities to creditors |
+| CreditorController | Done | Internal APIs for lookup and administration |
+| CreditorService / CreditorServiceImpl | Done | Creditor lookup, hierarchy, action validation |
+| ChannelBindingService / ChannelBindingServiceImpl | Done | Channel binding CRUD, access resolution |
+| CreditorMapper / ChannelBindingMapper | Done | MapStruct mappers |
+| CreditorRepository | Done | JPA with filtering indexes |
+| ChannelBindingRepository | Done | JPA repository |
+| SecurityConfig | Done | OAuth2 resource server, actuator/swagger permitted |
+| Flyway migration V1 | Done | `creditors`, audit, history |
+| Flyway migration V2 | Done | `channel_bindings`, audit, history |
 
-**Target API endpoints:**
+**API endpoints:**
 - `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference
-- `POST /api/v1/creditors/access/resolve` - Resolve channel/user identity to acting creditor
+- `GET /api/v1/creditors/by-external-id/{externalCreditorId}` - Resolve creditor by legacy external ID
 - `POST /api/v1/creditors/{creditorOrgId}/validate-action` - Validate creditor status and permissions
 
 ---
@@ -774,13 +809,13 @@ Pre-defined API specs (API-first, ADR-0004):
 | person-registry | Done | 9 | 6 | V1 |
 | debt-service | Done | 6 | 10 | V1, V2 |
 | case-service | Done | 10 | 8 | V1 |
-| rules-engine | Done | 7 | 4 | V1 |
+| rules-engine | Done | 16 | 534 | V1 |
 | payment-service | Partial | 22 | 1 | V1, V2, V3 |
 | integration-gateway | Partial | 7 | 2 | - |
-| creditor-service | Planned | 0 | 0 | - |
+| creditor-service | Done | 32 | 3 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | Scaffold | 1 | 0 | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
 | creditor-portal | Scaffold | 1 | 0 | - |
 | citizen-portal | Scaffold | 1 | 0 | - |
-| **Total** | | **73** | **31** | **10** |
+| **Total** | | **105** | **34** | **12** |

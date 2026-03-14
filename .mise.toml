@@ -12,5 +12,4 @@
 java = "temurin-21"
 maven = "3.9"
 
-[env]
-JAVA_HOME = "{{env.MISE_JAVA_HOME}}"
+# JAVA_HOME is automatically set by mise when java tool is activated

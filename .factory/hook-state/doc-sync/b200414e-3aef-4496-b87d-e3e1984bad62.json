@@ -1,0 +1,20 @@
+{
+  "prompt_snapshot": null,
+  "prompt_transcript_offset": 431,
+  "session_snapshot": {
+    ".factory/hook-state/doc-sync/5eb6ee59-57b0-4a73-8fc2-d4dd137f8354.json": "50b790b19ebdcf7df2a2808d768ac809d6e33bcca59b83ca90533246b39ae177",
+    ".factory/hooks/doc_sync_hook.py": "5577f760f1bd79b14998accc3591fd97246cb849a3909079ac81ce46a85577de",
+    ".factory/settings.json": "ac191c2dfd06c890d90653f533a543489b6436067ecec510af3331102bf9cd27",
+    ".mise.toml": "31b9f0c32cb8be2acfc918b1520fd9fbbae3aa63d01840f56c9d1e509312e554",
+    "docker-compose.yml": "a55a24273c21b844ddcc73a8b0d06020171193649b767a9f1a4dc71d53e1bfab",
+    "docs/architecture-overview.md": "ee31b8066a7f64d09f67097311e8d9ebb5faf7defac87003b20c5724476243f8",
+    "opendebt-citizen-portal/Dockerfile": "fcea9b3d3cb65392b5dd099d803b5a2c07208dada4bcdef59cd7ba53d8399978",
+    "opendebt-creditor-portal/Dockerfile": "e2174157cd2b17220117768cbd6d34890c4fa6078a1f87aa16c4581b8145e6f3",
+    "opendebt-creditor-service/src/main/java/dk/ufst/opendebt/creditorservice/config/SecurityConfig.java": "2b7972c0f7d2d77435e8b328fb9b610b92b7ffddcf9093e60723d35f08e1ed08",
+    "opendebt-creditor-service/src/main/resources/db/migration/V1__baseline.sql": null,
+    "opendebt-debt-service/Dockerfile": "c2b6a7bbf88e653e503a0b3fba212d5bf22bcd35261f059372397949a1b4065c",
+    "opendebt-letter-service/Dockerfile": "bc1bc26f82931570a363acecee4d691f3f4bc166cd6d42862c05dbd861cf23ed",
+    "opendebt-payment-service/Dockerfile": "989b8513c9db2477c0be88be1ad14aa44209b46cb59a5a176ba81a170e6051c0",
+    "opendebt-person-registry/Dockerfile": "6645aa15119f9d3ca2e1e2a01d743d528c08f7b334a2812bd8aeffb4dbed41e9"
+  }
+}

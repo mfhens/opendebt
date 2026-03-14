@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
+            "command": "python3 -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
             "timeout": 30
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
+            "command": "python3 -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
             "timeout": 30
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
+            "command": "python3 -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
             "timeout": 30
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
+            "command": "python3 -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
             "timeout": 30
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
+            "command": "python3 -c \"import os, runpy; runpy.run_path(os.path.join(os.environ['FACTORY_PROJECT_DIR'], '.factory', 'hooks', 'doc_sync_hook.py'), run_name='__main__')\"",
             "timeout": 30
           }
         ]
