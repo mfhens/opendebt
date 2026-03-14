@@ -84,7 +84,10 @@ public class Petition001Steps {
   }
 
   @Given("incoming payments are received by OpenDebt from SKB as CREMUL payment entries")
-  public void incoming_payments_are_received_by_open_debt_from_skb_as_cremul_payment_entries() {}
+  public void incoming_payments_are_received_by_open_debt_from_skb_as_cremul_payment_entries() {
+    // No-op: This step describes a precondition context for the scenario.
+    // Actual CREMUL parsing is tested in SkbEdifactServiceImplTest.
+  }
 
   @Given("an issued påkrav contains Betalingsservice OCR-linje {string}")
   public void an_issued_påkrav_contains_betalingsservice_ocr_linje(String ocrLine) {

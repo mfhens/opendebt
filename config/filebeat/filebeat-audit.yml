@@ -1,0 +1,324 @@
+# Filebeat configuration for OpenDebt audit log shipping to CLS (ELK stack)
+# 
+# This configuration polls the audit_log tables in each service's PostgreSQL
+# database and ships events to the CLS Elasticsearch cluster.
+#
+# Deploy as a sidecar or standalone container with access to PostgreSQL.
+
+filebeat.inputs:
+
+  # ============================================================================
+  # Creditor Service Audit Logs
+  # ============================================================================
+  - type: sql
+    id: creditor-service-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_creditor?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "creditor-service"]
+    fields:
+      service: creditor-service
+      environment: ${ENVIRONMENT:dev}
+
+  # ============================================================================
+  # Debt Service Audit Logs
+  # ============================================================================
+  - type: sql
+    id: debt-service-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_debt?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "debt-service"]
+    fields:
+      service: debt-service
+      environment: ${ENVIRONMENT:dev}
+
+  # ============================================================================
+  # Case Service Audit Logs
+  # ============================================================================
+  - type: sql
+    id: case-service-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_case?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "case-service"]
+    fields:
+      service: case-service
+      environment: ${ENVIRONMENT:dev}
+
+  # ============================================================================
+  # Payment Service Audit Logs
+  # ============================================================================
+  - type: sql
+    id: payment-service-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_payment?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "payment-service"]
+    fields:
+      service: payment-service
+      environment: ${ENVIRONMENT:dev}
+
+  # ============================================================================
+  # Person Registry Audit Logs (GDPR-sensitive - extra care)
+  # ============================================================================
+  - type: sql
+    id: person-registry-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_person?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        -- Note: old_values and new_values may contain PII
+        -- They are already encrypted at rest in Person Registry
+        -- CLS should NOT index these fields in plain text
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "person-registry", "gdpr"]
+    fields:
+      service: person-registry
+      environment: ${ENVIRONMENT:dev}
+      gdpr_sensitive: true
+
+  # ============================================================================
+  # Letter Service Audit Logs
+  # ============================================================================
+  - type: sql
+    id: letter-service-audit
+    driver: postgres
+    dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/opendebt_letter?sslmode=disable"
+    sql: |
+      SELECT 
+        id,
+        table_name,
+        record_id,
+        operation,
+        old_values,
+        new_values,
+        changed_fields,
+        db_user,
+        application_user,
+        client_ip,
+        client_application,
+        transaction_id,
+        timestamp
+      FROM audit_log 
+      WHERE id > :cursor.id
+      ORDER BY id ASC
+      LIMIT 1000
+    cursor:
+      id:
+        initial_value: 0
+    period: 10s
+    tags: ["audit", "letter-service"]
+    fields:
+      service: letter-service
+      environment: ${ENVIRONMENT:dev}
+
+# ============================================================================
+# Processors - PII Masking
+# ============================================================================
+processors:
+  # Mask PII fields in old_values and new_values before shipping
+  - script:
+      lang: javascript
+      source: |
+        var piiFields = [
+          "cpr_number", "cpr", "cvr_number", "cvr",
+          "name", "first_name", "last_name", "full_name",
+          "address", "street", "city", "postal_code",
+          "email", "phone", "mobile", "iban", "account_number"
+        ];
+        
+        function maskPii(obj) {
+          if (!obj) return obj;
+          var result = {};
+          for (var key in obj) {
+            if (piiFields.indexOf(key.toLowerCase()) >= 0) {
+              result[key] = "[MASKED]";
+            } else {
+              result[key] = obj[key];
+            }
+          }
+          return result;
+        }
+        
+        function process(event) {
+          var oldVals = event.Get("sql.old_values");
+          var newVals = event.Get("sql.new_values");
+          
+          if (oldVals) {
+            try {
+              var parsed = JSON.parse(oldVals);
+              event.Put("sql.old_values_masked", JSON.stringify(maskPii(parsed)));
+            } catch(e) {}
+          }
+          if (newVals) {
+            try {
+              var parsed = JSON.parse(newVals);
+              event.Put("sql.new_values_masked", JSON.stringify(maskPii(parsed)));
+            } catch(e) {}
+          }
+          return event;
+        }
+
+  # Add timestamp processing
+  - timestamp:
+      field: sql.timestamp
+      layouts:
+        - '2006-01-02T15:04:05Z07:00'
+        - '2006-01-02 15:04:05.999999-07'
+      target_field: '@timestamp'
+
+  # Drop the unmasked PII fields before output
+  - drop_fields:
+      fields: ["sql.old_values", "sql.new_values"]
+      ignore_missing: true
+      when:
+        has_fields: ["sql.old_values_masked"]
+
+# ============================================================================
+# Output to Elasticsearch (CLS)
+# ============================================================================
+output.elasticsearch:
+  hosts: ["${CLS_ELASTICSEARCH_HOST:https://cls.ufst.dk:9200}"]
+  index: "opendebt-audit-%{[fields.service]}-%{+yyyy.MM}"
+  
+  # Authentication - use API key or basic auth
+  # api_key: "${CLS_API_KEY}"
+  username: "${CLS_USERNAME:}"
+  password: "${CLS_PASSWORD:}"
+  
+  # TLS configuration for CLS
+  ssl:
+    enabled: true
+    certificate_authorities: ["${CLS_CA_CERT:/etc/filebeat/certs/cls-ca.crt}"]
+    # For mTLS (if required by CLS)
+    # certificate: "/etc/filebeat/certs/client.crt"
+    # key: "/etc/filebeat/certs/client.key"
+
+# ============================================================================
+# Logging
+# ============================================================================
+logging:
+  level: info
+  to_files: true
+  files:
+    path: /var/log/filebeat
+    name: filebeat-audit
+    keepfiles: 7
+    permissions: 0640
+
+# ============================================================================
+# Monitoring (optional - send Filebeat metrics to same cluster)
+# ============================================================================
+monitoring:
+  enabled: true
+  elasticsearch:
+    hosts: ["${CLS_ELASTICSEARCH_HOST:https://cls.ufst.dk:9200}"]

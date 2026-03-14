@@ -253,14 +253,25 @@ public ResponseEntity<Page<DebtDto>> listDebts(
 }
 ```
 
-### Audit Logging
+### Audit Infrastructure
+All entities should extend `AuditableEntity` from opendebt-common:
 ```java
-@Slf4j
-public class AuditLogger {
-    public void logAccess(String action, String resource, String userId) {
-        log.info("AUDIT: action={}, resource={}, user={}", action, resource, userId);
-    }
+@Entity
+public class MyEntity extends AuditableEntity {
+    @Id
+    private UUID id;
+    // ... other fields (audit fields inherited)
 }
+```
+
+The `AuditableEntity` provides: `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `version`.
+
+For CLS (Common Logging System) integration, events are shipped via `ClsAuditClient`:
+```yaml
+opendebt:
+  audit:
+    cls:
+      enabled: true  # false for dev/test
 ```
 
 ## ADR References
@@ -284,6 +295,9 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0017: Smooks EDIFACT CREMUL/DEBMUL (SKB Integration)
 - ADR-0018: Double-Entry Bookkeeping
 - ADR-0019: Orchestration over Event-Driven Architecture
+- ADR-0020: Creditor Channel and Master Data Architecture
+- ADR-0021: UI Accessibility and Webtilgaengelighed Compliance
+- ADR-0022: Shared Audit Infrastructure
 
 ## Standard Components
 
@@ -346,3 +360,29 @@ workflowService.completeTask(taskId, variables);
 - Log PII data (use person_id instead)
 - Use ASCII art or draw.io for diagrams (use Mermaid)
 - Change source code without checking if documentation needs updating
+
+## AIDEV Comments for Technical Backlog
+
+When AI agents (droids) or developers identify technical debt, refactoring opportunities, or
+improvements that are not blocking but should be tracked, use `AIDEV-` prefixed comments:
+
+```java
+// AIDEV-TODO: Migrate this entity to extend AuditableEntity (TB-001)
+// AIDEV-REFACTOR: Extract duplicate validation logic to shared service
+// AIDEV-PERF: Consider caching this lookup - called frequently
+// AIDEV-SECURITY: Add rate limiting before production
+```
+
+**Comment types:**
+- `AIDEV-TODO` - Work that should be done but isn't blocking
+- `AIDEV-REFACTOR` - Code that works but should be restructured
+- `AIDEV-PERF` - Performance improvement opportunities
+- `AIDEV-SECURITY` - Security hardening suggestions
+- `AIDEV-TEST` - Missing test coverage
+
+**Workflow:**
+1. Reviewer droids (`code-reviewer-strict`, `solution-architecture-reviewer`) add AIDEV comments
+2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items
+3. `tech-debt-executor` implements items from the technical_backlog
+
+These comments are collected into `petitions/program-status.yaml` under `technical_backlog`.

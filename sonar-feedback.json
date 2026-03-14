@@ -1,0 +1,3854 @@
+{
+  "fetchedAt": "2026-03-14T14:20:07+01:00",
+  "baseUrl": "https://sonarcloud.io",
+  "projectKey": "mfhens_opendebt",
+  "total": 69,
+  "severities": null,
+  "issues": [
+    {
+      "key": "AZzsePwdpV0X0E10ptH6",
+      "rule": "java:S5841",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 106,
+      "hash": "f31ceb8d5cb06cc07d2060e5bb1af83b",
+      "textRange": {
+        "startLine": 106,
+        "endLine": 106,
+        "startOffset": 9,
+        "endOffset": 23
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+              "textRange": {
+                "startLine": 104,
+                "endLine": 104,
+                "startOffset": 15,
+                "endOffset": 28
+              }
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Test the emptiness of the list before calling this assertion predicate.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-14T09:01:48+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "BUG",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePwdpV0X0E10ptH7",
+      "rule": "java:S5841",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 451,
+      "hash": "c7becce9820aeda416c03bed7acbf608",
+      "textRange": {
+        "startLine": 451,
+        "endLine": 451,
+        "startOffset": 27,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+              "textRange": {
+                "startLine": 451,
+                "endLine": 451,
+                "startOffset": 15,
+                "endOffset": 25
+              }
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Test the emptiness of the list before calling this assertion predicate.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-14T09:01:48+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "BUG",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePwdpV0X0E10ptH8",
+      "rule": "java:S5841",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 459,
+      "hash": "4ccd07a76b6d28b65b0eeae21d2c7ca7",
+      "textRange": {
+        "startLine": 459,
+        "endLine": 459,
+        "startOffset": 27,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+              "textRange": {
+                "startLine": 459,
+                "endLine": 459,
+                "startOffset": 15,
+                "endOffset": 25
+              }
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Test the emptiness of the list before calling this assertion predicate.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-14T09:01:48+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "BUG",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePwdpV0X0E10ptH9",
+      "rule": "java:S5841",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 467,
+      "hash": "6947629b54444897fa20739b0bfb0a15",
+      "textRange": {
+        "startLine": 467,
+        "endLine": 467,
+        "startOffset": 27,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+              "textRange": {
+                "startLine": 467,
+                "endLine": 467,
+                "startOffset": 15,
+                "endOffset": 25
+              }
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Test the emptiness of the list before calling this assertion predicate.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-14T09:01:48+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "BUG",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePyWpV0X0E10ptH_",
+      "rule": "java:S4144",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-rules-engine/src/test/java/dk/ufst/opendebt/rules/fordring/FordringRulesCompilationTest.java",
+      "project": "mfhens_opendebt",
+      "line": 27,
+      "hash": "e82b0b84bed7a406e1d8011417e73001",
+      "textRange": {
+        "startLine": 27,
+        "endLine": 27,
+        "startOffset": 7,
+        "endOffset": 48
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-rules-engine/src/test/java/dk/ufst/opendebt/rules/fordring/FordringRulesCompilationTest.java",
+              "textRange": {
+                "startLine": 16,
+                "endLine": 16,
+                "startOffset": 7,
+                "endOffset": 41
+              },
+              "msg": "original implementation"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Update this method so that its implementation is not identical to \"drlFilesShouldCompileWithoutErrors\" on line 16.",
+      "effort": "15min",
+      "debt": "15min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "confusing",
+        "duplicate",
+        "suspicious"
+      ],
+      "creationDate": "2026-03-14T09:01:48+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePxnpV0X0E10ptH-",
+      "rule": "java:S131",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-rules-engine/src/test/java/dk/ufst/opendebt/rules/fordring/CurrencyValidationRuleTest.java",
+      "project": "mfhens_opendebt",
+      "line": 61,
+      "hash": "3877d527dd8bf40f2c5f8cfe843b2d20",
+      "textRange": {
+        "startLine": 61,
+        "endLine": 61,
+        "startOffset": 4,
+        "endOffset": 10
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add a default case to this switch.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cert",
+        "cwe"
+      ],
+      "creationDate": "2026-03-14T08:39:52+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePq1pV0X0E10ptH1",
+      "rule": "java:S1128",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/main/java/dk/ufst/opendebt/creditorservice/exception/CreditorNotFoundException.java",
+      "project": "mfhens_opendebt",
+      "line": 4,
+      "hash": "cb7e6d4e61e0257d94c9db99010a9e43",
+      "textRange": {
+        "startLine": 4,
+        "endLine": 4,
+        "startOffset": 7,
+        "endOffset": 72
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Remove this unused import 'dk.ufst.opendebt.common.exception.OpenDebtException.ErrorSeverity'.",
+      "effort": "1min",
+      "debt": "1min",
+      "author": "markus.friedehens@ufst.dk",
+      "tags": [
+        "unused"
+      ],
+      "creationDate": "2026-03-14T06:02:55+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePvxpV0X0E10ptH3",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 76,
+        "endOffset": 84
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+              "textRange": {
+                "startLine": 57,
+                "endLine": 57,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+              "textRange": {
+                "startLine": 69,
+                "endLine": 69,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+              "textRange": {
+                "startLine": 200,
+                "endLine": 200,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "author": "markus.friedehens@ufst.dk",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-14T06:02:55+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePvxpV0X0E10ptH4",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 66,
+        "endOffset": 74
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+              "textRange": {
+                "startLine": 59,
+                "endLine": 59,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/main/resources/db/migration/V1__create_creditor_tables.sql",
+              "textRange": {
+                "startLine": 192,
+                "endLine": 192,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 3 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "author": "markus.friedehens@ufst.dk",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-14T06:02:55+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzsePwdpV0X0E10ptH5",
+      "rule": "java:S4144",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 490,
+      "hash": "afa0110bc3a3321d224455d24ab60c37",
+      "textRange": {
+        "startLine": 490,
+        "endLine": 490,
+        "startOffset": 14,
+        "endOffset": 63
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-creditor-service/src/test/java/dk/ufst/opendebt/creditorservice/steps/Petition009Steps.java",
+              "textRange": {
+                "startLine": 392,
+                "endLine": 392,
+                "startOffset": 14,
+                "endOffset": 63
+              },
+              "msg": "original implementation"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Update this method so that its implementation is not identical to \"the_validation_response_indicates_allowed_is_true\" on line 392.",
+      "effort": "15min",
+      "debt": "15min",
+      "author": "markus.friedehens@ufst.dk",
+      "tags": [
+        "confusing",
+        "duplicate",
+        "suspicious"
+      ],
+      "creationDate": "2026-03-14T06:02:55+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzseP5opV0X0E10ptIA",
+      "rule": "java:S6353",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-person-registry/src/main/java/dk/ufst/opendebt/personregistry/dto/OrganizationLookupRequest.java",
+      "project": "mfhens_opendebt",
+      "line": 20,
+      "hash": "754ea81feaf163b467864b424638c95f",
+      "textRange": {
+        "startLine": 20,
+        "endLine": 20,
+        "startOffset": 22,
+        "endOffset": 27
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use concise character class syntax '\\\\d' instead of '[0-9]'.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "markus.friedehens@ufst.dk",
+      "tags": [
+        "regex"
+      ],
+      "creationDate": "2026-03-14T06:02:55+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzSddEJWDS9qebIsTIS",
+      "rule": "java:S1186",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/steps/Petition001Steps.java",
+      "project": "mfhens_opendebt",
+      "line": 87,
+      "hash": "8fa7ef3e49b3a963da12029e2b84c277",
+      "textRange": {
+        "startLine": 87,
+        "endLine": 87,
+        "startOffset": 14,
+        "endOffset": 92
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add a nested comment explaining why this method is empty, throw an UnsupportedOperationException or complete the implementation.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "suspicious"
+      ],
+      "creationDate": "2026-03-09T11:57:09+0000",
+      "updateDate": "2026-03-09T11:57:09+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzseP8NpV0X0E10ptIB",
+      "rule": "xml:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-integration-gateway/src/main/resources/smooks/cremul-config.xml",
+      "project": "mfhens_opendebt",
+      "line": 15,
+      "hash": "af620e93ae2823a31ada6884315a6215",
+      "textRange": {
+        "startLine": 15,
+        "endLine": 15,
+        "startOffset": 4,
+        "endOffset": 116
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this \"TODO\" comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T14:06:12+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF9863NKbvqNGHoK",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/entity/DebtEntity.java",
+      "project": "mfhens_opendebt",
+      "line": 69,
+      "hash": "f9150b9a057a073fcf74a6e7cc0241aa",
+      "textRange": {
+        "startLine": 69,
+        "endLine": 69,
+        "startOffset": 0,
+        "endOffset": 98
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF9s63NKbvqNGHoE",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/impl/DebtServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 130,
+      "hash": "4c69add753ac5ed8e30b69faa7ea1852",
+      "textRange": {
+        "startLine": 130,
+        "endLine": 130,
+        "startOffset": 0,
+        "endOffset": 94
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF9z63NKbvqNGHoH",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/impl/ReadinessValidationServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 23,
+      "hash": "d854ce11124d6e4eb50227d2b35e4894",
+      "textRange": {
+        "startLine": 23,
+        "endLine": 23,
+        "startOffset": 0,
+        "endOffset": 94
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF9z63NKbvqNGHoI",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/impl/ReadinessValidationServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 38,
+      "hash": "5d53f6a0970522f580b39d1a93e6edf8",
+      "textRange": {
+        "startLine": 38,
+        "endLine": 38,
+        "startOffset": 0,
+        "endOffset": 97
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBQ63NKbvqNGHpK",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-integration-gateway/src/main/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 76,
+      "hash": "76e51ca60fdbdaa97b70f759aed5daf4",
+      "textRange": {
+        "startLine": 76,
+        "endLine": 76,
+        "startOffset": 0,
+        "endOffset": 98
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBQ63NKbvqNGHpL",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-integration-gateway/src/main/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 86,
+      "hash": "42db5f1f90b15295322f78090e00c797",
+      "textRange": {
+        "startLine": 86,
+        "endLine": 86,
+        "startOffset": 0,
+        "endOffset": 98
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_R63NKbvqNGHos",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/impl/BookkeepingServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 24,
+      "hash": "dfe521ba0f21eb16c0ee10926b3753cc",
+      "textRange": {
+        "startLine": 24,
+        "endLine": 24,
+        "startOffset": 0,
+        "endOffset": 86
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_q63NKbvqNGHow",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/client/DebtServiceClient.java",
+      "project": "mfhens_opendebt",
+      "line": 20,
+      "hash": "27259ca8000f60ade57afbe61bc53338",
+      "textRange": {
+        "startLine": 20,
+        "endLine": 20,
+        "startOffset": 0,
+        "endOffset": 90
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_h63NKbvqNGHov",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/service/impl/OverpaymentRulesServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 27,
+      "hash": "012368315ca2a942aa07bbb3e392e922",
+      "textRange": {
+        "startLine": 27,
+        "endLine": 27,
+        "startOffset": 0,
+        "endOffset": 98
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_a63NKbvqNGHot",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/service/impl/PaymentMatchingServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 91,
+      "hash": "46c7d66559b9aab0591f5194a3d0dd8c",
+      "textRange": {
+        "startLine": 91,
+        "endLine": 91,
+        "startOffset": 0,
+        "endOffset": 89
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_a63NKbvqNGHou",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/service/impl/PaymentMatchingServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 134,
+      "hash": "18d22e2370ac9f3dc9f15e183dcb6dab",
+      "textRange": {
+        "startLine": 134,
+        "endLine": 134,
+        "startOffset": 0,
+        "endOffset": 99
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-k63NKbvqNGHoZ",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+      "project": "mfhens_opendebt",
+      "line": 62,
+      "hash": "50124220d5493481209df1e735f84a1d",
+      "textRange": {
+        "startLine": 62,
+        "endLine": 62,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 63,
+                "endLine": 63,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-k63NKbvqNGHob",
+      "rule": "java:S5838",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+      "project": "mfhens_opendebt",
+      "line": 64,
+      "hash": "d8d95a8a8e52b4999966984f6208e900",
+      "textRange": {
+        "startLine": 64,
+        "endLine": 64,
+        "startOffset": 32,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 64,
+                "endLine": 64,
+                "startOffset": 15,
+                "endOffset": 30
+              },
+              "msg": "This can be simplified"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Use assertThat(actual).hasSameHashCodeAs(expected) instead.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-k63NKbvqNGHoa",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+      "project": "mfhens_opendebt",
+      "line": 65,
+      "hash": "56549924c9341c2b3c519b74115b8f68",
+      "textRange": {
+        "startLine": 65,
+        "endLine": 65,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 66,
+                "endLine": 66,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 67,
+                "endLine": 67,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 71,
+                "endLine": 71,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 75,
+                "endLine": 75,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 79,
+                "endLine": 79,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 83,
+                "endLine": 83,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-k63NKbvqNGHod",
+      "rule": "java:S5838",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+      "project": "mfhens_opendebt",
+      "line": 98,
+      "hash": "d8d95a8a8e52b4999966984f6208e900",
+      "textRange": {
+        "startLine": 98,
+        "endLine": 98,
+        "startOffset": 32,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 98,
+                "endLine": 98,
+                "startOffset": 15,
+                "endOffset": 30
+              },
+              "msg": "This can be simplified"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Use assertThat(actual).hasSameHashCodeAs(expected) instead.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-k63NKbvqNGHoc",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+      "project": "mfhens_opendebt",
+      "line": 99,
+      "hash": "ca5d251d9ce143a8b806b85f52fad386",
+      "textRange": {
+        "startLine": 99,
+        "endLine": 99,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/IncomingPaymentDtoTest.java",
+              "textRange": {
+                "startLine": 100,
+                "endLine": 100,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-d63NKbvqNGHoU",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+      "project": "mfhens_opendebt",
+      "line": 88,
+      "hash": "50124220d5493481209df1e735f84a1d",
+      "textRange": {
+        "startLine": 88,
+        "endLine": 88,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 89,
+                "endLine": 89,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-d63NKbvqNGHoW",
+      "rule": "java:S5838",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+      "project": "mfhens_opendebt",
+      "line": 90,
+      "hash": "d8d95a8a8e52b4999966984f6208e900",
+      "textRange": {
+        "startLine": 90,
+        "endLine": 90,
+        "startOffset": 32,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 90,
+                "endLine": 90,
+                "startOffset": 15,
+                "endOffset": 30
+              },
+              "msg": "This can be simplified"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Use assertThat(actual).hasSameHashCodeAs(expected) instead.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-d63NKbvqNGHoV",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+      "project": "mfhens_opendebt",
+      "line": 91,
+      "hash": "56549924c9341c2b3c519b74115b8f68",
+      "textRange": {
+        "startLine": 91,
+        "endLine": 91,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 92,
+                "endLine": 92,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 93,
+                "endLine": 93,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 103,
+                "endLine": 103,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 113,
+                "endLine": 113,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 123,
+                "endLine": 123,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 133,
+                "endLine": 133,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 143,
+                "endLine": 143,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 153,
+                "endLine": 153,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-d63NKbvqNGHoY",
+      "rule": "java:S5838",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+      "project": "mfhens_opendebt",
+      "line": 174,
+      "hash": "d8d95a8a8e52b4999966984f6208e900",
+      "textRange": {
+        "startLine": 174,
+        "endLine": 174,
+        "startOffset": 32,
+        "endOffset": 41
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 174,
+                "endLine": 174,
+                "startOffset": 15,
+                "endOffset": 30
+              },
+              "msg": "This can be simplified"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Use assertThat(actual).hasSameHashCodeAs(expected) instead.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-d63NKbvqNGHoX",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+      "project": "mfhens_opendebt",
+      "line": 175,
+      "hash": "4566a40789daccccca6f764bac49d558",
+      "textRange": {
+        "startLine": 175,
+        "endLine": 175,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/dto/PaymentMatchResultTest.java",
+              "textRange": {
+                "startLine": 176,
+                "endLine": 176,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T11:47:42+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBg63NKbvqNGHpO",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+      "project": "mfhens_opendebt",
+      "line": 75,
+      "hash": "086d9cf60c6001cd11ba599dbe9af00b",
+      "textRange": {
+        "startLine": 75,
+        "endLine": 75,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 76,
+                "endLine": 76,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 77,
+                "endLine": 77,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 78,
+                "endLine": 78,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 79,
+                "endLine": 79,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 80,
+                "endLine": 80,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 81,
+                "endLine": 81,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 82,
+                "endLine": 82,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 83,
+                "endLine": 83,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 84,
+                "endLine": 84,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBg63NKbvqNGHpP",
+      "rule": "java:S5853",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+      "project": "mfhens_opendebt",
+      "line": 112,
+      "hash": "5a2e2b5984fef84ec17ab44cad37ed78",
+      "textRange": {
+        "startLine": 112,
+        "endLine": 112,
+        "startOffset": 4,
+        "endOffset": 14
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 113,
+                "endLine": 113,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/skb/service/impl/SkbEdifactServiceImplTest.java",
+              "textRange": {
+                "startLine": 114,
+                "endLine": 114,
+                "startOffset": 4,
+                "endOffset": 14
+              },
+              "msg": "Other assertThat"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Join these multiple assertions subject to one assertion chain.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_I63NKbvqNGHoq",
+      "rule": "java:S135",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/service/impl/InterestAccrualServiceImpl.java",
+      "project": "mfhens_opendebt",
+      "line": 118,
+      "hash": "5957dd95d0f32261a3f119b4e26a2852",
+      "textRange": {
+        "startLine": 118,
+        "endLine": 118,
+        "startOffset": 4,
+        "endOffset": 7
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/service/impl/InterestAccrualServiceImpl.java",
+              "textRange": {
+                "startLine": 124,
+                "endLine": 124,
+                "startOffset": 8,
+                "endOffset": 17
+              },
+              "msg": "\"continue\" statement."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/service/impl/InterestAccrualServiceImpl.java",
+              "textRange": {
+                "startLine": 128,
+                "endLine": 128,
+                "startOffset": 8,
+                "endOffset": 17
+              },
+              "msg": "\"continue\" statement."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Reduce the total number of break and continue statements in this loop to use at most one.",
+      "effort": "20min",
+      "debt": "20min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "brain-overload"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "FOCUSED",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHoe",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 106,
+      "hash": "e90ea207040b23ccd80672f51a6d14df",
+      "textRange": {
+        "startLine": 106,
+        "endLine": 106,
+        "startOffset": 9,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHof",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 107,
+      "hash": "e8d9b2a443d69fa276293835534f4b1b",
+      "textRange": {
+        "startLine": 107,
+        "endLine": 107,
+        "startOffset": 9,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHog",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 108,
+      "hash": "bee8fad4f5f3dbf5db403e9549037457",
+      "textRange": {
+        "startLine": 108,
+        "endLine": 108,
+        "startOffset": 17,
+        "endOffset": 24
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHok",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 108,
+      "hash": "bee8fad4f5f3dbf5db403e9549037457",
+      "textRange": {
+        "startLine": 108,
+        "endLine": 108,
+        "startOffset": 62,
+        "endOffset": 69
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+              "textRange": {
+                "startLine": 115,
+                "endLine": 115,
+                "startOffset": 27,
+                "endOffset": 34
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+              "textRange": {
+                "startLine": 116,
+                "endLine": 116,
+                "startOffset": 38,
+                "endOffset": 45
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+              "textRange": {
+                "startLine": 117,
+                "endLine": 117,
+                "startOffset": 30,
+                "endOffset": 37
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHol",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 108,
+      "hash": "bee8fad4f5f3dbf5db403e9549037457",
+      "textRange": {
+        "startLine": 108,
+        "endLine": 108,
+        "startOffset": 84,
+        "endOffset": 93
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+              "textRange": {
+                "startLine": 118,
+                "endLine": 118,
+                "startOffset": 38,
+                "endOffset": 47
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+              "textRange": {
+                "startLine": 119,
+                "endLine": 119,
+                "startOffset": 32,
+                "endOffset": 41
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 3 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHoh",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 109,
+      "hash": "d4b0865fe34083a95ed5e57f04e51f0b",
+      "textRange": {
+        "startLine": 109,
+        "endLine": 109,
+        "startOffset": 16,
+        "endOffset": 23
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHoi",
+      "rule": "plsql:OrderByExplicitAscCheck",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 168,
+      "hash": "cd4cc5a6bc2dd56bd5c87b96df31ddc6",
+      "textRange": {
+        "startLine": 168,
+        "endLine": 168,
+        "startOffset": 9,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add ASC in order to make the order explicit.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "confusing",
+        "sql"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-t63NKbvqNGHoj",
+      "rule": "plsql:OrderByExplicitAscCheck",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V2__create_ledger_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 168,
+      "hash": "cd4cc5a6bc2dd56bd5c87b96df31ddc6",
+      "textRange": {
+        "startLine": 168,
+        "endLine": 168,
+        "startOffset": 18,
+        "endOffset": 32
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add ASC in order to make the order explicit.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "confusing",
+        "sql"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-U63NKbvqNGHoT",
+      "rule": "java:S5838",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/bookkeeping/service/impl/RetroactiveCorrectionServiceImplTest.java",
+      "project": "mfhens_opendebt",
+      "line": 217,
+      "hash": "e0d929adfed4bd130a8ef609ae8a14e3",
+      "textRange": {
+        "startLine": 217,
+        "endLine": 217,
+        "startOffset": 48,
+        "endOffset": 57
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/test/java/dk/ufst/opendebt/payment/bookkeeping/service/impl/RetroactiveCorrectionServiceImplTest.java",
+              "textRange": {
+                "startLine": 217,
+                "endLine": 217,
+                "startOffset": 15,
+                "endOffset": 46
+              },
+              "msg": "This can be simplified"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Use isZero() instead.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "assertj",
+        "tests"
+      ],
+      "creationDate": "2026-03-06T09:31:47+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAX63NKbvqNGHo7",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/java/dk/ufst/opendebt/caseservice/workflow/delegates/CaseAssessmentDelegate.java",
+      "project": "mfhens_opendebt",
+      "line": 24,
+      "hash": "f5f7c81f257a35ddd9627f504a443e50",
+      "textRange": {
+        "startLine": 24,
+        "endLine": 24,
+        "startOffset": 0,
+        "endOffset": 68
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAs63NKbvqNGHpB",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/java/dk/ufst/opendebt/caseservice/workflow/delegates/CheckPaymentDelegate.java",
+      "project": "mfhens_opendebt",
+      "line": 21,
+      "hash": "48ca583a85a38e9ac10a0b3703dffa64",
+      "textRange": {
+        "startLine": 21,
+        "endLine": 21,
+        "startOffset": 0,
+        "endOffset": 88
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAl63NKbvqNGHo_",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/java/dk/ufst/opendebt/caseservice/workflow/delegates/CloseCaseDelegate.java",
+      "project": "mfhens_opendebt",
+      "line": 26,
+      "hash": "555c0e26f789886e5299dc0e3bfa76d3",
+      "textRange": {
+        "startLine": 26,
+        "endLine": 26,
+        "startOffset": 0,
+        "endOffset": 65
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAe63NKbvqNGHo9",
+      "rule": "java:S1135",
+      "severity": "INFO",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/java/dk/ufst/opendebt/caseservice/workflow/delegates/SendLetterDelegate.java",
+      "project": "mfhens_opendebt",
+      "line": 26,
+      "hash": "1499ccf00d80bedc75d3f53c4e5f58eb",
+      "textRange": {
+        "startLine": 26,
+        "endLine": 26,
+        "startOffset": 0,
+        "endOffset": 85
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Complete the task associated to this TODO comment.",
+      "effort": "0min",
+      "debt": "0min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "cwe"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "INFO"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAO63NKbvqNGHo5",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 76,
+        "endOffset": 84
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+              "textRange": {
+                "startLine": 63,
+                "endLine": 63,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+              "textRange": {
+                "startLine": 84,
+                "endLine": 84,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+              "textRange": {
+                "startLine": 173,
+                "endLine": 173,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAO63NKbvqNGHo6",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 66,
+        "endOffset": 74
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+              "textRange": {
+                "startLine": 69,
+                "endLine": 69,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+              "textRange": {
+                "startLine": 163,
+                "endLine": 163,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 3 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAO63NKbvqNGHo3",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 140,
+      "hash": "9b05ed3a911282ea1be27497f753b994",
+      "textRange": {
+        "startLine": 140,
+        "endLine": 140,
+        "startOffset": 13,
+        "endOffset": 20
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGAO63NKbvqNGHo4",
+      "rule": "plsql:OrderByExplicitAscCheck",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-case-service/src/main/resources/db/migration/V1__create_case_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 216,
+      "hash": "1827dbd6027bca498738951821e2ec4b",
+      "textRange": {
+        "startLine": 216,
+        "endLine": 216,
+        "startOffset": 13,
+        "endOffset": 23
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add ASC in order to make the order explicit.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "confusing",
+        "sql"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_863NKbvqNGHoy",
+      "rule": "java:S6353",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-common/src/main/java/dk/ufst/opendebt/common/dto/DebtorIdentifier.java",
+      "project": "mfhens_opendebt",
+      "line": 33,
+      "hash": "f59b98c1a80341f46f9d132a11eb9338",
+      "textRange": {
+        "startLine": 33,
+        "endLine": 33,
+        "startOffset": 22,
+        "endOffset": 27
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use concise character class syntax '\\\\d' instead of '[0-9]'.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "regex"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_863NKbvqNGHoz",
+      "rule": "java:S6353",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-common/src/main/java/dk/ufst/opendebt/common/dto/DebtorIdentifier.java",
+      "project": "mfhens_opendebt",
+      "line": 100,
+      "hash": "577c6d1e79afdb31d6d044f812c47447",
+      "textRange": {
+        "startLine": 100,
+        "endLine": 100,
+        "startOffset": 32,
+        "endOffset": 37
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use concise character class syntax '\\\\d' instead of '[0-9]'.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "regex"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF_863NKbvqNGHo0",
+      "rule": "java:S6353",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-common/src/main/java/dk/ufst/opendebt/common/dto/DebtorIdentifier.java",
+      "project": "mfhens_opendebt",
+      "line": 107,
+      "hash": "963b4fcef36cdde7a73d769a465f20fd",
+      "textRange": {
+        "startLine": 107,
+        "endLine": 107,
+        "startOffset": 32,
+        "endOffset": 37
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use concise character class syntax '\\\\d' instead of '[0-9]'.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "regex"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoR",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 20,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 20,
+        "endLine": 20,
+        "startOffset": 76,
+        "endOffset": 84
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+              "textRange": {
+                "startLine": 67,
+                "endLine": 67,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+              "textRange": {
+                "startLine": 91,
+                "endLine": 91,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+              "textRange": {
+                "startLine": 216,
+                "endLine": 216,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoS",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 20,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 20,
+        "endLine": 20,
+        "startOffset": 66,
+        "endOffset": 74
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+              "textRange": {
+                "startLine": 75,
+                "endLine": 75,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+              "textRange": {
+                "startLine": 204,
+                "endLine": 204,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 3 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoM",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 104,
+      "hash": "c832a3c60ffa4652db03ee2ee2972538",
+      "textRange": {
+        "startLine": 104,
+        "endLine": 104,
+        "startOffset": 9,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoN",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 105,
+      "hash": "3ee33a3b7d33e08e0b0d098551d3a0af",
+      "textRange": {
+        "startLine": 105,
+        "endLine": 105,
+        "startOffset": 9,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoO",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 106,
+      "hash": "469a3f1a09979d9753adc33b62455347",
+      "textRange": {
+        "startLine": 106,
+        "endLine": 106,
+        "startOffset": 13,
+        "endOffset": 20
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoP",
+      "rule": "plsql:VarcharUsageCheck",
+      "severity": "MAJOR",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 108,
+      "hash": "47e5c32880ccf20898641cff6d917f8f",
+      "textRange": {
+        "startLine": 108,
+        "endLine": 108,
+        "startOffset": 16,
+        "endOffset": 23
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use VARCHAR2 instead of VARCHAR.",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "lock-in"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-L63NKbvqNGHoQ",
+      "rule": "plsql:OrderByExplicitAscCheck",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-debt-service/src/main/resources/db/migration/V1__create_debt_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 270,
+      "hash": "1827dbd6027bca498738951821e2ec4b",
+      "textRange": {
+        "startLine": 270,
+        "endLine": 270,
+        "startOffset": 13,
+        "endOffset": 23
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Add ASC in order to make the order explicit.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "confusing",
+        "sql"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-163NKbvqNGHom",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 76,
+        "endOffset": 84
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+              "textRange": {
+                "startLine": 54,
+                "endLine": 54,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+              "textRange": {
+                "startLine": 66,
+                "endLine": 66,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+              "textRange": {
+                "startLine": 143,
+                "endLine": 143,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZF-163NKbvqNGHon",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 66,
+        "endOffset": 74
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+              "textRange": {
+                "startLine": 56,
+                "endLine": 56,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-payment-service/src/main/resources/db/migration/V1__create_payment_tables.sql",
+              "textRange": {
+                "startLine": 135,
+                "endLine": 135,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 3 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGA_63NKbvqNGHpH",
+      "rule": "java:S6353",
+      "severity": "MINOR",
+      "component": "mfhens_opendebt:opendebt-person-registry/src/main/java/dk/ufst/opendebt/personregistry/dto/PersonLookupRequest.java",
+      "project": "mfhens_opendebt",
+      "line": 16,
+      "hash": "f59b98c1a80341f46f9d132a11eb9338",
+      "textRange": {
+        "startLine": 16,
+        "endLine": 16,
+        "startOffset": 22,
+        "endOffset": 27
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use concise character class syntax '\\\\d' instead of '[0-9]'.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "regex"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-06T13:43:59+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBH63NKbvqNGHpI",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 76,
+        "endOffset": 84
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 57,
+                "endLine": 57,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 81,
+                "endLine": 81,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 212,
+                "endLine": 212,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 232,
+                "endLine": 232,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 5 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    },
+    {
+      "key": "AZzDZGBH63NKbvqNGHpJ",
+      "rule": "plsql:S1192",
+      "severity": "CRITICAL",
+      "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+      "project": "mfhens_opendebt",
+      "line": 19,
+      "hash": "a8134fb47ef402101fa1aaa94bfac5a3",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 66,
+        "endOffset": 74
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 59,
+                "endLine": 59,
+                "startOffset": 18,
+                "endOffset": 26
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 204,
+                "endLine": 204,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "mfhens_opendebt:opendebt-person-registry/src/main/resources/db/migration/V1__create_person_registry_tables.sql",
+              "textRange": {
+                "startLine": 224,
+                "endLine": 224,
+                "startOffset": 15,
+                "endOffset": 23
+              },
+              "msg": "Duplication."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Define a constant instead of duplicating this literal 4 times.",
+      "effort": "4min",
+      "debt": "4min",
+      "assignee": "mfhens@github",
+      "author": "markus@friedehens.eu",
+      "tags": [
+        "design"
+      ],
+      "creationDate": "2026-03-04T13:19:09+0000",
+      "updateDate": "2026-03-14T13:10:56+0000",
+      "type": "CODE_SMELL",
+      "organization": "mfhens",
+      "cleanCodeAttribute": "DISTINCT",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "OpenDebt - Danish Public Debt Collection System",
+      "internalTags": []
+    }
+  ]
+}

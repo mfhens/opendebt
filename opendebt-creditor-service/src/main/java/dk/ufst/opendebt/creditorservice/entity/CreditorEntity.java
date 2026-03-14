@@ -1,12 +1,10 @@
 package dk.ufst.opendebt.creditorservice.entity;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import dk.ufst.opendebt.common.audit.AuditableEntity;
 
 import lombok.*;
 
@@ -26,7 +24,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreditorEntity {
+public class CreditorEntity extends AuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -217,17 +215,5 @@ public class CreditorEntity {
   @Builder.Default
   private Boolean ipWhitelisted = false;
 
-  // Audit fields
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
-  @UpdateTimestamp
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
-
-  @Column(name = "created_by", length = 100)
-  private String createdBy;
-
-  @Version private Long version;
+  // Audit fields inherited from AuditableEntity
 }

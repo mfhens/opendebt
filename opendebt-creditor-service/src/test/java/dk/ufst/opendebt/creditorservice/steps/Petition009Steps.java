@@ -101,6 +101,7 @@ public class Petition009Steps {
     // and does not contain organization PII fields (name, address, CVR)
     List<String> dtoFieldNames =
         Arrays.stream(CreditorDto.class.getDeclaredFields()).map(Field::getName).toList();
+    assertThat(dtoFieldNames).as("CreditorDto must have fields to verify").isNotEmpty();
     assertThat(dtoFieldNames)
         .as("CreditorDto must not contain PII fields — PII is owned by person-registry")
         .doesNotContain("cprNumber", "cvrNumber", "name", "address", "email", "phone");
@@ -114,13 +115,14 @@ public class Petition009Steps {
   public void a_creditor_exists_with_creditor_org_id(String creditorOrgIdStr) {
     UUID creditorOrgId = UUID.fromString(creditorOrgIdStr);
     creditorOrgIds.put("current", creditorOrgId);
-    currentEntity =
-        creditorRepository.save(
-            CreditorEntity.builder()
-                .creditorOrgId(creditorOrgId)
-                .externalCreditorId("FH-" + creditorOrgId.toString().substring(0, 8))
-                .activityStatus(ActivityStatus.ACTIVE)
-                .build());
+    CreditorEntity entity =
+        CreditorEntity.builder()
+            .creditorOrgId(creditorOrgId)
+            .externalCreditorId("FH-" + creditorOrgId.toString().substring(0, 8))
+            .activityStatus(ActivityStatus.ACTIVE)
+            .build();
+    entity.setCreatedBy("test-user");
+    currentEntity = creditorRepository.save(entity);
   }
 
   @Given("the creditor has externalCreditorId {string}")
@@ -448,6 +450,7 @@ public class Petition009Steps {
     assertThat(retrievedCreditor).isNotNull();
     List<String> fieldNames =
         Arrays.stream(CreditorDto.class.getDeclaredFields()).map(Field::getName).toList();
+    assertThat(fieldNames).isNotEmpty();
     assertThat(fieldNames).doesNotContain("cvrNumber", "cvr");
   }
 
@@ -456,6 +459,7 @@ public class Petition009Steps {
     assertThat(retrievedCreditor).isNotNull();
     List<String> fieldNames =
         Arrays.stream(CreditorDto.class.getDeclaredFields()).map(Field::getName).toList();
+    assertThat(fieldNames).isNotEmpty();
     assertThat(fieldNames).doesNotContain("name", "organizationName", "orgName");
   }
 
@@ -464,6 +468,7 @@ public class Petition009Steps {
     assertThat(retrievedCreditor).isNotNull();
     List<String> fieldNames =
         Arrays.stream(CreditorDto.class.getDeclaredFields()).map(Field::getName).toList();
+    assertThat(fieldNames).isNotEmpty();
     assertThat(fieldNames).doesNotContain("address", "organizationAddress", "orgAddress");
   }
 
@@ -488,8 +493,10 @@ public class Petition009Steps {
 
   @Then("the validation result is returned through the API")
   public void the_validation_result_is_returned_through_the_api() {
-    assertThat(validationResponse).isNotNull();
-    assertThat(validationResponse.isAllowed()).isTrue();
+    // Verify API response structure and success indicator
+    assertThat(validationResponse)
+        .isNotNull()
+        .satisfies(response -> assertThat(response.isAllowed()).isTrue());
   }
 
   // ========================================================================================
@@ -512,10 +519,8 @@ public class Petition009Steps {
   @Then("the audit log contains the user who made the change")
   public void the_audit_log_contains_the_user_who_made_the_change() {
     // In production, the audit trigger captures application_user via set_audit_context().
-    // In H2, we verify the entity supports createdBy tracking.
-    List<String> entityFields =
-        Arrays.stream(CreditorEntity.class.getDeclaredFields()).map(Field::getName).toList();
-    assertThat(entityFields).contains("createdBy");
+    // In H2, we verify the entity supports createdBy tracking via AuditableEntity superclass.
+    assertThat(currentEntity.getCreatedBy()).isNotNull();
   }
 
   @Then("the audit log contains the previous activityStatus value")

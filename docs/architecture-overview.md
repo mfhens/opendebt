@@ -693,7 +693,7 @@ flowchart LR
 
 ### opendebt-common (Shared library)
 
-**Purpose:** Shared DTOs, exceptions, and audit infrastructure.
+**Purpose:** Shared DTOs, exceptions, audit infrastructure, and CLS integration.
 
 **Implementation status:** IMPLEMENTED
 
@@ -704,8 +704,16 @@ flowchart LR
 | ErrorResponse | Done | Standard error format |
 | OpenDebtException | Done | Base exception with error code + severity |
 | GlobalExceptionHandler | Done | @ControllerAdvice |
+| AuditableEntity | Done | @MappedSuperclass with createdAt/updatedAt/createdBy/updatedBy/version |
+| AuditingConfig | Done | JPA auditing with security context integration |
 | AuditContextFilter | Done | Extracts user context for audit |
 | AuditContextService | Done | Sets PostgreSQL audit context |
+| ClsAuditClient | Done | Interface for CLS event shipping (fallback) |
+| ClsAuditClientImpl | Done | Async batched CLS client with retry (fallback) |
+| NoOpClsAuditClient | Done | No-op client for dev/test |
+| ClsAuditEventMapper | Done | Maps audit records to CLS format with PII masking |
+| **Filebeat config** | Done | `config/filebeat/filebeat-audit.yml` - recommended CLS integration |
+| FordringValidationService | Done | 114 Drools rules for fordring validation |
 
 ## Database Architecture
 

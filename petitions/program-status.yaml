@@ -318,3 +318,59 @@ program:
         - defines 6 SOAP services (3 OIO + 3 SKAT/PSRM) for legacy system integration
       notes: Provides backward-compatible SOAP endpoints for SKAT/DMI legacy systems. Requires OCES3 certificate authentication, CLS logging, and TLS 1.3. SOAP services delegate to same business logic as REST APIs. Depends on validation rules from petition015-018.
       next_step: Implement Spring-WS endpoint handlers after validation rules are in place from Wave 2.
+
+  # ===========================================================================
+  # Technical Debt and Infrastructure Backlog
+  # ===========================================================================
+  # Items that are not petitions but need tracking for implementation quality.
+
+  technical_backlog:
+    - id: TB-001
+      title: Migrate remaining entities to AuditableEntity base class
+      status: in_progress
+      priority: medium
+      created: 2026-03-14
+      description: |
+        ADR-0022 established shared audit infrastructure in opendebt-common.
+        CreditorEntity and ChannelBindingEntity are migrated. Remaining entities
+        should extend AuditableEntity to reduce duplication and ensure consistent
+        audit field handling.
+      entities_migrated:
+        - CreditorEntity (creditor-service)
+        - ChannelBindingEntity (creditor-service)
+      entities_pending:
+        - DebtEntity (debt-service)
+        - DebtTypeEntity (debt-service)
+        - CaseEntity (case-service)
+        - PaymentEntity (payment-service)
+        - LedgerEntryEntity (payment-service)
+        - DebtEventEntity (payment-service)
+        - PersonEntity (person-registry)
+        - OrganizationEntity (person-registry)
+      notes: Can be done incrementally per service. Each migration requires updating entity imports, extending AuditableEntity, removing duplicate audit fields, and verifying tests pass.
+
+    - id: TB-002
+      title: Enable CLS integration for production
+      status: not_started
+      priority: high
+      created: 2026-03-14
+      description: |
+        ClsAuditClient infrastructure is implemented but disabled by default.
+        Production deployment requires configuring CLS endpoint, mTLS certificates,
+        and enabling opendebt.audit.cls.enabled=true.
+      depends_on:
+        - UFST CLS endpoint availability
+        - mTLS certificate provisioning
+      notes: NoOpClsAuditClient is used in dev/test. ClsAuditClientImpl activates when enabled.
+
+    - id: TB-003
+      title: Fix SonarCloud SQL duplication false positives
+      status: wont_fix
+      priority: low
+      created: 2026-03-14
+      description: |
+        SonarCloud flags ~3% duplication in SQL migrations (V1__create_*_tables.sql).
+        This is expected and architecturally correct - each microservice database
+        requires its own audit infrastructure (triggers, tables). Not fixable
+        without violating ADR-0007 (no cross-service DB access).
+      notes: Accept as technical debt. Document in ADR-0022.

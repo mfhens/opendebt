@@ -19,7 +19,12 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   @Bean
+  @SuppressWarnings(
+      "java:S4502") // CSRF disabled intentionally - stateless JWT API, no session cookies
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    // CSRF protection is disabled because this is a stateless REST API using JWT bearer tokens.
+    // CSRF attacks exploit session cookies, which are not used here. All authentication is via
+    // Authorization header with OAuth2/JWT tokens. See OWASP CSRF Prevention Cheat Sheet.
     http.csrf(csrf -> csrf.disable())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -1,13 +1,10 @@
 package dk.ufst.opendebt.creditorservice.entity;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import dk.ufst.opendebt.common.audit.AuditableEntity;
 import dk.ufst.opendebt.creditorservice.dto.ChannelType;
 
 import lombok.*;
@@ -30,7 +27,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChannelBindingEntity {
+public class ChannelBindingEntity extends AuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -61,18 +58,5 @@ public class ChannelBindingEntity {
   @Column(name = "description", length = 500)
   private String description;
 
-  // Audit fields
-
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
-  @UpdateTimestamp
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
-
-  @Column(name = "created_by", length = 100)
-  private String createdBy;
-
-  @Version private Long version;
+  // Audit fields inherited from AuditableEntity
 }

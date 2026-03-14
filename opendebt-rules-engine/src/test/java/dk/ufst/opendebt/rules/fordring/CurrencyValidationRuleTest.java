@@ -67,6 +67,7 @@ class CurrencyValidationRuleTest extends AbstractFordringRuleTest {
           builder.mfOpskrivningOmgjortNedskrivningReguleringStrukturPresent(true);
       case "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING" ->
           builder.mfOpskrivningAnnulleretNedskrivningIndbetalingStrukturPresent(true);
+      default -> throw new IllegalArgumentException("Unexpected action type: " + actionType);
     }
 
     FordringValidationResult result = fireRules(builder.build());

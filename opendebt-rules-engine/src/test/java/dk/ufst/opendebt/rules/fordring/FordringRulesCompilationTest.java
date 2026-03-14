@@ -1,5 +1,7 @@
 package dk.ufst.opendebt.rules.fordring;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 
 import dk.ufst.opendebt.common.dto.fordring.FordringValidationRequest;
@@ -31,8 +33,10 @@ class FordringRulesCompilationTest extends AbstractFordringRuleTest {
     FordringValidationRequest request = createValidOpretFordringRequest();
     FordringValidationResult result = fireRules(request);
 
-    // No errors from other rule groups
-    assertValid(result);
+    // Verify isolation by checking the result has the expected structure
+    assertThat(result).isNotNull();
+    assertThat(result.getErrors()).isEmpty();
+    assertThat(result.isValid()).isTrue();
   }
 
   @Test
