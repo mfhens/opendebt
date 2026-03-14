@@ -2,7 +2,7 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-10
+  updated_at: 2026-03-14
   updated_by: factory-droid
   ticket_status_values:
     - pending
@@ -204,7 +204,7 @@ backlog:
       parallelization: Can run in parallel with W1-CRD-04.
 
     W1-CRD-04:
-      status: pending
+      status: done
       sprint: sprint-1
       petitions:
         - petition009
@@ -224,7 +224,7 @@ backlog:
       parallelization: Can run alongside sprint hardening.
 
     W1-ACC-01:
-      status: pending
+      status: done
       sprint: sprint-2
       petitions:
         - petition010
@@ -404,7 +404,7 @@ backlog:
       parallelization: Can start while W2-RULE-02 is in progress.
 
     W2-BOOT-01:
-      status: pending
+      status: done
       sprint: sprint-3
       petitions:
         - petition015
@@ -431,7 +431,7 @@ backlog:
       parallelization: Can run in parallel with W2-SPEC-02.
 
     W2-RULE-01:
-      status: pending
+      status: done
       sprint: sprint-3
       petitions:
         - petition015

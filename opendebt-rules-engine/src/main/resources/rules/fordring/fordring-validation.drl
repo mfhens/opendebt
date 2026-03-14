@@ -1,0 +1,326 @@
+package dk.ufst.opendebt.rules.fordring
+
+// Fordring (claim action) validation rules
+// Implements core validation from petition015
+// Extension points for petition016, petition017, petition018
+
+import dk.ufst.opendebt.common.dto.fordring.FordringValidationRequest
+import dk.ufst.opendebt.common.dto.fordring.FordringValidationResult
+import dk.ufst.opendebt.common.dto.fordring.FordringErrorCode
+
+global FordringValidationResult validationResult
+
+// ============================================================
+// Structure Validation Rules (petition015)
+// ============================================================
+
+rule "OPRETFORDRING requires MFOpretFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPRETFORDRING",
+            mfOpretFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPRETFORDRING_STRUKTUR, "MFOpretFordringStruktur");
+end
+
+rule "GENINDSENDFORDRING requires MFGenindsendFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            mfGenindsendFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_STRUCTURE_MISSING, "MFGenindsendFordringStruktur");
+end
+
+rule "NEDSKRIV requires MFNedskrivFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            mfNedskrivFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_STRUKTUR_MISSING, "MFNedskrivFordringStruktur");
+end
+
+rule "TILBAGEKALD requires MFTilbagekaldFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            mfTilbagekaldFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.TILBAGEKALD_STRUKTUR_MISSING, "MFTilbagekaldFordringStruktur");
+end
+
+rule "AENDRFORDRING requires MFAendrFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            mfAendrFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.AENDRFORDRING_STRUKTUR_MISSING, "MFAendrFordringStruktur");
+end
+
+rule "OPSKRIVNINGREGULERING requires MFOpskrivningReguleringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGREGULERING",
+            mfOpskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_REGULERING_STRUKTUR, "MFOpskrivningReguleringStruktur");
+end
+
+rule "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING",
+            mfOpskrivningAnnulleretNedskrivningIndbetalingStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_ANNULLERET_NEDSKRIV_INDBETALING_STRUKTUR, "MFOpskrivningAnnulleretNedskrivningIndbetalingStruktur");
+end
+
+rule "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+            mfOpskrivningOmgjortNedskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_OMGJORT_NEDSKRIV_REGULERING_STRUKTUR, "MFOpskrivningOmgjortNedskrivningReguleringStruktur");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            mfNedskrivningAnnulleretOpskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_ANNULLERET_OPSKRIV_REGULERING_STRUKTUR, "MFNedskrivningAnnulleretOpskrivningReguleringStruktur");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING",
+            mfNedskrivningAnnulleretOpskrivningIndbetalingStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_ANNULLERET_OPSKRIV_INDBETALING_STRUKTUR, "MFNedskrivningAnnulleretOpskrivningIndbetalingStruktur");
+end
+
+// ============================================================
+// Currency Validation Rules (petition015)
+// ============================================================
+
+rule "Currency must be DKK"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            valutaKode != null,
+            valutaKode != "DKK",
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING", "NEDSKRIV",
+                           "OPSKRIVNINGREGULERING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+                           "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING")
+        )
+    then
+        validationResult.addError(FordringErrorCode.INVALID_CURRENCY, "ValutaKode");
+end
+
+// ============================================================
+// Art Type Validation Rules (petition015)
+// ============================================================
+
+rule "Art type must be INDR or MODR for OPRETFORDRING and GENINDSENDFORDRING"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            artType != null,
+            artType not in ("INDR", "MODR")
+        )
+    then
+        validationResult.addError(FordringErrorCode.FORDRING_TYPE_ERROR, "ArtType");
+end
+
+// ============================================================
+// Interest Rate Validation Rules (petition015)
+// ============================================================
+
+rule "Interest rate must not be negative"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            merRenteSats != null,
+            merRenteSats.signum() < 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEGATIVE_INTEREST_RATE, "MerRenteSats");
+end
+
+// ============================================================
+// Date Validation Rules (petition015)
+// ============================================================
+
+rule "VirkningsDato is required when flagged"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDatoRequired == true,
+            virkningsDato == null
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_MISSING, "VirkningsDato");
+end
+
+rule "VirkningsDato must not be later than ModtagelsesTidspunkt"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            modtagelsesTidspunkt != null,
+            virkningsDato.isAfter(modtagelsesTidspunkt.toLocalDate())
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_SENERE_END_MODTAGELSE, "VirkningsDato");
+end
+
+rule "Withdrawal VirkningsDato must not be before main claim ModtagelsesTidspunkt"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            virkningsDato != null,
+            hovedfordringModtagelsesTidspunkt != null,
+            virkningsDato.isBefore(hovedfordringModtagelsesTidspunkt.toLocalDate())
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_FOER_HOVEDFORDRING_MODTAGELSE, "VirkningsDato");
+end
+
+rule "VirkningsDato must not be in the future"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            virkningsDato.isAfter(java.time.LocalDate.now())
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_FUTURE_VIRKNINGDATO, "VirkningsDato");
+end
+
+rule "No dates before year 1900"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            virkningsDato.isBefore(java.time.LocalDate.of(1900, 1, 1))
+        )
+    then
+        validationResult.addError(FordringErrorCode.TIDLIGST_MULIG_DATO, "VirkningsDato");
+end
+
+rule "PeriodeFra must not be after PeriodeTil"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            periodeFra != null,
+            periodeTil != null,
+            periodeFra.isAfter(periodeTil)
+        )
+    then
+        validationResult.addError(FordringErrorCode.PERIODE_TIL_EFTER_PERIODE_FRA, "PeriodeFra");
+end
+
+// ============================================================
+// Agreement Validation Rules (petition015)
+// ============================================================
+
+rule "Agreement must exist"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            agreementFound == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_AGREEMENT_FOUND, "FordringhaveraftaleID");
+end
+
+rule "Claim type must be allowed by agreement"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            agreementFound == true,
+            claimTypeAllowedByAgreement == false,
+            dmiFordringTypeKode != null
+        )
+    then
+        validationResult.addError(FordringErrorCode.TYPE_AGREEMENT_MISSING, "DMIFordringTypeKode");
+end
+
+rule "System-to-system requires MFAftaleSystemIntegration"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            systemToSystem == true,
+            mfAftaleSystemIntegration == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_SYSTEM_TO_SYSTEM_INTEGRATION, "MFAftaleSystemIntegration");
+end
+
+// ============================================================
+// Debtor Validation Rules (petition015)
+// ============================================================
+
+rule "Debtor ID must not be zero"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            debtorId != null,
+            debtorId == "0"
+        )
+    then
+        validationResult.addError(FordringErrorCode.DEBTOR_NOT_FOUND, "debtorId");
+end
+
+rule "Debtor ID must not be all zeros UUID"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            debtorId != null,
+            debtorId == "00000000-0000-0000-0000-000000000000"
+        )
+    then
+        validationResult.addError(FordringErrorCode.DEBTOR_NOT_FOUND, "debtorId");
+end
+
+// ============================================================
+// Extension: Claimant Authorization Rules (petition016)
+// ============================================================
+// To be added in W2-RULE-02
+
+// ============================================================
+// Extension: Lifecycle / Reference Rules (petition017)
+// ============================================================
+// To be added in W2-RULE-03
+
+// ============================================================
+// Extension: Content Validation Rules (petition018)
+// ============================================================
+// To be added in W2-RULE-04
