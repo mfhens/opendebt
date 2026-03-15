@@ -2,7 +2,7 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-14
+  updated_at: 2026-03-15
   updated_by: factory-droid
   ticket_status_values:
     - pending
@@ -27,6 +27,21 @@ backlog:
         - sprint-3
         - sprint-4
 
+    - id: wave-3
+      phase: phase-2
+      name: Creditor portal frontend
+      objective: Deliver a functional creditor-portal using Thymeleaf + HTMX with SKAT visual identity, BFF wiring to backend services, accessibility compliance, and manual fordring submission.
+      sprints:
+        - sprint-5
+        - sprint-6
+
+    - id: wave-4
+      phase: phase-5
+      name: OpenTelemetry observability framework
+      objective: Implement OpenTelemetry-based observability (structured JSON logging, distributed tracing, metrics) across creditor-related services, with Grafana stack backend for local dev.
+      sprints:
+        - sprint-7
+
   sprints:
     - id: sprint-1
       wave: wave-1
@@ -44,6 +59,18 @@ backlog:
       wave: wave-2
       name: Fordring lifecycle and content validation
       objective: Implement petition017 lifecycle rules and petition018 content validation rules.
+    - id: sprint-5
+      wave: wave-3
+      name: Portal foundation and accessibility baseline
+      objective: Bootstrap Thymeleaf + HTMX infrastructure, SKAT layout, accessibility patterns, and service client wiring.
+    - id: sprint-6
+      wave: wave-3
+      name: Portal BFF and manual submission
+      objective: Deliver creditor profile view, manual fordring submission, and petition012 acceptance coverage.
+    - id: sprint-7
+      wave: wave-4
+      name: OpenTelemetry framework and creditor instrumentation
+      objective: Add OTel dependencies, structured JSON logging, trace propagation, Docker Compose observability stack, and custom creditor business metrics.
 
   tickets:
     W1-SPEC-01:
@@ -166,13 +193,13 @@ backlog:
         - petition009
       modules:
         - opendebt-creditor-service
-      objective: Implement creditor lookup and administration APIs.
+      objective: Implement creditor lookup APIs and supporting service layer.
       entry_criteria:
         - W1-CRD-01 is mostly in place.
         - W1-BOOT-02 organization API is available.
       deliverables:
         - repository and service layer
-        - controller endpoints for lookup and admin updates
+        - controller endpoints for creditor lookup
         - mapping logic
         - unit tests
       depends_on:
@@ -243,19 +270,19 @@ backlog:
       parallelization: Consumer teams can prep stubs in parallel once the contract is frozen.
 
     W1-ACC-02:
-      status: pending
+      status: done
       sprint: sprint-2
       petitions:
         - petition010
       modules:
         - opendebt-creditor-service
         - api-specs
-      objective: Implement the access-resolution engine and API.
+      objective: Expose the access-resolution engine through the creditor-service API and complete acceptance coverage.
       entry_criteria:
         - W1-ACC-01 is complete.
         - creditor lookup is already available.
       deliverables:
-        - access resolve endpoint
+        - access resolve controller endpoint
         - acting versus represented creditor resolution
         - hierarchy-based rule enforcement
         - audited resolution outcomes
@@ -288,7 +315,7 @@ backlog:
       parallelization: Split by module and run in parallel.
 
     W1-ACC-04:
-      status: pending
+      status: in_progress
       sprint: sprint-2
       petitions:
         - petition009
@@ -591,3 +618,315 @@ backlog:
         - W2-INT-01
       owner_role: QA automation plus rules engineer
       parallelization: Final convergence ticket for Wave 2.
+
+    # Wave 3: Creditor Portal Frontend
+
+    W3-SPEC-01:
+      status: done
+      sprint: sprint-5
+      petitions:
+        - petition012
+        - petition013
+        - petition014
+      modules:
+        - petitions
+        - opendebt-creditor-portal
+      objective: Define portal page inventory, screen layouts (aligned to skat.dk/borger), and accessibility acceptance criteria.
+      entry_criteria:
+        - ADR-0023 is accepted.
+        - petition012, petition013, petition014 artifacts exist.
+      deliverables:
+        - portal page inventory mapping petition012 scenarios to screens
+        - SKAT-aligned layout wireframes (header, breadcrumb, content, footer)
+        - accessibility acceptance criteria checklist derived from petition013
+        - accessibility statement template derived from petition014
+      depends_on: []
+      owner_role: UX lead plus domain architect
+      parallelization: Must complete before UI coding starts.
+
+    W3-BOOT-01:
+      status: done
+      sprint: sprint-5
+      petitions:
+        - petition012
+        - petition013
+      modules:
+        - opendebt-creditor-portal
+      objective: Bootstrap Thymeleaf and HTMX infrastructure with SKAT layout in the creditor-portal module.
+      entry_criteria:
+        - W3-SPEC-01 is complete.
+        - ADR-0023 is accepted.
+        - skat-tokens.css exists in static resources.
+      deliverables:
+        - spring-boot-starter-thymeleaf dependency added to pom.xml
+        - thymeleaf-layout-dialect dependency for shared page structure
+        - HTMX 2.x JS file in static resources or via WebJar
+        - base Thymeleaf layout template (layout.html) with SKAT-style header, breadcrumb, content area, footer
+        - skip-link, landmark regions, language meta for accessibility
+        - IBM Plex Sans font integration
+        - application.yml Thymeleaf config (prefix, suffix, cache)
+        - landing page controller and template to verify stack works
+      depends_on:
+        - W3-SPEC-01
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W3-BOOT-02.
+
+    W3-BOOT-02:
+      status: done
+      sprint: sprint-5
+      petitions:
+        - petition012
+      modules:
+        - opendebt-creditor-portal
+      objective: Create service client layer for creditor-service, debt-service, and case-service.
+      entry_criteria:
+        - W3-SPEC-01 is complete.
+        - creditor-service API is stable (W1-ACC-02 done).
+      deliverables:
+        - CreditorServiceClient (getByCreditorOrgId, resolveAccess)
+        - DebtServiceClient (listDebts, createDebt)
+        - CaseServiceClient (listCases)
+        - WebClient configuration with OAuth2 token relay
+        - unit tests for each client with WireMock stubs
+      depends_on:
+        - W3-SPEC-01
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with W3-BOOT-01.
+
+    W3-A11Y-01:
+      status: done
+      sprint: sprint-5
+      petitions:
+        - petition013
+        - petition014
+      modules:
+        - opendebt-creditor-portal
+      objective: Implement accessibility infrastructure and statement.
+      entry_criteria:
+        - W3-BOOT-01 layout template exists.
+      deliverables:
+        - accessibility statement page (/was) with WAS-Tool generated content placeholder
+        - footer link to accessibility statement on every page
+        - keyboard navigation verification for base layout
+        - form error association pattern (aria-describedby)
+        - focus management pattern for page transitions
+        - axe-core or Pa11y CI integration for automated accessibility checks
+        - petition013 and petition014 Cucumber feature files wired for acceptance
+      depends_on:
+        - W3-BOOT-01
+      owner_role: Accessibility-aware frontend engineer
+      parallelization: Can run alongside W3-BOOT-02.
+
+    W3-PAGE-01:
+      status: done
+      sprint: sprint-6
+      petitions:
+        - petition012
+      modules:
+        - opendebt-creditor-portal
+      objective: Implement creditor profile view page.
+      entry_criteria:
+        - W3-BOOT-01 layout is working.
+        - W3-BOOT-02 CreditorServiceClient is available.
+      deliverables:
+        - /dashboard controller reading creditor profile from creditor-service
+        - Thymeleaf template showing creditor master data (externalCreditorId, activityStatus, connectionType, hierarchy)
+        - HTMX-enhanced status refresh
+        - access resolution on login to determine acting fordringshaver
+        - petition012 scenario 1 covered (portal reads creditor profile from backend service)
+      depends_on:
+        - W3-BOOT-01
+        - W3-BOOT-02
+      owner_role: Backend engineer with Thymeleaf
+      parallelization: Can run in parallel with W3-PAGE-02.
+
+    W3-PAGE-02:
+      status: done
+      sprint: sprint-6
+      petitions:
+        - petition012
+      modules:
+        - opendebt-creditor-portal
+        - opendebt-debt-service
+      objective: Implement manual fordring submission page.
+      entry_criteria:
+        - W3-BOOT-01 layout is working.
+        - W3-BOOT-02 DebtServiceClient is available.
+        - W3-A11Y-01 form patterns are established.
+      deliverables:
+        - /fordring/ny controller with form binding and server-side validation
+        - Thymeleaf template with accessible form (labels, error associations, fieldsets)
+        - HTMX inline validation feedback on blur
+        - submission routes to debt-service via DebtServiceClient
+        - success/error feedback page
+        - petition012 scenario 2 covered (manual fordring submitted to debt-service)
+      depends_on:
+        - W3-BOOT-01
+        - W3-BOOT-02
+        - W3-A11Y-01
+      owner_role: Backend engineer with Thymeleaf
+      parallelization: Can run in parallel with W3-PAGE-01.
+
+    W3-SEC-01:
+      status: done
+      sprint: sprint-6
+      petitions:
+        - petition012
+      modules:
+        - opendebt-creditor-portal
+      objective: Enforce acting-on-behalf-of restrictions in the portal.
+      entry_criteria:
+        - W3-PAGE-01 creditor profile view exists.
+        - Access resolution endpoint is available (W1-ACC-02 done).
+      deliverables:
+        - login flow resolves acting fordringshaver via creditor-service access resolution
+        - acting-on-behalf-of selector for parent creditors (uses hierarchy from creditor-service)
+        - unrelated creditor access is rejected and shown as error
+        - petition012 scenario 3 covered (user cannot act for unrelated fordringshaver)
+      depends_on:
+        - W3-PAGE-01
+      owner_role: Security-aware backend engineer
+      parallelization: Blocks petition012 full acceptance.
+
+    W3-ACC-01:
+      status: done
+      sprint: sprint-6
+      petitions:
+        - petition012
+        - petition013
+        - petition014
+      modules:
+        - opendebt-creditor-portal
+      objective: Make petition012, 013, 014 acceptance tests executable and protect the portal with coverage.
+      entry_criteria:
+        - W3-PAGE-01, W3-PAGE-02, W3-SEC-01 are complete.
+        - W3-A11Y-01 accessibility infrastructure is in place.
+      deliverables:
+        - Cucumber acceptance coverage for petition012 (3 scenarios)
+        - Cucumber acceptance coverage for petition013 (3 scenarios)
+        - Cucumber acceptance coverage for petition014 (3 scenarios)
+        - architecture tests for portal package layering
+        - portal coverage gate (JaCoCo)
+        - local smoke test via docker compose
+      depends_on:
+        - W3-PAGE-01
+        - W3-PAGE-02
+        - W3-SEC-01
+        - W3-A11Y-01
+      owner_role: QA automation plus frontend engineer
+      parallelization: Final convergence ticket for Wave 3.
+
+    # Wave 4: OpenTelemetry Observability
+
+    W4-OTEL-01:
+      status: done
+      sprint: sprint-7
+      petitions:
+        - petition020
+      modules:
+        - pom.xml
+        - opendebt-common
+      objective: Add Micrometer Tracing bridge and OTLP exporter dependencies to the parent POM dependency management, and structured JSON logging to opendebt-common.
+      entry_criteria:
+        - ADR-0024 is accepted.
+        - petition020 solution architecture exists.
+      deliverables:
+        - micrometer-tracing-bridge-otel in parent POM dependencyManagement
+        - opentelemetry-exporter-otlp in parent POM dependencyManagement
+        - logstash-logback-encoder in parent POM dependencyManagement
+        - shared logback-spring.xml template in opendebt-common resources
+      depends_on: []
+      owner_role: Platform engineer
+      parallelization: Must complete before service instrumentation.
+
+    W4-OTEL-02:
+      status: done
+      sprint: sprint-7
+      petitions:
+        - petition020
+      modules:
+        - opendebt-creditor-service
+        - opendebt-debt-service
+        - opendebt-creditor-portal
+      objective: Instrument creditor-service, debt-service, and creditor-portal with OTel tracing, structured JSON logging, and OTLP export.
+      entry_criteria:
+        - W4-OTEL-01 dependencies are available.
+      deliverables:
+        - micrometer-tracing-bridge-otel dependency in each service pom.xml
+        - opentelemetry-exporter-otlp dependency in each service pom.xml
+        - logstash-logback-encoder dependency in each service pom.xml
+        - logback-spring.xml with JSON console appender including traceId and spanId in each service
+        - application.yml OTLP tracing and metrics configuration in each service
+        - W3C traceparent propagation verified on WebClient calls
+      depends_on:
+        - W4-OTEL-01
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with W4-OTEL-03.
+
+    W4-OTEL-03:
+      status: done
+      sprint: sprint-7
+      petitions:
+        - petition020
+      modules:
+        - config
+        - docker-compose.yml
+      objective: Deploy the Grafana observability stack (OTel Collector, Tempo, Loki, Prometheus, Grafana) via Docker Compose for local development.
+      entry_criteria:
+        - ADR-0024 backend selection is documented.
+      deliverables:
+        - docker-compose.observability.yml with otel-collector, tempo, loki, prometheus, grafana
+        - config/otel/otel-collector-config.yaml
+        - config/tempo/tempo.yaml
+        - config/loki/loki-config.yaml
+        - config/prometheus/prometheus.yml with scrape targets for creditor services
+        - config/grafana/provisioning/datasources.yaml
+        - config/grafana/provisioning/dashboards.yaml with OpenDebt overview dashboard
+        - OTEL_EXPORTER_OTLP_ENDPOINT wired in docker-compose for each service
+      depends_on: []
+      owner_role: Platform engineer
+      parallelization: Can run in parallel with W4-OTEL-02.
+
+    W4-OTEL-04:
+      status: done
+      sprint: sprint-7
+      petitions:
+        - petition020
+      modules:
+        - opendebt-creditor-service
+        - opendebt-debt-service
+      objective: Add custom business metrics for creditor-related operations.
+      entry_criteria:
+        - W4-OTEL-02 instrumentation is in place.
+      deliverables:
+        - creditor_access_resolution_total counter in creditor-service (tag result=allowed/denied)
+        - fordring_submissions_total counter in debt-service
+        - Micrometer MeterRegistry wiring and unit tests
+      depends_on:
+        - W4-OTEL-02
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with W4-OTEL-05.
+
+    W4-OTEL-05:
+      status: done
+      sprint: sprint-7
+      petitions:
+        - petition020
+      modules:
+        - opendebt-creditor-service
+        - opendebt-debt-service
+        - opendebt-creditor-portal
+      objective: Verify end-to-end observability and ensure all tests pass.
+      entry_criteria:
+        - W4-OTEL-02 and W4-OTEL-03 are complete.
+      deliverables:
+        - all existing tests pass with tracing enabled
+        - structured JSON logs verified with traceId and spanId
+        - distributed trace visible in Grafana via Tempo for portal to backend call chain
+        - PII audit verification (no CPR, CVR, names in spans or logs)
+      depends_on:
+        - W4-OTEL-02
+        - W4-OTEL-03
+        - W4-OTEL-04
+      owner_role: Platform engineer plus QA
+      parallelization: Final convergence ticket for Wave 4.

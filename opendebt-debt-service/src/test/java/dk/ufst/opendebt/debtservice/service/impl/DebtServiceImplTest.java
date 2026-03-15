@@ -29,9 +29,12 @@ import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
+import dk.ufst.opendebt.debtservice.config.FordringMetrics;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class DebtServiceImplTest {
@@ -43,7 +46,8 @@ class DebtServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new DebtServiceImpl(debtRepository, creditorServiceClient);
+    FordringMetrics fordringMetrics = new FordringMetrics(new SimpleMeterRegistry());
+    service = new DebtServiceImpl(debtRepository, creditorServiceClient, fordringMetrics);
   }
 
   @Test

@@ -1,0 +1,64 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'creditor-service'
+    metrics_path: '/creditor-service/actuator/prometheus'
+    static_configs:
+      - targets: ['creditor-service:8092']
+
+  - job_name: 'debt-service'
+    metrics_path: '/debt-service/actuator/prometheus'
+    static_configs:
+      - targets: ['debt-service:8082']
+
+  - job_name: 'creditor-portal'
+    metrics_path: '/creditor-portal/actuator/prometheus'
+    static_configs:
+      - targets: ['creditor-portal:8085']
+
+  - job_name: 'case-service'
+    metrics_path: '/case-service/actuator/prometheus'
+    static_configs:
+      - targets: ['case-service:8081']
+
+  - job_name: 'payment-service'
+    metrics_path: '/payment-service/actuator/prometheus'
+    static_configs:
+      - targets: ['payment-service:8083']
+
+  - job_name: 'person-registry'
+    metrics_path: '/person-registry/actuator/prometheus'
+    static_configs:
+      - targets: ['person-registry:8090']
+
+  - job_name: 'rules-engine'
+    metrics_path: '/rules-engine/actuator/prometheus'
+    static_configs:
+      - targets: ['rules-engine:8091']
+
+  - job_name: 'integration-gateway'
+    metrics_path: '/integration-gateway/actuator/prometheus'
+    static_configs:
+      - targets: ['integration-gateway:8089']
+
+  - job_name: 'letter-service'
+    metrics_path: '/letter-service/actuator/prometheus'
+    static_configs:
+      - targets: ['letter-service:8084']
+
+  - job_name: 'citizen-portal'
+    metrics_path: '/borger/actuator/prometheus'
+    static_configs:
+      - targets: ['citizen-portal:8086']
+
+  - job_name: 'offsetting-service'
+    metrics_path: '/offsetting-service/actuator/prometheus'
+    static_configs:
+      - targets: ['offsetting-service:8087']
+
+  - job_name: 'wage-garnishment-service'
+    metrics_path: '/wage-garnishment-service/actuator/prometheus'
+    static_configs:
+      - targets: ['wage-garnishment-service:8088']

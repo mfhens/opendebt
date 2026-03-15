@@ -2,7 +2,7 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-14
+  updated_at: 2026-03-15
   updated_by: factory-droid
   status_values:
     - not_started
@@ -69,6 +69,12 @@ program:
         - petition016
         - petition017
         - petition018
+
+    - id: phase-5
+      name: Cross-cutting quality and observability
+      objective: Implement non-functional quality requirements spanning all services, starting with OpenTelemetry-based monitoring and observability.
+      petitions:
+        - petition020
 
   petitions:
     petition001:
@@ -143,52 +149,58 @@ program:
 
     petition008:
       title: Fordringshaver logical and physical data model
-      status: ready_for_implementation
+      status: implemented
       phase: phase-1
       depends_on: []
-      last_reviewed: 2026-03-09
+      last_reviewed: 2026-03-15
       evidence:
         - petition008 outcome contract exists in petitions/petition008-fordringshaver-data-model-outcome-contract.md
         - petition008 feature exists in petitions/petition008-fordringshaver-data-model.feature
         - petition008 includes canonical invariant matrix and value-set decisions for W1 implementation
-      notes: Petition008 is now an executable specification for creditor master-data implementation and now has frozen API-boundary assumptions for W1.
-      next_step: Support W1-BOOT-01 and W1-BOOT-02 if implementation questions arise from the frozen model.
+        - opendebt-creditor-service CreditorEntity and Flyway V1 implement the operational creditor model defined for Wave 1
+        - opendebt-person-registry OrganizationController keeps organization identity outside creditor-service per the petition boundary
+      notes: Petition008 now serves as both the executable specification and the implemented baseline for Wave 1 creditor master-data ownership.
+      next_step: Use petition008 as the reference model for future creditor-service enhancements and downstream creditor-channel work.
 
     petition009:
       title: Dedicated fordringshaver master data service
-      status: in_progress
+      status: validated
       phase: phase-1
       depends_on:
         - petition008
-      last_reviewed: 2026-03-14
+      last_reviewed: 2026-03-15
       evidence:
-        - api-specs/openapi-creditor-service.yaml defines the internal creditor-service boundary
+        - api-specs/openapi-creditor-service.yaml defines the implemented lookup and validation boundary and the next access-resolution contract
         - api-specs/openapi-person-registry-internal.yaml defines the organization lookup contract needed by creditor-service
         - api-specs/openapi-debt-service.yaml now aligns creditorId with technical creditor_org_id UUID semantics
         - W1-BOOT-01 creditor-service module bootstrapped with entities, DTOs, mapper, repository, service, controller
         - W1-BOOT-02 person-registry organization API exposed
         - W1-CRD-01 creditor persistence model with Flyway V1 migration, audit, indexes, constraints
-        - W1-CRD-02 creditor lookup and admin APIs with unit tests
+        - W1-CRD-02 creditor lookup APIs and service layer implemented with unit tests
         - W1-CRD-03 status and permission validation with debt-service client wiring
-        - Cucumber test infrastructure scaffolded with RunCucumberTest, Petition009Steps (13 scenarios, all pending)
-      notes: Core creditor-service implementation is complete (W1-BOOT-01/02, W1-CRD-01/02/03 all done). Only W1-CRD-04 remains - implementing acceptance test step definitions and adding architecture tests.
-      next_step: Execute W1-CRD-04 to implement all 13 Cucumber scenario step definitions, add ArchUnit architecture tests, and configure coverage gate. This unblocks Sprint 2 (W1-ACC-01).
+        - W1-CRD-04 petition009 Cucumber scenarios (12) and CreditorArchitectureTest are implemented and executable
+      notes: Petition009 is now satisfied end-to-end for Wave 1. Reconciliation with the plan narrows W1-CRD-02 to the lookup APIs actually required by petition009; separate admin CRUD endpoints are not required by the petition outcome contract.
+      next_step: Petition009 is complete; only shared Wave 1 hardening work remains under W1-ACC-04.
 
     petition010:
       title: Fordringshaver channel binding and access resolution
-      status: in_progress
+      status: implemented
       phase: phase-1
       depends_on:
         - petition009
-      last_reviewed: 2026-03-14
+      last_reviewed: 2026-03-15
       evidence:
         - W1-ACC-01 channel binding entity, Flyway V2 migration, repository, service, and tests implemented
         - ChannelBindingEntity with audit/history support via database triggers
         - ChannelBindingService with createBinding, resolveAccess, deactivateBinding operations
+        - AccessResolutionRequest and AccessResolutionResponse DTOs plus api-specs/openapi-creditor-service.yaml define the access-resolution contract
         - Access resolution supports direct identity binding and parent-child acting-on-behalf-of
         - 11 unit tests covering binding CRUD, access resolution, hierarchy validation, and error cases
-      notes: W1-ACC-01 (channel binding model) is complete. W1-ACC-02 (access resolution engine and API endpoint) remains to expose the resolution as a REST API.
-      next_step: Execute W1-ACC-02 to expose access-resolution as a REST endpoint and implement full petition010 BDD coverage.
+        - W1-ACC-02 AccessResolutionController exposes POST /api/v1/creditors/access/resolve with security annotations
+        - Petition010 BDD coverage with 3 Cucumber scenarios (bound M2M, parent-child acting-on-behalf-of, unbound rejection) all passing
+        - All 38 creditor-service tests pass (12 petition009 + 3 petition010 + 11 channel binding + 2 app + 10 arch)
+      notes: Petition010 acceptance criteria are now satisfied. The binding model, resolution service logic, REST endpoint, and BDD coverage are all implemented. Downstream consumer adoption (W1-ACC-03) and Wave 1 hardening (W1-ACC-04) remain.
+      next_step: Execute W1-ACC-03 to wire shared access resolution into integration-gateway, creditor-portal, and debt-service, then W1-ACC-04 for CI/local convergence.
 
     petition011:
       title: Fordringshaver M2M ingress via integration-gateway
@@ -202,32 +214,49 @@ program:
 
     petition012:
       title: Fordringshaverportal as BFF and manual submission channel
-      status: ready_for_implementation
+      status: validated
       phase: phase-2
       depends_on:
         - petition009
         - petition010
         - petition013
         - petition014
-      last_reviewed: 2026-03-09
-      next_step: Implement portal as BFF/manual channel only, with accessibility requirements included.
+      last_reviewed: 2026-03-15
+      evidence:
+        - petition012 outcome contract, petition, and feature file (3 scenarios) exist
+        - ADR-0023 accepted for Thymeleaf + HTMX frontend technology
+        - skat-tokens.css with SKAT visual design language placed in creditor-portal static resources
+        - Wave 3 execution backlog created with 9 tickets (W3-SPEC-01 through W3-ACC-01)
+        - petition009 and petition010 dependencies are satisfied (creditor-service and access resolution implemented)
+      notes: Wave 3 execution plan is defined. Portal will use SKAT-aligned layout (dark navy header, breadcrumb, content, footer) with IBM Plex Sans. BFF wires to creditor-service, debt-service, and case-service. Accessibility is addressed in parallel via W3-A11Y-01.
+      next_step: "All Wave 3 tickets (W3-SPEC-01 through W3-ACC-01) completed. 48 tests pass (39 unit + 9 BDD). Portal starts with dev profile and serves all pages. Next is OAuth2 browser flow integration with Keycloak."
 
     petition013:
       title: UI webtilgaengelighed compliance
-      status: ready_for_implementation
+      status: validated
       phase: phase-2
       depends_on: []
-      last_reviewed: 2026-03-09
-      next_step: Apply accessibility requirements to creditor-portal and citizen-portal implementation work.
+      last_reviewed: 2026-03-15
+      evidence:
+        - petition013 outcome contract and feature file (3 scenarios) exist
+        - ADR-0021 defines WCAG 2.1 AA compliance as mandatory
+        - ADR-0023 selects Thymeleaf SSR for maximum HTML control
+        - skat-tokens.css includes skip-link and sr-only utility patterns
+      notes: Accessibility is planned as W3-A11Y-01 within Wave 3 sprint-5. Covers keyboard navigation, form error association, focus management, and CI-integrated accessibility testing.
+      next_step: "W3-A11Y-01 completed. Accessibility infrastructure in place: skip link, landmarks, form-field fragment with aria, a11y.js focus management, /was statement page. 3 BDD scenarios pass."
 
     petition014:
       title: Accessibility statements and feedback for each UI
-      status: ready_for_implementation
+      status: validated
       phase: phase-2
       depends_on:
         - petition013
-      last_reviewed: 2026-03-09
-      next_step: Establish statement rollout and footer/was discoverability conventions for each UI.
+      last_reviewed: 2026-03-15
+      evidence:
+        - petition014 outcome contract and feature file (3 scenarios) exist
+        - skat-tokens.css includes footer pattern for statement link placement
+      notes: Accessibility statement page (/was) and footer discoverability are planned as part of W3-A11Y-01. Statement content will use WAS-Tool template.
+      next_step: "W3-A11Y-01 completed. Accessibility statement at /was with contact info, enforcement link, last-updated date. Footer link discoverable on all pages. 3 BDD scenarios pass."
 
     petition015:
       title: Fordring core claim validation rules
@@ -302,6 +331,20 @@ program:
       notes: W2-RULE-04 complete. Content validation rules implemented for claim amounts (5 rules), sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules), hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and identifiers (3 rules). Rules use pre-resolved content context flags in the validation request; actual lookup integration with configuration service deferred to service layer.
       next_step: Petition018 is complete. All fordring validation rules (petition015-018) are now implemented. W2-SOAP-01 (petition019) can proceed.
 
+    petition020:
+      title: OpenTelemetry-based observability
+      status: in_progress
+      phase: phase-5
+      depends_on: []
+      last_reviewed: 2026-03-15
+      evidence:
+        - petition020 petition, outcome contract, and feature file (12 scenarios) exist
+        - ADR-0024 accepted for Grafana stack (Tempo + Loki + Prometheus + Grafana)
+        - petition020-solution-architecture.md defines 6 slices, deployment architecture, traceability matrix
+        - Wave 4 execution backlog created with 5 tickets (W4-OTEL-01 through W4-OTEL-05)
+      notes: Scoped to creditor-related services first (creditor-service, debt-service, creditor-portal). Framework established in parent POM and opendebt-common for other services to adopt.
+      next_step: Execute W4-OTEL-01 through W4-OTEL-05 via pipeline-conductor.
+
     petition019:
       title: Legacy SOAP endpoints for external creditors
       status: ready_for_implementation
@@ -374,3 +417,119 @@ program:
         requires its own audit infrastructure (triggers, tables). Not fixable
         without violating ADR-0007 (no cross-service DB access).
       notes: Accept as technical debt. Document in ADR-0022.
+
+    - id: TB-004
+      title: Wire Smooks CREMUL/DEBMUL filter pipeline in integration-gateway
+      status: blocked
+      priority: high
+      created: 2026-03-15
+      source: AIDEV-TODO in SkbEdifactServiceImpl.java:76
+      description: |
+        SkbEdifactServiceImpl.parseCremul() returns an empty list. Smooks filter
+        pipeline must be wired once real CREMUL sample files are received from SKB.
+      blockers:
+        - Waiting for real CREMUL sample files from SKB/Bankdata
+      notes: Also includes AIDEV-TODO at line 86 — interchange sender/receiver IDs ("OPENDEBT", "SKB") are hardcoded and must come from configuration.
+
+    - id: TB-005
+      title: Add partial unique index on ocr_line for non-terminal debts
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in DebtEntity.java:69
+      description: |
+        ocr_line is used as the primary key for auto-matching incoming CREMUL payments.
+        A partial unique index on ocr_line WHERE status NOT IN ('PAID','CANCELLED') is
+        needed to prevent duplicate OCR lines for active debts. Requires a Flyway migration.
+
+    - id: TB-006
+      title: Load debt type codes from configuration table
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in DebtServiceImpl.java:133
+      description: |
+        Debt type codes are currently not validated against a configuration source.
+        Should load from a configuration table or ingest_specs equivalent to validate
+        incoming debt type codes at submission time.
+
+    - id: TB-007
+      title: Refactor ReadinessValidationService to avoid concrete impl dependency
+      status: not_started
+      priority: low
+      created: 2026-03-15
+      source: AIDEV-TODO in ReadinessValidationServiceImpl.java:23
+      description: |
+        ReadinessValidationServiceImpl injects DebtServiceImpl (concrete class) directly
+        because DebtService interface does not expose the needed method. Refactor to expose
+        via interface or extract to a separate query service.
+
+    - id: TB-008
+      title: Replace readiness validation stub with Drools rules engine call
+      status: not_started
+      priority: high
+      created: 2026-03-15
+      source: AIDEV-TODO in ReadinessValidationServiceImpl.java:38
+      depends_on:
+        - petition015
+      description: |
+        ReadinessValidationServiceImpl.validateDebt() contains a stub implementation.
+        Must be replaced with a Drools rules engine call (petition015 core validation rules
+        are now implemented). Rules must check mandatory claim data, debtor identity, amounts,
+        dates, and creditor authorization.
+
+    - id: TB-009
+      title: Inject RulesService into OverpaymentRulesServiceImpl
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in OverpaymentRulesServiceImpl.java:27
+      description: |
+        OverpaymentRulesServiceImpl returns a hardcoded PAYOUT default. Must inject
+        RulesService from opendebt-rules-engine and replace with actual overpayment
+        outcome rules (COVER_OTHER_DEBTS, PAYOUT, HOLD).
+
+    - id: TB-010
+      title: Add bookkeeping balance validation (debit == credit per transaction)
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in BookkeepingServiceImpl.java:24
+      description: |
+        Double-entry bookkeeping (ADR-0018) requires that debit sum equals credit sum
+        per transactionId. Add a post-commit validation or database constraint to enforce
+        this invariant.
+
+    - id: TB-011
+      title: Emit event to case-service for manual payment matching task
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in PaymentMatchingServiceImpl.java:91
+      description: |
+        When auto-matching fails and manual matching is needed, the payment-service
+        should emit an event or call case-service to create a caseworker matching task.
+        Currently logs a warning but takes no action.
+
+    - id: TB-012
+      title: Wrap payment matching in saga/outbox pattern
+      status: not_started
+      priority: high
+      created: 2026-03-15
+      source: AIDEV-TODO in PaymentMatchingServiceImpl.java:134
+      description: |
+        Bookkeeping recording and debt write-down are currently sequential REST calls.
+        Both operations must be wrapped in a saga or transactional outbox pattern to
+        guarantee atomicity. A failed write-down after successful bookkeeping leaves
+        inconsistent state.
+
+    - id: TB-013
+      title: Add Resilience4j circuit breaker and retry to payment-service DebtServiceClient
+      status: not_started
+      priority: medium
+      created: 2026-03-15
+      source: AIDEV-TODO in payment-service DebtServiceClient.java:20
+      description: |
+        payment-service's DebtServiceClient calls debt-service REST API without any
+        resilience patterns. Add Resilience4j @CircuitBreaker and @Retry on findByOcrLine
+        and writeDown methods to handle transient failures gracefully.

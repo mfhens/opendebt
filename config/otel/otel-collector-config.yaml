@@ -1,0 +1,67 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: local
+        action: upsert
+
+  # PII filter: remove any attributes that might contain personal data (ADR-0014)
+  attributes/pii:
+    actions:
+      - key: user.cpr
+        action: delete
+      - key: user.cvr
+        action: delete
+      - key: user.name
+        action: delete
+      - key: user.address
+        action: delete
+      - key: user.email
+        action: delete
+      - key: user.phone
+        action: delete
+      - key: enduser.cpr
+        action: delete
+      - key: enduser.cvr
+        action: delete
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/pii, resource, batch]
+      exporters: [otlp/tempo]
+
+    logs:
+      receivers: [otlp]
+      processors: [attributes/pii, resource, batch]
+      exporters: [loki]
+
+    metrics:
+      receivers: [otlp]
+      processors: [attributes/pii, resource, batch]
+      exporters: [prometheusremotewrite]

@@ -15,6 +15,7 @@ import dk.ufst.opendebt.debtservice.client.CreditorAction;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
+import dk.ufst.opendebt.debtservice.config.FordringMetrics;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -30,6 +31,7 @@ public class DebtServiceImpl implements DebtService {
 
   private final DebtRepository debtRepository;
   private final CreditorServiceClient creditorServiceClient;
+  private final FordringMetrics fordringMetrics;
 
   @Override
   public Page<DebtDto> listDebts(
@@ -90,6 +92,7 @@ public class DebtServiceImpl implements DebtService {
             .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
             .build();
     DebtEntity saved = debtRepository.save(entity);
+    fordringMetrics.recordSubmission();
     log.info(
         "Created debt {}, type={}, amount={}",
         saved.getId(),

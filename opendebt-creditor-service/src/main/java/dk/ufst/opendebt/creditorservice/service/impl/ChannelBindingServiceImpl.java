@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import dk.ufst.opendebt.creditorservice.config.AccessResolutionMetrics;
 import dk.ufst.opendebt.creditorservice.dto.*;
 import dk.ufst.opendebt.creditorservice.entity.ChannelBindingEntity;
 import dk.ufst.opendebt.creditorservice.entity.CreditorEntity;
@@ -27,6 +28,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
   private final ChannelBindingRepository channelBindingRepository;
   private final CreditorRepository creditorRepository;
   private final ChannelBindingMapper channelBindingMapper;
+  private final AccessResolutionMetrics accessResolutionMetrics;
 
   @Override
   public ChannelBindingDto createBinding(CreateChannelBindingRequest request) {
@@ -111,6 +113,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
       log.info(
           "AUDIT: action=ACCESS_DENIED, identity={}, reason=UNBOUND_IDENTITY",
           request.getPresentedIdentity());
+      accessResolutionMetrics.recordDenied();
       return AccessResolutionResponse.builder()
           .channelType(request.getChannelType())
           .allowed(false)
@@ -144,6 +147,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
         log.info(
             "AUDIT: action=ACCESS_DENIED, identity={}, reason=REPRESENTED_CREDITOR_NOT_FOUND",
             request.getPresentedIdentity());
+        accessResolutionMetrics.recordDenied();
         return AccessResolutionResponse.builder()
             .channelType(request.getChannelType())
             .actingCreditorOrgId(actingCreditorOrgId)
@@ -161,6 +165,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
             request.getPresentedIdentity(),
             actingCreditor.getId(),
             representedCreditor.getId());
+        accessResolutionMetrics.recordDenied();
         return AccessResolutionResponse.builder()
             .channelType(request.getChannelType())
             .actingCreditorOrgId(actingCreditorOrgId)
@@ -177,6 +182,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
           request.getPresentedIdentity(),
           actingCreditorOrgId,
           request.getRepresentedCreditorOrgId());
+      accessResolutionMetrics.recordAllowed();
       return AccessResolutionResponse.builder()
           .channelType(request.getChannelType())
           .actingCreditorOrgId(actingCreditorOrgId)
@@ -190,6 +196,7 @@ public class ChannelBindingServiceImpl implements ChannelBindingService {
         "AUDIT: action=ACCESS_GRANTED, identity={}, actingCreditorOrgId={}",
         request.getPresentedIdentity(),
         actingCreditorOrgId);
+    accessResolutionMetrics.recordAllowed();
     return AccessResolutionResponse.builder()
         .channelType(request.getChannelType())
         .actingCreditorOrgId(actingCreditorOrgId)

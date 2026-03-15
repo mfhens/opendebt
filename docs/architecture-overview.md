@@ -77,7 +77,7 @@ OpenDebt treats creditor interaction as two separate channels: **M2M/STP by defa
 
 - `integration-gateway` owns external M2M ingress via DUPLA
 - `debt-service` owns `fordring` submission and lifecycle
-- `creditor-service` (planned) owns non-PII `fordringshaver` master data and channel binding
+- `creditor-service` owns non-PII `fordringshaver` master data and channel binding
 - `creditor-portal` is a UI/BFF only, not a master-data system of record
 - `person-registry` remains the source of organization identity and PII-like data
 
@@ -367,6 +367,16 @@ flowchart LR
 | Mapping | MapStruct | 1.5.5 |
 | Code style | Spotless (Google Java Format) | 2.43.0 |
 | Coverage | JaCoCo (80% line, 70% branch) | 0.8.12 |
+| Portal templates | Thymeleaf | 3 (Spring Boot managed) |
+| Progressive enhancement | HTMX | 2.x |
+| Design system | DKFDS (Det Fælles Designsystem) | 11.x |
+| Tracing | Micrometer Tracing + OpenTelemetry OTLP | Spring Boot managed |
+| Structured logging | Logstash Logback Encoder | 8.0 |
+| Metrics backend | Prometheus | latest (Docker) |
+| Trace backend | Grafana Tempo | latest (Docker) |
+| Log backend | Grafana Loki | latest (Docker) |
+| Dashboards | Grafana OSS | latest (Docker) |
+| Telemetry relay | OpenTelemetry Collector Contrib | latest (Docker) |
 
 ## Services
 
@@ -412,6 +422,8 @@ flowchart LR
 | DebtServiceImpl | Done | Full CRUD + findByOcrLine + writeDown |
 | ReadinessValidationService | Done | Calls rules-engine for evaluation |
 | DebtRepository | Done | JPA with filtering indexes |
+| FordringMetrics | Done | `fordring_submissions_total` counter (ADR-0024) |
+| logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
 | Flyway migration V1 | Done | Debts, debt_types, audit, history |
 | Flyway migration V2 | Done | ocr_line (unique), outstanding_balance |
 
@@ -597,13 +609,16 @@ flowchart LR
 |-----------|--------|-------|
 | CreditorEntity / model | Done | Implements Petition 008 operational data model |
 | ChannelBindingEntity / model | Done | Binds M2M and portal identities to creditors |
-| CreditorController | Done | Internal APIs for lookup and administration |
+| CreditorController | Done | Lookup and action-validation APIs |
+| AccessResolutionController | Done | POST /api/v1/creditors/access/resolve (petition010) |
 | CreditorService / CreditorServiceImpl | Done | Creditor lookup, hierarchy, action validation |
 | ChannelBindingService / ChannelBindingServiceImpl | Done | Channel binding CRUD, access resolution |
 | CreditorMapper / ChannelBindingMapper | Done | MapStruct mappers |
 | CreditorRepository | Done | JPA with filtering indexes |
 | ChannelBindingRepository | Done | JPA repository |
 | SecurityConfig | Done | OAuth2 resource server, actuator/swagger permitted |
+| AccessResolutionMetrics | Done | `creditor_access_resolution_total` counter (tags: result=allowed/denied) |
+| logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
 | Flyway migration V1 | Done | `creditors`, audit, history |
 | Flyway migration V2 | Done | `channel_bindings`, audit, history |
 
@@ -611,6 +626,7 @@ flowchart LR
 - `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference
 - `GET /api/v1/creditors/by-external-id/{externalCreditorId}` - Resolve creditor by legacy external ID
 - `POST /api/v1/creditors/{creditorOrgId}/validate-action` - Validate creditor status and permissions
+- `POST /api/v1/creditors/access/resolve` - Resolve acting and represented creditor for a channel request (petition010)
 
 ---
 
@@ -664,14 +680,38 @@ flowchart LR
 
 **Accessibility requirement:** Must comply with ADR-0021 and the applicable requirements from EN 301 549 / WCAG 2.1 AA, and must have its own accessibility statement.
 
-**Implementation status:** SCAFFOLD ONLY
+**Implementation status:** PARTIALLY IMPLEMENTED
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | CreditorPortalApplication | Done | Spring Boot app |
-| application.yml | Done | References debt-service, case-service |
-| BFF/API aggregation | Planned | Reads creditor master data from creditor-service |
-| Controllers/Views | Not started | |
+| application.yml | Done | References debt-service, case-service, creditor-service |
+| SKAT design tokens CSS | Done | `static/css/skat-tokens.css` — color palette, spacing, typography tokens from skat.dk design language (ADR-0023) |
+| WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
+| CreditorServiceClient | Done | REST client for creditor-service (getByCreditorOrgId, resolveAccess) |
+| DebtServiceClient | Done | REST client for debt-service (listDebts, createDebt) |
+| CaseServiceClient | Done | REST client for case-service (listCases) |
+| Portal DTOs | Done | PortalCreditorDto, PortalDebtDto, PortalCaseDto, FordringFormDto, AccessResolutionRequest/Response, RestPage |
+| FordringMapper | Done | Maps FordringFormDto + creditorOrgId → PortalDebtDto for DebtServiceClient |
+| PortalSessionService | Done | Resolves acting creditor for session; acting-on-behalf-of enforcement via CreditorServiceClient.resolveAccess(); session caching; graceful fallback |
+| AccessibilityController | Done | `GET /was` → accessibility statement page (petition014) |
+| Accessibility statement | Done | `templates/was.html` — Danish WCAG 2.1 AA statement with contact info, enforcement link, last-updated date |
+| Form-field fragment | Done | `templates/fragments/form-field.html` — reusable accessible form pattern with aria-describedby |
+| Focus management JS | Done | `static/js/a11y.js` — HTMX afterSwap focus management for screen readers |
+| **Unit tests** | **Done** | 39 unit tests across 9 test classes |
+| **BDD acceptance tests** | **Done** | 9 Cucumber scenarios: petition012 (3), petition013 (3), petition014 (3) |
+| SecurityConfig (permissive) | Done | Permits all requests for dev/demo without Keycloak (ADR-0023 browser flow TBD) |
+| logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
+| Thymeleaf layout + HTMX | Done | `spring-boot-starter-thymeleaf`, `thymeleaf-layout-dialect`, `htmx.org` WebJar (ADR-0023) |
+| SKAT layout template | Done | `templates/layout/default.html` — skip link, header, breadcrumb, main, footer with `/was` link |
+| DashboardController | Done | `GET /` → index.html with creditor profile card, shortcuts, acting-on-behalf-of selector (`?actAs=`); graceful fallback when backend unavailable |
+| FordringController | Done | `GET /fordring/ny` → fordring-ny.html form; `POST /fordring/ny` → validate + submit to DebtServiceClient; success redirect with flash; backend error display |
+| PortalPagesController | Done | `GET /fordringer`, `GET /sager` → placeholder pages |
+| Dashboard template | Done | SKAT-style creditor profile card (status badge), shortcuts to fordring/sager, acting-on-behalf-of selector/indicator |
+| Fordring form template | Done | `templates/fordring-ny.html` — accessible form with skat-tokens.css, Bean Validation error display, breadcrumb |
+| Fordringer placeholder | Done | `templates/fordringer.html` — "Dine fordringer" with placeholder table, success flash alert |
+| Sager placeholder | Done | `templates/sager.html` — "Dine sager" with placeholder table |
+| Error page | Done | `templates/error.html` extending SKAT layout |
 
 ---
 
@@ -759,6 +799,7 @@ See the Communication Pattern diagram above.
 ## Deployment
 
 - **Local:** Docker Compose with all services, PostgreSQL 16, Keycloak 24
+- **Observability stack (ADR-0024):** Separate `docker-compose.observability.yml` (merged with `-f`), containing OTel Collector, Grafana Tempo, Grafana Loki, Prometheus, and Grafana OSS. All 12 services are instrumented with Micrometer Tracing + OpenTelemetry OTLP export, structured JSON logging (logback-spring.xml with traceId/spanId), and Prometheus metrics. Prometheus scrapes all 12 service `/actuator/prometheus` endpoints. Config files under `config/otel/`, `config/tempo/`, `config/loki/`, `config/prometheus/`, `config/grafana/`.
 - **Kubernetes:** Kustomize-based with base + staging/production overlays
   - Namespace: `opendebt`
   - Service discovery via internal DNS
@@ -796,6 +837,9 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0019 | Orchestration over Event-Driven Architecture |
 | 0020 | Creditor Channel and Master Data Architecture |
 | 0021 | UI Accessibility and Webtilgængelighed Compliance |
+| 0022 | Shared Audit Infrastructure |
+| 0023 | Creditor Portal Frontend Technology (Thymeleaf + HTMX) |
+| 0024 | Observability Backend Stack (Grafana + Prometheus + Loki + Tempo) |
 
 ## Unit Tests
 
@@ -808,6 +852,20 @@ Pre-defined API specs (API-first, ADR-0004):
 | SkbEdifactServiceImplTest | integration-gateway | 6 | CREMUL parsing, DEBMUL generation, UTF-8 |
 | DebtServiceImplTest | debt-service | 8 | findByOcrLine, writeDown, balance clamping, status transitions |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
+| CreditorServiceClientTest | creditor-portal | 5 | Creditor lookup, access resolution, error handling |
+| DebtServiceClientTest | creditor-portal | 5 | Debt listing, creation, validation errors, server errors |
+| CaseServiceClientTest | creditor-portal | 2 | Case listing, server error handling |
+| DashboardControllerTest | creditor-portal | 6 | Dashboard with creditor profile, acting creditor resolution, fallback on backend unavailable |
+| PortalPagesControllerTest | creditor-portal | 2 | Fordringer and sager placeholder view names |
+| FordringControllerTest | creditor-portal | 4 | Form display, validation errors, successful submission, backend error handling |
+| PortalSessionServiceTest | creditor-portal | 11 | Acting creditor resolution, access allowed/denied, backend fallback, session management |
+| FordringMapperTest | creditor-portal | 2 | Full field mapping, null description handling |
+| AccessibilityControllerTest | creditor-portal | 1 | Accessibility statement view name |
+| RunCucumberTest (petition012) | creditor-portal | 3 | Portal reads creditor profile, manual fordring submission to debt-service, unrelated fordringshaver rejection |
+| RunCucumberTest (petition013) | creditor-portal | 3 | Keyboard-only navigation structure, accessible form validation with aria, accessibility release gate |
+| RunCucumberTest (petition014) | creditor-portal | 3 | Discoverable accessibility statement link, accessible contact path without MitID, statement maintenance date |
+| AccessResolutionMetricsTest | creditor-service | 4 | Counter registration, allowed/denied increments, independence |
+| FordringMetricsTest | debt-service | 2 | Counter registration, submission increments |
 
 ## Implementation Summary
 
@@ -815,15 +873,15 @@ Pre-defined API specs (API-first, ADR-0004):
 |---------|--------|-----------|-----------|---------------|
 | opendebt-common | Done | 6 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
-| debt-service | Done | 6 | 10 | V1, V2 |
+| debt-service | Done | 7 | 10 | V1, V2 |
 | case-service | Done | 10 | 8 | V1 |
 | rules-engine | Done | 16 | 534 | V1 |
 | payment-service | Partial | 22 | 1 | V1, V2, V3 |
 | integration-gateway | Partial | 7 | 2 | - |
-| creditor-service | Done | 32 | 3 | V1, V2 |
+| creditor-service | Done | 34 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | Scaffold | 1 | 0 | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
-| creditor-portal | Scaffold | 1 | 0 | - |
+| creditor-portal | Partial | 22 | 5 | 3 (petition012/013/014) |
 | citizen-portal | Scaffold | 1 | 0 | - |
-| **Total** | | **105** | **34** | **12** |
+| **Total** | | **129** | **40** | **15** |

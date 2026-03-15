@@ -128,37 +128,15 @@ class CreditorArchitectureTest {
           .resideInAPackage("..repository..");
 
   // ========================================================================================
-  // GDPR data isolation (ADR-0014)
+  // Shared rules from opendebt-common (ADR-0007, ADR-0014)
   // ========================================================================================
 
   @ArchTest
-  static final ArchRule entities_should_not_store_pii =
-      noFields()
-          .that()
-          .areDeclaredInClassesThat()
-          .areAnnotatedWith(Entity.class)
-          .should()
-          .haveNameMatching(".*(?i)(cprNumber|cvrNumber|personName|address|email|phone).*")
-          .as(
-              "Entities must not store PII directly (ADR-0014). "
-                  + "Use person-registry UUID references instead.");
-
-  // ========================================================================================
-  // Cross-service isolation (ADR-0007)
-  // ========================================================================================
+  static final ArchRule entities_must_not_store_pii =
+      dk.ufst.opendebt.common.test.SharedArchRules.ENTITIES_MUST_NOT_STORE_PII;
 
   @ArchTest
-  static final ArchRule no_dependency_on_other_service_repositories =
-      noClasses()
-          .that()
-          .resideInAPackage("dk.ufst.opendebt.creditorservice..")
-          .should()
-          .dependOnClassesThat()
-          .resideInAnyPackage(
-              "dk.ufst.opendebt.debtservice..repository..",
-              "dk.ufst.opendebt.personregistry..repository..",
-              "dk.ufst.opendebt.payment..repository..")
-          .as(
-              "Creditor-service must not access other services' repositories directly (ADR-0007). "
-                  + "Use API clients instead.");
+  static final ArchRule no_cross_service_db_access =
+      dk.ufst.opendebt.common.test.SharedArchRules.noAccessToOtherServiceRepositories(
+          "creditorservice");
 }

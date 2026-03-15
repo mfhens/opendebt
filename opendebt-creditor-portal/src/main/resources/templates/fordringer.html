@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      lang="da">
+<head>
+  <title>Dine fordringer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">Fordringer</span>
+  <section layout:fragment="content">
+    <h1>Dine fordringer</h1>
+
+    <!-- Success flash message from fordring submission -->
+    <div th:if="${successMessage != null}"
+         class="skat-alert skat-alert--success" role="status">
+      <p><span class="ikon ikon-ok" aria-hidden="true"></span> <span th:text="${successMessage}">Fordringen er indsendt.</span></p>
+    </div>
+
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <table class="skat-table">
+          <thead>
+            <tr>
+              <th scope="col">Type</th>
+              <th scope="col">Hovedstol</th>
+              <th scope="col">Udestående</th>
+              <th scope="col">Forfaldsdato</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(debts)}">
+              <td colspan="5">Ingen fordringer fundet.</td>
+            </tr>
+            <tr th:each="debt : ${debts}">
+              <td th:text="${debt.debtTypeCode}">SKAT</td>
+              <td th:text="${#numbers.formatDecimal(debt.principalAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK'">0,00 DKK</td>
+              <td th:text="${debt.outstandingBalance != null ? #numbers.formatDecimal(debt.outstandingBalance, 1, 'COMMA', 2, 'POINT') + ' DKK' : '-'}">0,00 DKK</td>
+              <td th:text="${debt.dueDate}">2025-01-01</td>
+              <td>
+                <span th:text="${debt.status}"
+                      th:classappend="${debt.status == 'PAID'} ? ' skat-badge--success' : (${debt.status == 'DISPUTED' or debt.status == 'CANCELLED'} ? ' skat-badge--error' : ' skat-badge--warning')"
+                      class="skat-badge">
+                  STATUS
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> Opret ny fordring</a>
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}"><span class="ikon ikon-arrow-right" aria-hidden="true"></span> Tilbage til forsiden</a>
+    </p>
+  </section>
+</body>
+</html>

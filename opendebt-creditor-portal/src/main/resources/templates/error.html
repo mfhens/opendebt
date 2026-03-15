@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      lang="da">
+<head>
+  <title>Fejl</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">Fejl</span>
+  <section layout:fragment="content">
+    <h1>Der opstod en fejl</h1>
+    <div class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${error != null ? error : 'En uventet fejl opstod. Prøv venligst igen senere.'}">
+        En uventet fejl opstod.
+      </p>
+    </div>
+    <p>
+      <a class="skat-btn skat-btn--primary" th:href="@{/}">Tilbage til forsiden</a>
+    </p>
+  </section>
+</body>
+</html>

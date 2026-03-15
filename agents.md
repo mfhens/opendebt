@@ -171,17 +171,37 @@ Use correct Danish terminology in code and documentation:
 - Test business logic in isolation
 
 ### Architecture Tests
+
+**Shared rules** are defined in `opendebt-common/src/test/java/.../SharedArchRules.java` and enforced across all 12 services:
+
+- **ADR-0014 (GDPR):** `ENTITIES_MUST_NOT_STORE_PII` — bans PII field names (cpr, cvr, name, address, email, phone) in `@Entity` classes. Applied to all services except person-registry (the GDPR vault).
+- **ADR-0007 (DB isolation):** `noAccessToOtherServiceRepositories("myservice")` — prevents any service from importing another service's repository classes. Applied to all 12 services.
+
+Each service has a thin `*ArchitectureTest.java` that references the shared rules:
+
 ```java
-@AnalyzeClasses(packages = "dk.ufst.opendebt")
-class ArchitectureTest {
-    
-    @ArchTest
-    static final ArchRule controllers_should_not_access_repositories =
-        noClasses()
-            .that().resideInAPackage("..controller..")
-            .should().accessClassesThat().resideInAPackage("..repository..");
+@AnalyzeClasses(packages = "dk.ufst.opendebt.myservice", importOptions = ImportOption.DoNotIncludeTests.class)
+class MyServiceArchitectureTest {
+    @ArchTest static final ArchRule pii = SharedArchRules.ENTITIES_MUST_NOT_STORE_PII;
+    @ArchTest static final ArchRule db  = SharedArchRules.noAccessToOtherServiceRepositories("myservice");
 }
 ```
+
+**When adding a new service:** create this test class referencing `SharedArchRules`. If the service has a `..client..` package with WebClient, also add the trace propagation rule from `PortalArchitectureTest`.
+
+**Trace propagation rule (ADR-0024):** Services with inter-service clients must prevent `WebClient.create()`:
+
+```java
+@ArchTest
+static final ArchRule clients_must_use_injected_webclient_builder =
+    noClasses()
+        .that().resideInAPackage("..client..")
+        .should().callMethod(WebClient.class, "create")
+        .orShould().callMethod(WebClient.class, "create", String.class)
+        .as("Service clients must inject WebClient.Builder for trace propagation (ADR-0024).");
+```
+
+See `CreditorArchitectureTest` (full layered architecture + shared rules) and `PortalArchitectureTest` (WebClient guard) for reference.
 
 ### Integration Tests
 - Use Testcontainers for external dependencies
@@ -223,6 +243,9 @@ Letters are sent via Digital Post:
 ## Common Patterns
 
 ### Service Client Pattern
+
+**CRITICAL (ADR-0024 / Trace Propagation):** Always inject `WebClient.Builder` — never use `WebClient.create()`. The Spring-managed builder carries Micrometer Tracing filters that automatically propagate W3C `traceparent` headers across inter-service calls. Without this, distributed traces break and requests cannot be correlated across services. This is enforced by ArchUnit tests.
+
 ```java
 @Component
 @RequiredArgsConstructor
@@ -241,6 +264,15 @@ public class DebtServiceClient {
             .block();
     }
 }
+```
+
+```java
+// WRONG — breaks distributed tracing (no trace context propagation)
+WebClient client = WebClient.create(baseUrl);
+
+// CORRECT — Spring-managed builder with Micrometer tracing filters
+private final WebClient.Builder webClientBuilder; // injected via constructor
+WebClient client = webClientBuilder.build();
 ```
 
 ### Pagination
@@ -298,6 +330,8 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0020: Creditor Channel and Master Data Architecture
 - ADR-0021: UI Accessibility and Webtilgaengelighed Compliance
 - ADR-0022: Shared Audit Infrastructure
+- ADR-0023: Creditor Portal Frontend Technology (Thymeleaf + HTMX)
+- ADR-0024: Observability Backend Stack (Grafana + Prometheus + Loki + Tempo)
 
 ## Standard Components
 

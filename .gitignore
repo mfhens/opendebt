@@ -65,3 +65,13 @@ dependency-check-report.*
 
 # Docker
 docker-compose.override.yml
+
+# Demo scripts runtime
+.demo-pids/
+.demo-logs/
+.demo-pgdata/
+
+# Proprietary SKAT fonts (not distributable in open-source repo)
+opendebt-creditor-portal/src/main/resources/static/fonts/academy-sans/
+opendebt-creditor-portal/src/main/resources/static/fonts/republic/
+opendebt-creditor-portal/src/main/resources/static/fonts/dap-ikon-font.*

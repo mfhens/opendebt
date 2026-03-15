@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dk.ufst.opendebt.creditorservice.config.AccessResolutionMetrics;
 import dk.ufst.opendebt.creditorservice.dto.*;
 import dk.ufst.opendebt.creditorservice.entity.ChannelBindingEntity;
 import dk.ufst.opendebt.creditorservice.entity.CreditorEntity;
@@ -35,6 +36,7 @@ class ChannelBindingServiceImplTest {
   @Mock private ChannelBindingRepository channelBindingRepository;
   @Mock private CreditorRepository creditorRepository;
   @Mock private ChannelBindingMapper channelBindingMapper;
+  @Mock private AccessResolutionMetrics accessResolutionMetrics;
 
   @InjectMocks private ChannelBindingServiceImpl channelBindingService;
 

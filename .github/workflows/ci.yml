@@ -127,6 +127,7 @@ jobs:
       matrix:
         service:
           - opendebt-case-service
+          - opendebt-creditor-service
           - opendebt-debt-service
           - opendebt-creditor-portal
           - opendebt-citizen-portal
@@ -135,6 +136,7 @@ jobs:
           - opendebt-offsetting-service
           - opendebt-wage-garnishment-service
           - opendebt-integration-gateway
+          - opendebt-person-registry
     steps:
       - uses: actions/checkout@v4
 

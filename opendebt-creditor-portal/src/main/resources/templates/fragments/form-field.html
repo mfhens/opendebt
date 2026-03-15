@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
+<body>
+  <!--
+    Accessible form field fragment.
+    Parameters:
+      fieldId    – unique identifier used for input id, label for, and error aria-describedby
+      labelText  – visible label text
+      fieldName  – form field name (for th:field binding)
+      fieldType  – input type (text, email, number, etc.), defaults to "text"
+      fieldValue – current value (optional)
+      errorMsg   – error message to display (null/empty hides the error)
+
+    Usage:
+      <div th:replace="~{fragments/form-field :: formField(
+          fieldId='debtAmount',
+          labelText='Beløb',
+          fieldName='amount',
+          fieldType='number',
+          fieldValue=${form.amount},
+          errorMsg=${#fields.hasErrors('amount') ? #fields.errors('amount')[0] : null})}">
+      </div>
+  -->
+  <div th:fragment="formField(fieldId, labelText, fieldName, fieldType, fieldValue, errorMsg)"
+       class="skat-form-group">
+    <label class="skat-label"
+           th:for="${fieldId}"
+           th:text="${labelText}">Feltnavn</label>
+    <input th:id="${fieldId}"
+           th:name="${fieldName}"
+           th:type="${fieldType != null ? fieldType : 'text'}"
+           th:value="${fieldValue}"
+           th:classappend="${errorMsg != null and !errorMsg.isEmpty()} ? 'skat-input--error'"
+           th:aria-describedby="${fieldId + '-error'}"
+           th:aria-invalid="${errorMsg != null and !errorMsg.isEmpty()} ? 'true' : 'false'"
+           class="skat-input" />
+    <span th:id="${fieldId + '-error'}"
+          class="skat-error-message"
+          role="alert"
+          th:if="${errorMsg != null and !errorMsg.isEmpty()}"
+          th:text="${errorMsg}">Fejlmeddelelse</span>
+  </div>
+</body>
+</html>

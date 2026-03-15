@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      lang="da">
+<head>
+  <title>Tilgængelighedserklæring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">Tilgængelighedserklæring</span>
+  <section layout:fragment="content">
+    <h1>Tilgængelighedserklæring for OpenDebt Fordringshaverportal</h1>
+
+    <div class="skat-card">
+      <div class="skat-card__title">Overensstemmelsesstatus</div>
+      <div class="skat-card__body">
+        <p>Denne webapplikation er <strong>delvis overensstemmende</strong> med
+          <strong>WCAG 2.1 niveau AA</strong> i henhold til den harmoniserede europæiske standard
+          EN 301 549 v3.2.1.</p>
+        <p>Utilgængeligt indhold og kendte begrænsninger beskrives nedenfor.</p>
+      </div>
+    </div>
+
+    <h2>Ikke-tilgængeligt indhold</h2>
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <p>Følgende indhold er endnu ikke fuldt tilgængeligt:</p>
+        <ul>
+          <li>Komplekse datatabeller mangler muligvis fuldstændig markup for skærmlæsere.</li>
+          <li>Visse dynamiske opdateringer via HTMX annonceres muligvis ikke korrekt til
+            hjælpeteknologier.</li>
+        </ul>
+        <p>Vi arbejder løbende på at udbedre disse forhold.</p>
+      </div>
+    </div>
+
+    <h2>Grundlag for erklæringen</h2>
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <p>Denne erklæring er udarbejdet med udgangspunkt i en selvvurdering foretaget af
+          udviklingsteamet. Applikationen er testet med følgende metoder:</p>
+        <ul>
+          <li>Manuel tastaturnavigation</li>
+          <li>Skærmlæsertest (NVDA, VoiceOver)</li>
+          <li>Automatiserede tilgængelighedsværktøjer</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Kontaktoplysninger</h2>
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <p>Hvis du oplever tilgængelighedsproblemer på denne portal, er du velkommen til at
+          kontakte os:</p>
+        <ul>
+          <li>E-mail: <a href="mailto:tilgaengelighed@opendebt.dk">tilgaengelighed@opendebt.dk</a></li>
+          <li>Telefon: +45 72 22 18 18</li>
+        </ul>
+        <p>Vi bestræber os på at besvare henvendelser inden for 10 arbejdsdage.</p>
+      </div>
+    </div>
+
+    <h2>Håndhævelsesprocedure</h2>
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <p>Hvis du ikke er tilfreds med vores svar på din henvendelse, kan du klage til
+          Digitaliseringsstyrelsen:</p>
+        <p><a href="https://www.was.digst.dk/" target="_blank" rel="noopener noreferrer">
+          Digitaliseringsstyrelsen — Webtilgængelighed (was.digst.dk)</a></p>
+      </div>
+    </div>
+
+    <h2>Denne erklæring</h2>
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <p>Denne tilgængelighedserklæring er senest opdateret den
+          <time datetime="2026-03-15">15. marts 2026</time>.</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

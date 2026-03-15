@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      lang="da">
+<head>
+  <title>Forside</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">Forside</span>
+  <section layout:fragment="content">
+    <h1>Fordringshaverportal</h1>
+
+    <!-- Backend error -->
+    <div th:if="${backendError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${backendError}">Backend-fejl.</span></p>
+    </div>
+
+    <!-- Acting-on-behalf-of denied alert -->
+    <div th:if="${actAsDeniedMessage != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${actAsDeniedMessage}">Adgang nægtet.</span></p>
+    </div>
+
+    <!-- Everything below requires creditor data from the backend -->
+    <th:block th:if="${creditor != null}">
+
+    <!-- Acting-on-behalf-of indicator -->
+    <div th:if="${representedCreditorOrgId != null}"
+         class="skat-alert skat-alert--info" role="status">
+      <p><span class="ikon ikon-information" aria-hidden="true"></span> Du handler på vegne af fordringshaver:
+        <strong th:text="${representedCreditorOrgId}">org-id</strong>
+      </p>
+    </div>
+
+    <!-- Acting-on-behalf-of selector (shown when creditor has a parent) -->
+    <div th:if="${showActingSelector}" class="skat-card" style="margin-bottom: 1rem;">
+      <div class="skat-card__title">Handle på vegne af</div>
+      <div class="skat-card__body">
+        <form method="get" th:action="@{/}">
+          <div class="skat-form-group">
+            <label class="skat-label" for="actAs">Fordringshaver-ID (UUID)</label>
+            <input id="actAs" name="actAs" type="text" class="skat-input"
+                   aria-describedby="actAs-help"
+                   placeholder="Indtast fordringshaver-UUID" />
+            <span id="actAs-help" class="skat-form-hint">
+              Angiv UUID for den fordringshaver, du ønsker at handle på vegne af.
+            </span>
+          </div>
+          <button type="submit" class="skat-btn skat-btn--secondary">Skift fordringshaver</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Creditor profile card -->
+    <h2>Fordringshaverprofil</h2>
+    <div class="skat-card">
+      <div class="skat-card__title" th:text="'Fordringshaver: ' + ${creditor.externalCreditorId}">
+        Fordringshaver: DEMO-001
+      </div>
+      <div class="skat-card__body">
+        <table class="skat-table">
+          <tbody>
+            <tr>
+              <th scope="row">Eksternt ID</th>
+              <td th:text="${creditor.externalCreditorId}">DEMO-001</td>
+            </tr>
+            <tr>
+              <th scope="row">Status</th>
+              <td>
+                <span th:text="${creditor.activityStatus}"
+                      th:classappend="${creditor.activityStatus == 'ACTIVE'} ? ' skat-badge--success' : (${creditor.activityStatus == 'INACTIVE'} ? ' skat-badge--error' : ' skat-badge--warning')"
+                      class="skat-badge">
+                  ACTIVE
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Forbindelsestype</th>
+              <td th:text="${creditor.connectionType}">PORTAL</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Shortcuts section -->
+    <h2>Genveje</h2>
+    <div class="skat-card-grid">
+      <div class="skat-card">
+        <span class="ikon ikon-tilfoej skat-card__icon" aria-hidden="true"></span>
+        <div class="skat-card__title">Opret fordring</div>
+        <div class="skat-card__body">
+          <p>Indsend en ny fordring til inddrivelse.</p>
+          <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> Opret fordring</a>
+        </div>
+      </div>
+      <div class="skat-card">
+        <span class="ikon ikon-gaeld skat-card__icon" aria-hidden="true"></span>
+        <div class="skat-card__title">Se fordringer</div>
+        <div class="skat-card__body">
+          <p>Se og administrer dine indsendte fordringer.</p>
+          <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}"><span class="ikon ikon-se" aria-hidden="true"></span> Se fordringer</a>
+        </div>
+      </div>
+      <div class="skat-card">
+        <span class="ikon ikon-henvendelser skat-card__icon" aria-hidden="true"></span>
+        <div class="skat-card__title">Se sager</div>
+        <div class="skat-card__body">
+          <p>Følg status på inddrivelsessager.</p>
+          <a class="skat-btn skat-btn--secondary" th:href="@{/sager}"><span class="ikon ikon-se" aria-hidden="true"></span> Se sager</a>
+        </div>
+      </div>
+    </div>
+
+    </th:block><!-- end creditor != null -->
+  </section>
+</body>
+</html>

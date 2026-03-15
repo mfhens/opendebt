@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      lang="da">
+<head>
+  <title>Opret ny fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/fordringer}">Fordringer</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    Opret ny fordring
+  </span>
+  <section layout:fragment="content">
+    <h1>Opret ny fordring</h1>
+
+    <!-- Acting-on-behalf-of indicator -->
+    <div th:if="${representedCreditorOrgId != null}"
+         class="skat-alert skat-alert--info" role="status">
+      <p>Du handler på vegne af fordringshaver:
+        <strong th:text="${representedCreditorOrgId}">org-id</strong>
+      </p>
+    </div>
+
+    <!-- Backend error alert -->
+    <div th:if="${backendError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${backendError}">Fejl ved indsendelse.</p>
+    </div>
+
+    <form method="post" th:action="@{/fordring/ny}" th:object="${fordringForm}" novalidate="novalidate">
+
+      <!-- Global validation error summary -->
+      <div th:if="${#fields.hasAnyErrors()}"
+           class="skat-alert skat-alert--error" role="alert">
+        <p>Der er fejl i formularen. Ret venligst nedenstående felter.</p>
+      </div>
+
+      <!-- Skyldner-ID (debtor person ID) -->
+      <div class="skat-form-group">
+        <label class="skat-label" for="debtorPersonId">Skyldner-ID (UUID)</label>
+        <input id="debtorPersonId" type="text" class="skat-input"
+               th:field="*{debtorPersonId}"
+               th:classappend="${#fields.hasErrors('debtorPersonId')} ? 'skat-input--error'"
+               th:aria-describedby="'debtorPersonId-error'"
+               th:aria-invalid="${#fields.hasErrors('debtorPersonId')} ? 'true' : 'false'" />
+        <span id="debtorPersonId-error" class="skat-error-message" role="alert"
+              th:if="${#fields.hasErrors('debtorPersonId')}"
+              th:text="${#fields.errors('debtorPersonId')[0]}">Fejl</span>
+      </div>
+
+      <!-- Beløb (principal amount) -->
+      <div class="skat-form-group">
+        <label class="skat-label" for="principalAmount">Beløb (DKK)</label>
+        <input id="principalAmount" type="number" class="skat-input"
+               th:field="*{principalAmount}"
+               th:classappend="${#fields.hasErrors('principalAmount')} ? 'skat-input--error'"
+               th:aria-describedby="'principalAmount-error'"
+               th:aria-invalid="${#fields.hasErrors('principalAmount')} ? 'true' : 'false'" />
+        <span id="principalAmount-error" class="skat-error-message" role="alert"
+              th:if="${#fields.hasErrors('principalAmount')}"
+              th:text="${#fields.errors('principalAmount')[0]}">Fejl</span>
+      </div>
+
+      <!-- Fordringstype (debt type code) -->
+      <div class="skat-form-group">
+        <label class="skat-label" for="debtTypeCode">Fordringstype</label>
+        <input id="debtTypeCode" type="text" class="skat-input"
+               th:field="*{debtTypeCode}"
+               th:classappend="${#fields.hasErrors('debtTypeCode')} ? 'skat-input--error'"
+               th:aria-describedby="'debtTypeCode-error'"
+               th:aria-invalid="${#fields.hasErrors('debtTypeCode')} ? 'true' : 'false'" />
+        <span id="debtTypeCode-error" class="skat-error-message" role="alert"
+              th:if="${#fields.hasErrors('debtTypeCode')}"
+              th:text="${#fields.errors('debtTypeCode')[0]}">Fejl</span>
+      </div>
+
+      <!-- Forfaldsdato (due date) -->
+      <div class="skat-form-group">
+        <label class="skat-label" for="dueDate">Forfaldsdato</label>
+        <input id="dueDate" type="date" class="skat-input"
+               th:field="*{dueDate}"
+               th:classappend="${#fields.hasErrors('dueDate')} ? 'skat-input--error'"
+               th:aria-describedby="'dueDate-error'"
+               th:aria-invalid="${#fields.hasErrors('dueDate')} ? 'true' : 'false'" />
+        <span id="dueDate-error" class="skat-error-message" role="alert"
+              th:if="${#fields.hasErrors('dueDate')}"
+              th:text="${#fields.errors('dueDate')[0]}">Fejl</span>
+      </div>
+
+      <!-- Beskrivelse (description, optional) -->
+      <div class="skat-form-group">
+        <label class="skat-label" for="description">Beskrivelse (valgfri)</label>
+        <input id="description" type="text" class="skat-input"
+               th:field="*{description}" />
+      </div>
+
+      <div class="skat-form-group">
+        <button type="submit" class="skat-btn skat-btn--primary">Indsend fordring</button>
+        <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}">Annuller</a>
+      </div>
+    </form>
+  </section>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title layout:title-pattern="$CONTENT_TITLE - OpenDebt Fordringshaverportal">OpenDebt Fordringshaverportal</title>
+  <link rel="stylesheet" th:href="@{/css/skat-tokens.css}" />
+  <script th:src="@{/webjars/htmx.org/2.0.4/dist/htmx.min.js}" defer></script>
+  <script th:src="@{/js/a11y.js}" defer></script>
+</head>
+<body>
+  <div class="skat-page">
+
+    <!-- Skip link for accessibility (ADR-0021) -->
+    <a class="skat-skip-link" href="#main-content">Gå til hovedindhold</a>
+
+    <!-- Header -->
+    <header class="skat-header" role="banner">
+      <div class="skat-header__inner">
+        <a class="skat-header__logo" th:href="@{/}">OpenDebt</a>
+        <nav class="skat-header__nav" aria-label="Hovednavigation">
+          <a th:href="@{/}"><span class="ikon ikon-borger" aria-hidden="true"></span> Borger</a>
+          <a th:href="@{/}"><span class="ikon ikon-erhverv" aria-hidden="true"></span> Erhverv</a>
+          <a th:href="@{/}"><span class="ikon ikon-soeg" aria-hidden="true"></span> Søg</a>
+          <a th:href="@{/}"><span class="ikon ikon-log-ind" aria-hidden="true"></span> Log på</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="skat-breadcrumb" role="navigation" aria-label="Brødkrumme">
+      <div class="skat-breadcrumb__inner">
+        <a th:href="@{/}">Forside</a>
+        <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+        <span layout:fragment="breadcrumb">Side</span>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <main id="main-content" class="skat-content" role="main">
+      <section layout:fragment="content">
+        <!-- Child pages replace this section -->
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="skat-footer" role="contentinfo">
+      <div class="skat-footer__inner">
+        <a th:href="@{/was}"><span class="ikon ikon-hjaelp" aria-hidden="true"></span> Tilgængelighedserklæring</a>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>
