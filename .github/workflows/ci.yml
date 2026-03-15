@@ -121,7 +121,7 @@ jobs:
   build-images:
     name: Build Docker Images
     needs: [ code-quality, security-scan ]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && secrets.CONTAINER_REGISTRY != ''
     runs-on: ubuntu-latest
     strategy:
       matrix:

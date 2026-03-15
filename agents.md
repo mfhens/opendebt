@@ -332,6 +332,7 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0022: Shared Audit Infrastructure
 - ADR-0023: Creditor Portal Frontend Technology (Thymeleaf + HTMX)
 - ADR-0024: Observability Backend Stack (Grafana + Prometheus + Loki + Tempo)
+- ADR-0025: Maven Build Tool
 
 ## Standard Components
 

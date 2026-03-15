@@ -22,7 +22,7 @@ We use the following technology stack:
 - **Spring Security** - OAuth2 Resource Server for Keycloak integration
 
 ### Build & Quality
-- **Maven** - Standard build tool at UFST
+- **Maven** - See ADR-0025 for build tool decision
 - **Spotless** - Code formatting (Google Java Style)
 - **JaCoCo** - Code coverage (80% line, 70% branch minimum)
 - **ArchUnit** - Architecture testing

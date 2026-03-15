@@ -840,6 +840,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0022 | Shared Audit Infrastructure |
 | 0023 | Creditor Portal Frontend Technology (Thymeleaf + HTMX) |
 | 0024 | Observability Backend Stack (Grafana + Prometheus + Loki + Tempo) |
+| 0025 | Maven Build Tool |
 
 ## Unit Tests
 
