@@ -106,13 +106,13 @@ function Stop-JavaServices {
     Write-Status "Stopping Java services..."
     if (Test-Path $PidDir) {
         Get-ChildItem "$PidDir\*.pid" -ErrorAction SilentlyContinue | ForEach-Object {
-            $pid = [int](Get-Content $_.FullName)
+            $procId = [int](Get-Content $_.FullName)
             $name = $_.BaseName
             try {
-                $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
                 if ($proc) {
-                    Write-Host "  Stopping $name (PID $pid)"
-                    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                    Write-Host "  Stopping $name (PID $procId)"
+                    Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
                 }
             } catch {}
             Remove-Item $_.FullName -Force
@@ -217,6 +217,14 @@ foreach ($db in $Databases) {
     }
 }
 Write-Ok "  Databases ready."
+
+# --- Activate mise environment (if available) for Java + Maven ---
+$miseCmd = Get-Command mise -ErrorAction SilentlyContinue
+if ($miseCmd) {
+    Write-Host "  Activating mise environment..."
+    $miseEnv = & $miseCmd.Source env --shell pwsh 2>$null
+    if ($miseEnv) { $miseEnv | Invoke-Expression }
+}
 
 # --- Step 4: Build JARs ---
 Write-Status "[4/6] Building service JARs..."
