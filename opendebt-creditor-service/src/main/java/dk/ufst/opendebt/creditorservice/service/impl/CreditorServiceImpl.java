@@ -92,6 +92,15 @@ public class CreditorServiceImpl implements CreditorService {
     return creditorRepository.findByCreditorOrgId(creditorOrgId).map(creditorMapper::toDto);
   }
 
+  @Override
+  public List<CreditorDto> listActive() {
+    return creditorRepository
+        .findByActivityStatusOrderByExternalCreditorIdAsc(ActivityStatus.ACTIVE)
+        .stream()
+        .map(creditorMapper::toDto)
+        .toList();
+  }
+
   private boolean isCreditorActive(CreditorEntity creditor) {
     return creditor.getActivityStatus() == ActivityStatus.ACTIVE;
   }

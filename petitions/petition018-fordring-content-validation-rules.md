@@ -108,6 +108,50 @@ Beyond structure, dates, authorization, and references, the Fordring system must
 - PSRM and DMI routing status is determined by claim type and fordringshaver configuration
 - These rules execute after lifecycle rules (petition017) pass
 
+## PSRM Reference Context
+
+### PSRM Interest Rules
+
+Cross-reference of petition interest validation rules against PSRM's official interest regime (ref: [Renteregler](https://gaeldst.dk/fordringshaver/find-vejledning/renteregler)):
+
+| RenteRegel | RenteSatsKode | PSRM Meaning | Petition Rule |
+|---|---|---|---|
+| **001** | **98** | Ingen renteberegning — PSRM does not calculate interest on this claim. | Rule 436: MerRenteSats must only be provided for specific codes (03, 04, 07); code 98 implies no rate. |
+| **001** | **03** | Merrentesats p.a. — creditor-specified additional annual interest rate applied on top of standard inddrivelsesrente. | Rule 436: MerRenteSats is allowed for code 03. Rule 442 validates the code is valid for PSRM. |
+| **001** | **10** | Morarente før 01.08.2002 — legacy default interest rate for claims originating before August 2002. | Rule 442: validates this as a valid PSRM RenteSatsKode. |
+| **001** | **20** | Procesrente — statutory interest rate applied during legal proceedings. | Rule 442: validates this as a valid PSRM RenteSatsKode. |
+| **002** | **99** | Fordringshaver beregner selv — the creditor calculates interest independently; PSRM does not perform any interest calculation. | Rule 441: RenteRegel 002 must use RenteSatsKode 99 with MerRenteSats 00 or empty. |
+
+**Inddrivelsesrente (2026)**: 5.75% p.a., calculated as simpel dag-til-dag rente (simple day-to-day interest) on the hovedstol. This rate is set annually by Gældsstyrelsen and applies to all claims under RenteRegel 001 unless overridden by a specific RenteSatsKode.
+
+**Key PSRM constraints for interest:**
+- **Bøder** (straffelovsbøder/criminal fines) are completely exempt from inddrivelsesrente — no interest is ever calculated on fines. This maps to rule 443 (NO_INTEREST_ON_FORDRING_TYPE) which validates that the claim type is interest-bearing.
+- **Renteberegning cannot be changed after submission** — if the wrong interest configuration is submitted, the creditor must withdraw with FEJL and resubmit with correct parameters. This aligns with the petition's design where interest rules are validated at submission time (rules 436, 441, 442, 443).
+
+### Hovedstol Rules
+
+PSRM rules for principal amount management (ref: [Regulering af fordringer — Opskriv](https://gaeldst.dk/fordringshaver/find-vejledning/regulering-af-fordringer/)):
+
+| Constraint | PSRM Rule | Petition Rule |
+|---|---|---|
+| **FejlagtighovedstolIndberetning: only to higher amount** | When correcting an incorrectly reported principal, the new amount must be higher than the current hovedstol. The indberettet beløb becomes the new hovedstol (it is the absolute new value, not the difference). | Rule 510 (FEJLAGTIG_HOVEDSTOL_INDBETALING_BELOEB_FOR_LAVT) validates that the new amount exceeds the previous. |
+| **Saldo cannot exceed hovedstol** | The outstanding balance (saldo/restgæld) of a claim can never exceed its registered hovedstol in PSRM. If it would, the creditor must first perform a FHI opskrivning. | Implicit in the validation chain — opskrivning rules (petition017) and amount rules (rule 227) ensure consistency. |
+| **Opskrivning of renter NOT allowed** | Interest amounts cannot be increased via opskrivning. If additional interest is owed beyond what PSRM calculates, the creditor must submit it as a new related fordring (underfordring). | Rule 474 in petition017 (OPSKRIVNING_ON_RENTE_NOT_ALLOWED) enforces this PSRM constraint. |
+| **FHI struktur required** | The AENDRFORDRING action with FHI must include the FejlagtighovedstolIndberetning struktur containing the new hovedstol amount. | Rule 517 (FEJLAGTIG_HOVEDSTOL_INDBERETNING_STRUKTUR_MISSING) validates structure presence. |
+| **No FHI on withdrawn claims** | Hovedstol corrections cannot be applied to claims that have been withdrawn. | Rule 518 (FHI_TILBAGEKALD_NOT_REJECTED_ON_RELATEDCLAIM) blocks this. |
+
+### Nedskriv Constraints
+
+PSRM rules for claim amount decreases (ref: [Regulering af fordringer — Nedskriv](https://gaeldst.dk/fordringshaver/find-vejledning/regulering-af-fordringer/)):
+
+| Constraint | PSRM Rule | Petition Rule |
+|---|---|---|
+| **Cannot nedskrive more than restsaldo** | A nedskrivning amount cannot exceed the remaining balance (restsaldo) of the claim. If attempted, the action is rejected (afvises) by PSRM. | Rule 408 (NEDSKRIVNING_TOO_SMALL) ensures amount > 0; the upper bound is enforced by PSRM at processing time. |
+| **REGU: virkningsdato from modtagelsesdato** | For regulatory decreases (REGU), the effective date is always automatically set to the claim's original modtagelsesdato. The creditor must NOT provide an explicit virkningsdato. | Rule 519 (NEDSKRIV_REGU_VIRKNING_DATO_NONEMPTY) rejects nedskrivninger with REGU that include a VirkningsDato. |
+| **INDB: requires virkningsdato = indbetalingsdato** | For payment-based decreases (INDB), the creditor must provide a virkningsdato equal to the actual date of payment (indbetalingsdato). This is mandatory for correct interest calculation. | Rules 409/464/548 in petition015 validate VirkningsDato presence and range; INDB-specific matching is enforced at processing. |
+| **REGU at fordring level only** | The REGU reason code can only be applied at the fordring (claim) level, not at the hæftelse (liability) level. | Rule 410 (CAUSE_CODE_ERROR) enforces this restriction. |
+| **FAST not allowed for PSRM** | The ÅrsagKode FAST (used for legacy DMI scenarios) cannot be used for claims routed to PSRM. | Rule 571 (AARSAGSKODE_FAST_NOT_ON_PSRM_CLAIMS) blocks this. |
+
 ## Out of scope
 
 - Core claim structure validation (covered in petition015)

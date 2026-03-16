@@ -38,6 +38,73 @@ Before a submitted fordring can become an active debt in OpenDebt, it must pass 
 - “Keep bookkeeping updated” is intentionally kept at a high level and does not define accounts, postings, or booking sequence.
 - If authentication, access control, or inddrivelsesparathed validation fails, no debt post is created.
 
+## PSRM Reference Context
+
+The following reference material from Gældsstyrelsen's PSRM documentation provides concrete domain constraints that inform the implementation of fordring creation in OpenDebt.
+
+**Source:** [Generelle krav til fordringer](https://gaeldst.dk/fordringshaver/find-vejledning/generelle-krav-til-fordringer)
+
+### Stamdata requirements
+
+PSRM requires or supports the following 22 stamdata fields when creating/submitting a fordring:
+
+| # | Stamdatafelt | Obligatorisk / Valgfri | Notes |
+|---|---|---|---|
+| 1 | Beløb | Obligatorisk | Fordringens restgæld ved overdragelse |
+| 2 | Hovedstol | Obligatorisk | Fordringens oprindelige pålydende |
+| 3 | Fordringshaver | Obligatorisk | Kreditor for fordringen |
+| 4 | Fordringshaver Reference | Obligatorisk | Unikt referencenummer (sagsnummer + evt. løbenummer) |
+| 5 | Fordringsart | Obligatorisk | INDR (inddrivelse) eller MODR (kun modregning). Kun INDR i PSRM |
+| 6 | Fordringstype (kode) | Obligatorisk | Kode der beskriver retligt grundlag (fx PSRESTS = restskat) |
+| 7 | HovedfordringsID | Obligatorisk | Knytter relateret fordring til hovedfordring |
+| 8 | Identifikation af skyldner | Obligatorisk | CPR, CVR/SE eller AKR nummer |
+| 9 | Forældelsesdato | Obligatorisk | Sidste dag fordringen er retskraftig; skal afspejle aktuel dato ved oversendelse |
+| 10 | Beskrivelse | Afhængig af fordringstype | Fritekst max 100 tegn; medtages i breve til skyldner |
+| 11 | Fordringsperiode | Afhængig af fordringstype | Start- og sluttidspunkt; perioder defineret af lovgivning |
+| 12 | Stiftelsesdato | Afhængig af fordringstype | Tidspunkt for retsstiftende begivenhed |
+| 13 | Forfaldsdato | Afhængig af fordringstype | Tidligste tidspunkt fordring kan kræves betalt |
+| 14 | Sidste rettidige betalingsdato (SRB) | Afhængig af fordringstype | Seneste betalingstidspunkt uden misligholdelse; henstand/betalingsordning ændrer SRB, rykkerskrivelser udskyder IKKE SRB |
+| 15 | Bobehandling | Valgfri (S2S) / Obligatorisk (portal) | Om fordring er omfattet af bobehandling |
+| 16 | Domsdato | Valgfri | Dato for domsafsigelse (kun ved forældelseslovens §5 stk 1 nr 3) |
+| 17 | Forligsdato | Valgfri | Dato for forligsaftale |
+| 18 | Rentevalg | Valgfri | Renteregel, rentesatskode, rentesats |
+| 19 | Fordringsnote | Valgfri | Sagsrelevante bemærkninger til Gældsstyrelsen |
+| 20 | Fordringsdokumenter | Valgfri | Dokumentation for fordringens eksistens |
+| 21 | Kundenote | Valgfri | Information om skyldner |
+| 22 | P-nummer | Valgfri | Produktionsenhed/lokation |
+
+**GDPR constraint on Beskrivelse:** The field is max 100 characters and must NOT contain personal data (CPR, names, addresses) of persons other than the skyldner. Only the first 6 digits of another person's CPR may be included if required by the aftalegrundlag.
+
+### Pre-submission requirements
+
+Before a fordring may be submitted for inddrivelse, the following conditions must be met:
+
+1. **Sædvanlig rykkerprocedure** must have been completed without result (forgæves)
+2. **Skriftlig underretning** to the skyldner is required before overdragelse — may be embedded in the opkrævning/rykkerskrivelse
+3. **Hovedfordringer must be separated** from renter og lignende ydelser (rente, provisioner, gebyrer) — each submitted as separate fordringer in their correct fordringstype
+4. **Fordringer must be submitted individually** — two or more fordringer must NOT be aggregated into one; fordringer with different lovgrundlag must not be mixed (affects forældelsesfrist)
+
+### Submission outcomes
+
+When a fordring is received, the system returns a **kvittering** containing:
+
+- The assigned **fordrings-ID**
+- Any **hæftelsesforhold** and **AKR-nummer**
+- A **slutstatus**:
+  - **UDFØRT** — fordring accepted and received for inddrivelse
+  - **AFVIST** — fordring rejected (failed validation)
+  - **HØRING** — stamdata deviates from indgangsfilter rules; claim enters the hearing workflow (see below)
+
+### Hearing workflow (fordringer i høring)
+
+When stamdata deviates from the indgangsfilter rules, the fordring enters **høring** rather than being accepted or rejected outright:
+
+- The fordring is placed in a waiting position under "Fordringer i høring" in the fordringshaverportal with status **"Afventer fordringshaver"**
+- **The fordring is NOT received for inddrivelse** while in høring — fordringshaver's own forældelsesregler apply until stamdata is resolved
+- The fordringshaver must either **approve** the submission (with written justification) or **withdraw** it (fortryd) and resubmit with corrected stamdata
+- If approved, status changes to **"Afventer RIM"** and a Gældsstyrelsen caseworker decides: godkend, afvis, or tilpas indgangsfilter
+- Gældsstyrelsen treats all fordringer i høring **within 14 days**
+
 ## Out of scope
 
 - Detailed OCES3 certificate onboarding, issuance, and lifecycle management

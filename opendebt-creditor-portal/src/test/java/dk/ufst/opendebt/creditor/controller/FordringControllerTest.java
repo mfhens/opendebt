@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
@@ -32,6 +33,7 @@ class FordringControllerTest {
 
   @Mock private DebtServiceClient debtServiceClient;
   @Mock private FordringMapper fordringMapper;
+  @Mock private MessageSource messageSource;
   @Mock private PortalSessionService portalSessionService;
 
   @InjectMocks private FordringController controller;
@@ -82,6 +84,8 @@ class FordringControllerTest {
     when(fordringMapper.toDebtRequest(form, ACTING_CREDITOR)).thenReturn(debtRequest);
     when(debtServiceClient.createDebt(debtRequest))
         .thenReturn(PortalDebtDto.builder().id(UUID.randomUUID()).build());
+    when(messageSource.getMessage(eq("controller.fordring.submitted"), any(), any()))
+        .thenReturn("Fordringen er indsendt.");
 
     Model model = new ConcurrentModel();
     RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
@@ -125,6 +129,8 @@ class FordringControllerTest {
     when(fordringMapper.toDebtRequest(form, ACTING_CREDITOR)).thenReturn(debtRequest);
     when(debtServiceClient.createDebt(debtRequest))
         .thenThrow(new RuntimeException("Connection refused"));
+    when(messageSource.getMessage(eq("controller.fordring.submit.error"), any(), any()))
+        .thenReturn("Fordringen kunne ikke indsendes. Prøv igen senere.");
 
     Model model = new ConcurrentModel();
     RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();

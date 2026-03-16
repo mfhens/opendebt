@@ -79,6 +79,35 @@ These are "static" validation rules that can be evaluated without complex servic
 - Debtor validation requires a call to the person registry service
 - Error codes must be numeric and match fordring error code enumeration
 
+## PSRM Reference Context
+
+### PSRM Stamdata Field Definitions
+
+The validation rules in this petition correspond to the following official PSRM stamdata field definitions (ref: [Generelle krav til fordringer](https://gaeldst.dk/fordringshaver/find-vejledning/generelle-krav-til-fordringer)):
+
+| Stamdata Field | PSRM Definition | Petition Relevance |
+|---|---|---|
+| **Beløb** | Restgæld at overdragelse (numeric). The outstanding debt balance at the time of submission to Gældsstyrelsen. | Validated by amount rules (petition018), but core structure must carry the field. |
+| **Hovedstol** | Original pålydende — the original face value of the claim as established by the creditor. | Referenced in opskrivning/nedskrivning structure validation (rules 404, 406, 407, 412). |
+| **Fordringstype (kode)** | Describes the retligt grundlag (legal basis) for the claim, e.g. `PSRESTS` = restskat. Each code maps to specific validation rules and interest regimes. | Validated against fordringshaveraftale in rule 151 (TYPE_AGREEMENT_MISSING). |
+| **Fordringsart** | `INDR` (inddrivelse/collection) or `MODR` (modregning/offsetting). Note: only `INDR` exists in PSRM; `MODR` is a legacy DMI concept. | Directly validated by rule 411 (FORDRING_TYPE_ERROR). |
+| **SRB** (Seneste rettidige betalingsdato) | Seneste betalingstidspunkt uden misligholdelse. Henstand or betalingsordning changes SRB; rykkerskrivelser do NOT affect SRB. | Part of date validation logic; SRB consistency checked in downstream rules. |
+| **Forældelsesdato** | Must reflect the current limitation date at the time of oversendelse to Gældsstyrelsen, not the original limitation date. | Validated by date range rules (rules 568, 569) ensuring dates are within valid bounds. |
+| **Stiftelsesdato** | Tidspunkt for den retsstiftende begivenhed — the date of the legally constitutive event that gave rise to the claim. | Part of stamdata consistency checks; must be ≥ 1900-01-01 per rule 568. |
+| **Beskrivelse** | Free-text description, max 100 characters, must not contain PII (GDPR compliance). | Validated by content rules in petition018; GDPR constraint aligns with ADR-0014. |
+
+### PSRM Submission Outcomes
+
+When a claim passes validation and is submitted to PSRM, the system returns a **kvittering** (receipt) with a unique fordrings-ID. The submission outcome status can be:
+
+| Status | Meaning | Petition Mapping |
+|---|---|---|
+| **UDFØRT** | Accepted — the claim has been successfully registered in PSRM. | Corresponds to successful validation (no error codes triggered). |
+| **AFVIST** | Rejected — the claim failed validation or business rules. | Corresponds to any of the error codes in this petition (e.g., 152, 411, 438, etc.) being triggered. |
+| **HØRING** | Pending review — the claim requires manual caseworker review before acceptance. | Not directly mapped to validation rules; occurs post-validation for certain claim types. |
+
+These outcomes map directly to the petition's error code return model: each rejected claim returns a specific numeric error code with a Danish description, mirroring PSRM's AFVIST response pattern.
+
 ## Out of scope
 
 - Claimant permission/authorization validation (covered in petition016)

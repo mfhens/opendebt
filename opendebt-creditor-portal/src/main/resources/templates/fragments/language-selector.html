@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
+<body>
+  <div th:fragment="languageSelector"
+       th:if="${orderedSupportedLocales.size() > 1}"
+       class="skat-lang-ribbon">
+    <div class="skat-lang-ribbon__inner"
+         role="group"
+         th:aria-label="#{layout.lang.selector.group}">
+      <svg class="skat-lang-globe" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2Zm6.929 9h-3.012a15.023 15.023 0 0 0-1.597-5.028A8.027 8.027 0 0 1 18.93 11ZM12 4.07c.955 1.104 2.257 3.556 2.892 6.93H9.108C9.743 7.626 11.045 5.174 12 4.07ZM4.07 13h3.013a15.023 15.023 0 0 0 1.597 5.028A8.027 8.027 0 0 1 4.07 13Zm3.013-2H4.07a8.027 8.027 0 0 1 4.61-5.028A15.023 15.023 0 0 0 7.083 11Zm.025 2h5.784c-.635 3.374-1.937 5.826-2.892 6.93-.955-1.104-2.257-3.556-2.892-6.93Zm7.212 5.028A15.023 15.023 0 0 0 15.917 13h3.012a8.027 8.027 0 0 1-4.609 5.028Z"
+              fill="currentColor" />
+      </svg>
+      <ul class="skat-lang-list">
+        <li th:each="loc : ${orderedSupportedLocales}"
+            th:with="langCode=${T(java.util.Locale).forLanguageTag(loc).language}, current=${#locale.language == langCode}">
+          <a th:href="${'?lang=' + loc}"
+             th:aria-current="${current} ? 'page' : null"
+             th:classappend="${current} ? ' skat-lang-list--current'">
+            <span class="skat-lang-check" aria-hidden="true" th:if="${current}">&#10003;</span>
+            <span th:text="${localeNativeNames.containsKey(langCode) ? localeNativeNames.get(langCode) : loc}">Dansk</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

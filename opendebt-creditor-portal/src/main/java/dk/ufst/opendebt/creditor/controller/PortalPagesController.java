@@ -28,6 +28,9 @@ public class PortalPagesController {
   @GetMapping("/fordringer")
   public String fordringer(Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
+    if (actingCreditor == null) {
+      return "redirect:/demo-login";
+    }
     List<PortalDebtDto> debts = loadDebts(actingCreditor);
     model.addAttribute("debts", debts);
     return "fordringer";

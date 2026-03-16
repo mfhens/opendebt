@@ -23,6 +23,13 @@ public class CreditorController {
 
   private final CreditorService creditorService;
 
+  @GetMapping
+  @PreAuthorize("hasRole('SERVICE') or hasRole('CASEWORKER') or hasRole('ADMIN')")
+  @Operation(summary = "List all active creditors")
+  public ResponseEntity<List<CreditorDto>> listActive() {
+    return ResponseEntity.ok(creditorService.listActive());
+  }
+
   @GetMapping("/{creditorOrgId}")
   @PreAuthorize("hasRole('SERVICE') or hasRole('CASEWORKER') or hasRole('ADMIN')")
   @Operation(

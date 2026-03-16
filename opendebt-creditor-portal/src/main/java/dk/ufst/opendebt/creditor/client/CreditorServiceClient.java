@@ -1,8 +1,11 @@
 package dk.ufst.opendebt.creditor.client;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -26,6 +29,22 @@ public class CreditorServiceClient {
       WebClient.Builder webClientBuilder,
       @Value("${opendebt.services.creditor-service.url:http://localhost:8092}") String baseUrl) {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
+  }
+
+  public List<PortalCreditorDto> listAllActive() {
+    try {
+      List<PortalCreditorDto> result =
+          webClient
+              .get()
+              .uri("/creditor-service/api/v1/creditors")
+              .retrieve()
+              .bodyToMono(new ParameterizedTypeReference<List<PortalCreditorDto>>() {})
+              .block();
+      return result != null ? result : Collections.emptyList();
+    } catch (Exception ex) {
+      log.warn("Failed to list creditors: {}", ex.getMessage());
+      return Collections.emptyList();
+    }
   }
 
   public PortalCreditorDto getByCreditorOrgId(UUID creditorOrgId) {

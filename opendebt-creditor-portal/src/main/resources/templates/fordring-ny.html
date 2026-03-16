@@ -2,23 +2,23 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/default}"
-      lang="da">
+      th:lang="${#locale.language}" lang="da">
 <head>
-  <title>Opret ny fordring</title>
+  <title th:text="#{claim.new.page.title}">Opret ny fordring</title>
 </head>
 <body>
   <span layout:fragment="breadcrumb">
-    <a th:href="@{/fordringer}">Fordringer</a>
+    <a th:href="@{/fordringer}" th:text="#{claim.new.breadcrumb.parent}">Fordringer</a>
     <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
-    Opret ny fordring
+    <span th:text="#{claim.new.breadcrumb.current}">Opret ny fordring</span>
   </span>
   <section layout:fragment="content">
-    <h1>Opret ny fordring</h1>
+    <h1 th:text="#{claim.new.heading}">Opret ny fordring</h1>
 
     <!-- Acting-on-behalf-of indicator -->
     <div th:if="${representedCreditorOrgId != null}"
          class="skat-alert skat-alert--info" role="status">
-      <p>Du handler på vegne af fordringshaver:
+      <p><span th:text="#{claim.new.acting.indicator}">Du handler på vegne af fordringshaver:</span>
         <strong th:text="${representedCreditorOrgId}">org-id</strong>
       </p>
     </div>
@@ -34,12 +34,12 @@
       <!-- Global validation error summary -->
       <div th:if="${#fields.hasAnyErrors()}"
            class="skat-alert skat-alert--error" role="alert">
-        <p>Der er fejl i formularen. Ret venligst nedenstående felter.</p>
+        <p th:text="#{claim.new.validation.summary}">Der er fejl i formularen. Ret venligst nedenstående felter.</p>
       </div>
 
       <!-- Skyldner-ID (debtor person ID) -->
       <div class="skat-form-group">
-        <label class="skat-label" for="debtorPersonId">Skyldner-ID (UUID)</label>
+        <label class="skat-label" for="debtorPersonId" th:text="#{claim.new.label.debtorPersonId}">Skyldner-ID (UUID)</label>
         <input id="debtorPersonId" type="text" class="skat-input"
                th:field="*{debtorPersonId}"
                th:classappend="${#fields.hasErrors('debtorPersonId')} ? 'skat-input--error'"
@@ -52,7 +52,7 @@
 
       <!-- Beløb (principal amount) -->
       <div class="skat-form-group">
-        <label class="skat-label" for="principalAmount">Beløb (DKK)</label>
+        <label class="skat-label" for="principalAmount" th:text="#{claim.new.label.principalAmount}">Beløb (DKK)</label>
         <input id="principalAmount" type="number" class="skat-input"
                th:field="*{principalAmount}"
                th:classappend="${#fields.hasErrors('principalAmount')} ? 'skat-input--error'"
@@ -65,7 +65,7 @@
 
       <!-- Fordringstype (debt type code) -->
       <div class="skat-form-group">
-        <label class="skat-label" for="debtTypeCode">Fordringstype</label>
+        <label class="skat-label" for="debtTypeCode" th:text="#{claim.new.label.debtTypeCode}">Fordringstype</label>
         <input id="debtTypeCode" type="text" class="skat-input"
                th:field="*{debtTypeCode}"
                th:classappend="${#fields.hasErrors('debtTypeCode')} ? 'skat-input--error'"
@@ -78,7 +78,7 @@
 
       <!-- Forfaldsdato (due date) -->
       <div class="skat-form-group">
-        <label class="skat-label" for="dueDate">Forfaldsdato</label>
+        <label class="skat-label" for="dueDate" th:text="#{claim.new.label.dueDate}">Forfaldsdato</label>
         <input id="dueDate" type="date" class="skat-input"
                th:field="*{dueDate}"
                th:classappend="${#fields.hasErrors('dueDate')} ? 'skat-input--error'"
@@ -91,14 +91,14 @@
 
       <!-- Beskrivelse (description, optional) -->
       <div class="skat-form-group">
-        <label class="skat-label" for="description">Beskrivelse (valgfri)</label>
+        <label class="skat-label" for="description" th:text="#{claim.new.label.description}">Beskrivelse (valgfri)</label>
         <input id="description" type="text" class="skat-input"
                th:field="*{description}" />
       </div>
 
       <div class="skat-form-group">
-        <button type="submit" class="skat-btn skat-btn--primary">Indsend fordring</button>
-        <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}">Annuller</a>
+        <button type="submit" class="skat-btn skat-btn--primary" th:text="#{claim.new.btn.submit}">Indsend fordring</button>
+        <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}" th:text="#{claim.new.btn.cancel}">Annuller</a>
       </div>
     </form>
   </section>

@@ -59,6 +59,12 @@ logging:
     dk.ufst.opendebt: INFO
 
 opendebt:
+  i18n:
+    default-locale: da-DK
+    supported-locales:
+      - da-DK
+      - en-GB
+      - uk-UA
   creditor:
     max-batch-size: 1000
     allowed-debt-types-file: classpath:debt-types.json

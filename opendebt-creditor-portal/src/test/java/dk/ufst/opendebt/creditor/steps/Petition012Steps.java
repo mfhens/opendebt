@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
@@ -47,6 +48,7 @@ public class Petition012Steps {
 
   private CreditorServiceClient creditorServiceClient;
   private DebtServiceClient debtServiceClient;
+  private MessageSource messageSource;
   private PortalSessionService portalSessionService;
   private DashboardController dashboardController;
   private FordringController fordringController;
@@ -64,11 +66,29 @@ public class Petition012Steps {
   public void setUp() {
     creditorServiceClient = Mockito.mock(CreditorServiceClient.class);
     debtServiceClient = Mockito.mock(DebtServiceClient.class);
+    messageSource = Mockito.mock(MessageSource.class);
+    when(messageSource.getMessage(
+            Mockito.eq("controller.dashboard.backend.unavailable"), any(), any()))
+        .thenReturn("Backend-tjenesten er ikke tilgængelig. Kontroller at creditor-service kører.");
+    when(messageSource.getMessage(
+            Mockito.eq("controller.dashboard.creditor.notfound"), any(), any()))
+        .thenReturn("Fordringshaver ikke fundet for orgId. Kontroller seed-data.");
+    when(messageSource.getMessage(Mockito.eq("controller.dashboard.access.denied"), any(), any()))
+        .thenReturn("Adgang nægtet: Du har ikke tilladelse.");
+    when(messageSource.getMessage(
+            Mockito.eq("controller.dashboard.access.denied.default"), any(), any()))
+        .thenReturn("Du har ikke tilladelse til at handle på vegne af denne fordringshaver.");
+    when(messageSource.getMessage(Mockito.eq("controller.fordring.submitted"), any(), any()))
+        .thenReturn("Fordringen er indsendt.");
+    when(messageSource.getMessage(Mockito.eq("controller.fordring.submit.error"), any(), any()))
+        .thenReturn("Fordringen kunne ikke indsendes. Prøv igen senere.");
     portalSessionService = new PortalSessionService(creditorServiceClient);
     fordringMapper = new FordringMapper();
-    dashboardController = new DashboardController(creditorServiceClient, portalSessionService);
+    dashboardController =
+        new DashboardController(creditorServiceClient, messageSource, portalSessionService);
     fordringController =
-        new FordringController(debtServiceClient, fordringMapper, portalSessionService);
+        new FordringController(
+            debtServiceClient, fordringMapper, messageSource, portalSessionService);
     session = new MockHttpSession();
     model = new ConcurrentModel();
     viewResult = null;
@@ -83,6 +103,7 @@ public class Petition012Steps {
   @Given("portal user {string} is bound to fordringshaver {string}")
   public void portalUserBoundToFordringshaver(String userId, String creditorAlias) {
     boundCreditorOrgId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    session.setAttribute("actingCreditorOrgId", boundCreditorOrgId);
     PortalCreditorDto creditor =
         PortalCreditorDto.builder()
             .id(UUID.randomUUID())

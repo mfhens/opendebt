@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/default}"
-      lang="da">
+      th:lang="${#locale.language}" lang="da">
 <head>
-  <title>Forside</title>
+  <title th:text="#{dashboard.page.title}">Forside</title>
 </head>
 <body>
-  <span layout:fragment="breadcrumb">Forside</span>
+  <span layout:fragment="breadcrumb" th:text="#{dashboard.breadcrumb}">Forside</span>
   <section layout:fragment="content">
-    <h1>Fordringshaverportal</h1>
+    <h1 th:text="#{dashboard.title}">Fordringshaverportal</h1>
 
     <!-- Backend error -->
     <div th:if="${backendError != null}"
@@ -29,45 +29,46 @@
     <!-- Acting-on-behalf-of indicator -->
     <div th:if="${representedCreditorOrgId != null}"
          class="skat-alert skat-alert--info" role="status">
-      <p><span class="ikon ikon-information" aria-hidden="true"></span> Du handler på vegne af fordringshaver:
+      <p><span class="ikon ikon-information" aria-hidden="true"></span> <span th:text="#{dashboard.acting.indicator}">Du handler på vegne af fordringshaver:</span>
         <strong th:text="${representedCreditorOrgId}">org-id</strong>
       </p>
     </div>
 
     <!-- Acting-on-behalf-of selector (shown when creditor has a parent) -->
     <div th:if="${showActingSelector}" class="skat-card" style="margin-bottom: 1rem;">
-      <div class="skat-card__title">Handle på vegne af</div>
+      <div class="skat-card__title" th:text="#{dashboard.acting.title}">Handle på vegne af</div>
       <div class="skat-card__body">
         <form method="get" th:action="@{/}">
           <div class="skat-form-group">
-            <label class="skat-label" for="actAs">Fordringshaver-ID (UUID)</label>
+            <label class="skat-label" for="actAs" th:text="#{dashboard.acting.label}">Fordringshaver-ID (UUID)</label>
             <input id="actAs" name="actAs" type="text" class="skat-input"
                    aria-describedby="actAs-help"
-                   placeholder="Indtast fordringshaver-UUID" />
-            <span id="actAs-help" class="skat-form-hint">
+                   placeholder="Indtast fordringshaver-UUID"
+                   th:placeholder="#{dashboard.acting.placeholder}" />
+            <span id="actAs-help" class="skat-form-hint" th:text="#{dashboard.acting.hint}">
               Angiv UUID for den fordringshaver, du ønsker at handle på vegne af.
             </span>
           </div>
-          <button type="submit" class="skat-btn skat-btn--secondary">Skift fordringshaver</button>
+          <button type="submit" class="skat-btn skat-btn--secondary" th:text="#{dashboard.acting.button}">Skift fordringshaver</button>
         </form>
       </div>
     </div>
 
     <!-- Creditor profile card -->
-    <h2>Fordringshaverprofil</h2>
+    <h2 th:text="#{dashboard.profile.heading}">Fordringshaverprofil</h2>
     <div class="skat-card">
-      <div class="skat-card__title" th:text="'Fordringshaver: ' + ${creditor.externalCreditorId}">
+      <div class="skat-card__title" th:text="#{dashboard.profile.title.prefix} + ' ' + ${creditor.externalCreditorId}">
         Fordringshaver: DEMO-001
       </div>
       <div class="skat-card__body">
         <table class="skat-table">
           <tbody>
             <tr>
-              <th scope="row">Eksternt ID</th>
+              <th scope="row" th:text="#{dashboard.profile.field.externalId}">Eksternt ID</th>
               <td th:text="${creditor.externalCreditorId}">DEMO-001</td>
             </tr>
             <tr>
-              <th scope="row">Status</th>
+              <th scope="row" th:text="#{dashboard.profile.field.status}">Status</th>
               <td>
                 <span th:text="${creditor.activityStatus}"
                       th:classappend="${creditor.activityStatus == 'ACTIVE'} ? ' skat-badge--success' : (${creditor.activityStatus == 'INACTIVE'} ? ' skat-badge--error' : ' skat-badge--warning')"
@@ -77,7 +78,7 @@
               </td>
             </tr>
             <tr>
-              <th scope="row">Forbindelsestype</th>
+              <th scope="row" th:text="#{dashboard.profile.field.connectionType}">Forbindelsestype</th>
               <td th:text="${creditor.connectionType}">PORTAL</td>
             </tr>
           </tbody>
@@ -86,30 +87,30 @@
     </div>
 
     <!-- Shortcuts section -->
-    <h2>Genveje</h2>
+    <h2 th:text="#{dashboard.shortcuts.heading}">Genveje</h2>
     <div class="skat-card-grid">
       <div class="skat-card">
         <span class="ikon ikon-tilfoej skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title">Opret fordring</div>
+        <div class="skat-card__title" th:text="#{dashboard.shortcut.create.title}">Opret fordring</div>
         <div class="skat-card__body">
-          <p>Indsend en ny fordring til inddrivelse.</p>
-          <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> Opret fordring</a>
+          <p th:text="#{dashboard.shortcut.create.description}">Indsend en ny fordring til inddrivelse.</p>
+          <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.create.button}">Opret fordring</span></a>
         </div>
       </div>
       <div class="skat-card">
         <span class="ikon ikon-gaeld skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title">Se fordringer</div>
+        <div class="skat-card__title" th:text="#{dashboard.shortcut.debts.title}">Se fordringer</div>
         <div class="skat-card__body">
-          <p>Se og administrer dine indsendte fordringer.</p>
-          <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}"><span class="ikon ikon-se" aria-hidden="true"></span> Se fordringer</a>
+          <p th:text="#{dashboard.shortcut.debts.description}">Se og administrer dine indsendte fordringer.</p>
+          <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}"><span class="ikon ikon-se" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.debts.button}">Se fordringer</span></a>
         </div>
       </div>
       <div class="skat-card">
         <span class="ikon ikon-henvendelser skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title">Se sager</div>
+        <div class="skat-card__title" th:text="#{dashboard.shortcut.cases.title}">Se sager</div>
         <div class="skat-card__body">
-          <p>Følg status på inddrivelsessager.</p>
-          <a class="skat-btn skat-btn--secondary" th:href="@{/sager}"><span class="ikon ikon-se" aria-hidden="true"></span> Se sager</a>
+          <p th:text="#{dashboard.shortcut.cases.description}">Følg status på inddrivelsessager.</p>
+          <a class="skat-btn skat-btn--secondary" th:href="@{/sager}"><span class="ikon ikon-se" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.cases.button}">Se sager</span></a>
         </div>
       </div>
     </div>

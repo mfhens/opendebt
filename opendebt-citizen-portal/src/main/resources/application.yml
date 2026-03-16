@@ -57,6 +57,11 @@ logging:
     dk.ufst.opendebt: INFO
 
 opendebt:
+  i18n:
+    default-locale: da-DK
+    supported-locales:
+      - da-DK
+      - en-GB
   citizen:
     tastselv-integration:
       enabled: true

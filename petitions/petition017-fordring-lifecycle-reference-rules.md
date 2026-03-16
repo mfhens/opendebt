@@ -78,6 +78,62 @@ Claims in Fordring go through various lifecycle states and can reference other c
 - DMI routing status is tracked per claim
 - These rules execute after authorization rules (petition016) pass
 
+## PSRM Reference Context
+
+### PSRM Tilbagekald Årsagskoder
+
+Full mapping of PSRM withdrawal reason codes to petition lifecycle rules (ref: [Regulering af fordringer](https://gaeldst.dk/fordringshaver/find-vejledning/regulering-af-fordringer/)):
+
+| Årsagskode | Description | Virkningsdato | Dækninger | Renter | Kan genindsendes |
+|---|---|---|---|---|---|
+| **BORD** | Betalingsordning — creditor has established a payment arrangement with the debtor. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Kun via FEJL (rule 539 allows BORD for genindsend) |
+| **BORT** | Bortfald (tvangsbøder) — coercive fines that have lapsed. | Obligatorisk (must be provided) | Fastholdes (before dato) | Beregnes til virkningsdato | Kun via FEJL; rule 538 restricts BORT to PSRM-routed claims only |
+| **FEJL** | Forkert/burde ikke have været indsendt — claim was submitted in error. | Modtagelsesdato (auto-set to original receipt date) | Ophæves alle (all coverages reversed) | Nulstilles alle (all interest zeroed) | Nej — must create entirely new fordring; rule 546 enforces empty VirkningsDato |
+| **HENS** | Henstand — creditor has granted the debtor a deferral. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Ja (via GenindsendFordring); rule 539 allows HENS |
+| **KLAG** | Klage med opsættende virkning — complaint with suspensive effect filed. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Ja (via GenindsendFordring); rule 539 allows KLAG |
+| **HAFT** | Tilføj medhæfter — adding a co-liable party requires withdrawal and resubmission. | Auto (bogføringsdato) | Fastholdes | Returneres (interest returned to creditor) | Ja (new indsendelse required); rule 539 allows HAFT |
+
+**Key constraint for rule 547**: Eftersendt (late-submitted) related claims are rejected if the main claim is withdrawn or returned — this prevents orphaned sub-claims in PSRM.
+
+**Key constraint for rule 570**: Hovedfordringer with divided related claims cannot be withdrawn until all divided related claims are withdrawn first — PSRM requires bottom-up withdrawal order.
+
+### GenindsendFordring Constraints
+
+When resubmitting a previously withdrawn claim via GenindsendFordring (ref: same PSRM documentation):
+
+| Constraint | PSRM Rule | Petition Rule |
+|---|---|---|
+| Must reference original fordrings-ID | The resubmission must carry a reference to the original claim's fordrings-ID for audit trail and state continuity. | Rules 539-540 verify original claim exists and was withdrawn with valid reason. |
+| Stamdata must match original | Fields `stiftelsesdato`, `forfaldsdato`, and `periode` must be identical to the original submission. | Rule 542 (GENINDSEND_BASIC_DATA_NOT_EQUAL_TO_CREATE_CLAIM) enforces stamdata match. |
+| Gets new fordrings-ID | PSRM assigns a new fordrings-ID to the resubmitted claim; the original ID remains for historical reference. | Handled at the system level after validation passes. |
+| FEJL-withdrawn claims CANNOT use GenindsendFordring | Claims withdrawn with FEJL are treated as never-submitted; creditor must create an entirely new claim. | Rule 539 only allows HENS, KLAG, BORD, or HAFT — FEJL is excluded. |
+| MODR fordringer cannot be resubmitted | Modregningsfordringer are single-use and cannot be resubmitted after withdrawal. | Rule 544 (GENINDSEND_MODR_NOT_ALLOWED) explicitly blocks this. |
+| Forældelsesdato: always use newest | The resubmission must carry the current forældelsesdato, not the one from the original submission. | Validated in date rules (petition015, rule 568). |
+| Same fordringshaver required | The resubmitting creditor must be the same as the one who originally submitted and withdrew the claim. | Rule 541 (GENINDSEND_MUST_HAVE_SAME_CLAIMANT). |
+
+### Opskrivning/Nedskrivning Reason Codes
+
+PSRM defines specific reason codes for claim amount adjustments (ref: [Regulering af fordringer](https://gaeldst.dk/fordringshaver/find-vejledning/regulering-af-fordringer/)):
+
+**Opskrivning (increase) codes:**
+
+| Code | Description | Petition Rules |
+|---|---|---|
+| **OpskrivRegulering (OR)** | General regulatory increase of claim amount. | Rules 502-504 validate NAOR (annullering of OR) references. |
+| **NAOR** | Annullering of a previous OpskrivRegulering — reverses the increase. | Rule 502 requires referenced action to be type OR or OONR; rule 503 checks no prior non-rejected annullering exists. |
+| **FejlagtighovedstolIndberetning (FHI)** | Correction of incorrectly reported principal — only to a higher amount; the reported amount becomes the new hovedstol (not the difference). | Rules 510, 512, 517, 518 in petition018 handle FHI validation. |
+
+**Nedskrivning (decrease) codes:**
+
+| Code | Description | Virkningsdato | Petition Rules |
+|---|---|---|---|
+| **INDB** | Indbetaling — payment received by creditor. | Required (must equal indbetalingsdato) | Rules 471, 473 validate OANI references to INDB nedskrivninger. |
+| **REGU** | Regulering — regulatory decrease (e.g., recalculation). | Not allowed (auto-set from fordringens modtagelsesdato) | Rules 477, 473 validate OONR references to REGU nedskrivninger; rule 519 in petition018 blocks explicit VirkningsDato. |
+| **OANI** | Annullering of INDB nedskrivning — reverses a payment-based decrease. | Matches original | Rules 469, 470, 471, 473, 506 validate OANI references and amounts. |
+| **OONR** | Annullering of REGU nedskrivning — reverses a regulatory decrease. | Matches original | Rules 469, 470, 477, 473 validate OONR references and amounts. |
+
+**Critical PSRM constraint**: Renter (interest) kan IKKE opskrives — interest amounts cannot be increased via opskrivning. If additional interest is owed, it must be submitted as a new related fordring. This is enforced by rule 474 (OPSKRIVNING_ON_RENTE_NOT_ALLOWED).
+
 ## Out of scope
 
 - Core claim structure validation (covered in petition015)

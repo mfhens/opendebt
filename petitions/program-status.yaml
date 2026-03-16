@@ -2,8 +2,16 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-15
-  updated_by: factory-droid
+  updated_at: 2026-03-16
+  updated_by: factory-droid (PSRM enrichment backlog update)
+  psrm_reference:
+    source_docs: docs/psrm-reference/
+    enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
+    enrichment_date: 2026-03-16
+    notes: >
+      11 petitions enriched with "PSRM Reference Context" sections containing concrete
+      Gældsstyrelsen PSRM business rules from gaeldst.dk/fordringshaver/find-vejledning/.
+      Source material captured in docs/psrm-reference/ (16 reference documents).
   status_values:
     - not_started
     - architecture_ready
@@ -75,6 +83,29 @@ program:
       objective: Implement non-functional quality requirements spanning all services, starting with OpenTelemetry-based monitoring and observability.
       petitions:
         - petition020
+        - petition021
+
+    - id: phase-6
+      name: Citizen portal (Skyldnerportal) landing page
+      objective: Build the public-facing citizen portal landing page with informational content, FAQ, and MitID login link.
+      petitions:
+        - petition022
+
+    - id: phase-7
+      name: Citizen authentication and backend APIs
+      objective: Establish person/CPR lookup, citizen-scoped debt endpoint, and MitID/TastSelv OAuth2 browser flow.
+      petitions:
+        - petition023
+        - petition024
+        - petition025
+
+    - id: phase-8
+      name: Citizen self-service and integrations
+      objective: Deliver the authenticated debt overview page, citizen payment initiation, and Digital Post letter retrieval.
+      petitions:
+        - petition026
+        - petition027
+        - petition028
 
   petitions:
     petition001:
@@ -92,60 +123,113 @@ program:
       title: Creditor creation of a new fordring
       status: in_progress
       phase: phase-0
+      psrm_enriched: true
       depends_on:
         - petition011
         - petition012
-      last_reviewed: 2026-03-09
+      last_reviewed: 2026-03-16
       blockers:
         - Portal path is not implemented.
         - M2M ingress is being redirected to the integration-gateway target architecture.
-      notes: Debt creation exists in debt-service, but the petition is not fully satisfied end-to-end.
+      notes: >
+        Debt creation exists in debt-service, but the petition is not fully satisfied end-to-end.
+        PSRM enrichment reveals 22 stamdata fields (obligatorisk/valgfri classification),
+        hearing workflow (HØRING status for indgangsfilter deviations), pre-submission requirements
+        (rykkerprocedure, skriftlig underretning, claim separation), and GDPR constraint on
+        Beskrivelse field (max 100 chars, no PII of third parties).
+      psrm_additions:
+        - 22 stamdata fields with obligatorisk/valgfri classification for fordring creation
+        - HØRING workflow for fordringer deviating from indgangsfilter (14-day SLA)
+        - Pre-submission requirements (rykkerprocedure, underretning, claim separation)
+        - Kvittering response with fordrings-ID, hæftelsesforhold, AKR-nummer, slutstatus (UDFØRT/AFVIST/HØRING)
+        - GDPR constraint on Beskrivelse field
       next_step: Complete petitions011 and 012, then reassess petition002 completion.
 
     petition003:
       title: Formalization of fordring, restance, and overdragelse til inddrivelse
       status: ready_for_implementation
       phase: phase-1
+      psrm_enriched: true
       depends_on:
         - petition002
-      last_reviewed: 2026-03-09
-      next_step: Implement lifecycle model and transfer audit trail in debt-service.
+      last_reviewed: 2026-03-16
+      psrm_additions:
+        - SRB must have expired before overdragelse (PSRM rejects otherwise)
+        - Claim separation rules — hovedfordringer and renter must be separate fordringer
+        - 0-fordring pattern — when hovedfordring is paid, submit 0-saldo fordring before related renter
+        - Post-overdragelse lifecycle — inddrivelsesrente at 5.75% from 1st of month following receipt
+        - Kvittering with fordrings-ID, hæftelsesforhold, AKR-nummer, slutstatus
+        - All medhæftere must be reported simultaneously at overdragelse
+      next_step: Implement lifecycle model with PSRM-informed state transitions, 0-fordring support, and claim separation enforcement in debt-service.
 
     petition004:
       title: Underretning, paakrav, and rykker
       status: architecture_ready
       phase: phase-3
+      psrm_enriched: true
       depends_on:
         - petition003
-      last_reviewed: 2026-03-09
-      next_step: Reassess after petition003 lifecycle model is implemented.
+      last_reviewed: 2026-03-16
+      psrm_additions:
+        - 6 PSRM underretningsmeddelelse types defined (Afregning, Udligning, Allokering, Renter, Afskrivning, Tilbagesend/Returnering)
+        - Afregning sent monthly (last business day) with CPR/beløb/dato/fordring
+        - Udligning vs Allokering mutually exclusive per fordringshaver
+        - Notifications older than 3 months cannot be fetched
+        - Skriftlig underretning required before overdragelse and opskrivning
+        - Individual underretning required for each medhæfter
+      next_step: Implement underretning domain model with 6 PSRM notification types after petition003 lifecycle is in place.
 
     petition005:
       title: Haeftelse for multiple skyldnere
       status: architecture_ready
       phase: phase-3
+      psrm_enriched: true
       depends_on:
         - petition003
-      last_reviewed: 2026-03-09
-      next_step: Define debtor liability model after claim lifecycle semantics are in place.
+      last_reviewed: 2026-03-16
+      psrm_additions:
+        - PSRM only supports solidarisk hæftelse (non-solidary must be split by fordringshaver before submission)
+        - HAFT tilbagekald workflow — withdraw with årsagskode HAFT, notify all parties, resubmit
+        - Dækninger NOT reversed on HAFT tilbagekald; inddrivelsesrenter are returned
+        - REINDGI fordringstype for re-submitting inddrivelsesrenter after HAFT resubmission
+        - I/S rules — submit CVR for partnership AND CPR/CVR for all liable interessenter
+        - PEF rules — submit CVR if firm active, CPR if firm ceased; PSRM auto-adds CPR for PEF owner
+        - New plads i dækningsrækkefølge for resubmitted fordring (new modtagelsestidspunkt)
+      next_step: Implement solidarisk hæftelse model with HAFT workflow, I/S and PEF rules, after petition003 lifecycle is in place.
 
     petition006:
       title: Indsigelse workflow blockering
       status: architecture_ready
       phase: phase-3
+      psrm_enriched: true
       depends_on:
         - petition003
-      last_reviewed: 2026-03-09
-      next_step: Revisit once objection and workflow boundaries are modeled.
+      last_reviewed: 2026-03-16
+      psrm_additions:
+        - KLAG tilbagekald workflow (klage med opsættende virkning) — auto virkningsdato, dækninger fastholdes, renter beregnes to virkningsdato
+        - HENS tilbagekald workflow (henstand) — identical to KLAG, NOT available for statsrefusion
+        - FEJL outcome for KLAG — all dækninger reversed/ophæves, renter nulstilles, fordring permanently locked
+        - GenindsendFordring function — original fordrings-ID required, stamdata must match, new fordrings-ID assigned
+        - FEJL-withdrawn claims CANNOT use GenindsendFordring (must create entirely new fordring)
+        - Forældelsesdato must be newest available on genindsendelse
+      next_step: Implement KLAG/HENS tilbagekald workflows and GenindsendFordring function using Flowable BPMN after petition003 lifecycle is in place.
 
     petition007:
       title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
       status: architecture_ready
       phase: phase-3
+      psrm_enriched: true
       depends_on:
         - petition003
-      last_reviewed: 2026-03-09
-      next_step: Implement only after overdragelse til inddrivelse exists.
+      last_reviewed: 2026-03-16
+      psrm_additions:
+        - Civilretlige fordringer constraints — limited to afdragsordning and modregning; lønindeholdelse and udlæg generally NOT available
+        - Udlæg only with eksekutionsfundament (dom, betalingspåkrav, skylderklæring) via retsplejeloven §478
+        - Betalingspåkrav threshold — under 100K kr Gældsstyrelsen files with fogedret; over 100K fordringshaver must file stævning
+        - Dækningsrækkefølge — inddrivelsesrente (5.75% 2026) always dækket forud for hovedstol
+        - Modregning requires gensidige, udjævnelige, forfaldne, retskraftige fordringer; GIL §8 indtrædelsesret
+        - Monthly afregning with dækning details; udligning/allokering daily saldo movements
+      next_step: Implement inddrivelsesskridt model with civilretlige constraints and 100K threshold after overdragelse til inddrivelse exists.
 
     petition008:
       title: Fordringshaver logical and physical data model
@@ -262,8 +346,9 @@ program:
       title: Fordring core claim validation rules
       status: in_progress
       phase: phase-4
+      psrm_enriched: true
       depends_on: []
-      last_reviewed: 2026-03-14
+      last_reviewed: 2026-03-16
       evidence:
         - petition015 outcome contract exists in petitions/petition015-fordring-core-validation-rules-outcome-contract.md
         - petition015 feature file exists with 28 scenarios in petitions/petition015-fordring-core-validation-rules.feature
@@ -271,7 +356,17 @@ program:
         - existing rules-engine module has Drools KIE container, DroolsConfig, and 3 existing .drl rule files
         - existing RulesService interface covers readiness, interest, and collection priority but NOT fordring validation
         - W2-BOOT-01 complete — FordringErrorCode enum (22 codes), validation DTOs (Request/Result/Error), FordringValidationService interface and impl with isolated KIE session, placeholder DRL with fordring-validation agenda group, AbstractFordringRuleTest base class, 92 passing tests
-      notes: W2-RULE-01 complete. All 23 core validation rules implemented in fordring-validation.drl covering structure (10 rules), currency (1 rule), art type (1 rule), interest rate (1 rule), dates (6 rules), agreement (3 rules), and debtor (1 rule). 43 new unit tests plus 92 existing tests all pass (135 total). Rules use the fordring-validation agenda group for isolation from existing rules.
+      notes: >
+        W2-RULE-01 complete. All 23 core validation rules implemented in fordring-validation.drl
+        covering structure (10 rules), currency (1 rule), art type (1 rule), interest rate (1 rule),
+        dates (6 rules), agreement (3 rules), and debtor (1 rule). 43 new unit tests plus 92 existing
+        tests all pass (135 total). Rules use the fordring-validation agenda group for isolation from
+        existing rules. PSRM enrichment adds cross-reference to official stamdata field definitions and
+        submission outcome statuses (UDFØRT/AFVIST/HØRING). Rules already cover the PSRM requirements;
+        enrichment documents the traceability to PSRM source.
+      psrm_additions:
+        - Cross-reference of validation rules to PSRM stamdata field definitions (Beløb, Hovedstol, Fordringstype, Fordringsart, SRB, Forældelsesdato, Stiftelsesdato, Beskrivelse)
+        - Submission outcome mapping (UDFØRT → no errors, AFVIST → error codes triggered, HØRING → post-validation caseworker review)
       next_step: Petition015 is complete. W2-RULE-02 (petition016) is also complete — see petition016 for authorization rules.
 
     petition016:
@@ -296,10 +391,11 @@ program:
       title: Fordring claim lifecycle and reference rules
       status: implemented
       phase: phase-4
+      psrm_enriched: true
       depends_on:
         - petition015
         - petition016
-      last_reviewed: 2026-03-14
+      last_reviewed: 2026-03-16
       evidence:
         - petition017 outcome contract exists in petitions/petition017-fordring-lifecycle-reference-rules-outcome-contract.md
         - petition017 feature file exists with 32 scenarios in petitions/petition017-fordring-lifecycle-reference-rules.feature
@@ -308,18 +404,30 @@ program:
         - FordringValidationRequest extended with 35 lifecycle context fields for state/reference validation
         - 40 new unit tests covering all 32 feature scenarios plus combined lifecycle tests
         - All 343 rules-engine tests pass
-      notes: W2-RULE-03 complete. Lifecycle rules implemented for genindsend (6 rules), tilbagekald (5 rules), action references (5 rules), opskrivning/nedskrivning references (12 rules), and state validation (4 rules). Rules use pre-resolved lifecycle context flags in the validation request; actual repository lookups integration deferred to service layer.
+      notes: >
+        W2-RULE-03 complete. Lifecycle rules implemented for genindsend (6 rules), tilbagekald (5 rules),
+        action references (5 rules), opskrivning/nedskrivning references (12 rules), and state validation
+        (4 rules). Rules use pre-resolved lifecycle context flags in the validation request; actual
+        repository lookups integration deferred to service layer. PSRM enrichment adds full tilbagekald
+        årsagskode mapping (BORD, BORT, FEJL, HENS, KLAG, HAFT) with virkningsdato, dækning, and renter
+        behavior per code, plus GenindsendFordring constraint table and opskrivning/nedskrivning reason codes.
+      psrm_additions:
+        - Full tilbagekald årsagskode mapping (BORD, BORT, FEJL, HENS, KLAG, HAFT) with detailed behavior per code
+        - GenindsendFordring constraint table (stamdata match, same fordringshaver, new fordrings-ID, FEJL excluded, MODR blocked)
+        - Opskrivning/nedskrivning reason codes (OR, NAOR, FHI, INDB, REGU, OANI, OONR) with PSRM definitions
+        - Critical constraint — renter kan IKKE opskrives (must submit as new related fordring)
       next_step: Execute W2-RULE-04 to implement content validation rules (petition018).
 
     petition018:
       title: Fordring claim content validation rules
       status: implemented
       phase: phase-4
+      psrm_enriched: true
       depends_on:
         - petition015
         - petition016
         - petition017
-      last_reviewed: 2026-03-14
+      last_reviewed: 2026-03-16
       evidence:
         - petition018 outcome contract exists in petitions/petition018-fordring-content-validation-rules-outcome-contract.md
         - petition018 feature file exists with 44 scenarios in petitions/petition018-fordring-content-validation-rules.feature
@@ -328,7 +436,20 @@ program:
         - FordringValidationRequest extended with 60+ content validation context fields
         - ContentValidationRuleTest with 55 unit tests covering all 44+ feature scenarios
         - All 534 rules-engine tests pass
-      notes: W2-RULE-04 complete. Content validation rules implemented for claim amounts (5 rules), sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules), hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and identifiers (3 rules). Rules use pre-resolved content context flags in the validation request; actual lookup integration with configuration service deferred to service layer.
+      notes: >
+        W2-RULE-04 complete. Content validation rules implemented for claim amounts (5 rules),
+        sub-claims (4 rules), interest (4 rules), nedskriv reasons (4 rules), documents/notes (6 rules),
+        hovedstol (4 rules), hæftelse (6 rules), routing (4 rules), claim types (5 rules), and
+        identifiers (3 rules). Rules use pre-resolved content context flags in the validation request;
+        actual lookup integration with configuration service deferred to service layer. PSRM enrichment
+        adds cross-reference to official interest regime (RenteRegel/RenteSatsKode), hovedstol and
+        nedskriv constraints from PSRM Regulering af fordringer documentation.
+      psrm_additions:
+        - PSRM interest regime cross-reference (RenteRegel 001/002, RenteSatsKode 03/10/20/98/99, inddrivelsesrente 5.75%)
+        - Bøder exempt from inddrivelsesrente (maps to rule 443)
+        - Renteberegning cannot be changed after submission (withdraw with FEJL and resubmit)
+        - FHI hovedstol constraints (only to higher amount, absolute new value not difference, saldo cannot exceed hovedstol)
+        - Nedskriv constraints (cannot exceed restsaldo, REGU auto-virkningsdato, INDB requires indbetalingsdato, FAST not for PSRM)
       next_step: Petition018 is complete. All fordring validation rules (petition015-018) are now implemented. W2-SOAP-01 (petition019) can proceed.
 
     petition020:
@@ -344,6 +465,173 @@ program:
         - Wave 4 execution backlog created with 5 tickets (W4-OTEL-01 through W4-OTEL-05)
       notes: Scoped to creditor-related services first (creditor-service, debt-service, creditor-portal). Framework established in parent POM and opendebt-common for other services to adopt.
       next_step: Execute W4-OTEL-01 through W4-OTEL-05 via pipeline-conductor.
+
+    petition021:
+      title: Internationalization (i18n) infrastructure for all OpenDebt portals
+      status: validated
+      phase: phase-5
+      depends_on: []
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition021 petition and outcome contract exist
+        - I18nConfig with MessageSource, CookieLocaleResolver, LocaleChangeInterceptor implemented
+        - I18nProperties configures default-locale (da-DK) and supported-locales list
+        - I18nModelAdvice exposes supportedLocales and localeNativeNames to all templates
+        - Language selector fragment (fragments/language-selector.html) with accessible drop-down
+        - Dynamic th:lang on layout and all page templates
+        - messages_da.properties with 83 keys covering all templates and controllers
+        - messages_en_GB.properties with complete English translations via translator-droid
+        - All hardcoded Danish in creditor-portal templates replaced with #{...} expressions
+        - Controllers use MessageSource with LocaleContextHolder for user-facing messages
+        - 5 BDD scenarios in petition021.feature all pass (default Danish, switch to English, persistence, fallback, selector)
+        - "All 14 BDD scenarios pass (petition012: 3, petition013: 3, petition014: 3, petition021: 5)"
+        - 54 total tests pass (0 failures)
+        - translator-droid registered at .factory/droids/translator.md
+        - Citizen portal application.yml includes opendebt.i18n configuration ready for petition022
+      notes: >
+        Wave 5 i18n sprint complete. All 11 tickets (W5-I18N-01 through W5-I18N-11) implemented.
+        The creditor portal is fully internationalized with Danish as default and English (UK) as
+        the first additional language. The i18n infrastructure is reusable for the citizen portal.
+      next_step: Petition021 is complete. Petition022 (citizen portal landing page) can proceed.
+
+    petition022:
+      title: Skyldnerportal (citizen portal) landing page
+      status: not_started
+      phase: phase-6
+      depends_on:
+        - petition013
+        - petition014
+        - petition021
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition022 petition exists in petitions/petition022-skyldnerportal-landing-page.md
+        - petition022 outcome contract exists in petitions/petition022-skyldnerportal-landing-page-outcome-contract.md
+        - gaeldst.dk/borger/se-din-gaeld content captured and analyzed
+        - opendebt-citizen-portal module exists as skeleton (Spring Boot app, no UI)
+      notes: >
+        Models the Gældsstyrelsen "Se din gæld" public landing page. Content includes debt overview
+        explanation, MitID login CTA, FAQ section (7 items), old debt errors section. Built with
+        Thymeleaf + HTMX (ADR-0023), i18n from start (petition021), accessibility (petition013/014).
+      next_step: >
+        Implement after petition021 i18n infrastructure is in place. Add Thymeleaf dependencies
+        to citizen-portal POM, create layout templates, implement landing page controller and view.
+
+    petition023:
+      title: Person Registry citizen (CPR) lookup API
+      status: not_started
+      phase: phase-7
+      depends_on: []
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition023 petition and outcome contract exist
+        - person-registry has OrganizationController but no PersonController REST API
+        - PersonEntity exists in person-registry with encrypted CPR storage
+      notes: >
+        Foundational API for citizen portal authentication. Exposes POST /api/v1/persons/lookup
+        (CPR to person_id UUID), GET by ID, and exists check. Internal-only, never exposed to
+        end users. CPR never leaves person-registry in responses — only UUID returned.
+      next_step: Implement PersonController and PersonService in person-registry.
+
+    petition024:
+      title: Citizen-facing debt summary endpoint
+      status: not_started
+      phase: phase-7
+      psrm_enriched: true
+      depends_on:
+        - petition023
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition024 petition and outcome contract exist
+        - debt-service has GET /api/v1/debts?debtorId= but uses CPR string, not person_id UUID
+        - No citizen-scoped auth path exists in debt-service
+      notes: >
+        Adds GET /api/v1/citizen/debts to debt-service, secured with citizen-scoped OAuth2 tokens.
+        Resolves person_id from JWT, returns paginated debt summary with aggregates.
+        Requires debtor_person_id column alignment in DebtEntity.
+      psrm_additions:
+        - Citizen-friendly status mapping from PSRM states (UDFØRT→ACTIVE, HØRING→hidden, Tilbagekaldt→depends on årsagskode, Afskrevet→WRITTEN_OFF, Fully paid→PAID)
+        - Interest display rules (5.75% simple day-to-day, dækningsrækkefølge rente before hovedstol, rentestop for uafklaret gæld since 2024-11-01)
+        - No fradragsret for inddrivelsesrenter since 2020-01-01
+        - Afregning/afskrivning underretning data informs outstandingAmount and status transitions
+      next_step: Implement after petition023 person-id resolution is available.
+
+    petition025:
+      title: MitID/TastSelv OAuth2 browser flow for citizen portal
+      status: not_started
+      phase: phase-7
+      depends_on:
+        - petition023
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition025 petition and outcome contract exist
+        - citizen-portal application.yml has TastSelv OAuth2 client config placeholders
+        - SecurityConfig exists but only permits all requests (no OAuth2 wired)
+      notes: >
+        Wires Spring Security OAuth2 login with TastSelv/MitID provider. After login, extracts
+        CPR from JWT, resolves to person_id via person-registry (petition023), stores in session.
+        Keycloak mock flow for development. Public pages remain unauthenticated.
+      next_step: Implement after petition023 CPR lookup is available.
+
+    petition026:
+      title: "\"Mit gældsoverblik\" authenticated citizen debt overview page"
+      status: not_started
+      phase: phase-8
+      psrm_enriched: true
+      depends_on:
+        - petition022
+        - petition024
+        - petition025
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition026 petition and outcome contract exist
+        - Citizen portal landing page (petition022) links to external gaeldst.dk Mit gældsoverblik
+      notes: >
+        The core citizen self-service page at /min-gaeld. Requires MitID authentication (petition025),
+        calls citizen debt endpoint (petition024), displays debt table with totals. Replaces external
+        Mit gældsoverblik link from landing page. Internationalized and accessible.
+      psrm_additions:
+        - Interest display for citizens (5.75% simple day-to-day, dækningsrækkefølge rente→hovedstol, rentestop for uafklaret gæld)
+        - No fradragsret since 2020 — inform citizens in footnote/info box
+        - Collection step visibility (afdragsordning, modregning, lønindeholdelse for applicable claim types)
+        - Civilretlige fordringer have limited collection options; betalingspåkrav for claims under 100K
+        - 6 afskrivning scenarios for citizen display (forældelse, konkurs, dødsbo, gældssanering, åbenbart formålsløs, uforholdsmæssigt omkostningsfuld)
+        - Snapshot nature disclaimer — saldi change daily due to renter, dækninger, and reguleringer
+      next_step: Implement after petitions 024 and 025 provide auth and data access.
+
+    petition027:
+      title: Citizen payment initiation API and self-service payment
+      status: not_started
+      phase: phase-8
+      depends_on:
+        - petition024
+        - petition026
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition027 petition and outcome contract exist
+        - payment-service handles CREMUL matching and bookkeeping but has no citizen payment flow
+      notes: >
+        Adds POST /api/v1/citizen/payments to payment-service. Supports card/MobilePay redirect
+        and bank transfer with OCR line. Records payments in double-entry bookkeeping (ADR-0018),
+        triggers debt write-down. Includes instalment plan request flow.
+      next_step: Implement after petition026 debt overview page provides the payment entry point.
+
+    petition028:
+      title: Digital Post integration for citizen letter retrieval
+      status: not_started
+      phase: phase-8
+      depends_on:
+        - petition025
+        - petition026
+      last_reviewed: 2026-03-16
+      evidence:
+        - petition028 petition and outcome contract exist
+        - ADR-0008 covers letter management, petition004 covers sending side
+        - No Digital Post retrieval API integration exists
+      notes: >
+        Adds "Mine breve" page to citizen portal showing letters sent via Digital Post.
+        Retrieves on-demand from Digital Post API (no local storage). Uses OCES3 certificate
+        auth for service-to-service. Handles Digital Post-exempt citizens gracefully.
+      next_step: Implement after petition025 provides citizen authentication.
 
     petition019:
       title: Legacy SOAP endpoints for external creditors

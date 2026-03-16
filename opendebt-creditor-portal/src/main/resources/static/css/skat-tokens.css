@@ -789,3 +789,69 @@ a:focus {
   margin-right: var(--spacing--2xs);
   font-size: 1em;
 }
+
+/* =========================================================================
+   Language selector — white ribbon above header
+   ========================================================================= */
+
+.skat-lang-ribbon {
+  background-color: var(--color-white);
+  padding: var(--spacing--xs) var(--grid-gutter);
+}
+
+.skat-lang-ribbon__inner {
+  max-width: var(--width-lg);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing--sm);
+  color: var(--color-primary);
+}
+
+.skat-lang-globe {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.skat-lang-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing--xs) var(--spacing--sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size--sm);
+}
+
+.skat-lang-list li {
+  margin: 0;
+}
+
+.skat-lang-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing--2xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight--normal);
+}
+
+.skat-lang-list a:hover,
+.skat-lang-list a:focus {
+  text-decoration: underline;
+}
+
+.skat-lang-list a:focus {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.skat-lang-list a[aria-current="page"],
+.skat-lang-list a.skat-lang-list--current {
+  font-weight: var(--font-weight--bold);
+}
+
+.skat-lang-check {
+  font-size: 0.75em;
+}

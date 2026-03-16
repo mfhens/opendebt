@@ -32,12 +32,10 @@ class PortalSessionServiceTest {
   }
 
   @Test
-  void resolveActingCreditor_returnsDemoCreditor_whenNoParamsAndNoSession() {
+  void resolveActingCreditor_returnsNull_whenNoParamsAndNoSession() {
     UUID result = service.resolveActingCreditor(null, session);
 
-    assertThat(result).isEqualTo(PortalSessionService.DEMO_CREDITOR_ORG_ID);
-    assertThat(session.getAttribute(PortalSessionService.SESSION_ACTING_CREDITOR))
-        .isEqualTo(PortalSessionService.DEMO_CREDITOR_ORG_ID);
+    assertThat(result).isNull();
   }
 
   @Test
@@ -51,9 +49,20 @@ class PortalSessionServiceTest {
   }
 
   @Test
+  void setActingCreditor_storesInSession() {
+    UUID creditorOrgId = UUID.randomUUID();
+    service.setActingCreditor(creditorOrgId, session);
+
+    assertThat(session.getAttribute(PortalSessionService.SESSION_ACTING_CREDITOR))
+        .isEqualTo(creditorOrgId);
+    assertThat(service.resolveActingCreditor(null, session)).isEqualTo(creditorOrgId);
+  }
+
+  @Test
   void resolveActingCreditor_resolvesActAsParam_whenAccessAllowed() {
     UUID representedOrgId = UUID.randomUUID();
     UUID actingOrgId = UUID.randomUUID();
+    session.setAttribute(PortalSessionService.SESSION_ACTING_CREDITOR, actingOrgId);
 
     AccessResolutionResponse response =
         AccessResolutionResponse.builder()
@@ -71,8 +80,19 @@ class PortalSessionServiceTest {
   }
 
   @Test
-  void resolveActingCreditor_fallsToDemoCreditor_whenAccessDenied() {
+  void resolveActingCreditor_returnsNull_whenActAsButNoSessionCreditor() {
     UUID representedOrgId = UUID.randomUUID();
+
+    UUID result = service.resolveActingCreditor(representedOrgId.toString(), session);
+
+    assertThat(result).isNull();
+  }
+
+  @Test
+  void resolveActingCreditor_keepsSessionCreditor_whenAccessDenied() {
+    UUID sessionCreditor = UUID.randomUUID();
+    UUID representedOrgId = UUID.randomUUID();
+    session.setAttribute(PortalSessionService.SESSION_ACTING_CREDITOR, sessionCreditor);
 
     AccessResolutionResponse response =
         AccessResolutionResponse.builder()
@@ -84,26 +104,28 @@ class PortalSessionServiceTest {
 
     UUID result = service.resolveActingCreditor(representedOrgId.toString(), session);
 
-    assertThat(result).isEqualTo(PortalSessionService.DEMO_CREDITOR_ORG_ID);
+    assertThat(result).isEqualTo(sessionCreditor);
     assertThat(session.getAttribute(PortalSessionService.SESSION_REPRESENTED_CREDITOR)).isNull();
   }
 
   @Test
-  void resolveActingCreditor_fallsToDemoCreditor_whenBackendUnavailable() {
+  void resolveActingCreditor_keepsSessionCreditor_whenBackendUnavailable() {
+    UUID sessionCreditor = UUID.randomUUID();
     UUID representedOrgId = UUID.randomUUID();
+    session.setAttribute(PortalSessionService.SESSION_ACTING_CREDITOR, sessionCreditor);
     when(creditorServiceClient.resolveAccess(any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     UUID result = service.resolveActingCreditor(representedOrgId.toString(), session);
 
-    assertThat(result).isEqualTo(PortalSessionService.DEMO_CREDITOR_ORG_ID);
+    assertThat(result).isEqualTo(sessionCreditor);
   }
 
   @Test
-  void resolveActingCreditor_fallsToDemoCreditor_whenActAsParamInvalid() {
+  void resolveActingCreditor_returnsNull_whenActAsParamInvalidAndNoSession() {
     UUID result = service.resolveActingCreditor("not-a-uuid", session);
 
-    assertThat(result).isEqualTo(PortalSessionService.DEMO_CREDITOR_ORG_ID);
+    assertThat(result).isNull();
   }
 
   @Test

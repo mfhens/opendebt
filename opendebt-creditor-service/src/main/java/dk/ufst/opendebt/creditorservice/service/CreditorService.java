@@ -15,4 +15,6 @@ public interface CreditorService {
   ValidateActionResponse validateAction(UUID creditorOrgId, ValidateActionRequest request);
 
   Optional<CreditorDto> findCreditorByCreditorOrgId(UUID creditorOrgId);
+
+  List<CreditorDto> listActive();
 }
