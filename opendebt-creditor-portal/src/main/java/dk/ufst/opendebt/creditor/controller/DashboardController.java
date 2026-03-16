@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,13 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DashboardController {
 
-  /**
-   * Hardcoded demo creditor org ID. In production this would be resolved from the OAuth2 security
-   * context after Keycloak browser flow is wired.
-   */
-  static final UUID DEMO_CREDITOR_ORG_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
   private final CreditorServiceClient creditorServiceClient;
+  private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
 
   @GetMapping("/")
@@ -39,6 +36,9 @@ public class DashboardController {
       HttpSession session) {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(actAsParam, session);
+    if (actingCreditor == null) {
+      return "redirect:/demo-login";
+    }
     UUID representedCreditor = portalSessionService.getRepresentedCreditor(session);
 
     // Check for acting-on-behalf-of denial when an explicit actAs was requested
@@ -53,7 +53,8 @@ public class DashboardController {
       log.error("Creditor service unavailable: {}", ex.getMessage());
       model.addAttribute(
           "backendError",
-          "Backend-tjenesten er ikke tilgængelig. Kontroller at creditor-service kører.");
+          messageSource.getMessage(
+              "controller.dashboard.backend.unavailable", null, LocaleContextHolder.getLocale()));
       return "index";
     }
 
@@ -61,7 +62,10 @@ public class DashboardController {
       log.error("Creditor not found for orgId {}", actingCreditor);
       model.addAttribute(
           "backendError",
-          "Fordringshaver ikke fundet for orgId: " + actingCreditor + ". Kontroller seed-data.");
+          messageSource.getMessage(
+              "controller.dashboard.creditor.notfound",
+              new Object[] {actingCreditor},
+              LocaleContextHolder.getLocale()));
       return "index";
     }
 
@@ -81,12 +85,19 @@ public class DashboardController {
         AccessResolutionResponse response =
             portalSessionService.tryResolveAccess(actingCreditor, requestedOrgId);
         if (response != null && !response.isAllowed()) {
+          String reason =
+              response.getMessage() != null
+                  ? response.getMessage()
+                  : messageSource.getMessage(
+                      "controller.dashboard.access.denied.default",
+                      null,
+                      LocaleContextHolder.getLocale());
           model.addAttribute(
               "actAsDeniedMessage",
-              "Adgang nægtet: "
-                  + (response.getMessage() != null
-                      ? response.getMessage()
-                      : "Du har ikke tilladelse til at handle på vegne af denne fordringshaver."));
+              messageSource.getMessage(
+                  "controller.dashboard.access.denied",
+                  new Object[] {reason},
+                  LocaleContextHolder.getLocale()));
         }
       }
     } catch (IllegalArgumentException ignored) {

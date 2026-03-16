@@ -36,6 +36,33 @@ Without `hæftelse`, OpenDebt cannot represent several central public-sector cla
 - This petition does not define the detailed enforcement allocation rules for payments across solidarity relationships.
 - Person and organization identity remain stored through technical UUID references only.
 
+## PSRM Reference Context
+
+### PSRM solidarisk hæftelse
+
+- PSRM only supports solidarisk hæftelse (joint and several liability).
+- For non-solidary liability (e.g. delt hæftelse): the fordringshaver must split the fordring themselves before submission.
+- Sædvanlig rykkerprocedure and individual underretning is required for each skyldner.
+
+### Adding/removing skyldnere
+
+- **To add skyldner(e):** tilbagekald the fordring with årsagskode "HAFT", notify all parties, then resubmit.
+- Dækninger (payments already applied) are NOT reversed; inddrivelsesrenter are returned.
+- Use REINDGI fordringstype for re-submitting collection interest (inddrivelsesrenter).
+- Only the originally reported skyldnere hæfte for inddrivelsesrenter (exception: I/S partnerships).
+- **To remove skyldner(e):** contact Fordringshaversupport.
+- A resubmitted fordring gets a new plads i dækningsrækkefølge (new modtagelsestidspunkt).
+
+### I/S and PEF rules
+
+- **I/S (Interessentskab):** submit the CVR for the partnership AND the CPR/CVR for all liable interessenter at the time of debt creation.
+- **PEF (Personligt ejet firma):** submit CVR if the firm is active, CPR if the firm has ceased.
+- PSRM automatically adds the CPR for a PEF owner after submission.
+
+Sources:
+- https://gaeldst.dk/fordringshaver/find-vejledning/tilfoej-eller-fjern-skyldner-paa-en-fordring
+- https://gaeldst.dk/fordringshaver/find-vejledning/is-og-pef-skyldnere
+
 ## Out of scope
 
 - Detailed payment allocation rules between multiple liable parties

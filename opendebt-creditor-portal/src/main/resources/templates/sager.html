@@ -2,35 +2,35 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/default}"
-      lang="da">
+      th:lang="${#locale.language}" lang="da">
 <head>
-  <title>Dine sager</title>
+  <title th:text="#{cases.page.title}">Dine sager</title>
 </head>
 <body>
-  <span layout:fragment="breadcrumb">Sager</span>
+  <span layout:fragment="breadcrumb" th:text="#{cases.breadcrumb}">Sager</span>
   <section layout:fragment="content">
-    <h1>Dine sager</h1>
+    <h1 th:text="#{cases.heading}">Dine sager</h1>
     <div class="skat-card">
       <div class="skat-card__body">
         <table class="skat-table">
           <thead>
             <tr>
-              <th scope="col">Sagsnummer</th>
-              <th scope="col">Skyldner</th>
-              <th scope="col">Samlet gæld</th>
-              <th scope="col">Status</th>
+              <th scope="col" th:text="#{cases.col.caseNumber}">Sagsnummer</th>
+              <th scope="col" th:text="#{cases.col.debtor}">Skyldner</th>
+              <th scope="col" th:text="#{cases.col.totalDebt}">Samlet gæld</th>
+              <th scope="col" th:text="#{cases.col.status}">Status</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td colspan="4">Ingen sager fundet. Denne side er under udvikling.</td>
+              <td colspan="4" th:text="#{cases.empty}">Ingen sager fundet. Denne side er under udvikling.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
     <p>
-      <a class="skat-btn skat-btn--secondary" th:href="@{/}">Tilbage til forsiden</a>
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}" th:text="#{cases.btn.back}">Tilbage til forsiden</a>
     </p>
   </section>
 </body>

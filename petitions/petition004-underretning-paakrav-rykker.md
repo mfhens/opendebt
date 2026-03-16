@@ -40,6 +40,33 @@ Without a shared model, OpenDebt risks scattering legal communication semantics 
 - This petition does not define channel-specific delivery integrations in detail.
 - This petition assumes debtor identity is still handled through UUID references in person-registry.
 
+## PSRM Reference Context
+
+### PSRM underretningsmeddelelser
+
+Gældsstyrelsen sends six types of notification (underretningsmeddelelser) to fordringshavere:
+
+1. **Afregning** — monthly settlement, sent on the last business day of each month. Contains CPR/beløb/dato/fordring.
+2. **Udligning** — daily notification when there is saldo movement on a fordring. Used to track saldi for nedskrivning.
+3. **Allokering** — daily notification, similar to udligning but shows afdrag/hovedstol/renter breakdown. Mutually exclusive with udligning (a fordringshaver receives one or the other).
+4. **Renter** — monthly tilskrevet renter or detailed daily renter statement (system-to-system only).
+5. **Afskrivning** — sent when a fordring loses retskraft (forældelse, konkurs, dødsbo, gældssanering).
+6. **Tilbagesend/Returnering** — sent when the creditor requests return of a fordring or Gældsstyrelsen returns a claim.
+
+Key constraints:
+- Notifications older than 3 months cannot be fetched.
+- System-to-system: fetch via service in own debitorsystem.
+- Portal users: fetch in Fordringshaverportalen.
+
+### Skriftlig underretning requirement
+
+- Written notification (skriftlig underretning) to the skyldner is required before overdragelse til inddrivelse.
+- The underretning must be given by the fordringshaver or opkræver.
+- All medhæftere (co-liable parties) need individual underretning.
+- Underretning is also required before opskrivning (increase) of an existing fordring.
+
+Source: https://gaeldst.dk/fordringshaver/find-vejledning/underretningsmeddelelser
+
 ## Out of scope
 
 - Physical mail provider integration

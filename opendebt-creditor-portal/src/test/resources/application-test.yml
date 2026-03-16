@@ -15,6 +15,12 @@ spring:
     mode: HTML
 
 opendebt:
+  i18n:
+    default-locale: da-DK
+    supported-locales:
+      - da-DK
+      - en-GB
+      - uk-UA
   services:
     debt-service:
       url: http://localhost:8082

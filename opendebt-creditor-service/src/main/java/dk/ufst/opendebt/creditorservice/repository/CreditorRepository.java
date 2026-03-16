@@ -19,4 +19,7 @@ public interface CreditorRepository extends JpaRepository<CreditorEntity, UUID> 
   Optional<CreditorEntity> findByCreditorOrgId(UUID creditorOrgId);
 
   List<CreditorEntity> findByParentCreditorId(UUID parentCreditorId);
+
+  List<CreditorEntity> findByActivityStatusOrderByExternalCreditorIdAsc(
+      dk.ufst.opendebt.creditorservice.entity.ActivityStatus activityStatus);
 }

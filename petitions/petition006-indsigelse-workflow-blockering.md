@@ -39,6 +39,39 @@ Without an explicit objection model, OpenDebt cannot reliably express:
 - This petition does not define detailed SLA rules for resolving objections.
 - This petition assumes that later communication to the debtor about the objection outcome may be handled by the communication model.
 
+## PSRM Reference Context
+
+### PSRM KLAG withdrawal workflow
+
+When a skyldner has a klage with opsættende virkning, the fordringshaver must tilbagekald the fordring with årsagskode **KLAG**:
+
+- No virkningsdato is required — it is automatically set to bogføringsdato.
+- Dækninger are **NOT** reversed; they are retained.
+- Inddrivelsesrenter are calculated up to virkningsdato and returned upon tilbagekald.
+- The fordring is **locked** after withdrawal.
+- After the klage decision is reached:
+  - **FEJL** (skyldner gets medhold): all dækninger are reversed/ophæves, inddrivelsesrenter nulstilles from modtagelsestidspunktet, and the fordring is permanently locked.
+  - **GenindsendFordring**: the fordring can be resubmitted using the original fordrings-ID.
+
+### PSRM HENS (henstand) withdrawal
+
+When a fordringshaver grants the skyldner henstand, the tilbagekald workflow uses årsagskode **HENS**:
+
+- Works identically to the KLAG workflow (auto virkningsdato, dækninger retained, renter calculated to virkningsdato).
+- **Not available** for statsrefusion-fordringer.
+
+### Genindsendelse after KLAG/HENS
+
+After a KLAG or HENS tilbagekald, the fordring may be resubmitted using the **GenindsendFordring** function:
+
+- The original fordrings-ID must be provided.
+- Certain stamdata must match the original fordring: stiftelsesdato, forfaldsdato, and periode.
+- The resubmitted fordring receives a **new fordrings-ID**.
+- Forældelsesdato must be the newest available (from underretning or the fordringshaver's own afbrydelse).
+- **FEJL-withdrawn claims CANNOT be resubmitted** via GenindsendFordring — they must be created as entirely new fordringer.
+
+_Source: [Tilbagekald fordring](https://gaeldst.dk/fordringshaver/find-vejledning/regulering-af-fordringer/tilbagekald-fordring) · `docs/psrm-reference/04c-tilbagekald-fordring.md`_
+
 ## Out of scope
 
 - Full appeals hierarchy beyond the objection step

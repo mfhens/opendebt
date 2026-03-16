@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/default}"
-      lang="da">
+      th:lang="${#locale.language}">
 <head>
-  <title>Dine fordringer</title>
+  <title th:text="#{debts.page.title}">Dine fordringer</title>
 </head>
 <body>
-  <span layout:fragment="breadcrumb">Fordringer</span>
+  <span layout:fragment="breadcrumb" th:text="#{debts.breadcrumb}">Fordringer</span>
   <section layout:fragment="content">
-    <h1>Dine fordringer</h1>
+    <h1 th:text="#{debts.heading}">Dine fordringer</h1>
 
     <!-- Success flash message from fordring submission -->
     <div th:if="${successMessage != null}"
@@ -22,21 +22,21 @@
         <table class="skat-table">
           <thead>
             <tr>
-              <th scope="col">Type</th>
-              <th scope="col">Hovedstol</th>
-              <th scope="col">Udestående</th>
-              <th scope="col">Forfaldsdato</th>
-              <th scope="col">Status</th>
+              <th scope="col" th:text="#{debts.col.type}">Type</th>
+              <th scope="col" th:text="#{debts.col.principal}">Hovedstol</th>
+              <th scope="col" th:text="#{debts.col.outstanding}">Udestående</th>
+              <th scope="col" th:text="#{debts.col.dueDate}">Forfaldsdato</th>
+              <th scope="col" th:text="#{debts.col.status}">Status</th>
             </tr>
           </thead>
           <tbody>
             <tr th:if="${#lists.isEmpty(debts)}">
-              <td colspan="5">Ingen fordringer fundet.</td>
+              <td colspan="5" th:text="#{debts.empty}">Ingen fordringer fundet.</td>
             </tr>
             <tr th:each="debt : ${debts}">
               <td th:text="${debt.debtTypeCode}">SKAT</td>
-              <td th:text="${#numbers.formatDecimal(debt.principalAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK'">0,00 DKK</td>
-              <td th:text="${debt.outstandingBalance != null ? #numbers.formatDecimal(debt.outstandingBalance, 1, 'COMMA', 2, 'POINT') + ' DKK' : '-'}">0,00 DKK</td>
+              <td th:text="${#numbers.formatDecimal(debt.principalAmount, 1, 'COMMA', 2, 'POINT')} + ' ' + #{debts.currency.suffix}">0,00 DKK</td>
+              <td th:text="${debt.outstandingBalance != null} ? (${#numbers.formatDecimal(debt.outstandingBalance, 1, 'COMMA', 2, 'POINT')} + ' ' + #{debts.currency.suffix}) : '-'">0,00 DKK</td>
               <td th:text="${debt.dueDate}">2025-01-01</td>
               <td>
                 <span th:text="${debt.status}"
@@ -52,8 +52,8 @@
     </div>
 
     <p style="margin-top: 1rem;">
-      <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> Opret ny fordring</a>
-      <a class="skat-btn skat-btn--secondary" th:href="@{/}"><span class="ikon ikon-arrow-right" aria-hidden="true"></span> Tilbage til forsiden</a>
+      <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> <span th:text="#{debts.btn.create}">Opret ny fordring</span></a>
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}"><span class="ikon ikon-arrow-right" aria-hidden="true"></span> <span th:text="#{debts.btn.back}">Tilbage til forsiden</span></a>
     </p>
   </section>
 </body>

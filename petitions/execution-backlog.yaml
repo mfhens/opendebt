@@ -2,8 +2,9 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-15
-  updated_by: factory-droid
+  updated_at: 2026-03-16
+  updated_by: factory-droid (wave-7 PSRM-enriched downstream collection + PSRM notes)
+  psrm_reference: docs/psrm-reference/
   ticket_status_values:
     - pending
     - in_progress
@@ -42,6 +43,35 @@ backlog:
       sprints:
         - sprint-7
 
+    - id: wave-5
+      phase: phase-5
+      name: Internationalization (i18n) infrastructure
+      objective: Extract all hardcoded Danish text from creditor-portal templates into message bundles, add English translations, implement shared i18n infrastructure (MessageSource, LocaleResolver, language selector) reusable by all portals.
+      sprints:
+        - sprint-8
+        - sprint-9
+
+    - id: wave-6
+      phase: phase-6
+      name: Citizen portal (Skyldnerportal) landing page
+      objective: Build the public-facing citizen portal landing page with debt overview content, MitID CTA, FAQ section, accessibility statement, and full i18n — using the same Thymeleaf + HTMX + SKAT design language as the creditor portal.
+      sprints:
+        - sprint-10
+        - sprint-11
+
+    - id: wave-7
+      phase: phase-3
+      name: Downstream collection model (PSRM-enriched)
+      objective: >
+        Implement the downstream collection domain model informed by PSRM reference context:
+        fordring lifecycle with 0-fordring support, 22 stamdata field validation, HØRING workflow,
+        6 underretning types, solidarisk hæftelse with HAFT workflow, KLAG/HENS tilbagekald
+        workflows, GenindsendFordring function, and inddrivelsesskridt with civilretlige constraints.
+      sprints:
+        - sprint-12
+        - sprint-13
+        - sprint-14
+
   sprints:
     - id: sprint-1
       wave: wave-1
@@ -71,6 +101,44 @@ backlog:
       wave: wave-4
       name: OpenTelemetry framework and creditor instrumentation
       objective: Add OTel dependencies, structured JSON logging, trace propagation, Docker Compose observability stack, and custom creditor business metrics.
+    - id: sprint-8
+      wave: wave-5
+      name: i18n infrastructure and creditor-portal string extraction
+      objective: Configure Spring i18n beans, extract all hardcoded Danish from creditor-portal templates into messages_da.properties, add language selector to layout header.
+    - id: sprint-9
+      wave: wave-5
+      name: English translations and i18n acceptance testing
+      objective: Generate messages_en_GB.properties using translator-droid, add BDD scenarios for language switching, verify existing tests pass after refactoring.
+    - id: sprint-10
+      wave: wave-6
+      name: Citizen portal infrastructure and landing page
+      objective: Bootstrap Thymeleaf + HTMX stack in citizen portal, duplicate i18n infrastructure, create SKAT-branded citizen layout, implement landing page controller and template with FAQ section.
+    - id: sprint-11
+      wave: wave-6
+      name: Citizen portal i18n, security, and acceptance
+      objective: Create Danish and English message bundles, configure SecurityConfig for public access, add accessibility statement, write BDD acceptance tests, and converge.
+    - id: sprint-12
+      wave: wave-7
+      name: Fordring lifecycle, stamdata, and hearing workflow
+      objective: >
+        Implement PSRM-informed fordring lifecycle model (restance transition, overdragelse pre-conditions),
+        22 stamdata field validation with obligatorisk/valgfri classification, 0-fordring pattern for
+        renter on indfriet hovedfordring, HØRING workflow for indgangsfilter deviations, and kvittering
+        response model.
+    - id: sprint-13
+      wave: wave-7
+      name: Underretning model, hæftelse, and tilbagekald workflows
+      objective: >
+        Implement 6 PSRM underretning types (Afregning, Udligning, Allokering, Renter, Afskrivning,
+        Tilbagesend), solidarisk hæftelse model with HAFT/KLAG/HENS tilbagekald workflows,
+        GenindsendFordring function, and I/S/PEF skyldner rules.
+    - id: sprint-14
+      wave: wave-7
+      name: Inddrivelsesskridt and civilretlige constraints
+      objective: >
+        Implement inddrivelsesskridt domain model for modregning, lønindeholdelse, and udlæg with
+        civilretlige fordringer constraints, 100K betalingspåkrav threshold, dækningsrækkefølge
+        (rente before hovedstol), and afskrivning reason codes.
 
   tickets:
     W1-SPEC-01:
@@ -483,6 +551,9 @@ backlog:
         - W2-SPEC-01
       owner_role: Rules engine engineer
       parallelization: Starts as soon as infrastructure exists.
+      psrm_note: >
+        PSRM enrichment confirms rules map to official stamdata field definitions and
+        submission outcome model (UDFØRT/AFVIST/HØRING). No code changes needed; traceability documented.
 
     W2-RULE-02:
       status: pending
@@ -594,6 +665,10 @@ backlog:
         - W2-RULE-04
       owner_role: Backend integration engineer
       parallelization: Blocks production use of rules.
+      psrm_note: >
+        PSRM enrichment adds kvittering response model requirement — validation results must
+        map to PSRM slutstatus (UDFØRT/AFVIST/HØRING). Error codes map to AFVIST; indgangsfilter
+        deviations route to HØRING workflow (W7-HEAR-01). Coordinate with Wave 7 for full integration.
 
     W2-ACC-01:
       status: pending
@@ -930,3 +1005,980 @@ backlog:
         - W4-OTEL-04
       owner_role: Platform engineer plus QA
       parallelization: Final convergence ticket for Wave 4.
+
+    # Wave 5: Internationalization (i18n)
+
+    W5-I18N-01:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Configure Spring i18n infrastructure (MessageSource, LocaleResolver, LocaleChangeInterceptor) in the creditor-portal module.
+      entry_criteria:
+        - Creditor portal is functional with all templates in place (Wave 3 complete).
+      deliverables:
+        - I18nConfig.java with ReloadableResourceBundleMessageSource (classpath messages, fallback to da)
+        - CookieLocaleResolver with default locale da-DK and cookie name opendebt-lang
+        - LocaleChangeInterceptor intercepting lang request parameter
+        - WebMvcConfigurer wiring the interceptor
+        - opendebt.i18n configuration properties bean (default-locale, supported-locales list)
+        - application.yml updated with opendebt.i18n.default-locale da-DK and supported-locales da-DK plus en-GB
+        - empty messages_da.properties created as baseline
+        - unit test verifying MessageSource resolves keys and falls back to Danish
+      depends_on: []
+      owner_role: Backend engineer
+      parallelization: Must complete before template extraction starts.
+
+    W5-I18N-02:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Make the HTML lang attribute dynamic and add a language selector fragment to the layout header.
+      entry_criteria:
+        - W5-I18N-01 i18n infrastructure is configured.
+      deliverables:
+        - layout/default.html html element updated with th:lang to reflect active locale dynamically
+        - new Thymeleaf fragment fragments/language-selector.html rendering a drop-down from supported-locales config
+        - language selector displays native names (Dansk, English) and preserves current page URL on switch
+        - language selector integrated into skat-header section of layout/default.html
+        - CSS additions in skat-tokens.css for language selector styling (skat-lang-select class)
+        - lang selector accessible with aria-label for screen readers
+        - unit test verifying locale switch via lang parameter
+      depends_on:
+        - W5-I18N-01
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can overlap late with W5-I18N-01 once MessageSource bean exists.
+
+    W5-I18N-03:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Extract all hardcoded Danish strings from layout/default.html into messages_da.properties.
+      entry_criteria:
+        - W5-I18N-01 is complete.
+        - W5-I18N-02 language selector is integrated.
+      deliverables:
+        - layout/default.html refactored to use #{...} message expressions for all static text
+        - message keys added to messages_da.properties for skip-link, header nav items, breadcrumb, footer link text, page title pattern
+        - aria-label values externalized to message keys
+        - no hardcoded Danish text remaining in layout/default.html
+      depends_on:
+        - W5-I18N-01
+        - W5-I18N-02
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W5-I18N-04 through W5-I18N-08 once layout is done.
+
+    W5-I18N-04:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Extract all hardcoded Danish strings from index.html (dashboard) into messages_da.properties.
+      entry_criteria:
+        - W5-I18N-03 layout extraction is complete (shared keys like breadcrumb and page title are defined).
+      deliverables:
+        - index.html refactored to use #{...} message expressions for all headings, labels, card titles, button text, alert messages, form labels, hints
+        - message keys added to messages_da.properties for dashboard-specific text (fordringshaverprofil heading, profile table labels, shortcut cards, acting-on-behalf-of labels)
+        - error messages in DashboardController moved to message keys or kept as backend error strings (document decision)
+        - no hardcoded Danish text remaining in index.html
+      depends_on:
+        - W5-I18N-03
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W5-I18N-05 through W5-I18N-08.
+
+    W5-I18N-05:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Extract all hardcoded Danish strings from fordringer.html (debt list) into messages_da.properties.
+      entry_criteria:
+        - W5-I18N-03 layout extraction is complete.
+      deliverables:
+        - fordringer.html refactored to use #{...} message expressions for page title, column headers, empty-state text, button labels, success message placeholder
+        - message keys added to messages_da.properties for debt list page text
+        - currency formatting updated to respect active locale
+        - no hardcoded Danish text remaining in fordringer.html
+      depends_on:
+        - W5-I18N-03
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W5-I18N-04, W5-I18N-06, W5-I18N-07, W5-I18N-08.
+
+    W5-I18N-06:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Extract all hardcoded Danish strings from fordring-ny.html (new claim form) into messages_da.properties.
+      entry_criteria:
+        - W5-I18N-03 layout extraction is complete.
+      deliverables:
+        - fordring-ny.html refactored to use #{...} message expressions for page title, form labels, field hints, validation error summary text, button labels, acting-on-behalf-of indicator text
+        - message keys added to messages_da.properties for all form field labels and submission text
+        - no hardcoded Danish text remaining in fordring-ny.html
+      depends_on:
+        - W5-I18N-03
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W5-I18N-04, W5-I18N-05, W5-I18N-07, W5-I18N-08.
+
+    W5-I18N-07:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Extract all hardcoded Danish strings from sager.html, error.html, was.html, and fragments/form-field.html into messages_da.properties.
+      entry_criteria:
+        - W5-I18N-03 layout extraction is complete.
+      deliverables:
+        - sager.html refactored (page title, column headers, empty-state text, under-development notice, back button)
+        - error.html refactored (heading, default error message, back button)
+        - was.html refactored (accessibility statement heading, all section headings, body paragraphs, contact details, enforcement link text, date text)
+        - fragments/form-field.html default text externalized
+        - all message keys added to messages_da.properties
+        - no hardcoded Danish text remaining in any of these four files
+      depends_on:
+        - W5-I18N-03
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W5-I18N-04, W5-I18N-05, W5-I18N-06, W5-I18N-08.
+
+    W5-I18N-08:
+      status: pending
+      sprint: sprint-8
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Externalize hardcoded Danish strings in Java controllers to message keys and update backend error messages.
+      entry_criteria:
+        - W5-I18N-01 MessageSource is available.
+      deliverables:
+        - DashboardController backend error messages use MessageSource instead of hardcoded Danish strings
+        - FordringController error and success messages use MessageSource
+        - Jakarta Bean Validation messages externalized to ValidationMessages_da.properties if custom messages exist
+        - all controller-originated user-facing text resolved via MessageSource or message keys
+      depends_on:
+        - W5-I18N-01
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with template extraction tickets.
+
+    W5-I18N-09:
+      status: pending
+      sprint: sprint-9
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Generate messages_en_GB.properties using the translator-droid.
+      entry_criteria:
+        - W5-I18N-03 through W5-I18N-08 are complete (all Danish keys are in messages_da.properties).
+        - translator-droid is available in .factory/droids/translator.md.
+      deliverables:
+        - messages_en_GB.properties with complete English translations for all keys
+        - translation uses OpenDebt domain terminology (fordring=claim, skyldner=debtor, etc.)
+        - auto-translation header comment in the file
+        - key order matches messages_da.properties exactly
+        - ValidationMessages_en_GB.properties if validation messages were externalized
+      depends_on:
+        - W5-I18N-03
+        - W5-I18N-04
+        - W5-I18N-05
+        - W5-I18N-06
+        - W5-I18N-07
+        - W5-I18N-08
+      owner_role: translator-droid (automated)
+      parallelization: Must wait for all Danish extraction to complete.
+
+    W5-I18N-10:
+      status: pending
+      sprint: sprint-9
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+      objective: Add BDD scenarios for i18n functionality and verify existing tests still pass.
+      entry_criteria:
+        - W5-I18N-09 English translations exist.
+        - W5-I18N-02 language selector is functional.
+      deliverables:
+        - petition021.feature file with Cucumber scenarios covering language switching to English, fallback to Danish for missing keys, language persistence via cookie across navigation, HTML lang attribute updates on switch, language selector visibility and content
+        - Petition021Steps.java step definitions
+        - all existing BDD tests (petition012, 013, 014) pass without modification after template refactoring
+        - all existing unit tests pass
+        - mvn verify succeeds with i18n changes
+      depends_on:
+        - W5-I18N-09
+        - W5-I18N-02
+      owner_role: QA automation plus backend engineer
+      parallelization: Blocks Wave 5 completion.
+
+    W5-I18N-11:
+      status: pending
+      sprint: sprint-9
+      petitions:
+        - petition021
+      modules:
+        - opendebt-creditor-portal
+        - opendebt-citizen-portal
+        - opendebt-common
+      objective: Verify i18n infrastructure is reusable and document the pattern for future portals.
+      entry_criteria:
+        - W5-I18N-10 is complete.
+      deliverables:
+        - citizen-portal application.yml includes opendebt.i18n configuration section (ready for petition022)
+        - shared i18n configuration pattern documented in an AGENTS.md update or inline code comments
+        - language selector fragment is portable (can be included by citizen-portal layout when built)
+        - verify no hardcoded Danish text remains in any creditor-portal template (grep audit)
+        - mvn verify on full project passes
+        - all petition021 outcome contract acceptance criteria verified met
+      depends_on:
+        - W5-I18N-10
+      owner_role: Platform engineer plus QA
+      parallelization: Final convergence ticket for Wave 5.
+
+    # ==========================================================================
+    # Wave 6: Citizen Portal (Skyldnerportal) Landing Page
+    # ==========================================================================
+
+    W6-CP-01:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Add Thymeleaf, layout dialect, HTMX, and WebFlux dependencies to the citizen portal POM.
+      entry_criteria:
+        - petition021 i18n infrastructure is validated (Wave 5 complete).
+        - Citizen portal skeleton module exists with Spring Boot app.
+      deliverables:
+        - spring-boot-starter-thymeleaf dependency added to opendebt-citizen-portal pom.xml
+        - thymeleaf-layout-dialect 3.3.0 dependency added
+        - htmx.org 2.0.4 WebJar dependency added
+        - spring-boot-starter-webflux dependency added (for future WebClient usage)
+        - Cucumber test dependencies added (cucumber-java, cucumber-spring, cucumber-junit-platform-engine, junit-platform-suite)
+        - spring-security-test dependency added (scope test)
+        - mockwebserver dependency added (scope test)
+        - Thymeleaf template configuration in application.yml (prefix, suffix, cache)
+      depends_on: []
+      owner_role: Platform engineer
+      parallelization: Must complete before template work starts.
+
+    W6-CP-02:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+        - petition021
+      modules:
+        - opendebt-citizen-portal
+      objective: Duplicate i18n infrastructure classes (I18nConfig, I18nProperties, I18nModelAdvice) for the citizen portal.
+      entry_criteria:
+        - W6-CP-01 dependencies are in place.
+        - Creditor portal i18n classes exist as reference (petition021 validated).
+      deliverables:
+        - I18nConfig.java in dk.ufst.opendebt.citizen.config (MessageSource, CookieLocaleResolver, LocaleChangeInterceptor)
+        - I18nProperties.java in dk.ufst.opendebt.citizen.config (reads opendebt.i18n config)
+        - I18nModelAdvice.java in dk.ufst.opendebt.citizen.config (exposes supportedLocales and localeNativeNames)
+        - application.yml already has opendebt.i18n section (verified)
+        - unit test verifying MessageSource resolves a test key and falls back to Danish
+      depends_on:
+        - W6-CP-01
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with W6-CP-04 once dependencies exist.
+      notes: >
+        The i18n classes are duplicated rather than shared via opendebt-common because each portal
+        may diverge (different cookie names, different supported locales). If a third portal is added,
+        consider extracting to opendebt-common.
+
+    W6-CP-03:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+        - petition013
+      modules:
+        - opendebt-citizen-portal
+      objective: Create the citizen portal Thymeleaf layout template adapted from the creditor portal with citizen-specific branding.
+      entry_criteria:
+        - W6-CP-01 Thymeleaf and layout dialect dependencies are in place.
+        - W6-CP-02 i18n infrastructure is available.
+        - W6-CP-04 static resources (CSS, JS, fonts) are copied.
+      deliverables:
+        - layout/default.html with SKAT design language (dark navy header, breadcrumb, content, footer)
+        - citizen-specific branding in header (Gaeldsstyrelsen logo/text instead of Fordringshaverportal)
+        - citizen-specific navigation items (Se din gaeld, Om gaeld, Kontakt instead of creditor nav)
+        - skip-link for accessibility (ADR-0021)
+        - landmark roles (banner, navigation, main, contentinfo)
+        - language selector fragment included in header
+        - accessibility statement link in footer
+        - th:lang dynamic HTML lang attribute
+        - Thymeleaf layout:title-pattern for page titles
+      depends_on:
+        - W6-CP-01
+        - W6-CP-02
+        - W6-CP-04
+      owner_role: Frontend-capable backend engineer
+      parallelization: Blocks all page template work.
+
+    W6-CP-04:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Copy shared static resources (skat-tokens.css, a11y.js, fonts) to the citizen portal module.
+      entry_criteria:
+        - W6-CP-01 dependencies are in place.
+        - skat-tokens.css, a11y.js, and font files exist in creditor-portal static resources.
+      deliverables:
+        - static/css/skat-tokens.css copied from creditor portal
+        - static/js/a11y.js copied from creditor portal
+        - static/fonts/ directory with republic and academy-sans font families and dap-ikon-font
+        - fragments/language-selector.html copied from creditor portal
+      depends_on:
+        - W6-CP-01
+      owner_role: Backend engineer
+      parallelization: Can run in parallel with W6-CP-02.
+      notes: >
+        Static resources are copied rather than extracted to a shared module because citizen portal
+        may later diverge (different color scheme for citizen vs creditor). If resources stay identical,
+        a future ticket can extract to opendebt-common or a shared assets module.
+
+    W6-CP-05:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Create the landing page controller and Thymeleaf template with debt overview content, MitID call-to-action, and configurable external links.
+      entry_criteria:
+        - W6-CP-03 layout template is working.
+        - W6-CP-02 i18n infrastructure is available.
+      deliverables:
+        - CitizenExternalLinksProperties.java reading opendebt.citizen.external-links from application.yml
+        - LandingPageController.java serving GET / (or GET /borger root) returning the landing page view
+        - landing page template (index.html) with heading, debt overview explanation, three ways to view debt
+        - prominent MitID call-to-action button linking to configurable Mit gaeldsoverblik URL
+        - explanation that debt overview is a snapshot and interest accrues daily
+        - section about possible errors in old debt (2013-2015) with configurable link
+        - all text via #{...} Thymeleaf message expressions (no hardcoded text)
+        - all external URLs injected from CitizenExternalLinksProperties (not hardcoded in template)
+        - application.yml updated with opendebt.citizen.external-links configuration block
+      depends_on:
+        - W6-CP-03
+        - W6-CP-02
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W6-CP-06 once layout exists.
+
+    W6-CP-06:
+      status: pending
+      sprint: sprint-10
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Create the FAQ section with 7 expandable items using HTML5 details/summary elements.
+      entry_criteria:
+        - W6-CP-05 landing page template exists.
+      deliverables:
+        - FAQ section in the landing page template using HTML5 details and summary elements
+        - 7 FAQ items covering total debt, payment, interest, payment difficulties, debt counselling, old debt, creditor list
+        - FAQ answers contain links to configurable external URLs from CitizenExternalLinksProperties
+        - all FAQ questions and answers externalized to message bundle keys (citizen.faq.q1 through citizen.faq.a7)
+        - FAQ section is keyboard-accessible (native details/summary provides this)
+        - CSS styling for details/summary in skat-tokens.css (consistent with SKAT design)
+      depends_on:
+        - W6-CP-05
+      owner_role: Frontend-capable backend engineer
+      parallelization: Tightly coupled with W6-CP-05 landing page.
+      notes: >
+        HTML5 details/summary provides native accessible expand/collapse without JavaScript.
+        HTMX enhancement is not needed for FAQ (petition specifies details/summary as primary mechanism).
+
+    W6-CP-07:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+        - petition014
+      modules:
+        - opendebt-citizen-portal
+      objective: Create the accessibility statement page (/was) for the citizen portal.
+      entry_criteria:
+        - W6-CP-03 layout template is working.
+      deliverables:
+        - AccessibilityController.java in dk.ufst.opendebt.citizen.controller serving GET /was
+        - was.html Thymeleaf template adapted from creditor portal version
+        - citizen-specific heading (Tilgaengelighedserklaering for OpenDebt Borgerportal instead of Fordringshaverportal)
+        - same WAS-Tool structure as creditor portal (compliance status, inaccessible content, basis, contact, enforcement, last updated)
+        - all text via #{...} message expressions
+        - footer link to /was verified in layout template
+      depends_on:
+        - W6-CP-03
+      owner_role: Frontend-capable backend engineer
+      parallelization: Can run in parallel with W6-CP-08.
+
+    W6-CP-08:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+        - petition021
+      modules:
+        - opendebt-citizen-portal
+      objective: Create messages_da.properties with all citizen portal Danish message keys for landing page, FAQ, accessibility statement, and layout.
+      entry_criteria:
+        - W6-CP-03 layout template is finalized.
+        - W6-CP-05 and W6-CP-06 landing page and FAQ templates are finalized.
+        - W6-CP-07 accessibility statement template is finalized.
+      deliverables:
+        - messages_da.properties with all citizen portal message keys (estimated 80 to 100 keys)
+        - layout keys (citizen.layout.skip.link, citizen.layout.title.suffix, citizen.layout.nav.*, citizen.layout.breadcrumb.*, citizen.layout.footer.*)
+        - landing page keys (citizen.landing.heading, citizen.landing.intro.*, citizen.landing.mitid.*, citizen.landing.snapshot.*, citizen.landing.olddebterrors.*)
+        - FAQ keys (citizen.faq.heading, citizen.faq.q1 through citizen.faq.q7, citizen.faq.a1 through citizen.faq.a7)
+        - accessibility statement keys (citizen.was.*)
+        - controller message keys if any
+        - all keys use proper unicode escapes for Danish characters
+      depends_on:
+        - W6-CP-05
+        - W6-CP-06
+        - W6-CP-07
+      owner_role: Backend engineer
+      parallelization: Must complete before English translation.
+      notes: >
+        Key prefix citizen.* is used to clearly distinguish from creditor portal keys.
+        Alternatively, the same unprefixed key pattern (layout.*, was.*) can be used since
+        each portal has its own message bundle. Decision: use same unprefixed pattern as
+        creditor portal for consistency within each portal module.
+
+    W6-CP-09:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+        - petition021
+      modules:
+        - opendebt-citizen-portal
+      objective: Translate messages_da.properties to messages_en_GB.properties using the translator-droid.
+      entry_criteria:
+        - W6-CP-08 Danish message bundle is complete.
+        - translator-droid is available at .factory/droids/translator.md.
+      deliverables:
+        - messages_en_GB.properties with complete English translations for all keys
+        - translations use OpenDebt domain terminology (skyldner=debtor, gaeld=debt, fordring=claim, indrivelse=collection)
+        - auto-translation header comment in the file
+        - key order matches messages_da.properties exactly
+        - placeholders and HTML entities preserved
+      depends_on:
+        - W6-CP-08
+      owner_role: translator-droid (automated)
+      parallelization: Must wait for all Danish keys to be finalized.
+
+    W6-CP-10:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Create SecurityConfig allowing unauthenticated access to the landing page and static resources.
+      entry_criteria:
+        - W6-CP-01 Spring Security OAuth2 dependencies exist in pom.xml.
+      deliverables:
+        - SecurityConfig.java in dk.ufst.opendebt.citizen.config
+        - permits unauthenticated access to root path, /was, /css/**, /js/**, /fonts/**, /webjars/**, /actuator/health
+        - CSRF disabled for development (same pattern as creditor portal)
+        - placeholder comments for future MitID/TastSelv OAuth2 login flow wiring
+        - OAuth2 resource server JWT validation disabled or made optional for the landing page (no auth needed)
+      depends_on:
+        - W6-CP-01
+      owner_role: Security-aware backend engineer
+      parallelization: Can run any time after W6-CP-01.
+
+    W6-CP-11:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+      objective: Write BDD acceptance tests covering all petition022 outcome contract acceptance criteria.
+      entry_criteria:
+        - W6-CP-05, W6-CP-06, W6-CP-07, W6-CP-08, W6-CP-09, W6-CP-10 are complete.
+        - Citizen portal starts and serves the landing page.
+      deliverables:
+        - petition022.feature file with Cucumber scenarios covering all 13 acceptance criteria
+        - Petition022Steps.java step definitions using MockMvc or WebTestClient
+        - RunCucumberTest.java test runner for citizen portal
+        - CucumberSpringConfig.java for Spring Boot test context
+        - scenarios for landing page rendering (heading, debt overview content, MitID CTA)
+        - scenarios for FAQ section (7 expandable items, keyboard accessibility)
+        - scenarios for accessibility statement page
+        - scenarios for i18n (Danish default, English switch, language selector visible)
+        - scenarios for configurable external links (not hardcoded)
+        - scenarios for SKAT layout elements (skip-link, landmarks, header, footer)
+        - all scenarios pass with mvn test
+      depends_on:
+        - W6-CP-05
+        - W6-CP-06
+        - W6-CP-07
+        - W6-CP-08
+        - W6-CP-09
+        - W6-CP-10
+      owner_role: QA automation plus backend engineer
+      parallelization: Blocks Wave 6 completion.
+
+    W6-CP-12:
+      status: pending
+      sprint: sprint-11
+      petitions:
+        - petition022
+      modules:
+        - opendebt-citizen-portal
+        - petitions
+      objective: Converge Wave 6 — run mvn verify, update program-status, and document conditions for full citizen portal functionality.
+      entry_criteria:
+        - W6-CP-11 BDD acceptance tests pass.
+        - All Wave 6 tickets are done.
+      deliverables:
+        - mvn verify passes for opendebt-citizen-portal module (all tests green, JaCoCo gate met)
+        - mvn verify passes for the full project (no regressions in other modules)
+        - petition022 status in program-status.yaml updated to validated
+        - conditions for full citizen portal functionality documented in program-status.yaml petition022 notes
+        - citizen portal architecture test updated if new packages were added
+        - JaCoCo coverage thresholds updated from 0.00 to actual minimums
+      depends_on:
+        - W6-CP-11
+      owner_role: Platform engineer plus QA
+      parallelization: Final convergence ticket for Wave 6.
+      notes: >
+        Conditions for full citizen portal functionality (beyond the informational landing page)
+        that must be documented as future petition candidates:
+        a. Person Registry needs a person/CPR lookup API (resolve MitID-authenticated CPR to person_id UUID)
+        b. debt-service needs a citizen-facing debt summary endpoint (authenticated by person_id, not creditorId)
+        c. MitID/TastSelv OAuth2 browser flow must be wired in SecurityConfig
+        d. A citizen-facing Mit gaeldsoverblik page (authenticated debt overview) must be built
+        e. payment-service needs a citizen payment initiation API
+        f. Digital Post integration for letter retrieval
+
+    # ==========================================================================
+    # Wave 7: Downstream Collection Model (PSRM-enriched)
+    # ==========================================================================
+    # These tickets are informed by PSRM Reference Context additions to petitions
+    # 002, 003, 004, 005, 006, and 007. Source: docs/psrm-reference/
+
+    # --- Sprint 12: Fordring lifecycle, stamdata, and hearing workflow ---
+
+    W7-STAM-01:
+      status: pending
+      sprint: sprint-12
+      petitions:
+        - petition002
+        - petition003
+      modules:
+        - opendebt-debt-service
+        - opendebt-integration-gateway
+        - api-specs
+      objective: Implement 22 PSRM stamdata field model with obligatorisk/valgfri classification for fordring creation.
+      entry_criteria:
+        - petition002 PSRM enrichment reviewed and accepted.
+        - debt-service fordring creation endpoint exists.
+      deliverables:
+        - StamdataField enum or configuration with 22 fields and their obligatorisk/valgfri classification
+        - Fordring DTO updated with all 22 fields (Beløb, Hovedstol, Fordringshaver, FordringhaverReference, Fordringsart, Fordringstype, HovedfordringsID, Skyldner ID, Forældelsesdato, Beskrivelse, Fordringsperiode, Stiftelsesdato, Forfaldsdato, SRB, Bobehandling, Domsdato, Forligsdato, Rentevalg, Fordringsnote, Fordringsdokumenter, Kundenote, P-nummer)
+        - Validation rules for obligatorisk fields per channel (S2S vs portal — Bobehandling is valgfri S2S, obligatorisk portal)
+        - GDPR constraint on Beskrivelse (max 100 chars, no PII of third parties)
+        - OpenAPI spec updated with complete stamdata field definitions
+        - Unit tests for field validation (obligatorisk rejection, valgfri acceptance)
+      depends_on: []
+      owner_role: Domain architect plus backend engineer
+      parallelization: Must complete before hearing workflow and lifecycle model.
+      psrm_source: docs/psrm-reference/01-generelle-krav-til-fordringer.md
+
+    W7-LIFE-01:
+      status: pending
+      sprint: sprint-12
+      petitions:
+        - petition003
+      modules:
+        - opendebt-debt-service
+      objective: Implement fordring→restance lifecycle transition with PSRM pre-conditions for overdragelse.
+      entry_criteria:
+        - W7-STAM-01 stamdata model is defined.
+        - debt-service entity model supports lifecycle states.
+      deliverables:
+        - Fordring lifecycle state model (FORDRING → RESTANCE → OVERDRAGET → collection states)
+        - SRB expiry check as pre-condition for overdragelse (PSRM rejects if SRB not passed)
+        - Pre-submission validation (rykkerprocedure completed, skriftlig underretning given, claims separated)
+        - Claim separation enforcement — hovedfordringer and renter must be separate fordringer
+        - All medhæftere must be reported simultaneously validation
+        - Overdragelse audit trail (restance, fordringshaver, restanceinddrivelsesmyndighed, tidspunkt)
+        - Unit tests for lifecycle transitions and pre-condition enforcement
+      depends_on:
+        - W7-STAM-01
+      owner_role: Backend engineer for debt-service
+      parallelization: Can overlap with W7-HEAR-01 once lifecycle states are defined.
+      psrm_source: docs/psrm-reference/01-generelle-krav-til-fordringer.md
+
+    W7-ZERO-01:
+      status: pending
+      sprint: sprint-12
+      petitions:
+        - petition003
+      modules:
+        - opendebt-debt-service
+      objective: Implement 0-fordring pattern for renter on indfriet hovedfordring.
+      entry_criteria:
+        - W7-LIFE-01 lifecycle model exists.
+        - Claim separation rules are enforced.
+      deliverables:
+        - Support for creating a 0-saldo fordring (saldo 0 kr) when hovedfordring is already paid
+        - Validation that renter related to a paid hovedfordring require 0-fordring to be submitted first
+        - Underfordring (renter) must reference the hovedfordring via HovedfordringsID
+        - Unit tests for 0-fordring creation and renter submission order
+      depends_on:
+        - W7-LIFE-01
+      owner_role: Backend engineer for debt-service
+      parallelization: Can run after lifecycle model is in place.
+      psrm_source: docs/psrm-reference/01-generelle-krav-til-fordringer.md
+
+    W7-HEAR-01:
+      status: pending
+      sprint: sprint-12
+      petitions:
+        - petition002
+      modules:
+        - opendebt-debt-service
+        - opendebt-creditor-portal
+      objective: Implement HØRING workflow for fordringer deviating from indgangsfilter rules.
+      entry_criteria:
+        - W7-STAM-01 stamdata model exists.
+        - Creditor portal fordring submission page exists (Wave 3).
+      deliverables:
+        - HOERING status for fordringer where stamdata deviates from indgangsfilter
+        - Fordringer-i-hoering view in fordringshaverportal with status Afventer-fordringshaver
+        - Fordringshaver actions — approve (with written justification) or withdraw (fortryd)
+        - Status transition to Afventer-RIM after fordringshaver approval
+        - Gaeldsstyrelsen caseworker decision — godkend, afvis, or tilpas indgangsfilter
+        - Kvittering response model with fordrings-ID, haeftelsesforhold, AKR-nummer, slutstatus (UDFOERT/AFVIST/HOERING)
+        - 14-day SLA tracking for fordringer i hoering
+        - Fordringshaver own foraeldelsesregler apply while in hoering (NOT received for inddrivelse)
+        - Unit and integration tests for hearing workflow states
+      depends_on:
+        - W7-STAM-01
+      owner_role: Backend engineer plus Flowable workflow
+      parallelization: Can run in parallel with W7-LIFE-01.
+      psrm_source: docs/psrm-reference/02-fordringer-i-hoering.md
+
+    W7-KVIT-01:
+      status: pending
+      sprint: sprint-12
+      petitions:
+        - petition002
+        - petition003
+      modules:
+        - opendebt-debt-service
+        - opendebt-integration-gateway
+        - api-specs
+      objective: Implement kvittering (receipt) response model for fordring submission outcomes.
+      entry_criteria:
+        - W7-STAM-01 stamdata model exists.
+        - W7-HEAR-01 HØRING workflow is defined.
+      deliverables:
+        - KvitteringResponse DTO with fordrings-ID, hæftelsesforhold, AKR-nummer, slutstatus
+        - Slutstatus enum (UDFØRT, AFVIST, HØRING) with mapping to internal validation results
+        - OpenAPI spec updated with kvittering response schema
+        - Integration with validation pipeline — map error codes to AFVIST, indgangsfilter deviations to HØRING
+        - Unit tests for kvittering generation per outcome
+      depends_on:
+        - W7-STAM-01
+        - W7-HEAR-01
+      owner_role: Backend integration engineer
+      parallelization: Blocks end-to-end submission flow.
+      psrm_source: docs/psrm-reference/01-generelle-krav-til-fordringer.md
+
+    # --- Sprint 13: Underretning, hæftelse, and tilbagekald workflows ---
+
+    W7-UND-01:
+      status: pending
+      sprint: sprint-13
+      petitions:
+        - petition004
+      modules:
+        - opendebt-notification-service
+        - api-specs
+      objective: Implement underretning domain model with 6 PSRM notification types.
+      entry_criteria:
+        - petition003 lifecycle model exists (Sprint 12 complete).
+        - Notification service module exists or is bootstrapped.
+      deliverables:
+        - Underretning entity with sender, recipients, channel, fordring/restance reference, delivery state
+        - 6 underretning types as enum or subtype hierarchy (AFREGNING, UDLIGNING, ALLOKERING, RENTER, AFSKRIVNING, TILBAGESEND_RETURNERING)
+        - AFREGNING — monthly settlement logic (last business day), CPR/beløb/dato/fordring content
+        - UDLIGNING vs ALLOKERING mutual exclusivity per fordringshaver (configuration-driven)
+        - ALLOKERING — afdrag/hovedstol/renter breakdown
+        - RENTER — monthly or detailed daily (S2S only)
+        - AFSKRIVNING — triggered on forældelse, konkurs, dødsbo, gældssanering
+        - TILBAGESEND/RETURNERING — triggered on tilbagekald or Gældsstyrelsen return
+        - 3-month fetch window constraint
+        - Skriftlig underretning validation (required before overdragelse and opskrivning)
+        - Unit tests for each notification type
+      depends_on: []
+      owner_role: Backend engineer
+      parallelization: Can start once lifecycle model is defined.
+      psrm_source: docs/psrm-reference/06-underretningsmeddelelser.md
+
+    W7-HAFT-01:
+      status: pending
+      sprint: sprint-13
+      petitions:
+        - petition005
+      modules:
+        - opendebt-debt-service
+      objective: Implement solidarisk hæftelse model with HAFT tilbagekald/resubmit workflow.
+      entry_criteria:
+        - W7-LIFE-01 lifecycle model exists.
+        - petition005 PSRM enrichment reviewed.
+      deliverables:
+        - Hæftelse entity linking fordring to skyldner with liability type
+        - Solidarisk hæftelse as primary (only PSRM-supported) type
+        - Non-solidary liability must be split by fordringshaver before submission (validation rule)
+        - HAFT tilbagekald workflow — withdraw fordring, notify all parties, resubmit with updated skyldnere
+        - Dækninger NOT reversed on HAFT tilbagekald; inddrivelsesrenter returned
+        - REINDGI fordringstype for re-submitting inddrivelsesrenter after HAFT resubmission
+        - New plads i dækningsrækkefølge for resubmitted fordring
+        - Individual underretning required for each medhæfter
+        - Unit tests for hæftelse creation, HAFT workflow, and skyldner management
+      depends_on:
+        - W7-LIFE-01
+      owner_role: Backend engineer for debt-service
+      parallelization: Can run in parallel with W7-UND-01.
+      psrm_source: docs/psrm-reference/03-tilfoej-fjern-skyldner.md
+
+    W7-HAFT-02:
+      status: pending
+      sprint: sprint-13
+      petitions:
+        - petition005
+      modules:
+        - opendebt-debt-service
+        - opendebt-person-registry
+      objective: Implement I/S and PEF skyldner identification rules.
+      entry_criteria:
+        - W7-HAFT-01 hæftelse model exists.
+        - person-registry supports CVR and CPR lookups.
+      deliverables:
+        - I/S (Interessentskab) rules — submit CVR for partnership AND CPR/CVR for all liable interessenter
+        - PEF (Personligt ejet firma) rules — submit CVR if firm active, CPR if firm ceased
+        - PSRM auto-add CPR for PEF owner after submission (simulation or hook)
+        - Only originally reported skyldnere hæfte for inddrivelsesrenter (exception for I/S)
+        - Validation rules for I/S and PEF identification at submission time
+        - Unit tests for I/S and PEF skyldner scenarios
+      depends_on:
+        - W7-HAFT-01
+      owner_role: Backend engineer
+      parallelization: Starts after hæftelse model exists.
+      psrm_source: docs/psrm-reference/10-is-og-pef-skyldnere.md
+
+    W7-INDS-01:
+      status: pending
+      sprint: sprint-13
+      petitions:
+        - petition006
+      modules:
+        - opendebt-debt-service
+        - opendebt-case-service
+      objective: Implement KLAG and HENS tilbagekald workflows with Flowable BPMN.
+      entry_criteria:
+        - W7-LIFE-01 lifecycle model exists.
+        - Flowable workflow engine is available (ADR-0016).
+      deliverables:
+        - KLAG tilbagekald workflow — auto virkningsdato (bogføringsdato), dækninger fastholdes, renter beregnes to virkningsdato
+        - HENS tilbagekald workflow — identical to KLAG, NOT available for statsrefusion fordringer
+        - FEJL outcome for KLAG — all dækninger reversed/ophæves, renter nulstilles from modtagelsestidspunktet, fordring permanently locked
+        - Fordring locked after KLAG/HENS withdrawal (no further actions until resolution)
+        - Tilbagekald årsagskode enum (BORD, BORT, FEJL, HENS, KLAG, HAFT) with behavior rules per code
+        - BORT restricted to PSRM-routed claims only
+        - FEJL auto-sets virkningsdato to modtagelsesdato, VirkningsDato field must be empty
+        - Flowable BPMN process for klage resolution (suspensive effect → decision → genindsend or permanent lock)
+        - Unit and workflow tests for each årsagskode
+      depends_on:
+        - W7-LIFE-01
+      owner_role: Workflow engineer plus backend
+      parallelization: Can run in parallel with W7-HAFT-01.
+      psrm_source: docs/psrm-reference/04c-tilbagekald-fordring.md
+
+    W7-INDS-02:
+      status: pending
+      sprint: sprint-13
+      petitions:
+        - petition006
+      modules:
+        - opendebt-debt-service
+        - opendebt-integration-gateway
+      objective: Implement GenindsendFordring function for resubmitting withdrawn claims.
+      entry_criteria:
+        - W7-INDS-01 tilbagekald workflows exist.
+        - Validation rules from petition017 (genindsend rules 539-544) are implemented.
+      deliverables:
+        - GenindsendFordring endpoint accepting original fordrings-ID reference
+        - Validation that original claim was withdrawn with valid reason (HENS, KLAG, BORD, or HAFT — NOT FEJL)
+        - Stamdata match validation (stiftelsesdato, forfaldsdato, periode must match original)
+        - Same fordringshaver validation
+        - New fordrings-ID assignment on successful resubmission
+        - Forældelsesdato must be newest available (not from original submission)
+        - MODR fordringer cannot be resubmitted (rule 544)
+        - FEJL-withdrawn claims must create entirely new fordring (cannot use GenindsendFordring)
+        - Integration with existing petition017 rules (539-544) for validation
+        - Unit tests for each genindsend constraint
+      depends_on:
+        - W7-INDS-01
+      owner_role: Backend integration engineer
+      parallelization: Must follow tilbagekald workflow implementation.
+      psrm_source: docs/psrm-reference/04c-tilbagekald-fordring.md
+
+    # --- Sprint 14: Inddrivelsesskridt and civilretlige constraints ---
+
+    W7-INDR-01:
+      status: pending
+      sprint: sprint-14
+      petitions:
+        - petition007
+      modules:
+        - opendebt-case-service
+        - opendebt-debt-service
+      objective: Implement inddrivelsesskridt domain model with civilretlige fordringer constraints.
+      entry_criteria:
+        - W7-LIFE-01 overdragelse til inddrivelse exists.
+        - petition007 PSRM enrichment reviewed.
+      deliverables:
+        - Inddrivelsesskridt entity linked to restance (common base with step type, initiator, timestamp, status)
+        - Modregning, Lønindeholdelse, Udlæg as distinct subtypes
+        - Civilretlige fordringer flag on claim type configuration
+        - Civilretlige constraints — only afdragsordning (GIL §3 stk 3) and modregning available; lønindeholdelse and udlæg generally NOT available
+        - Udlæg requires eksekutionsfundament (dom, betalingspåkrav, skylderklæring) via retsplejeloven §478
+        - Modregning pre-conditions — gensidige, udjævnelige, forfaldne, retskraftige fordringer; GIL §8 indtrædelsesret
+        - Collection step selection validation based on claim type and legal basis
+        - Audit trail for initiated, changed, and completed collection steps
+        - Unit tests for civilretlige constraints and step selection
+      depends_on:
+        - W7-LIFE-01
+      owner_role: Domain architect plus backend engineer
+      parallelization: Can start once overdragelse model exists.
+      psrm_source: docs/psrm-reference/11-civilretlige-fordringer.md
+
+    W7-INDR-02:
+      status: pending
+      sprint: sprint-14
+      petitions:
+        - petition007
+      modules:
+        - opendebt-case-service
+      objective: Implement betalingspåkrav 100K threshold and dækningsrækkefølge rules.
+      entry_criteria:
+        - W7-INDR-01 inddrivelsesskridt model exists.
+      deliverables:
+        - Betalingspåkrav threshold rule — claims under 100,000 kr Gældsstyrelsen files with fogedret; over 100,000 kr fordringshaver must file stævning
+        - Dækningsrækkefølge implementation — inddrivelsesrente (5.75% 2026) always dækket forud for hovedstol
+        - Simple dag-til-dag rente calculation on hovedstol
+        - Monthly afregning generation with dækning details (identification, amounts, dates, fordring references)
+        - Udligning/allokering daily saldo movement notifications
+        - Payment to NemKonto reference model
+        - Configurable inddrivelsesrente rate (annual update)
+        - Unit tests for threshold enforcement and dækningsrækkefølge
+      depends_on:
+        - W7-INDR-01
+      owner_role: Backend engineer
+      parallelization: Starts after inddrivelsesskridt model exists.
+      psrm_source: docs/psrm-reference/07-renteregler.md, docs/psrm-reference/11-civilretlige-fordringer.md
+
+    W7-AFSK-01:
+      status: pending
+      sprint: sprint-14
+      petitions:
+        - petition007
+        - petition024
+        - petition026
+      modules:
+        - opendebt-debt-service
+      objective: Implement afskrivning reason codes and status transitions for citizen visibility.
+      entry_criteria:
+        - W7-LIFE-01 lifecycle model exists.
+      deliverables:
+        - Afskrivning reason code enum (FORAELDELSE, KONKURS, DOEDSBO, GAELDSSANERING, ABENBART_FORMAALSLOES, UFORHOLDSMAESSIGT_OMKOSTNINGSFULD)
+        - Status transition from ACTIVE to WRITTEN_OFF with reason code
+        - Afskrivning triggers underretning to fordringshaver
+        - Citizen-friendly status mapping (PSRM Afskrevet → WRITTEN_OFF with explanatory sub-text)
+        - Rentestop for uafklaret gæld (since 2024-11-01) — interestAmount frozen at stop date
+        - No fradragsret flag (since 2020-01-01) for citizen display
+        - Unit tests for each afskrivning scenario
+      depends_on:
+        - W7-LIFE-01
+      owner_role: Backend engineer for debt-service
+      parallelization: Can run in parallel with W7-INDR-01.
+      psrm_source: docs/psrm-reference/06-underretningsmeddelelser.md
+
+    W7-ACC-01:
+      status: pending
+      sprint: sprint-14
+      petitions:
+        - petition002
+        - petition003
+        - petition004
+        - petition005
+        - petition006
+        - petition007
+      modules:
+        - opendebt-debt-service
+        - opendebt-case-service
+        - opendebt-notification-service
+      objective: Write BDD acceptance tests for Wave 7 PSRM-enriched downstream collection model.
+      entry_criteria:
+        - All Wave 7 implementation tickets are complete.
+      deliverables:
+        - Cucumber scenarios for stamdata validation (22 fields, obligatorisk/valgfri)
+        - Cucumber scenarios for fordring lifecycle transitions (restance, overdragelse, pre-conditions)
+        - Cucumber scenarios for HØRING workflow (indgangsfilter deviation, fordringshaver response, caseworker decision)
+        - Cucumber scenarios for 0-fordring pattern
+        - Cucumber scenarios for underretning types (6 types, delivery states)
+        - Cucumber scenarios for hæftelse model (solidarisk, HAFT workflow, I/S, PEF)
+        - Cucumber scenarios for tilbagekald workflows (KLAG, HENS, FEJL outcomes)
+        - Cucumber scenarios for GenindsendFordring (constraints, stamdata match, exclusions)
+        - Cucumber scenarios for inddrivelsesskridt (civilretlige constraints, 100K threshold)
+        - Cucumber scenarios for afskrivning (reason codes, citizen status mapping)
+        - Architecture tests for new modules
+        - mvn verify passes for all affected modules
+      depends_on:
+        - W7-STAM-01
+        - W7-LIFE-01
+        - W7-ZERO-01
+        - W7-HEAR-01
+        - W7-KVIT-01
+        - W7-UND-01
+        - W7-HAFT-01
+        - W7-HAFT-02
+        - W7-INDS-01
+        - W7-INDS-02
+        - W7-INDR-01
+        - W7-INDR-02
+        - W7-AFSK-01
+      owner_role: QA automation plus domain engineer
+      parallelization: Final convergence ticket for Wave 7.

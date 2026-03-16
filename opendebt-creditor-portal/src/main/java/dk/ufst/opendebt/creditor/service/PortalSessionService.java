@@ -34,11 +34,6 @@ public class PortalSessionService {
   static final String SESSION_ACTING_CREDITOR = "actingCreditorOrgId";
   static final String SESSION_REPRESENTED_CREDITOR = "representedCreditorOrgId";
 
-  /**
-   * Hardcoded demo creditor org ID. In production this would come from the OAuth2 security context.
-   */
-  static final UUID DEMO_CREDITOR_ORG_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-
   private final CreditorServiceClient creditorServiceClient;
 
   /**
@@ -46,11 +41,11 @@ public class PortalSessionService {
    *
    * <p>If an {@code actAsParam} is provided, validates the acting-on-behalf-of relationship via the
    * creditor service. If the session already contains an acting creditor, it is returned directly.
-   * Otherwise, falls back to the demo creditor org ID.
+   * Otherwise, returns {@code null} so the caller can redirect to the demo login page.
    *
    * @param actAsParam the optional {@code ?actAs=} request parameter (may be {@code null})
    * @param session the current HTTP session
-   * @return the resolved acting creditor org ID
+   * @return the resolved acting creditor org ID, or {@code null} if none selected
    */
   public UUID resolveActingCreditor(String actAsParam, HttpSession session) {
     // If an explicit actAs parameter is provided, attempt to resolve the acting-on-behalf-of
@@ -59,14 +54,13 @@ public class PortalSessionService {
     }
 
     // Check if the session already has a resolved acting creditor
-    UUID sessionCreditor = (UUID) session.getAttribute(SESSION_ACTING_CREDITOR);
-    if (sessionCreditor != null) {
-      return sessionCreditor;
-    }
+    return (UUID) session.getAttribute(SESSION_ACTING_CREDITOR);
+  }
 
-    // Fallback to demo creditor
-    session.setAttribute(SESSION_ACTING_CREDITOR, DEMO_CREDITOR_ORG_ID);
-    return DEMO_CREDITOR_ORG_ID;
+  /** Stores the selected creditor org ID in the session (used by the demo login page). */
+  public void setActingCreditor(UUID creditorOrgId, HttpSession session) {
+    session.setAttribute(SESSION_ACTING_CREDITOR, creditorOrgId);
+    session.removeAttribute(SESSION_REPRESENTED_CREDITOR);
   }
 
   /**
@@ -114,11 +108,13 @@ public class PortalSessionService {
       representedOrgId = UUID.fromString(actAsParam);
     } catch (IllegalArgumentException ex) {
       log.warn("Invalid actAs parameter: {}", actAsParam);
-      session.setAttribute(SESSION_ACTING_CREDITOR, DEMO_CREDITOR_ORG_ID);
-      return DEMO_CREDITOR_ORG_ID;
+      return (UUID) session.getAttribute(SESSION_ACTING_CREDITOR);
     }
 
-    UUID actingOrgId = DEMO_CREDITOR_ORG_ID;
+    UUID actingOrgId = (UUID) session.getAttribute(SESSION_ACTING_CREDITOR);
+    if (actingOrgId == null) {
+      return null;
+    }
 
     AccessResolutionResponse response = tryResolveAccess(actingOrgId, representedOrgId);
     if (response != null && response.isAllowed()) {
@@ -138,14 +134,10 @@ public class PortalSessionService {
           "Access denied for acting-on-behalf-of: reason={}, message={}",
           response.getReasonCode(),
           response.getMessage());
-      // Fall back to own identity – the controller can check the denial
-      session.setAttribute(SESSION_ACTING_CREDITOR, actingOrgId);
       session.removeAttribute(SESSION_REPRESENTED_CREDITOR);
       return actingOrgId;
     }
 
-    // Backend unavailable – fall back to demo creditor
-    session.setAttribute(SESSION_ACTING_CREDITOR, actingOrgId);
     return actingOrgId;
   }
 }

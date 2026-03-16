@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{demo.login.page.title}">Demo-login</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{demo.login.breadcrumb}">Demo-login</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{demo.login.title}">Vælg fordringshaver</h1>
+    <p th:text="#{demo.login.description}">
+      Vælg den fordringshaver, du vil logge ind som i demo-tilstand.
+    </p>
+
+    <form method="post" th:action="@{/demo-login}" class="skat-card" style="max-width: 40rem;">
+      <div class="skat-card__body">
+        <div class="skat-form-group">
+          <label class="skat-label" for="creditorOrgId" th:text="#{demo.login.label}">Fordringshaver</label>
+          <select id="creditorOrgId" name="creditorOrgId" class="skat-input" required>
+            <option value="" disabled selected th:text="#{demo.login.placeholder}">-- Vælg --</option>
+            <th:block th:each="entry : ${creditorsByType}">
+              <optgroup th:label="${entry.key}">
+                <option th:each="c : ${entry.value}"
+                        th:value="${c.creditorOrgId}"
+                        th:text="${c.externalCreditorId}">
+                  CRED-ID
+                </option>
+              </optgroup>
+            </th:block>
+          </select>
+        </div>
+        <button type="submit" class="skat-btn skat-btn--primary" style="margin-top: 1rem;">
+          <span class="ikon ikon-log-ind" aria-hidden="true"></span>
+          <span th:text="#{demo.login.button}">Log ind</span>
+        </button>
+      </div>
+    </form>
+  </section>
+</body>
+</html>

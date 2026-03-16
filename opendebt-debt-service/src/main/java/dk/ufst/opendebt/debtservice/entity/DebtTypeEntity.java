@@ -46,6 +46,13 @@ public class DebtTypeEntity {
   @Builder.Default
   private boolean interestApplicable = true;
 
+  @Column(name = "civilretlig")
+  @Builder.Default
+  private boolean civilretlig = false;
+
+  @Column(name = "fordringstype_kode", length = 20)
+  private String fordringstypeKode;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;

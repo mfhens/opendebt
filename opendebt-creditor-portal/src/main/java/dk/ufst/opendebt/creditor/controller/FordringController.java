@@ -5,6 +5,8 @@ import java.util.UUID;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -32,11 +34,15 @@ public class FordringController {
 
   private final DebtServiceClient debtServiceClient;
   private final FordringMapper fordringMapper;
+  private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
 
   /** GET /fordring/ny – displays the new fordring form. */
   @GetMapping("/ny")
   public String showForm(Model model, HttpSession session) {
+    if (portalSessionService.resolveActingCreditor(null, session) == null) {
+      return "redirect:/demo-login";
+    }
     if (!model.containsAttribute("fordringForm")) {
       model.addAttribute("fordringForm", new FordringFormDto());
     }
@@ -54,6 +60,9 @@ public class FordringController {
       RedirectAttributes redirectAttributes) {
 
     UUID actingCreditorOrgId = portalSessionService.resolveActingCreditor(null, session);
+    if (actingCreditorOrgId == null) {
+      return "redirect:/demo-login";
+    }
 
     if (bindingResult.hasErrors()) {
       addActingCreditorToModel(model, session);
@@ -64,11 +73,17 @@ public class FordringController {
       PortalDebtDto request = fordringMapper.toDebtRequest(form, actingCreditorOrgId);
       debtServiceClient.createDebt(request);
 
-      redirectAttributes.addFlashAttribute("successMessage", "Fordringen er indsendt.");
+      redirectAttributes.addFlashAttribute(
+          "successMessage",
+          messageSource.getMessage(
+              "controller.fordring.submitted", null, LocaleContextHolder.getLocale()));
       return "redirect:/fordringer";
     } catch (Exception ex) {
       log.error("Fejl ved indsendelse af fordring: {}", ex.getMessage(), ex);
-      model.addAttribute("backendError", "Fordringen kunne ikke indsendes. Prøv igen senere.");
+      model.addAttribute(
+          "backendError",
+          messageSource.getMessage(
+              "controller.fordring.submit.error", null, LocaleContextHolder.getLocale()));
       addActingCreditorToModel(model, session);
       return "fordring-ny";
     }

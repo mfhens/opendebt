@@ -44,11 +44,13 @@ public class Petition014Steps {
 
   @Then("the user can find a link to the accessibility statement")
   public void userFindsAccessibilityStatementLink() {
-    // The layout footer must contain a link to /was with visible text
+    // The layout footer must contain a link to /was with i18n message key or visible text
     assertThat(layoutHtml)
         .as("Footer must contain link to accessibility statement")
-        .containsIgnoringCase("Tilgængelighedserklæring");
-    assertThat(layoutHtml).contains("th:href=\"@{/was}\"");
+        .contains("th:href=\"@{/was}\"");
+    assertThat(layoutHtml)
+        .as("Footer must reference accessibility statement text via i18n or hardcoded")
+        .containsAnyOf("layout.footer.accessibility", "Tilgængelighedserklæring");
   }
 
   // Scenario 2: The written contact path is accessible
@@ -61,8 +63,8 @@ public class Petition014Steps {
 
   @When("the user follows the written contact path from the accessibility statement")
   public void userFollowsContactPath() {
-    // The accessibility statement must contain contact information
-    assertThat(wasHtml).contains("Kontaktoplysninger");
+    // The accessibility statement must contain contact information (via i18n key or literal)
+    assertThat(wasHtml).containsAnyOf("was.contact.heading", "Kontaktoplysninger");
     assertThat(wasHtml).contains("mailto:");
   }
 

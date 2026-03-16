@@ -20,7 +20,9 @@ import lombok.*;
       @Index(name = "idx_debt_creditor_org_id", columnList = "creditor_org_id"),
       @Index(name = "idx_debt_status", columnList = "status"),
       @Index(name = "idx_debt_readiness", columnList = "readiness_status"),
-      @Index(name = "idx_debt_due_date", columnList = "due_date")
+      @Index(name = "idx_debt_due_date", columnList = "due_date"),
+      @Index(name = "idx_debt_hovedfordrings_id", columnList = "hovedfordrings_id"),
+      @Index(name = "idx_debt_lifecycle_state", columnList = "lifecycle_state")
     })
 @Getter
 @Setter
@@ -74,6 +76,73 @@ public class DebtEntity {
   /** Remaining balance after payments (write-downs). */
   @Column(name = "outstanding_balance", precision = 15, scale = 2)
   private BigDecimal outstandingBalance;
+
+  // --- PSRM Stamdata Fields (W7-STAM-01) ---
+
+  @Column(name = "hovedstol", precision = 15, scale = 2)
+  private BigDecimal hovedstol;
+
+  @Column(name = "fordringshaver_reference", length = 50)
+  private String fordingshaverReference;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "fordringsart", length = 10)
+  private FordringsartEnum fordringsart;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "fordring_kategori", length = 5)
+  private FordringKategori fordringKategori;
+
+  @Column(name = "hovedfordrings_id")
+  private UUID hovedfordringsId;
+
+  @Column(name = "foraeldelsesdato")
+  private LocalDate foraeldelsesdato;
+
+  @Column(name = "beskrivelse", length = 100)
+  private String beskrivelse;
+
+  @Column(name = "periode_fra")
+  private LocalDate periodeFra;
+
+  @Column(name = "periode_til")
+  private LocalDate periodeTil;
+
+  @Column(name = "stiftelsesdato")
+  private LocalDate stiftelsesdato;
+
+  @Column(name = "forfaldsdato")
+  private LocalDate forfaldsdato;
+
+  @Column(name = "srb")
+  private LocalDate sidsteRettigeBetalingsdato;
+
+  @Column(name = "bobehandling")
+  private Boolean bobehandling;
+
+  @Column(name = "domsdato")
+  private LocalDate domsdato;
+
+  @Column(name = "forligsdato")
+  private LocalDate forligsdato;
+
+  @Embedded private RentevalgEmbeddable rentevalg;
+
+  @Column(name = "fordringsnote", length = 500)
+  private String fordringsnote;
+
+  @Column(name = "kundenote", length = 500)
+  private String kundenote;
+
+  @Column(name = "p_nummer", length = 20)
+  private String pNummer;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "lifecycle_state", length = 20)
+  private FordringLifecycleState lifecycleState;
+
+  @Column(name = "modtagelsestidspunkt")
+  private LocalDateTime modtagelsestidspunkt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)

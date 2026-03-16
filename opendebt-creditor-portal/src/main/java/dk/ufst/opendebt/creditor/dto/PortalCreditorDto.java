@@ -15,5 +15,6 @@ public class PortalCreditorDto {
   private String externalCreditorId;
   private String activityStatus;
   private String connectionType;
+  private String creditorType;
   private UUID parentCreditorId;
 }
