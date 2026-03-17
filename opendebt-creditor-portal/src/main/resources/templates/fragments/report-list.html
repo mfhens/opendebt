@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Report list fragment for the reports page (petition 037).
+    Can be loaded via HTMX for dynamic year/month changes.
+  -->
+  <div th:fragment="reportList">
+    <!-- Empty state -->
+    <div th:if="${#lists.isEmpty(reports)}" class="skat-empty-state">
+      <p th:text="#{reports.empty}">Ingen rapporter fundet for den valgte periode.</p>
+    </div>
+
+    <!-- Report table -->
+    <table th:if="${!#lists.isEmpty(reports)}" class="skat-table" th:aria-label="#{reports.table.arialabel}">
+      <caption class="skat-sr-only" th:text="#{reports.table.caption}">Rapporter</caption>
+      <thead>
+        <tr>
+          <th scope="col" th:text="#{reports.col.name}">Rapportnavn</th>
+          <th scope="col" th:text="#{reports.col.type}">Type</th>
+          <th scope="col" th:text="#{reports.col.status}">Status</th>
+          <th scope="col" th:text="#{reports.col.action}">Handling</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="report : ${reports}">
+          <td th:text="${report.reportName}">Rapport 2025-03</td>
+          <td th:text="${report.reportType}">Månedlig</td>
+          <td th:text="${report.availabilityStatus}">Tilgængelig</td>
+          <td>
+            <a th:if="${report.availabilityStatus == 'AVAILABLE'}"
+               th:href="@{/rapporter/{id}/download(id=${report.reportId})}"
+               data-report-download="true"
+               class="skat-btn skat-btn--small"
+               th:aria-label="#{reports.download.arialabel(${report.reportName})}">
+              <span th:text="#{reports.download.button}">Download</span>
+              <span class="report-download-progress" hidden="hidden" aria-hidden="true">⏳</span>
+            </a>
+            <span th:if="${report.availabilityStatus != 'AVAILABLE'}"
+                  class="skat-text--muted"
+                  th:text="#{reports.status.unavailable}">Ikke tilgængelig</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

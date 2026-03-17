@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{wizard.page.title}">Opret fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/}" th:text="#{layout.breadcrumb.home}">Forside</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{wizard.breadcrumb.current}">Opret fordring</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{wizard.heading}">Opret ny fordring</h1>
+
+    <!-- Step indicator -->
+    <nav class="skat-step-indicator" aria-label="Wizard progress">
+      <ol class="skat-step-indicator__list">
+        <li th:each="step : ${#numbers.sequence(1, totalSteps)}"
+            th:classappend="${step == currentStep} ? 'skat-step-indicator__item--active' : (${step < currentStep} ? 'skat-step-indicator__item--completed' : '')"
+            class="skat-step-indicator__item">
+          <span class="skat-step-indicator__number" th:text="${step}">1</span>
+          <span class="skat-step-indicator__label"
+                th:text="#{__${'wizard.step.' + step + '.label'}__}">Step</span>
+        </li>
+      </ol>
+      <p class="skat-sr-only" th:text="#{wizard.step.indicator(${currentStep}, ${totalSteps})}">Step 4 of 4</p>
+    </nav>
+
+    <!-- UDFOERT: Accepted / Receipt -->
+    <div th:if="${result.outcome == 'UDFOERT'}" class="skat-alert skat-alert--success" role="status">
+      <h2 th:text="#{wizard.result.accepted.heading}">Claim accepted</h2>
+      <p th:text="#{wizard.result.accepted.message}">Your claim has been accepted for collection.</p>
+    </div>
+
+    <div th:if="${result.outcome == 'UDFOERT'}">
+      <h3 th:text="#{wizard.result.receipt.heading}">Receipt</h3>
+      <dl class="skat-description-list">
+        <dt th:text="#{wizard.result.receipt.claimId}">Claim ID</dt>
+        <dd th:text="${result.claimId}">uuid</dd>
+
+        <dt th:text="#{wizard.result.receipt.status}">Processing status</dt>
+        <dd th:text="${result.processingStatus}">ACCEPTED</dd>
+
+        <dt th:text="#{wizard.step2.claimType.label}">Claim type</dt>
+        <dd th:text="${wizardForm?.claimType}">SKAT</dd>
+
+        <dt th:text="#{wizard.step2.amount.label}">Amount</dt>
+        <dd th:if="${wizardForm?.amount != null}">
+          <span th:text="${#numbers.formatDecimal(wizardForm.amount, 1, 2)}">0.00</span> DKK
+        </dd>
+
+        <dt th:text="#{wizard.step2.principalAmount.label}">Principal</dt>
+        <dd th:if="${wizardForm?.principalAmount != null}">
+          <span th:text="${#numbers.formatDecimal(wizardForm.principalAmount, 1, 2)}">0.00</span> DKK
+        </dd>
+
+        <dt th:text="#{wizard.step1.debtorType.label}">Debtor type</dt>
+        <dd th:text="${wizardForm?.debtorType}">CPR</dd>
+
+        <dt th:text="#{wizard.step3.debtor.name}">Debtor</dt>
+        <dd th:text="${wizardForm?.debtorDisplayName}">Name</dd>
+      </dl>
+    </div>
+
+    <!-- AFVIST: Rejected -->
+    <div th:if="${result.outcome == 'AFVIST'}" class="skat-alert skat-alert--error" role="alert">
+      <h2 th:text="#{wizard.result.rejected.heading}">Claim rejected</h2>
+      <p th:text="#{wizard.result.rejected.message}">Your claim was rejected. Please review the errors below.</p>
+    </div>
+
+    <div th:if="${result.outcome == 'AFVIST' and result.errors != null and !result.errors.isEmpty()}">
+      <h3 th:text="#{wizard.result.rejected.errors.heading}">Validation errors</h3>
+      <ul class="skat-error-list">
+        <li th:each="err : ${result.errors}">
+          <strong th:text="${err.errorCode}">400</strong>:
+          <span th:text="${err.description}">Error description</span>
+        </li>
+      </ul>
+
+      <div class="skat-form-group skat-form-actions">
+        <a class="skat-btn skat-btn--primary" th:href="@{/fordring/opret/step/2}" th:text="#{wizard.result.rejected.btn.correct}">Correct and resubmit</a>
+      </div>
+    </div>
+
+    <!-- HOERING: Hearing -->
+    <div th:if="${result.outcome == 'HOERING'}" class="skat-alert skat-alert--info" role="status">
+      <h2 th:text="#{wizard.result.hearing.heading}">Claim in hearing</h2>
+      <p th:text="#{wizard.result.hearing.message}">Your claim is pending review.</p>
+    </div>
+
+    <div th:if="${result.outcome == 'HOERING'}">
+      <dl class="skat-description-list">
+        <dt th:text="#{wizard.result.receipt.claimId}">Claim ID</dt>
+        <dd th:text="${result.claimId}">uuid</dd>
+      </dl>
+
+      <p>
+        <a th:href="@{/fordringer/hoering}" th:text="#{wizard.result.hearing.link}">Go to hearing list</a>
+      </p>
+    </div>
+
+    <!-- Navigation -->
+    <div class="skat-form-group skat-form-actions">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}" th:text="#{wizard.btn.home}">Back to home</a>
+      <a class="skat-btn skat-btn--secondary" th:href="@{/fordring/opret}" th:text="#{wizard.btn.createAnother}">Create another claim</a>
+    </div>
+  </section>
+</body>
+</html>

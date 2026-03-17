@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    HTMX-loadable rejected claims table fragment.
+    Used by rejected-list.html (petition 032).
+    Swapped in via hx-get on initial load and pagination/sort/search actions.
+  -->
+  <div th:fragment="rejectedClaimsTable" id="claims-table-container" aria-live="polite">
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <table class="skat-table" th:aria-label="#{rejected.table.arialabel}">
+          <caption class="skat-sr-only" th:text="#{rejected.list.heading}">Afviste fordringer</caption>
+          <thead>
+            <tr>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/rejected"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;claimId&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'claimId' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#claims-table-container"
+                   hx-indicator="#claims-loading"
+                   th:text="#{claims.col.claimId}"
+                   th:classappend="${sortBy == 'claimId'} ? 'skat-sorted' : ''">Fordrings-ID</a>
+                <span th:if="${sortBy == 'claimId'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/rejected"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;receivedDate&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'receivedDate' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#claims-table-container"
+                   hx-indicator="#claims-loading"
+                   th:text="#{claims.col.receivedDate}">Modtagelsesdato</a>
+                <span th:if="${sortBy == 'receivedDate'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col" th:text="#{claims.col.debtorType}">Skyldner-type</th>
+              <th scope="col" th:text="#{claims.col.debtorId}">Skyldner-ID</th>
+              <th scope="col" th:text="#{claims.col.creditorRef}">Fordringshaver-ref.</th>
+              <th scope="col" th:text="#{claims.col.claimType}">Fordringstype</th>
+              <th scope="col" th:text="#{claims.col.claimStatus}">Fordringsstatus</th>
+              <th scope="col" th:text="#{claims.col.incorporationDate}">Stiftelsesdato</th>
+              <th scope="col" th:text="#{claims.col.period}">Periode</th>
+              <th scope="col" th:text="#{claims.col.amountSent}">Beløb indsendt</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(claims)}">
+              <td colspan="10" th:text="#{rejected.empty}">Ingen afviste fordringer fundet.</td>
+            </tr>
+            <tr th:each="claim : ${claims}">
+              <td>
+                <a th:href="@{/fordring/afvist/{id}(id=${claim.claimId})}" th:text="${claim.claimId}">FDR-12345</a>
+              </td>
+              <td th:text="${claim.receivedDate != null} ? ${#temporals.format(claim.receivedDate, 'dd.MM.yyyy')} : '-'">01.01.2025</td>
+              <td th:text="${claim.debtorType}">CPR</td>
+              <td th:text="${claim.debtorIdentifier}">010190****</td>
+              <td th:text="${claim.creditorReference}">REF-001</td>
+              <td th:text="${claim.claimTypeName}">SKAT</td>
+              <td>
+                <span class="skat-badge skat-badge--error" th:text="${claim.claimStatus}">REJECTED</span>
+              </td>
+              <td th:text="${claim.incorporationDate != null} ? ${#temporals.format(claim.incorporationDate, 'dd.MM.yyyy')} : '-'">01.01.2025</td>
+              <td>
+                <span th:text="${claim.periodFrom != null} ? ${#temporals.format(claim.periodFrom, 'dd.MM.yyyy')} : '-'">01.01.2025</span>
+                –
+                <span th:text="${claim.periodTo != null} ? ${#temporals.format(claim.periodTo, 'dd.MM.yyyy')} : '-'">31.12.2025</span>
+              </td>
+              <td th:text="${claim.amountSentForRecovery != null} ? ${#numbers.formatDecimal(claim.amountSentForRecovery, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination controls -->
+    <nav th:if="${totalPages > 1}" class="skat-pagination" th:aria-label="#{claims.pagination.label}" role="navigation">
+      <ul class="skat-pagination__list">
+        <!-- Previous page -->
+        <li class="skat-pagination__item" th:classappend="${currentPage == 0} ? 'skat-pagination__item--disabled' : ''">
+          <a th:if="${currentPage > 0}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/rejected"
+             th:hx-vals="${'{&quot;page&quot;:' + (currentPage - 1) + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#claims-table-container"
+             hx-indicator="#claims-loading"
+             class="skat-pagination__link"
+             th:text="#{claims.pagination.previous}"
+             th:aria-label="#{claims.pagination.previous.aria}">Forrige</a>
+          <span th:if="${currentPage == 0}"
+                class="skat-pagination__link skat-pagination__link--disabled"
+                aria-disabled="true"
+                th:text="#{claims.pagination.previous}">Forrige</span>
+        </li>
+
+        <!-- Page numbers (show up to 5 pages centered on current) -->
+        <li th:each="p : ${#numbers.sequence(
+              T(java.lang.Math).max(0, currentPage - 2),
+              T(java.lang.Math).min(totalPages - 1, currentPage + 2))}"
+            class="skat-pagination__item"
+            th:classappend="${p == currentPage} ? 'skat-pagination__item--active' : ''">
+          <a th:if="${p != currentPage}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/rejected"
+             th:hx-vals="${'{&quot;page&quot;:' + p + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#claims-table-container"
+             hx-indicator="#claims-loading"
+             class="skat-pagination__link"
+             th:text="${p + 1}"
+             th:aria-label="#{claims.pagination.page.aria(${p + 1})}">1</a>
+          <span th:if="${p == currentPage}"
+                class="skat-pagination__link skat-pagination__link--current"
+                aria-current="page"
+                th:text="${p + 1}">1</span>
+        </li>
+
+        <!-- Next page -->
+        <li class="skat-pagination__item" th:classappend="${currentPage >= totalPages - 1} ? 'skat-pagination__item--disabled' : ''">
+          <a th:if="${currentPage < totalPages - 1}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/rejected"
+             th:hx-vals="${'{&quot;page&quot;:' + (currentPage + 1) + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#claims-table-container"
+             hx-indicator="#claims-loading"
+             class="skat-pagination__link"
+             th:text="#{claims.pagination.next}"
+             th:aria-label="#{claims.pagination.next.aria}">Næste</a>
+          <span th:if="${currentPage >= totalPages - 1}"
+                class="skat-pagination__link skat-pagination__link--disabled"
+                aria-disabled="true"
+                th:text="#{claims.pagination.next}">Næste</span>
+        </li>
+      </ul>
+      <div class="skat-pagination__info" role="status" aria-live="polite">
+        <span th:text="#{claims.pagination.showing(${currentPage * pageSize + 1}, ${T(java.lang.Math).min((currentPage + 1) * pageSize, totalElements)}, ${totalElements})}">
+          Viser 1-20 af 100
+        </span>
+      </div>
+    </nav>
+  </div>
+</body>
+</html>

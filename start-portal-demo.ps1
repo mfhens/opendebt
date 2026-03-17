@@ -14,7 +14,6 @@ Set-Location $ScriptDir
 
 $PidDir  = Join-Path $ScriptDir ".demo-pids"
 $LogDir  = Join-Path $ScriptDir ".demo-logs"
-$PgDataDir = Join-Path $ScriptDir ".demo-pgdata"
 
 $PgPort = 5432
 $PgUser = "opendebt"
@@ -160,29 +159,13 @@ $pgRunning = & $pgIsReady -p $PgPort 2>$null; $pgUp = ($LASTEXITCODE -eq 0)
 if ($pgUp) {
     Write-Ok "  PostgreSQL already running on port $PgPort."
 } else {
-    Write-Host "  PostgreSQL not running. Initializing a local instance..."
-    $pgCtl   = Join-Path $PgBin "pg_ctl"
-    $initdb  = Join-Path $PgBin "initdb"
-
-    if (-not (Test-Path (Join-Path $PgDataDir "PG_VERSION"))) {
-        Write-Host "  Initializing data directory: $PgDataDir"
-        New-Item -ItemType Directory -Path $PgDataDir -Force | Out-Null
-        $env:PGPASSWORD = $PgPass
-        & $initdb -D $PgDataDir -U $PgUser -A md5 --pwfile=(New-TemporaryFile | ForEach-Object { Set-Content $_.FullName $PgPass; $_.FullName }) 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Err "  Failed to initialize PostgreSQL data directory."
-            exit 1
-        }
-        # Set port in postgresql.conf
-        $pgConf = Join-Path $PgDataDir "postgresql.conf"
-        (Get-Content $pgConf) -replace "^#?port\s*=.*", "port = $PgPort" | Set-Content $pgConf
-    }
-
-    Write-Host "  Starting PostgreSQL..."
-    & $pgCtl -D $PgDataDir -l (Join-Path $LogDir "postgresql.log") start 2>&1 | Out-Null
+    Write-Host "  PostgreSQL not running. Starting with pg_ctl..."
+    $pgCtl = Join-Path $PgBin "pg_ctl"
+    & $pgCtl start -l (Join-Path $LogDir "postgresql.log") 2>&1 | Out-Null
     $ok = Wait-ForPg $PgBin 30
     if (-not $ok) {
         Write-Err "  PostgreSQL failed to start. Check .demo-logs\postgresql.log"
+        Write-Host "  Make sure PGDATA is set or PostgreSQL is configured with a default data directory."
         exit 1
     }
     Write-Ok "  PostgreSQL started."
@@ -304,4 +287,3 @@ Write-Host "  Stop with:         .\start-portal-demo.ps1 -Stop"
 Write-Host "  Logs in:           .demo-logs\"
 Write-Host ""
 Write-Host "  Note: PostgreSQL keeps running after -Stop."
-Write-Host "  Data in:           .demo-pgdata\ (if started by this script)"

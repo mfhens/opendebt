@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{rejected.list.page.title}">Afviste fordringer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{rejected.list.breadcrumb}">Afviste fordringer</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{rejected.list.heading}">Afviste fordringer</h1>
+
+    <!-- Search and filter controls -->
+    <div class="skat-card" style="margin-bottom: 1rem;">
+      <div class="skat-card__body">
+        <form id="claims-search-form" class="skat-form-inline"
+              hx-get="/creditor-portal/api/claims/rejected"
+              hx-target="#claims-table-container"
+              hx-indicator="#claims-loading">
+          <div class="skat-form-group">
+            <label for="searchType" th:text="#{claims.search.type.label}">Søgetype</label>
+            <select id="searchType" name="searchType" class="skat-select">
+              <option value="" th:text="#{claims.search.type.all}">Alle</option>
+              <option value="claimId" th:text="#{claims.search.type.claimId}">Fordrings-ID</option>
+              <option value="cpr" th:text="#{claims.search.type.cpr}">CPR</option>
+              <option value="cvr" th:text="#{claims.search.type.cvr}">CVR</option>
+              <option value="se" th:text="#{claims.search.type.se}">SE</option>
+            </select>
+          </div>
+          <div class="skat-form-group">
+            <label for="searchQuery" th:text="#{claims.search.query.label}">Søg</label>
+            <input type="text" id="searchQuery" name="searchQuery" class="skat-input"
+                   th:placeholder="#{claims.search.query.placeholder}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="dateFrom" th:text="#{claims.filter.dateFrom}">Modtagelsesdato fra</label>
+            <input type="date" id="dateFrom" name="dateFrom" class="skat-input" />
+          </div>
+          <div class="skat-form-group">
+            <label for="dateTo" th:text="#{claims.filter.dateTo}">Modtagelsesdato til</label>
+            <input type="date" id="dateTo" name="dateTo" class="skat-input" />
+          </div>
+          <button type="submit" class="skat-btn skat-btn--primary">
+            <span class="ikon ikon-soeg" aria-hidden="true"></span>
+            <span th:text="#{claims.search.button}">Søg</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Claims table area with HTMX progressive loading -->
+    <div id="claims-table-container"
+         hx-get="/creditor-portal/api/claims/rejected"
+         hx-trigger="load"
+         hx-indicator="#claims-loading">
+      <!-- Loading indicator shown during fetch -->
+      <div id="claims-loading" class="skat-loading htmx-indicator" role="status">
+        <span th:text="#{claims.loading}">Indlæser fordringer…</span>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{claims.btn.back}">Tilbage til forsiden</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

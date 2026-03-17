@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Portal secondary navigation fragment.
+    Included within the main content area on all portal pages.
+    Navigation items are filtered server-side by role.
+    External link URLs are injected from PortalLinksProperties (application.yml).
+  -->
+  <nav th:fragment="portalNav(currentPage)" class="skat-portal-nav" th:aria-label="#{nav.portal.label}">
+    <ul class="skat-portal-nav__list">
+      <!-- Forside (Home) — all authenticated -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/}"
+           th:text="#{nav.home}"
+           th:classappend="${currentPage == 'home'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'home'} ? 'page' : ''"
+           class="skat-portal-nav__link">Forside</a>
+      </li>
+      <!-- Til inddrivelse (For collection) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/fordringer}"
+           th:text="#{nav.claims.recovery}"
+           th:classappend="${currentPage == 'claims-recovery'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'claims-recovery'} ? 'page' : ''"
+           class="skat-portal-nav__link">Til inddrivelse</a>
+      </li>
+      <!-- Nulfordringer (Zero-balance claims) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/fordringer/nulfordringer}"
+           th:text="#{nav.claims.zerobalance}"
+           th:classappend="${currentPage == 'claims-zerobalance'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'claims-zerobalance'} ? 'page' : ''"
+           class="skat-portal-nav__link">Nulfordringer</a>
+      </li>
+      <!-- I høring (In hearing) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/fordringer/hoering}"
+           th:text="#{nav.claims.hearing}"
+           th:classappend="${currentPage == 'claims-hearing'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'claims-hearing'} ? 'page' : ''"
+           class="skat-portal-nav__link">I hoering</a>
+      </li>
+      <!-- Afviste (Rejected) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/fordringer/afviste}"
+           th:text="#{nav.claims.rejected}"
+           th:classappend="${currentPage == 'claims-rejected'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'claims-rejected'} ? 'page' : ''"
+           class="skat-portal-nav__link">Afviste</a>
+      </li>
+      <!-- Opret fordring (Create claim wizard — petition 033) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/fordring/opret}"
+           th:text="#{nav.claims.create}"
+           th:classappend="${currentPage == 'claim-new'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'claim-new'} ? 'page' : ''"
+           class="skat-portal-nav__link">Opret fordring</a>
+      </li>
+      <!-- Underretninger (Notifications) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/underretninger}"
+           th:text="#{nav.notifications}"
+           th:classappend="${currentPage == 'notifications'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'notifications'} ? 'page' : ''"
+           class="skat-portal-nav__link">Underretninger</a>
+      </li>
+      <!-- Rapporter (Reports) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/rapporter}"
+           th:text="#{nav.reports}"
+           th:classappend="${currentPage == 'reports'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'reports'} ? 'page' : ''"
+           class="skat-portal-nav__link">Rapporter</a>
+      </li>
+      <!-- Afstemning (Reconciliation) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/afstemning}"
+           th:text="#{nav.reconciliation}"
+           th:classappend="${currentPage == 'reconciliation'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'reconciliation'} ? 'page' : ''"
+           class="skat-portal-nav__link">Afstemning</a>
+      </li>
+      <!-- Indstillinger (Settings) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/indstillinger}"
+           th:text="#{nav.settings}"
+           th:classappend="${currentPage == 'settings'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'settings'} ? 'page' : ''"
+           class="skat-portal-nav__link">Indstillinger</a>
+      </li>
+
+      <!-- External links separator -->
+      <li class="skat-portal-nav__separator" role="separator" aria-hidden="true"></li>
+
+      <!-- Aftalemateriale (Agreement material) — external -->
+      <li class="skat-portal-nav__item skat-portal-nav__item--external">
+        <a th:href="${portalLinks.agreementMaterial}"
+           th:text="#{nav.external.agreement}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="skat-portal-nav__link skat-portal-nav__link--external">Aftalemateriale
+          <span class="skat-sr-only" th:text="#{nav.external.newwindow}">(opens in new window)</span>
+        </a>
+      </li>
+      <!-- Kontakt (Contact) — external -->
+      <li class="skat-portal-nav__item skat-portal-nav__item--external">
+        <a th:href="${portalLinks.contact}"
+           th:text="#{nav.external.contact}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="skat-portal-nav__link skat-portal-nav__link--external">Kontakt
+          <span class="skat-sr-only" th:text="#{nav.external.newwindow}">(opens in new window)</span>
+        </a>
+      </li>
+      <!-- Guides — external -->
+      <li class="skat-portal-nav__item skat-portal-nav__item--external">
+        <a th:href="${portalLinks.guides}"
+           th:text="#{nav.external.guides}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="skat-portal-nav__link skat-portal-nav__link--external">Guides
+          <span class="skat-sr-only" th:text="#{nav.external.newwindow}">(opens in new window)</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- System status indicator -->
+    <div class="skat-portal-nav__status" role="status" th:aria-label="#{nav.status.label}">
+      <span class="skat-portal-nav__status-dot" aria-hidden="true"></span>
+      <span th:text="#{nav.status.operational}">Systemet er i drift</span>
+    </div>
+  </nav>
+</body>
+</html>

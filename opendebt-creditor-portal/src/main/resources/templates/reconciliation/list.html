@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{reconciliation.list.page.title}">Afstemning</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{reconciliation.list.breadcrumb}">Afstemning</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{reconciliation.list.heading}">Afstemning</h1>
+
+    <!-- Backend error alert -->
+    <div th:if="${backendError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${backendError}">Backend error</p>
+    </div>
+
+    <!-- Filter controls -->
+    <div class="skat-card" style="margin-bottom: 1rem;">
+      <div class="skat-card__body">
+        <form id="reconciliation-filter-form" class="skat-form-inline" method="get" th:action="@{/afstemning}">
+          <div class="skat-form-group">
+            <label for="status" th:text="#{reconciliation.filter.status}">Status</label>
+            <select id="status" name="status" class="skat-select">
+              <option value="" th:text="#{reconciliation.filter.status.all}">Alle</option>
+              <option value="ACTIVE" th:selected="${filterStatus == 'ACTIVE'}" th:text="#{reconciliation.status.active}">Aktiv</option>
+              <option value="CLOSED" th:selected="${filterStatus == 'CLOSED'}" th:text="#{reconciliation.status.closed}">Lukket</option>
+            </select>
+          </div>
+          <div class="skat-form-group">
+            <label for="periodEndFrom" th:text="#{reconciliation.filter.periodEnd.from}">Periodeafslutning fra</label>
+            <input type="date" id="periodEndFrom" name="periodEndFrom" class="skat-input"
+                   th:value="${filterPeriodEndFrom}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="periodEndTo" th:text="#{reconciliation.filter.periodEnd.to}">Periodeafslutning til</label>
+            <input type="date" id="periodEndTo" name="periodEndTo" class="skat-input"
+                   th:value="${filterPeriodEndTo}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="reconciliationStartFrom" th:text="#{reconciliation.filter.start.from}">Afstemningsstart fra</label>
+            <input type="date" id="reconciliationStartFrom" name="reconciliationStartFrom" class="skat-input"
+                   th:value="${filterReconciliationStartFrom}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="reconciliationStartTo" th:text="#{reconciliation.filter.start.to}">Afstemningsstart til</label>
+            <input type="date" id="reconciliationStartTo" name="reconciliationStartTo" class="skat-input"
+                   th:value="${filterReconciliationStartTo}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="reconciliationEndFrom" th:text="#{reconciliation.filter.end.from}">Afstemningsslut fra</label>
+            <input type="date" id="reconciliationEndFrom" name="reconciliationEndFrom" class="skat-input"
+                   th:value="${filterReconciliationEndFrom}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="reconciliationEndTo" th:text="#{reconciliation.filter.end.to}">Afstemningsslut til</label>
+            <input type="date" id="reconciliationEndTo" name="reconciliationEndTo" class="skat-input"
+                   th:value="${filterReconciliationEndTo}" />
+          </div>
+          <button type="submit" class="skat-btn skat-btn--primary">
+            <span class="ikon ikon-soeg" aria-hidden="true"></span>
+            <span th:text="#{reconciliation.filter.button}">Filtrer</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Reconciliation table -->
+    <div th:if="${reconciliations != null and !reconciliations.isEmpty()}">
+      <table class="skat-table" th:aria-label="#{reconciliation.table.arialabel}">
+        <caption class="skat-sr-only" th:text="#{reconciliation.table.caption}">Afstemningsperioder</caption>
+        <thead>
+          <tr>
+            <th scope="col" th:text="#{reconciliation.col.period}">Periode</th>
+            <th scope="col" th:text="#{reconciliation.col.status}">Status</th>
+            <th scope="col" th:text="#{reconciliation.col.periodEndDate}">Periodeafslutning</th>
+            <th scope="col" th:text="#{reconciliation.col.reconciliationStart}">Afstemningsstart</th>
+            <th scope="col" th:text="#{reconciliation.col.reconciliationEnd}">Afstemningsslut</th>
+            <th scope="col" th:text="#{reconciliation.col.responseSubmitted}">Svar indsendt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="rec : ${reconciliations}">
+            <td>
+              <a th:href="@{/afstemning/{id}(id=${rec.id})}"
+                 th:text="${rec.year + '-' + #strings.padLeft(rec.month, 2, '0')}">2025-03</a>
+            </td>
+            <td th:text="${rec.status}">ACTIVE</td>
+            <td th:text="${rec.periodEndDate}">2025-03-31</td>
+            <td th:text="${rec.reconciliationStartDate}">2025-04-01</td>
+            <td th:text="${rec.reconciliationEndDate}">2025-04-30</td>
+            <td>
+              <span th:if="${rec.responseSubmitted}" th:text="#{reconciliation.response.yes}">Ja</span>
+              <span th:unless="${rec.responseSubmitted}" th:text="#{reconciliation.response.no}">Nej</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${reconciliations == null or reconciliations.isEmpty()}" th:unless="${backendError}">
+      <p th:text="#{reconciliation.empty}">Ingen afstemningsperioder fundet.</p>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{reconciliation.btn.back}">Tilbage til forsiden</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

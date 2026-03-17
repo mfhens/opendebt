@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{reports.page.title}">Rapporter</title>
+</head>
+<body>
+
+  <!-- Breadcrumb -->
+  <span layout:fragment="breadcrumb" th:text="#{reports.breadcrumb}">Rapporter</span>
+
+  <section layout:fragment="content">
+    <h1 class="skat-heading" th:text="#{reports.heading}">Rapporter</h1>
+
+    <!-- Backend error message -->
+    <div th:if="${backendError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${backendError}">Fejl</p>
+    </div>
+
+    <!-- Year/month selector -->
+    <form class="skat-form skat-form--inline" th:action="@{/rapporter}" method="get">
+      <div class="skat-form-group">
+        <label for="year-select" class="skat-label" th:text="#{reports.selector.year}">År</label>
+        <select id="year-select" name="year" class="skat-select">
+          <option th:each="y : ${availableYears}"
+                  th:value="${y}" th:text="${y}"
+                  th:selected="${y == selectedYear}">2025</option>
+        </select>
+      </div>
+      <div class="skat-form-group">
+        <label for="month-select" class="skat-label" th:text="#{reports.selector.month}">Måned</label>
+        <select id="month-select" name="month" class="skat-select">
+          <option th:each="m : ${availableMonths}"
+                  th:value="${m}"
+                  th:text="#{${'reports.month.' + m}}"
+                  th:selected="${m == selectedMonth}">Januar</option>
+        </select>
+      </div>
+      <div class="skat-form-group">
+        <button type="submit" class="skat-btn skat-btn--primary" th:text="#{reports.selector.button}">Vis rapporter</button>
+      </div>
+    </form>
+
+    <!-- Report list (replaceable via HTMX) -->
+    <div id="report-list-container">
+      <div th:replace="~{fragments/report-list :: reportList}"></div>
+    </div>
+
+    <!-- Download status aria-live region -->
+    <div id="download-status" class="skat-sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Inline download script for progress indication and aria-live updates -->
+    <script th:inline="javascript">
+      document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-report-download]');
+        if (!btn) return;
+        e.preventDefault();
+        var url = btn.getAttribute('href');
+        var statusEl = document.getElementById('download-status');
+        var progressEl = btn.querySelector('.report-download-progress');
+        if (progressEl) progressEl.removeAttribute('hidden');
+        statusEl.textContent = /*[[#{reports.download.started}]]*/ 'Downloading...';
+        fetch(url)
+          .then(function(resp) {
+            if (!resp.ok) throw new Error('Download failed');
+            return resp.blob();
+          })
+          .then(function(blob) {
+            var disposition = '';
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = url.split('/').pop() + '.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            statusEl.textContent = /*[[#{reports.download.complete}]]*/ 'Download complete.';
+            if (progressEl) progressEl.setAttribute('hidden', '');
+          })
+          .catch(function() {
+            statusEl.textContent = /*[[#{reports.download.error}]]*/ 'Download failed.';
+            if (progressEl) progressEl.setAttribute('hidden', '');
+          });
+      });
+    </script>
+  </section>
+
+</body>
+</html>

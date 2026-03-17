@@ -86,6 +86,17 @@
       </div>
     </div>
 
+    <!-- Summary claim counts (loaded via HTMX) -->
+    <h2 th:text="#{dashboard.counts.heading}">Overblik</h2>
+    <div id="claim-counts-container"
+         hx-get="/creditor-portal/api/claim-counts"
+         hx-trigger="load"
+         hx-swap="innerHTML"
+         aria-live="polite"
+         aria-busy="true">
+      <p th:text="#{dashboard.counts.loading}">Indlæser fordringsoversigt…</p>
+    </div>
+
     <!-- Shortcuts section -->
     <h2 th:text="#{dashboard.shortcuts.heading}">Genveje</h2>
     <div class="skat-card-grid">

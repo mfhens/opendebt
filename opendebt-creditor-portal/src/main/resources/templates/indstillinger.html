@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{settings.page.title}">Indstillinger</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{settings.breadcrumb}">Indstillinger</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{settings.heading}">Indstillinger</h1>
+
+    <!-- Backend error -->
+    <div th:if="${backendError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${backendError}">Backend-fejl.</span></p>
+    </div>
+
+    <!-- Success message -->
+    <div th:if="${successMessage != null}"
+         class="skat-alert skat-alert--success" role="status">
+      <p><span class="ikon ikon-ok" aria-hidden="true"></span> <span th:text="${successMessage}">Ændringer gemt.</span></p>
+    </div>
+
+    <!-- Error message -->
+    <div th:if="${errorMessage != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${errorMessage}">Fejl.</span></p>
+    </div>
+
+    <!-- Agreement configuration -->
+    <th:block th:if="${agreement != null}">
+      <h2 th:text="#{settings.agreement.heading}">Aftaleindstillinger</h2>
+      <div class="skat-card">
+        <div class="skat-card__body">
+          <table class="skat-table">
+            <tbody>
+              <tr>
+                <th scope="row" th:text="#{settings.agreement.portalActions}">Portalhandlinger tilladt</th>
+                <td>
+                  <span th:if="${agreement.portalActionsAllowed}" class="skat-badge skat-badge--success" th:text="#{settings.agreement.yes}">Ja</span>
+                  <span th:unless="${agreement.portalActionsAllowed}" class="skat-badge skat-badge--error" th:text="#{settings.agreement.no}">Nej</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" th:text="#{settings.agreement.claimTypes}">Tilladte fordringstyper</th>
+                <td>
+                  <span th:if="${agreement.allowedClaimTypes != null and !agreement.allowedClaimTypes.isEmpty()}"
+                        th:text="${#strings.listJoin(agreement.allowedClaimTypes, ', ')}">TYPE1, TYPE2</span>
+                  <span th:unless="${agreement.allowedClaimTypes != null and !agreement.allowedClaimTypes.isEmpty()}"
+                        th:text="#{settings.agreement.none}">Ingen</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" th:text="#{settings.agreement.debtorTypes}">Tilladte skyldnertyper</th>
+                <td>
+                  <span th:if="${agreement.allowedDebtorTypes != null and !agreement.allowedDebtorTypes.isEmpty()}"
+                        th:text="${#strings.listJoin(agreement.allowedDebtorTypes, ', ')}">PERSON, ORG</span>
+                  <span th:unless="${agreement.allowedDebtorTypes != null and !agreement.allowedDebtorTypes.isEmpty()}"
+                        th:text="#{settings.agreement.none}">Ingen</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" th:text="#{settings.agreement.notifications}">Underretningspræference</th>
+                <td th:text="${agreement.notificationPreference ?: '—'}">EMAIL</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Contact email management -->
+      <h2 th:text="#{settings.contact.heading}">Kontakt-e-mail</h2>
+      <div class="skat-card">
+        <div class="skat-card__body">
+          <form method="post" th:action="@{/indstillinger}" th:object="${contactEmailForm}">
+            <div class="skat-form-group">
+              <label class="skat-label" for="contactEmail" th:text="#{settings.contact.email.label}">E-mailadresse</label>
+              <input id="contactEmail" type="email" class="skat-input"
+                     th:field="*{contactEmail}"
+                     th:classappend="${#fields.hasErrors('contactEmail')} ? ' skat-input--error' : ''"
+                     aria-describedby="contactEmail-error"
+                     th:placeholder="#{settings.contact.email.placeholder}" />
+              <span id="contactEmail-error"
+                    th:if="${#fields.hasErrors('contactEmail')}"
+                    class="skat-error-message"
+                    th:errors="*{contactEmail}">E-mail er påkrævet.</span>
+            </div>
+            <button type="submit" class="skat-btn skat-btn--primary" th:text="#{settings.contact.email.save}">Gem e-mail</button>
+          </form>
+        </div>
+      </div>
+    </th:block>
+  </section>
+</body>
+</html>

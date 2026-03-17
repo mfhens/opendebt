@@ -85,7 +85,8 @@ public class Petition012Steps {
     portalSessionService = new PortalSessionService(creditorServiceClient);
     fordringMapper = new FordringMapper();
     dashboardController =
-        new DashboardController(creditorServiceClient, messageSource, portalSessionService);
+        new DashboardController(
+            creditorServiceClient, debtServiceClient, messageSource, portalSessionService);
     fordringController =
         new FordringController(
             debtServiceClient, fordringMapper, messageSource, portalSessionService);

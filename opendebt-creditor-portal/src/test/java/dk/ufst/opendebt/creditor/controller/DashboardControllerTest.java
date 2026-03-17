@@ -19,6 +19,8 @@ import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
+import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
@@ -29,6 +31,7 @@ class DashboardControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
 
   @Mock private CreditorServiceClient creditorServiceClient;
+  @Mock private DebtServiceClient debtServiceClient;
   @Mock private MessageSource messageSource;
   @Mock private PortalSessionService portalSessionService;
 
@@ -119,6 +122,60 @@ class DashboardControllerTest {
     controller.index(null, model, session);
 
     assertThat(model.getAttribute("actingCreditorOrgId")).isEqualTo(TEST_CREDITOR_ORG_ID);
+  }
+
+  @Test
+  void claimCounts_returnsFragment_withCounts() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    ClaimCountsDto counts =
+        ClaimCountsDto.builder().inRecovery(5).inHearing(2).rejected(1).zeroBalance(3).build();
+    when(debtServiceClient.getClaimCounts(TEST_CREDITOR_ORG_ID)).thenReturn(counts);
+
+    Model model = new ConcurrentModel();
+    String viewName = controller.claimCounts(model, session);
+
+    assertThat(viewName).isEqualTo("fragments/claim-counts :: claimCounts");
+    assertThat(model.getAttribute("counts")).isEqualTo(counts);
+  }
+
+  @Test
+  void claimCounts_returnsEmptyCounts_whenNoSession() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any())).thenReturn(null);
+
+    Model model = new ConcurrentModel();
+    String viewName = controller.claimCounts(model, session);
+
+    assertThat(viewName).isEqualTo("fragments/claim-counts :: claimCounts");
+    ClaimCountsDto counts = (ClaimCountsDto) model.getAttribute("counts");
+    assertThat(counts).isNotNull();
+    assertThat(counts.getInRecovery()).isZero();
+  }
+
+  @Test
+  void claimCounts_returnsEmptyCounts_whenBackendFails() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    when(debtServiceClient.getClaimCounts(any())).thenThrow(new RuntimeException("timeout"));
+
+    Model model = new ConcurrentModel();
+    String viewName = controller.claimCounts(model, session);
+
+    assertThat(viewName).isEqualTo("fragments/claim-counts :: claimCounts");
+    ClaimCountsDto counts = (ClaimCountsDto) model.getAttribute("counts");
+    assertThat(counts).isNotNull();
+  }
+
+  @Test
+  void index_addsCurrentPageToModel() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    when(creditorServiceClient.getByCreditorOrgId(any(UUID.class))).thenReturn(buildCreditor());
+
+    Model model = new ConcurrentModel();
+    controller.index(null, model, session);
+
+    assertThat(model.getAttribute("currentPage")).isEqualTo("home");
   }
 
   private PortalCreditorDto buildCreditor() {

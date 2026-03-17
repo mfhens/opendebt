@@ -791,6 +791,135 @@ a:focus {
 }
 
 /* =========================================================================
+   Content layout (portal nav + page body)
+   ========================================================================= */
+.skat-content-layout {
+  display: grid;
+  grid-template-columns: 16rem 1fr;
+  gap: var(--spacing--xl);
+  align-items: start;
+}
+
+@media (max-width: 48rem) {
+  .skat-content-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skat-content-layout__nav {
+  position: sticky;
+  top: 4rem;
+}
+
+.skat-content-layout__main {
+  min-width: 0;
+}
+
+/* =========================================================================
+   Portal secondary navigation
+   ========================================================================= */
+.skat-portal-nav {
+  background-color: var(--color-white);
+  border: var(--border--sm) solid var(--color-border--light);
+  border-radius: var(--corner-size--sm);
+  padding: var(--spacing--sm) 0;
+}
+
+.skat-portal-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.skat-portal-nav__item {
+  margin: 0;
+}
+
+.skat-portal-nav__link {
+  display: block;
+  padding: var(--spacing--xs) var(--spacing--md);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size--sm);
+  font-weight: var(--font-weight--normal);
+  transition: background-color var(--trans-time--shorter) var(--ease--tender),
+              color var(--trans-time--shorter) var(--ease--tender);
+  border-left: var(--border--lg) solid transparent;
+}
+
+.skat-portal-nav__link:hover,
+.skat-portal-nav__link:focus {
+  background-color: var(--color-bg--light-blue);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.skat-portal-nav__link:focus-visible {
+  outline: var(--border--md) solid var(--color-secondary);
+  outline-offset: calc(-1 * var(--border--md));
+}
+
+.skat-portal-nav__link--active {
+  font-weight: var(--font-weight--semibold);
+  border-left-color: var(--color-secondary);
+  background-color: var(--color-bg--light-blue);
+}
+
+.skat-portal-nav__link--external::after {
+  content: " \2197";
+  font-size: 0.8em;
+}
+
+.skat-portal-nav__separator {
+  height: 0;
+  margin: var(--spacing--xs) var(--spacing--md);
+  border-top: var(--border--sm) solid var(--color-border--light);
+}
+
+/* System status indicator */
+.skat-portal-nav__status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing--xs);
+  padding: var(--spacing--sm) var(--spacing--md);
+  font-size: var(--font-size--xs);
+  color: var(--color-primary--60);
+  border-top: var(--border--sm) solid var(--color-border--light);
+  margin-top: var(--spacing--xs);
+}
+
+.skat-portal-nav__status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--corner-circle);
+  background-color: var(--color-success);
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   Claim counts (dashboard)
+   ========================================================================= */
+.skat-card--count .skat-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skat-count {
+  font-family: var(--font-heading);
+  font-size: var(--font-size--5xl);
+  font-weight: var(--font-weight--bold);
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.skat-btn--sm {
+  font-size: var(--font-size--sm);
+  padding: var(--spacing--2xs) var(--spacing--sm);
+}
+
+/* =========================================================================
    Language selector — white ribbon above header
    ========================================================================= */
 

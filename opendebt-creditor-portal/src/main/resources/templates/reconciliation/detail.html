@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{reconciliation.detail.page.title}">Afstemningsdetaljer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/afstemning}" th:text="#{reconciliation.list.breadcrumb}">Afstemning</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:if="${reconciliation}" th:text="${reconciliation.year + '-' + #strings.padLeft(reconciliation.month, 2, '0')}">2025-03</span>
+  </span>
+  <section layout:fragment="content">
+
+    <!-- Success message (flash attribute from redirect) -->
+    <div th:if="${successMessage}" class="skat-alert skat-alert--success" role="status">
+      <p th:text="${successMessage}">Response submitted.</p>
+    </div>
+
+    <!-- Backend error alert -->
+    <div th:if="${backendError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${backendError}">Error</p>
+    </div>
+
+    <div th:if="${reconciliation}">
+      <h1>
+        <span th:text="#{reconciliation.detail.heading}">Afstemning</span>
+        <span th:text="${' — ' + reconciliation.year + '-' + #strings.padLeft(reconciliation.month, 2, '0')}">— 2025-03</span>
+      </h1>
+
+      <!-- Status section -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <dl class="skat-dl">
+            <dt th:text="#{reconciliation.detail.field.status}">Status</dt>
+            <dd th:text="${reconciliation.status}">ACTIVE</dd>
+            <dt th:text="#{reconciliation.detail.field.period}">Periode</dt>
+            <dd th:text="${reconciliation.year + '-' + #strings.padLeft(reconciliation.month, 2, '0')}">2025-03</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Basis data for ACTIVE reconciliations -->
+      <div th:if="${reconciliation.status == 'ACTIVE' and reconciliation.basis != null}">
+        <h2 th:text="#{reconciliation.detail.section.basis}">Grunddata</h2>
+        <table class="skat-table" th:aria-label="#{reconciliation.basis.table.arialabel}">
+          <caption th:text="#{reconciliation.basis.table.caption}">Afstemningsgrunddata</caption>
+          <thead>
+            <tr>
+              <th scope="col" th:text="#{reconciliation.basis.col.category}">Kategori</th>
+              <th scope="col" th:text="#{reconciliation.basis.col.amount}">Beløb (DKK)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" th:text="#{reconciliation.basis.influx}">Tilgang</th>
+              <td th:text="${#numbers.formatDecimal(reconciliation.basis.influxAmount, 1, 'COMMA', 2, 'POINT')}">0,00</td>
+            </tr>
+            <tr>
+              <th scope="row" th:text="#{reconciliation.basis.recall}">Tilbagekaldt</th>
+              <td th:text="${#numbers.formatDecimal(reconciliation.basis.recallAmount, 1, 'COMMA', 2, 'POINT')}">0,00</td>
+            </tr>
+            <tr>
+              <th scope="row" th:text="#{reconciliation.basis.writeup}">Opskrevet</th>
+              <td th:text="${#numbers.formatDecimal(reconciliation.basis.writeUpAmount, 1, 'COMMA', 2, 'POINT')}">0,00</td>
+            </tr>
+            <tr>
+              <th scope="row" th:text="#{reconciliation.basis.writedown}">Nedskrevet</th>
+              <td th:text="${#numbers.formatDecimal(reconciliation.basis.writeDownAmount, 1, 'COMMA', 2, 'POINT')}">0,00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Previous response (displayed for all statuses if available) -->
+      <div th:if="${reconciliation.previousResponse != null}">
+        <h2 th:text="#{reconciliation.detail.section.previousResponse}">Tidligere svar</h2>
+        <div class="skat-card">
+          <div class="skat-card__body">
+            <dl class="skat-dl">
+              <dt th:text="#{reconciliation.response.explained}">Forklaret difference</dt>
+              <dd th:text="${#numbers.formatDecimal(reconciliation.previousResponse.explainedDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+              <dt th:text="#{reconciliation.response.unexplained}">Uforklaret difference</dt>
+              <dd th:text="${#numbers.formatDecimal(reconciliation.previousResponse.unexplainedDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+              <dt th:text="#{reconciliation.response.total}">Total difference</dt>
+              <dd th:text="${#numbers.formatDecimal(reconciliation.previousResponse.totalDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirmation step -->
+      <div th:if="${showConfirmation}" class="skat-card skat-card--highlight" style="margin-top: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{reconciliation.confirm.heading}">Bekræft indsendelse</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{reconciliation.response.explained}">Forklaret difference</dt>
+            <dd th:text="${#numbers.formatDecimal(responseForm.explainedDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+            <dt th:text="#{reconciliation.response.unexplained}">Uforklaret difference</dt>
+            <dd th:text="${#numbers.formatDecimal(responseForm.unexplainedDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+            <dt th:text="#{reconciliation.response.total}">Total difference</dt>
+            <dd th:text="${#numbers.formatDecimal(responseForm.totalDifference, 1, 'COMMA', 2, 'POINT') + ' DKK'}">0,00 DKK</dd>
+          </dl>
+          <form method="post" th:action="@{/afstemning/{id}/response(id=${reconciliation.id})}">
+            <input type="hidden" name="explainedDifference" th:value="${responseForm.explainedDifference}" />
+            <input type="hidden" name="unexplainedDifference" th:value="${responseForm.unexplainedDifference}" />
+            <input type="hidden" name="totalDifference" th:value="${responseForm.totalDifference}" />
+            <input type="hidden" name="basisChecksum" th:value="${responseForm.basisChecksum}" />
+            <input type="hidden" name="basisInflux" th:value="${responseForm.basisInflux}" />
+            <input type="hidden" name="basisRecall" th:value="${responseForm.basisRecall}" />
+            <input type="hidden" name="basisWriteUp" th:value="${responseForm.basisWriteUp}" />
+            <input type="hidden" name="basisWriteDown" th:value="${responseForm.basisWriteDown}" />
+            <button type="submit" class="skat-btn skat-btn--primary" th:text="#{reconciliation.confirm.submit}">Bekræft og indsend</button>
+            <a class="skat-btn skat-btn--secondary" th:href="@{/afstemning/{id}(id=${reconciliation.id})}" th:text="#{reconciliation.confirm.cancel}">Annuller</a>
+          </form>
+        </div>
+      </div>
+
+      <!-- Response form for ACTIVE reconciliations (hidden during confirmation) -->
+      <div th:if="${reconciliation.status == 'ACTIVE' and !showConfirmation and reconciliation.previousResponse == null}">
+        <h2 th:text="#{reconciliation.detail.section.response}">Indsend svar</h2>
+
+        <!-- Validation error summary -->
+        <div th:if="${#fields.hasErrors('responseForm.*')}" class="skat-alert skat-alert--error" role="alert">
+          <p th:text="#{reconciliation.validation.summary}">Der er fejl i formularen.</p>
+        </div>
+
+        <form method="post" th:action="@{/afstemning/{id}/confirm(id=${reconciliation.id})}" th:object="${responseForm}">
+          <input type="hidden" th:field="*{basisChecksum}" th:value="${basisChecksum}" />
+          <input type="hidden" th:field="*{basisInflux}" th:value="${reconciliation.basis?.influxAmount}" />
+          <input type="hidden" th:field="*{basisRecall}" th:value="${reconciliation.basis?.recallAmount}" />
+          <input type="hidden" th:field="*{basisWriteUp}" th:value="${reconciliation.basis?.writeUpAmount}" />
+          <input type="hidden" th:field="*{basisWriteDown}" th:value="${reconciliation.basis?.writeDownAmount}" />
+
+          <div class="skat-form-group">
+            <label for="explainedDifference" th:text="#{reconciliation.label.explained}">Forklaret difference (DKK)</label>
+            <input type="number" step="0.01" id="explainedDifference" th:field="*{explainedDifference}"
+                   class="skat-input" th:classappend="${#fields.hasErrors('explainedDifference')} ? 'skat-input--error' : ''"
+                   th:aria-describedby="${#fields.hasErrors('explainedDifference')} ? 'error-explained' : ''" />
+            <span th:if="${#fields.hasErrors('explainedDifference')}" id="error-explained" class="skat-error-message" role="alert"
+                  th:text="${#fields.errors('explainedDifference')[0]}">Feltet er påkrævet.</span>
+          </div>
+
+          <div class="skat-form-group">
+            <label for="unexplainedDifference" th:text="#{reconciliation.label.unexplained}">Uforklaret difference (DKK)</label>
+            <input type="number" step="0.01" id="unexplainedDifference" th:field="*{unexplainedDifference}"
+                   class="skat-input" th:classappend="${#fields.hasErrors('unexplainedDifference')} ? 'skat-input--error' : ''"
+                   th:aria-describedby="${#fields.hasErrors('unexplainedDifference')} ? 'error-unexplained' : ''" />
+            <span th:if="${#fields.hasErrors('unexplainedDifference')}" id="error-unexplained" class="skat-error-message" role="alert"
+                  th:text="${#fields.errors('unexplainedDifference')[0]}">Feltet er påkrævet.</span>
+          </div>
+
+          <div class="skat-form-group">
+            <label for="totalDifference" th:text="#{reconciliation.label.total}">Total difference (DKK)</label>
+            <input type="number" step="0.01" id="totalDifference" th:field="*{totalDifference}"
+                   class="skat-input" th:classappend="${#fields.hasErrors('totalDifference')} ? 'skat-input--error' : ''"
+                   th:aria-describedby="${#fields.hasErrors('totalDifference')} ? 'error-total' : ''" />
+            <span th:if="${#fields.hasErrors('totalDifference')}" id="error-total" class="skat-error-message" role="alert"
+                  th:text="${#fields.errors('totalDifference')[0]}">Feltet er påkrævet.</span>
+          </div>
+
+          <button type="submit" class="skat-btn skat-btn--primary" th:text="#{reconciliation.btn.submit}">Indsend svar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Fallback when no reconciliation loaded -->
+    <div th:unless="${reconciliation}">
+      <h1 th:text="#{reconciliation.detail.heading}">Afstemning</h1>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/afstemning}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{reconciliation.detail.btn.back}">Tilbage til afstemningslisten</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

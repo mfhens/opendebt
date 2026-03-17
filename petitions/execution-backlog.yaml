@@ -2,8 +2,8 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-16
-  updated_by: factory-droid (wave-7 PSRM-enriched downstream collection + PSRM notes)
+  updated_at: 2026-03-17
+  updated_by: factory-droid (status sync -- W2/W4/W5 tickets marked done to match implemented petitions)
   psrm_reference: docs/psrm-reference/
   ticket_status_values:
     - pending
@@ -556,7 +556,7 @@ backlog:
         submission outcome model (UDFØRT/AFVIST/HØRING). No code changes needed; traceability documented.
 
     W2-RULE-02:
-      status: pending
+      status: done
       sprint: sprint-3
       petitions:
         - petition016
@@ -586,7 +586,7 @@ backlog:
       parallelization: Can overlap late with W2-RULE-01.
 
     W2-RULE-03:
-      status: pending
+      status: done
       sprint: sprint-4
       petitions:
         - petition017
@@ -612,7 +612,7 @@ backlog:
       parallelization: Starts when authorization rules are stable.
 
     W2-RULE-04:
-      status: pending
+      status: done
       sprint: sprint-4
       petitions:
         - petition018
@@ -1009,7 +1009,7 @@ backlog:
     # Wave 5: Internationalization (i18n)
 
     W5-I18N-01:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1032,7 +1032,7 @@ backlog:
       parallelization: Must complete before template extraction starts.
 
     W5-I18N-02:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1055,7 +1055,7 @@ backlog:
       parallelization: Can overlap late with W5-I18N-01 once MessageSource bean exists.
 
     W5-I18N-03:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1077,7 +1077,7 @@ backlog:
       parallelization: Can run in parallel with W5-I18N-04 through W5-I18N-08 once layout is done.
 
     W5-I18N-04:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1097,7 +1097,7 @@ backlog:
       parallelization: Can run in parallel with W5-I18N-05 through W5-I18N-08.
 
     W5-I18N-05:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1117,7 +1117,7 @@ backlog:
       parallelization: Can run in parallel with W5-I18N-04, W5-I18N-06, W5-I18N-07, W5-I18N-08.
 
     W5-I18N-06:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1136,7 +1136,7 @@ backlog:
       parallelization: Can run in parallel with W5-I18N-04, W5-I18N-05, W5-I18N-07, W5-I18N-08.
 
     W5-I18N-07:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1158,7 +1158,7 @@ backlog:
       parallelization: Can run in parallel with W5-I18N-04, W5-I18N-05, W5-I18N-06, W5-I18N-08.
 
     W5-I18N-08:
-      status: pending
+      status: done
       sprint: sprint-8
       petitions:
         - petition021
@@ -1178,7 +1178,7 @@ backlog:
       parallelization: Can run in parallel with template extraction tickets.
 
     W5-I18N-09:
-      status: pending
+      status: done
       sprint: sprint-9
       petitions:
         - petition021
@@ -1205,7 +1205,7 @@ backlog:
       parallelization: Must wait for all Danish extraction to complete.
 
     W5-I18N-10:
-      status: pending
+      status: done
       sprint: sprint-9
       petitions:
         - petition021
@@ -1228,7 +1228,7 @@ backlog:
       parallelization: Blocks Wave 5 completion.
 
     W5-I18N-11:
-      status: pending
+      status: done
       sprint: sprint-9
       petitions:
         - petition021

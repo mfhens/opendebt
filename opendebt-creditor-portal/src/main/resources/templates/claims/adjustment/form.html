@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{adjustment.page.title}">Opskriv/Nedskriv</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/fordringer}" th:text="#{claim.detail.breadcrumb.claims}">Fordringer</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <a th:href="@{/fordring/{id}(id=${claimId})}" th:text="${claimId}">FDR-100</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{adjustment.breadcrumb}">Opskriv/Nedskriv</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:if="${direction == 'WRITE_UP'}" th:text="#{adjustment.heading.writeup} + ' ' + ${claimId}">Opskrivning</h1>
+    <h1 th:if="${direction != 'WRITE_UP'}" th:text="#{adjustment.heading.writedown} + ' ' + ${claimId}">Nedskrivning</h1>
+
+    <!-- Service error message -->
+    <div th:if="${serviceError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${serviceError}">Der opstod en fejl.</p>
+    </div>
+
+    <!-- Action error message (submission failure) -->
+    <div th:if="${actionError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${actionError}">Handlingen kunne ikke gennemføres.</p>
+    </div>
+
+    <th:block th:if="${allowedTypes != null and !#lists.isEmpty(allowedTypes)}">
+
+      <!-- Validation error summary -->
+      <div th:if="${#fields.hasErrors('adjustmentForm.*')}" class="skat-alert skat-alert--error" role="alert">
+        <p th:text="#{adjustment.validation.summary}">Der er fejl i formularen.</p>
+      </div>
+
+      <form th:action="@{/fordring/{id}/adjustment(id=${claimId})}"
+            th:object="${adjustmentForm}"
+            method="post"
+            class="skat-form"
+            novalidate="novalidate">
+
+        <input type="hidden" name="direction" th:value="${direction}" />
+
+        <!-- Update type selection -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="adjustmentType" th:text="#{adjustment.label.type}">Opdateringstype</label>
+          <select id="adjustmentType"
+                  th:field="*{adjustmentType}"
+                  class="skat-select"
+                  th:classappend="${#fields.hasErrors('adjustmentType')} ? 'skat-input--error'"
+                  aria-describedby="adjustmentType-error"
+                  th:aria-invalid="${#fields.hasErrors('adjustmentType')} ? 'true' : 'false'"
+                  required="required">
+            <option value="" th:text="#{adjustment.type.placeholder}">-- Vælg type --</option>
+            <option th:each="type : ${allowedTypes}"
+                    th:value="${type.name()}"
+                    th:text="#{|adjustment.type.${type.name()}|}"
+                    th:selected="${adjustmentForm.adjustmentType != null and adjustmentForm.adjustmentType.name() == type.name()}">Type</option>
+          </select>
+          <span id="adjustmentType-error" class="skat-error-message" role="alert"
+                th:if="${#fields.hasErrors('adjustmentType')}"
+                th:text="${#fields.errors('adjustmentType')[0]}">Fejl</span>
+        </div>
+
+        <!-- Amount field -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="amount" th:text="#{adjustment.label.amount}">Beløb (DKK)</label>
+          <input id="amount"
+                 th:field="*{amount}"
+                 type="number"
+                 step="0.01"
+                 min="0.01"
+                 class="skat-input"
+                 th:classappend="${#fields.hasErrors('amount')} ? 'skat-input--error'"
+                 aria-describedby="amount-error"
+                 th:aria-invalid="${#fields.hasErrors('amount')} ? 'true' : 'false'"
+                 required="required" />
+          <span id="amount-error" class="skat-error-message" role="alert"
+                th:if="${#fields.hasErrors('amount')}"
+                th:text="${#fields.errors('amount')[0]}">Fejl</span>
+        </div>
+
+        <!-- Effective date field -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="effectiveDate" th:text="#{adjustment.label.effectiveDate}">Virkningsdato</label>
+          <input id="effectiveDate"
+                 th:field="*{effectiveDate}"
+                 type="date"
+                 class="skat-input"
+                 th:classappend="${#fields.hasErrors('effectiveDate')} ? 'skat-input--error'"
+                 aria-describedby="effectiveDate-error"
+                 th:aria-invalid="${#fields.hasErrors('effectiveDate')} ? 'true' : 'false'"
+                 required="required" />
+          <span id="effectiveDate-error" class="skat-error-message" role="alert"
+                th:if="${#fields.hasErrors('effectiveDate')}"
+                th:text="${#fields.errors('effectiveDate')[0]}">Fejl</span>
+        </div>
+
+        <!-- Reason field -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="reason" th:text="#{adjustment.label.reason}">Årsag</label>
+          <input id="reason"
+                 th:field="*{reason}"
+                 type="text"
+                 class="skat-input"
+                 th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
+                 aria-describedby="reason-error"
+                 th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
+                 required="required" />
+          <span id="reason-error" class="skat-error-message" role="alert"
+                th:if="${#fields.hasErrors('reason')}"
+                th:text="${#fields.errors('reason')[0]}">Fejl</span>
+        </div>
+
+        <!-- Debtor selection (radio buttons) - shown for payment-related types with multiple debtors -->
+        <div th:if="${multiDebtor}" class="skat-form-group" id="debtor-selection">
+          <fieldset>
+            <legend class="skat-label" th:text="#{adjustment.label.debtor}">Vælg skyldner</legend>
+            <p class="skat-hint" th:text="#{adjustment.hint.debtor}">Vælg den skyldner, som betalingen vedrører.</p>
+            <div th:each="debtor, iterStat : ${debtors}" class="skat-radio-group">
+              <input th:id="${'debtor-' + iterStat.index}"
+                     type="radio"
+                     th:field="*{debtorIndex}"
+                     th:value="${iterStat.index}"
+                     class="skat-radio" />
+              <label th:for="${'debtor-' + iterStat.index}" class="skat-radio-label">
+                <span th:text="${debtor.identifierType}">CPR</span>:
+                <span th:text="${debtor.identifier}">010190****</span>
+              </label>
+            </div>
+            <span id="debtorIndex-error" class="skat-error-message" role="alert"
+                  th:if="${#fields.hasErrors('debtorIndex')}"
+                  th:text="${#fields.errors('debtorIndex')[0]}">Fejl</span>
+          </fieldset>
+        </div>
+
+        <!-- Confirmation and submit -->
+        <div class="skat-form-actions" style="margin-top: 1.5rem;">
+          <button type="submit"
+                  class="skat-btn skat-btn--primary"
+                  th:attr="onclick=|return confirm('${direction == 'WRITE_UP' ? #messages.msg('adjustment.confirm.writeup') : #messages.msg('adjustment.confirm.writedown')}')|">
+            <span th:if="${direction == 'WRITE_UP'}" th:text="#{adjustment.btn.submit.writeup}">Indsend opskrivning</span>
+            <span th:if="${direction != 'WRITE_UP'}" th:text="#{adjustment.btn.submit.writedown}">Indsend nedskrivning</span>
+          </button>
+          <a class="skat-btn skat-btn--secondary"
+             th:href="@{/fordring/{id}(id=${claimId})}"
+             th:text="#{adjustment.btn.cancel}">Annuller</a>
+        </div>
+      </form>
+    </th:block>
+
+    <!-- Back to claim detail -->
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/fordring/{id}(id=${claimId})}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{adjustment.btn.back}">Tilbage til fordring</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

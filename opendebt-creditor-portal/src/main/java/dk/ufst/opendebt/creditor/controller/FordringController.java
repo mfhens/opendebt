@@ -46,6 +46,7 @@ public class FordringController {
     if (!model.containsAttribute("fordringForm")) {
       model.addAttribute("fordringForm", new FordringFormDto());
     }
+    model.addAttribute("currentPage", "claim-new");
     addActingCreditorToModel(model, session);
     return "fordring-ny";
   }

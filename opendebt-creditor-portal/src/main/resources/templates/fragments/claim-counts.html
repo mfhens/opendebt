@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    HTMX-loadable claim counts fragment.
+    Loaded asynchronously on the dashboard via hx-get="/api/claim-counts".
+  -->
+  <div th:fragment="claimCounts" class="skat-card-grid" id="claim-counts">
+    <div class="skat-card skat-card--count">
+      <div class="skat-card__title" th:text="#{dashboard.counts.recovery}">Fordringer i inddrivelse</div>
+      <div class="skat-card__body">
+        <span class="skat-count" th:text="${counts.inRecovery}">0</span>
+        <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer}" th:text="#{dashboard.counts.view}">Se</a>
+      </div>
+    </div>
+    <div class="skat-card skat-card--count">
+      <div class="skat-card__title" th:text="#{dashboard.counts.hearing}">Fordringer i hoering</div>
+      <div class="skat-card__body">
+        <span class="skat-count" th:text="${counts.inHearing}">0</span>
+        <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer/hoering}" th:text="#{dashboard.counts.view}">Se</a>
+      </div>
+    </div>
+    <div class="skat-card skat-card--count">
+      <div class="skat-card__title" th:text="#{dashboard.counts.rejected}">Afviste fordringer</div>
+      <div class="skat-card__body">
+        <span class="skat-count" th:text="${counts.rejected}">0</span>
+        <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer/afviste}" th:text="#{dashboard.counts.view}">Se</a>
+      </div>
+    </div>
+    <div class="skat-card skat-card--count">
+      <div class="skat-card__title" th:text="#{dashboard.counts.zerobalance}">Nulfordringer</div>
+      <div class="skat-card__body">
+        <span class="skat-count" th:text="${counts.zeroBalance}">0</span>
+        <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer/nulfordringer}" th:text="#{dashboard.counts.view}">Se</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

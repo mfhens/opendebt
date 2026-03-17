@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
+import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionResponse;
+import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DashboardController {
 
   private final CreditorServiceClient creditorServiceClient;
+  private final DebtServiceClient debtServiceClient;
   private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
 
@@ -71,11 +74,34 @@ public class DashboardController {
 
     model.addAttribute("creditor", creditor);
     model.addAttribute("actingCreditorOrgId", actingCreditor);
+    model.addAttribute("currentPage", "home");
     if (representedCreditor != null) {
       model.addAttribute("representedCreditorOrgId", representedCreditor);
     }
     model.addAttribute("showActingSelector", creditor.getParentCreditorId() != null);
     return "index";
+  }
+
+  /** HTMX endpoint that returns the claim counts fragment for the acting creditor. */
+  @GetMapping("/api/claim-counts")
+  public String claimCounts(Model model, HttpSession session) {
+    UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
+    ClaimCountsDto counts;
+    if (actingCreditor == null) {
+      counts = ClaimCountsDto.builder().build();
+    } else {
+      try {
+        counts = debtServiceClient.getClaimCounts(actingCreditor);
+        if (counts == null) {
+          counts = ClaimCountsDto.builder().build();
+        }
+      } catch (Exception ex) {
+        log.warn("Failed to load claim counts: {}", ex.getMessage());
+        counts = ClaimCountsDto.builder().build();
+      }
+    }
+    model.addAttribute("counts", counts);
+    return "fragments/claim-counts :: claimCounts";
   }
 
   private void handleActAsDenialIfApplicable(String actAsParam, UUID actingCreditor, Model model) {

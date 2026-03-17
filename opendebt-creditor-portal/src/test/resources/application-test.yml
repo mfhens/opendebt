@@ -15,6 +15,11 @@ spring:
     mode: HTML
 
 opendebt:
+  portal:
+    links:
+      agreement-material: https://gaeldst.dk/fordringshaver/individuelle-aftaler
+      contact: https://www.gaeldst.dk/fordringshaver/fordringshaversupport/
+      guides: https://www.gaeldst.dk/fordringshaver/find-vejledninger/guides-til-fordringshaverportalen/
   i18n:
     default-locale: da-DK
     supported-locales:
@@ -28,3 +33,7 @@ opendebt:
       url: http://localhost:8081
     creditor-service:
       url: http://localhost:8092
+    person-registry:
+      url: http://localhost:8083
+    reporting-service:
+      url: http://localhost:8094

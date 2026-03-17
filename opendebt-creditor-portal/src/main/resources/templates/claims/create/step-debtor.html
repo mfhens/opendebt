@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{wizard.page.title}">Opret fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/}" th:text="#{layout.breadcrumb.home}">Forside</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{wizard.breadcrumb.current}">Opret fordring</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{wizard.heading}">Opret ny fordring</h1>
+
+    <!-- Step indicator -->
+    <nav class="skat-step-indicator" aria-label="Wizard progress">
+      <ol class="skat-step-indicator__list">
+        <li th:each="step : ${#numbers.sequence(1, totalSteps)}"
+            th:classappend="${step == currentStep} ? 'skat-step-indicator__item--active' : (${step < currentStep} ? 'skat-step-indicator__item--completed' : '')"
+            class="skat-step-indicator__item">
+          <span class="skat-step-indicator__number" th:text="${step}">1</span>
+          <span class="skat-step-indicator__label"
+                th:text="#{__${'wizard.step.' + step + '.label'}__}">Step</span>
+        </li>
+      </ol>
+      <p class="skat-sr-only" th:text="#{wizard.step.indicator(${currentStep}, ${totalSteps})}">Step 1 of 4</p>
+    </nav>
+
+    <!-- Acting-on-behalf indicator -->
+    <div th:if="${representedCreditorOrgId != null}"
+         class="skat-alert skat-alert--info" role="status">
+      <p><span th:text="#{wizard.acting.indicator}">Du handler på vegne af fordringshaver:</span>
+        <strong th:text="${representedCreditorOrgId}">org-id</strong>
+      </p>
+    </div>
+
+    <!-- Verification error alert -->
+    <div th:if="${verificationError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${verificationError}">Verification failed.</p>
+    </div>
+
+    <form method="post" th:action="@{/fordring/opret/step/1}" novalidate="novalidate">
+      <fieldset>
+        <legend th:text="#{wizard.step1.heading}">Debtor identification</legend>
+
+        <!-- Debtor type selection -->
+        <div class="skat-form-group" th:classappend="${debtorTypeError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="debtorType" th:text="#{wizard.step1.debtorType.label}">Debtor type</label>
+          <span class="skat-hint" id="debtorType-hint" th:text="#{wizard.step1.debtorType.hint}">Select the debtor identifier type.</span>
+          <select id="debtorType" name="debtorType" class="skat-select"
+                  th:classappend="${debtorTypeError != null} ? 'skat-select--error'"
+                  aria-describedby="debtorType-hint debtorType-error"
+                  th:aria-invalid="${debtorTypeError != null} ? 'true' : 'false'"
+                  onchange="toggleDebtorFields(this.value)">
+            <option value="" th:text="#{wizard.step1.debtorType.placeholder}">-- Select --</option>
+            <option value="CPR" th:selected="${wizardForm.debtorType == 'CPR'}" th:text="#{wizard.step1.debtorType.cpr}">CPR</option>
+            <option value="CVR" th:selected="${wizardForm.debtorType == 'CVR'}" th:text="#{wizard.step1.debtorType.cvr}">CVR</option>
+            <option value="SE" th:selected="${wizardForm.debtorType == 'SE'}" th:text="#{wizard.step1.debtorType.se}">SE</option>
+            <option value="AKR" th:selected="${wizardForm.debtorType == 'AKR'}" th:text="#{wizard.step1.debtorType.akr}">AKR</option>
+          </select>
+          <span id="debtorType-error" class="skat-error-message" role="alert"
+                th:if="${debtorTypeError != null}"
+                th:text="${debtorTypeError}">Error</span>
+        </div>
+
+        <!-- Debtor identifier (CPR/CVR/SE/AKR number) -->
+        <div class="skat-form-group" th:classappend="${debtorIdentifierError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="debtorIdentifier" th:text="#{wizard.step1.identifier.label}">Identifier</label>
+          <span class="skat-hint" id="debtorIdentifier-hint" th:text="#{wizard.step1.identifier.hint}">Enter the debtor number.</span>
+          <input id="debtorIdentifier" name="debtorIdentifier" type="text" class="skat-input"
+                 th:value="${wizardForm.debtorIdentifier}"
+                 th:classappend="${debtorIdentifierError != null} ? 'skat-input--error'"
+                 th:attr="inputmode=${wizardForm.debtorType == 'CPR'} ? 'numeric' : 'text',
+                          pattern=${wizardForm.debtorType == 'CPR'} ? '[0-9]*' : ''"
+                 aria-describedby="debtorIdentifier-hint debtorIdentifier-error"
+                 th:aria-invalid="${debtorIdentifierError != null} ? 'true' : 'false'" />
+          <span id="debtorIdentifier-error" class="skat-error-message" role="alert"
+                th:if="${debtorIdentifierError != null}"
+                th:text="${debtorIdentifierError}">Error</span>
+        </div>
+
+        <!-- CPR-specific fields: first name and last name -->
+        <div id="cpr-name-fields" th:style="${wizardForm.debtorType != 'CPR'} ? 'display:none'">
+          <div class="skat-form-group">
+            <label class="skat-label" for="debtorFirstName" th:text="#{wizard.step1.firstName.label}">First name</label>
+            <input id="debtorFirstName" name="debtorFirstName" type="text" class="skat-input"
+                   th:value="${wizardForm.debtorFirstName}"
+                   aria-describedby="debtorFirstName-hint" />
+            <span class="skat-hint" id="debtorFirstName-hint" th:text="#{wizard.step1.firstName.hint}">Used for name verification.</span>
+          </div>
+
+          <div class="skat-form-group">
+            <label class="skat-label" for="debtorLastName" th:text="#{wizard.step1.lastName.label}">Last name</label>
+            <input id="debtorLastName" name="debtorLastName" type="text" class="skat-input"
+                   th:value="${wizardForm.debtorLastName}"
+                   aria-describedby="debtorLastName-hint" />
+            <span class="skat-hint" id="debtorLastName-hint" th:text="#{wizard.step1.lastName.hint}">Used for name verification.</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="skat-form-group skat-form-actions">
+        <button type="submit" class="skat-btn skat-btn--primary" th:text="#{wizard.btn.next}">Next</button>
+        <a class="skat-btn skat-btn--secondary" th:href="@{/}" th:text="#{wizard.btn.cancel}">Cancel</a>
+      </div>
+    </form>
+
+    <script th:inline="javascript">
+      function toggleDebtorFields(type) {
+        var cprFields = document.getElementById('cpr-name-fields');
+        var identifierInput = document.getElementById('debtorIdentifier');
+        if (type === 'CPR') {
+          cprFields.style.display = '';
+          identifierInput.setAttribute('inputmode', 'numeric');
+          identifierInput.setAttribute('pattern', '[0-9]*');
+        } else {
+          cprFields.style.display = 'none';
+          identifierInput.removeAttribute('inputmode');
+          identifierInput.removeAttribute('pattern');
+        }
+      }
+    </script>
+  </section>
+</body>
+</html>

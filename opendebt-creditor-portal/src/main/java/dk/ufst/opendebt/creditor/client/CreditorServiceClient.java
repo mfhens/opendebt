@@ -14,6 +14,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionRequest;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionResponse;
+import dk.ufst.opendebt.creditor.dto.ContactEmailUpdateDto;
+import dk.ufst.opendebt.creditor.dto.CreditorAgreementDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +84,75 @@ public class CreditorServiceClient {
                         "CREDITOR_SERVICE_UNAVAILABLE",
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(PortalCreditorDto.class)
+        .block();
+  }
+
+  /** Fetches the creditor agreement configuration. */
+  public CreditorAgreementDto getCreditorAgreement(UUID creditorOrgId) {
+    log.debug("Fetching creditor agreement for orgId: {}", creditorOrgId);
+
+    try {
+      return webClient
+          .get()
+          .uri("/creditor-service/api/v1/creditors/{creditorOrgId}/agreement", creditorOrgId)
+          .retrieve()
+          .onStatus(
+              HttpStatusCode::is4xxClientError,
+              response ->
+                  response
+                      .bodyToMono(String.class)
+                      .flatMap(
+                          body ->
+                              Mono.error(
+                                  new OpenDebtException(
+                                      "Creditor service client error: " + body,
+                                      "CREDITOR_CLIENT_ERROR"))))
+          .onStatus(
+              HttpStatusCode::is5xxServerError,
+              response ->
+                  Mono.error(
+                      new OpenDebtException(
+                          "Creditor service unavailable",
+                          "CREDITOR_SERVICE_UNAVAILABLE",
+                          OpenDebtException.ErrorSeverity.CRITICAL)))
+          .bodyToMono(CreditorAgreementDto.class)
+          .block();
+    } catch (Exception ex) {
+      log.warn("Failed to fetch creditor agreement: {}", ex.getMessage());
+      return null;
+    }
+  }
+
+  /** Updates the creditor contact email. */
+  public void updateContactEmail(UUID creditorOrgId, ContactEmailUpdateDto updateDto) {
+    log.debug("Updating contact email for creditor: {}", creditorOrgId);
+
+    webClient
+        .put()
+        .uri("/creditor-service/api/v1/creditors/{creditorOrgId}/contact", creditorOrgId)
+        .bodyValue(updateDto)
+        .retrieve()
+        .onStatus(
+            HttpStatusCode::is4xxClientError,
+            response ->
+                response
+                    .bodyToMono(String.class)
+                    .flatMap(
+                        body ->
+                            Mono.error(
+                                new OpenDebtException(
+                                    "Contact email update failed: " + body,
+                                    "CONTACT_UPDATE_ERROR",
+                                    OpenDebtException.ErrorSeverity.WARNING))))
+        .onStatus(
+            HttpStatusCode::is5xxServerError,
+            response ->
+                Mono.error(
+                    new OpenDebtException(
+                        "Creditor service unavailable",
+                        "CREDITOR_SERVICE_UNAVAILABLE",
+                        OpenDebtException.ErrorSeverity.CRITICAL)))
+        .toBodilessEntity()
         .block();
   }
 

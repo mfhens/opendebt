@@ -43,9 +43,18 @@
 
     <!-- Main content -->
     <main id="main-content" class="skat-content" role="main">
-      <section layout:fragment="content">
-        <!-- Child pages replace this section -->
-      </section>
+      <div class="skat-content-layout">
+        <!-- Portal secondary navigation -->
+        <aside class="skat-content-layout__nav">
+          <div th:replace="~{fragments/portal-nav :: portalNav(${currentPage ?: 'home'})}"></div>
+        </aside>
+        <!-- Page content -->
+        <div class="skat-content-layout__main">
+          <section layout:fragment="content">
+            <!-- Child pages replace this section -->
+          </section>
+        </div>
+      </div>
     </main>
 
     <!-- Footer -->

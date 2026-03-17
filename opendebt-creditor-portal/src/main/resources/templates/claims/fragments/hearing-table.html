@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    HTMX-loadable hearing claims table fragment.
+    Used by hearing-list.html (petition 031).
+    Swapped in via hx-get on initial load and pagination/sort/search actions.
+  -->
+  <div th:fragment="hearingTable" id="hearing-table-container" aria-live="polite">
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <table class="skat-table" th:aria-label="#{hearing.table.arialabel}">
+          <caption class="skat-sr-only" th:text="#{hearing.list.heading}">Fordringer i høring</caption>
+          <thead>
+            <tr>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/hearing"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;claimId&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'claimId' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#hearing-table-container"
+                   hx-indicator="#hearing-loading"
+                   th:text="#{hearing.col.claimId}"
+                   th:classappend="${sortBy == 'claimId'} ? 'skat-sorted' : ''">Fordrings-ID</a>
+                <span th:if="${sortBy == 'claimId'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/hearing"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;reportingTimestamp&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'reportingTimestamp' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#hearing-table-container"
+                   hx-indicator="#hearing-loading"
+                   th:text="#{hearing.col.reportingTimestamp}"
+                   th:classappend="${sortBy == 'reportingTimestamp'} ? 'skat-sorted' : ''">Indberetningstidspunkt</a>
+                <span th:if="${sortBy == 'reportingTimestamp'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col" th:text="#{hearing.col.debtorType}">Skyldner-type</th>
+              <th scope="col" th:text="#{hearing.col.debtorId}">Skyldner-ID</th>
+              <th scope="col" th:text="#{hearing.col.debtorCount}">Antal skyldnere</th>
+              <th scope="col" th:text="#{hearing.col.creditorRef}">Fordringshaver-ref.</th>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/hearing"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;claimTypeName&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'claimTypeName' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#hearing-table-container"
+                   hx-indicator="#hearing-loading"
+                   th:text="#{hearing.col.claimType}"
+                   th:classappend="${sortBy == 'claimTypeName'} ? 'skat-sorted' : ''">Fordringstype</a>
+                <span th:if="${sortBy == 'claimTypeName'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col" th:text="#{hearing.col.error}">Fejl</th>
+              <th scope="col">
+                <a th:href="'#'"
+                   hx-get="/creditor-portal/api/claims/hearing"
+                   th:hx-vals="${'{&quot;sortBy&quot;:&quot;hearingStatus&quot;,&quot;sortDirection&quot;:&quot;' + (sortBy == 'hearingStatus' and sortDirection == 'asc' ? 'desc' : 'asc') + '&quot;}'}"
+                   hx-target="#hearing-table-container"
+                   hx-indicator="#hearing-loading"
+                   th:text="#{hearing.col.hearingStatus}"
+                   th:classappend="${sortBy == 'hearingStatus'} ? 'skat-sorted' : ''">Høringsstatus</a>
+                <span th:if="${sortBy == 'hearingStatus'}" th:text="${sortDirection == 'asc'} ? '▲' : '▼'" aria-hidden="true"></span>
+              </th>
+              <th scope="col" th:text="#{hearing.col.caseId}">Sags-ID</th>
+              <th scope="col" th:text="#{hearing.col.actionCode}">Aktionskode</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(claims)}">
+              <td colspan="11" th:text="#{hearing.empty}">Ingen fordringer i høring fundet.</td>
+            </tr>
+            <tr th:each="claim : ${claims}">
+              <td>
+                <a th:href="@{/fordringer/hoering/{id}(id=${claim.claimId})}" th:text="${claim.claimId}">FDR-50001</a>
+              </td>
+              <td th:text="${claim.reportingTimestamp != null} ? ${#temporals.format(claim.reportingTimestamp, 'dd.MM.yyyy HH:mm')} : '-'">01.01.2025 12:00</td>
+              <td th:text="${claim.debtorType}">CPR</td>
+              <td th:text="${claim.debtorIdentifier}">010190****</td>
+              <td th:text="${claim.debtorCount}">1</td>
+              <td th:text="${claim.creditorReference ?: '-'}">REF-001</td>
+              <td th:text="${claim.claimTypeName}">SKAT</td>
+              <td>
+                <span th:if="${claim.errorCount <= 1}" th:text="${claim.errorDescription ?: '-'}">Fejlbeskrivelse</span>
+                <span th:if="${claim.errorCount > 1}" th:text="${claim.errorCount + ' ' + #{hearing.col.error.count.suffix}}">3 fejl</span>
+              </td>
+              <td>
+                <span class="skat-badge" th:text="${claim.hearingStatus}">I HØRING</span>
+              </td>
+              <td th:text="${claim.caseId ?: '-'}">CASE-001</td>
+              <td th:text="${claim.actionCode ?: '-'}">OPSKRIVNING_REGULERING</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination controls -->
+    <nav th:if="${totalPages > 1}" class="skat-pagination" th:aria-label="#{claims.pagination.label}" role="navigation">
+      <ul class="skat-pagination__list">
+        <!-- Previous page -->
+        <li class="skat-pagination__item" th:classappend="${currentPage == 0} ? 'skat-pagination__item--disabled' : ''">
+          <a th:if="${currentPage > 0}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/hearing"
+             th:hx-vals="${'{&quot;page&quot;:' + (currentPage - 1) + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#hearing-table-container"
+             hx-indicator="#hearing-loading"
+             class="skat-pagination__link"
+             th:text="#{claims.pagination.previous}"
+             th:aria-label="#{claims.pagination.previous.aria}">Forrige</a>
+          <span th:if="${currentPage == 0}"
+                class="skat-pagination__link skat-pagination__link--disabled"
+                aria-disabled="true"
+                th:text="#{claims.pagination.previous}">Forrige</span>
+        </li>
+
+        <!-- Page numbers (show up to 5 pages centered on current) -->
+        <li th:each="p : ${#numbers.sequence(
+              T(java.lang.Math).max(0, currentPage - 2),
+              T(java.lang.Math).min(totalPages - 1, currentPage + 2))}"
+            class="skat-pagination__item"
+            th:classappend="${p == currentPage} ? 'skat-pagination__item--active' : ''">
+          <a th:if="${p != currentPage}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/hearing"
+             th:hx-vals="${'{&quot;page&quot;:' + p + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#hearing-table-container"
+             hx-indicator="#hearing-loading"
+             class="skat-pagination__link"
+             th:text="${p + 1}"
+             th:aria-label="#{claims.pagination.page.aria(${p + 1})}">1</a>
+          <span th:if="${p == currentPage}"
+                class="skat-pagination__link skat-pagination__link--current"
+                aria-current="page"
+                th:text="${p + 1}">1</span>
+        </li>
+
+        <!-- Next page -->
+        <li class="skat-pagination__item" th:classappend="${currentPage >= totalPages - 1} ? 'skat-pagination__item--disabled' : ''">
+          <a th:if="${currentPage < totalPages - 1}"
+             th:href="'#'"
+             hx-get="/creditor-portal/api/claims/hearing"
+             th:hx-vals="${'{&quot;page&quot;:' + (currentPage + 1) + ',&quot;size&quot;:' + pageSize + (sortBy != null ? ',&quot;sortBy&quot;:&quot;' + sortBy + '&quot;,&quot;sortDirection&quot;:&quot;' + sortDirection + '&quot;' : '') + '}'}"
+             hx-target="#hearing-table-container"
+             hx-indicator="#hearing-loading"
+             class="skat-pagination__link"
+             th:text="#{claims.pagination.next}"
+             th:aria-label="#{claims.pagination.next.aria}">Næste</a>
+          <span th:if="${currentPage >= totalPages - 1}"
+                class="skat-pagination__link skat-pagination__link--disabled"
+                aria-disabled="true"
+                th:text="#{claims.pagination.next}">Næste</span>
+        </li>
+      </ul>
+      <div class="skat-pagination__info" role="status" aria-live="polite">
+        <span th:text="#{claims.pagination.showing(${currentPage * pageSize + 1}, ${T(java.lang.Math).min((currentPage + 1) * pageSize, totalElements)}, ${totalElements})}">
+          Viser 1-20 af 100
+        </span>
+      </div>
+    </nav>
+  </div>
+</body>
+</html>

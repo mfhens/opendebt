@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{wizard.page.title}">Opret fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/}" th:text="#{layout.breadcrumb.home}">Forside</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{wizard.breadcrumb.current}">Opret fordring</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{wizard.heading}">Opret ny fordring</h1>
+
+    <!-- Step indicator -->
+    <nav class="skat-step-indicator" aria-label="Wizard progress">
+      <ol class="skat-step-indicator__list">
+        <li th:each="step : ${#numbers.sequence(1, totalSteps)}"
+            th:classappend="${step == currentStep} ? 'skat-step-indicator__item--active' : (${step < currentStep} ? 'skat-step-indicator__item--completed' : '')"
+            class="skat-step-indicator__item">
+          <span class="skat-step-indicator__number" th:text="${step}">1</span>
+          <span class="skat-step-indicator__label"
+                th:text="#{__${'wizard.step.' + step + '.label'}__}">Step</span>
+        </li>
+      </ol>
+      <p class="skat-sr-only" th:text="#{wizard.step.indicator(${currentStep}, ${totalSteps})}">Step 2 of 4</p>
+    </nav>
+
+    <!-- Debtor summary -->
+    <div class="skat-alert skat-alert--info" role="status">
+      <p>
+        <strong th:text="#{wizard.step2.debtor.summary}">Debtor:</strong>
+        <span th:text="${wizardForm.debtorDisplayName}">Name</span>
+        (<span th:text="${wizardForm.debtorType}">CPR</span>:
+        <span th:text="${wizardForm.debtorIdentifier}">1234567890</span>)
+      </p>
+    </div>
+
+    <form method="post" th:action="@{/fordring/opret/step/2}" novalidate="novalidate">
+      <fieldset>
+        <legend th:text="#{wizard.step2.heading}">Claim details</legend>
+
+        <!-- Claim type (from agreement) -->
+        <div class="skat-form-group" th:classappend="${claimTypeError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="claimType" th:text="#{wizard.step2.claimType.label}">Claim type</label>
+          <select id="claimType" name="claimType" class="skat-select"
+                  th:classappend="${claimTypeError != null} ? 'skat-select--error'"
+                  aria-describedby="claimType-error"
+                  th:aria-invalid="${claimTypeError != null} ? 'true' : 'false'">
+            <option value="" th:text="#{wizard.step2.claimType.placeholder}">-- Select --</option>
+            <option th:each="ct : ${agreement?.allowedClaimTypes}"
+                    th:value="${ct}" th:text="${ct}"
+                    th:selected="${wizardForm.claimType == ct}">Type</option>
+          </select>
+          <span id="claimType-error" class="skat-error-message" role="alert"
+                th:if="${claimTypeError != null}"
+                th:text="${claimTypeError}">Error</span>
+        </div>
+
+        <!-- Amount (residual debt at transfer) -->
+        <div class="skat-form-group" th:classappend="${amountError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="amount" th:text="#{wizard.step2.amount.label}">Amount (DKK)</label>
+          <span class="skat-hint" id="amount-hint" th:text="#{wizard.step2.amount.hint}">Residual debt at transfer.</span>
+          <input id="amount" name="amount" type="number" step="0.01" class="skat-input"
+                 th:value="${wizardForm.amount}"
+                 th:classappend="${amountError != null} ? 'skat-input--error'"
+                 aria-describedby="amount-hint amount-error"
+                 th:aria-invalid="${amountError != null} ? 'true' : 'false'" />
+          <span id="amount-error" class="skat-error-message" role="alert"
+                th:if="${amountError != null}"
+                th:text="${amountError}">Error</span>
+        </div>
+
+        <!-- Principal amount -->
+        <div class="skat-form-group" th:classappend="${principalAmountError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="principalAmount" th:text="#{wizard.step2.principalAmount.label}">Principal amount (DKK)</label>
+          <input id="principalAmount" name="principalAmount" type="number" step="0.01" class="skat-input"
+                 th:value="${wizardForm.principalAmount}"
+                 th:classappend="${principalAmountError != null} ? 'skat-input--error'"
+                 aria-describedby="principalAmount-error"
+                 th:aria-invalid="${principalAmountError != null} ? 'true' : 'false'" />
+          <span id="principalAmount-error" class="skat-error-message" role="alert"
+                th:if="${principalAmountError != null}"
+                th:text="${principalAmountError}">Error</span>
+        </div>
+
+        <!-- Creditor reference -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="creditorReference" th:text="#{wizard.step2.creditorReference.label}">Creditor reference</label>
+          <input id="creditorReference" name="creditorReference" type="text" class="skat-input"
+                 th:value="${wizardForm.creditorReference}" />
+        </div>
+
+        <!-- Description with character counter -->
+        <div class="skat-form-group" th:classappend="${descriptionError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="description" th:text="#{wizard.step2.description.label}">Description</label>
+          <span class="skat-hint" id="description-hint" th:text="#{wizard.step2.description.hint}">Max 100 characters. Do not enter personal data.</span>
+          <div class="skat-alert skat-alert--warning skat-alert--small" role="note">
+            <p th:text="#{wizard.step2.description.gdpr.warning}">Do not include personal data (GDPR).</p>
+          </div>
+          <textarea id="description" name="description" class="skat-input skat-textarea"
+                    maxlength="100" rows="3"
+                    th:text="${wizardForm.description}"
+                    th:classappend="${descriptionError != null} ? 'skat-input--error'"
+                    aria-describedby="description-hint description-counter description-error"
+                    th:aria-invalid="${descriptionError != null} ? 'true' : 'false'"
+                    oninput="updateCharCounter(this)"></textarea>
+          <span id="description-counter" class="skat-hint" aria-live="polite"
+                th:text="#{wizard.step2.description.counter(${wizardForm.description != null ? 100 - wizardForm.description.length() : 100})}">100 characters remaining</span>
+          <span id="description-error" class="skat-error-message" role="alert"
+                th:if="${descriptionError != null}"
+                th:text="${descriptionError}">Error</span>
+        </div>
+
+        <!-- Limitation date (required) -->
+        <div class="skat-form-group" th:classappend="${limitationDateError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="limitationDate" th:text="#{wizard.step2.limitationDate.label}">Limitation date</label>
+          <input id="limitationDate" name="limitationDate" type="date" class="skat-input"
+                 th:value="${wizardForm.limitationDate}"
+                 th:classappend="${limitationDateError != null} ? 'skat-input--error'"
+                 aria-describedby="limitationDate-error"
+                 th:aria-invalid="${limitationDateError != null} ? 'true' : 'false'" />
+          <span id="limitationDate-error" class="skat-error-message" role="alert"
+                th:if="${limitationDateError != null}"
+                th:text="${limitationDateError}">Error</span>
+        </div>
+
+        <!-- Estate processing (required) -->
+        <div class="skat-form-group" th:classappend="${estateProcessingError != null} ? 'skat-form-group--error'">
+          <label class="skat-label" for="estateProcessing" th:text="#{wizard.step2.estateProcessing.label}">Estate processing</label>
+          <select id="estateProcessing" name="estateProcessing" class="skat-select"
+                  th:classappend="${estateProcessingError != null} ? 'skat-select--error'"
+                  aria-describedby="estateProcessing-error"
+                  th:aria-invalid="${estateProcessingError != null} ? 'true' : 'false'">
+            <option value="" th:text="#{wizard.step2.estateProcessing.placeholder}">-- Select --</option>
+            <option value="true" th:selected="${wizardForm.estateProcessing != null and wizardForm.estateProcessing}" th:text="#{wizard.step2.estateProcessing.yes}">Yes</option>
+            <option value="false" th:selected="${wizardForm.estateProcessing != null and !wizardForm.estateProcessing}" th:text="#{wizard.step2.estateProcessing.no}">No</option>
+          </select>
+          <span id="estateProcessing-error" class="skat-error-message" role="alert"
+                th:if="${estateProcessingError != null}"
+                th:text="${estateProcessingError}">Error</span>
+        </div>
+
+        <!-- Period from/to (conditional) -->
+        <div class="skat-form-group skat-form-group--inline">
+          <div class="skat-form-group">
+            <label class="skat-label" for="periodFrom" th:text="#{wizard.step2.periodFrom.label}">Period from</label>
+            <input id="periodFrom" name="periodFrom" type="date" class="skat-input"
+                   th:value="${wizardForm.periodFrom}" />
+          </div>
+          <div class="skat-form-group">
+            <label class="skat-label" for="periodTo" th:text="#{wizard.step2.periodTo.label}">Period to</label>
+            <input id="periodTo" name="periodTo" type="date" class="skat-input"
+                   th:value="${wizardForm.periodTo}" />
+          </div>
+        </div>
+
+        <!-- Incorporation date -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="incorporationDate" th:text="#{wizard.step2.incorporationDate.label}">Date of incorporation</label>
+          <input id="incorporationDate" name="incorporationDate" type="date" class="skat-input"
+                 th:value="${wizardForm.incorporationDate}" />
+        </div>
+
+        <!-- Due date -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="dueDate" th:text="#{wizard.step2.dueDate.label}">Due date</label>
+          <input id="dueDate" name="dueDate" type="date" class="skat-input"
+                 th:value="${wizardForm.dueDate}" />
+        </div>
+
+        <!-- Last timely payment date -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="lastTimelyPaymentDate" th:text="#{wizard.step2.lastTimelyPaymentDate.label}">Last timely payment date</label>
+          <input id="lastTimelyPaymentDate" name="lastTimelyPaymentDate" type="date" class="skat-input"
+                 th:value="${wizardForm.lastTimelyPaymentDate}" />
+        </div>
+
+        <!-- Court date (optional) -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="courtDate" th:text="#{wizard.step2.courtDate.label}">Court date</label>
+          <input id="courtDate" name="courtDate" type="date" class="skat-input"
+                 th:value="${wizardForm.courtDate}" />
+        </div>
+
+        <!-- Settlement date (optional) -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="settlementDate" th:text="#{wizard.step2.settlementDate.label}">Settlement date</label>
+          <input id="settlementDate" name="settlementDate" type="date" class="skat-input"
+                 th:value="${wizardForm.settlementDate}" />
+        </div>
+
+        <!-- Interest rule (from agreement) -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="interestRule" th:text="#{wizard.step2.interestRule.label}">Interest rule</label>
+          <select id="interestRule" name="interestRule" class="skat-select">
+            <option value="" th:text="#{wizard.step2.interestRule.placeholder}">-- None --</option>
+            <option th:each="ir : ${agreement?.allowedInterestRules}"
+                    th:value="${ir}" th:text="${ir}"
+                    th:selected="${wizardForm.interestRule == ir}">Rule</option>
+          </select>
+        </div>
+
+        <!-- Interest rate code -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="interestRateCode" th:text="#{wizard.step2.interestRateCode.label}">Interest rate code</label>
+          <input id="interestRateCode" name="interestRateCode" type="text" class="skat-input"
+                 th:value="${wizardForm.interestRateCode}" />
+        </div>
+
+        <!-- Interest rate -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="interestRate" th:text="#{wizard.step2.interestRate.label}">Interest rate (%)</label>
+          <input id="interestRate" name="interestRate" type="number" step="0.01" class="skat-input"
+                 th:value="${wizardForm.interestRate}" />
+        </div>
+
+        <!-- Claim note (optional) -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="claimNote" th:text="#{wizard.step2.claimNote.label}">Claim note</label>
+          <textarea id="claimNote" name="claimNote" class="skat-input skat-textarea" rows="2"
+                    th:text="${wizardForm.claimNote}"></textarea>
+        </div>
+
+        <!-- Debtor note (optional) -->
+        <div class="skat-form-group">
+          <label class="skat-label" for="debtorNote" th:text="#{wizard.step2.debtorNote.label}">Debtor note</label>
+          <textarea id="debtorNote" name="debtorNote" class="skat-input skat-textarea" rows="2"
+                    th:text="${wizardForm.debtorNote}"></textarea>
+        </div>
+      </fieldset>
+
+      <div class="skat-form-group skat-form-actions">
+        <button type="submit" class="skat-btn skat-btn--primary" th:text="#{wizard.btn.next}">Next</button>
+        <a class="skat-btn skat-btn--secondary" th:href="@{/fordring/opret/step/1}" th:text="#{wizard.btn.back}">Back</a>
+      </div>
+    </form>
+
+    <script th:inline="javascript">
+      function updateCharCounter(textarea) {
+        var max = 100;
+        var remaining = max - textarea.value.length;
+        var counter = document.getElementById('description-counter');
+        counter.textContent = /*[[#{wizard.step2.description.counter.js}]]*/ '' + remaining + ' characters remaining';
+        counter.textContent = remaining + ' / ' + max;
+      }
+    </script>
+  </section>
+</body>
+</html>

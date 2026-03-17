@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{hearing.detail.page.title}">Høringsdetaljer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/fordringer/hoering}" th:text="#{hearing.list.breadcrumb}">I høring</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="${claimId}">FDR-50001</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{hearing.detail.heading} + ' ' + ${claimId}">Høringsdetaljer</h1>
+
+    <!-- Success message (flash attribute after approve/withdraw) -->
+    <div th:if="${successMessage}" class="skat-alert skat-alert--success" role="status">
+      <p th:text="${successMessage}">Handling gennemført.</p>
+    </div>
+
+    <!-- Service error message -->
+    <div th:if="${serviceError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${serviceError}">Der opstod en fejl ved indlæsning af høringsoplysninger.</p>
+    </div>
+
+    <!-- Action error message -->
+    <div th:if="${actionError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${actionError}">Handlingen kunne ikke gennemføres.</p>
+    </div>
+
+    <th:block th:if="${claim != null}">
+
+      <!-- ============================== -->
+      <!-- Claim status section            -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.status}">Fordringsstatus</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.claimStatus}">Fordringsstatus</dt>
+            <dd>
+              <span class="skat-badge" th:text="${claim.claimStatusText ?: claim.claimStatusCode ?: '-'}">I HØRING</span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- ID numbers section              -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.ids}">ID-numre</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.claimId}">Fordrings-ID</dt>
+            <dd th:text="${claim.claimId}">FDR-50001</dd>
+
+            <dt th:text="#{hearing.detail.field.caseId}">Sags-ID</dt>
+            <dd th:text="${claim.caseId ?: '-'}">CASE-001</dd>
+
+            <dt th:text="#{hearing.detail.field.actionId}">Aktions-ID</dt>
+            <dd th:text="${claim.actionId ?: '-'}">AKT-001</dd>
+
+            <dt th:text="#{hearing.detail.field.creditorRef}">Fordringshaver-reference</dt>
+            <dd th:text="${claim.creditorReference ?: '-'}">REF-001</dd>
+
+            <dt th:text="#{hearing.detail.field.mainClaimId}">Hovedfordrings-ID</dt>
+            <dd th:text="${claim.mainClaimId ?: '-'}">FDR-50000</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Claim information section       -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.claimInfo}">Fordringsinformation</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.claimType}">Fordringstype</dt>
+            <dd th:text="${claim.claimTypeName ?: '-'}">SKAT</dd>
+
+            <dt th:text="#{hearing.detail.field.creditorDescription}">Fordringshaver-beskrivelse</dt>
+            <dd th:text="${claim.creditorDescription ?: '-'}">-</dd>
+
+            <dt th:text="#{hearing.detail.field.reportingTimestamp}">Indberetningstidspunkt</dt>
+            <dd th:text="${claim.reportingTimestamp != null} ? ${#temporals.format(claim.reportingTimestamp, 'dd.MM.yyyy HH:mm')} : '-'">01.01.2025 12:00</dd>
+
+            <dt th:text="#{hearing.detail.field.period}">Periode</dt>
+            <dd>
+              <span th:text="${claim.periodFrom != null} ? ${#temporals.format(claim.periodFrom, 'dd.MM.yyyy')} : '-'">01.01.2025</span>
+              –
+              <span th:text="${claim.periodTo != null} ? ${#temporals.format(claim.periodTo, 'dd.MM.yyyy')} : '-'">31.12.2025</span>
+            </dd>
+
+            <dt th:text="#{hearing.detail.field.incorporationDate}">Stiftelsesdato</dt>
+            <dd th:text="${claim.incorporationDate != null} ? ${#temporals.format(claim.incorporationDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Creditor info section           -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.creditorInfo}">Fordringshaver-info</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.creditorId}">Fordringshaver-ID</dt>
+            <dd th:text="${claim.creditorOrgId ?: '-'}">ORG-001</dd>
+
+            <dt th:text="#{hearing.detail.field.creditorName}">Fordringshaver-navn</dt>
+            <dd th:text="${claim.creditorName ?: '-'}">SKAT</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Amounts section                 -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.amounts}">Beløb</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.originalPrincipal}">Oprindelig hovedstol</dt>
+            <dd th:text="${claim.originalPrincipal != null} ? ${#numbers.formatDecimal(claim.originalPrincipal, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{hearing.detail.field.receivedAmount}">Modtaget beløb</dt>
+            <dd th:text="${claim.receivedAmount != null} ? ${#numbers.formatDecimal(claim.receivedAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Action code section             -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.actionCode}">Aktionskode</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{hearing.detail.field.actionCode}">Aktionskode</dt>
+            <dd th:text="${claim.actionCode ?: '-'}">OPSKRIVNING_REGULERING</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Write-up info section (conditional) -->
+      <!-- ============================== -->
+      <div th:if="${isWriteUp}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <details open>
+            <summary><h2 style="display: inline;" th:text="#{hearing.detail.section.writeUp}">Opskrivningsoplysninger</h2></summary>
+            <dl class="skat-dl">
+              <dt th:text="#{hearing.detail.field.writeUpAmount}">Opskrivningsbeløb</dt>
+              <dd th:text="${claim.writeUpAmount != null} ? ${#numbers.formatDecimal(claim.writeUpAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+              <dt th:text="#{hearing.detail.field.writeUpReason}">Opskrivningsårsag</dt>
+              <dd th:text="${claim.writeUpReason ?: '-'}">-</dd>
+
+              <dt th:text="#{hearing.detail.field.referenceActionId}">Reference-aktions-ID</dt>
+              <dd th:text="${claim.referenceActionId ?: '-'}">-</dd>
+
+              <th:block th:if="${showChangedPrincipal}">
+                <dt th:text="#{hearing.detail.field.changedOriginalPrincipal}">Ændret oprindelig hovedstol</dt>
+                <dd th:text="${claim.changedOriginalPrincipal != null} ? ${#numbers.formatDecimal(claim.changedOriginalPrincipal, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+              </th:block>
+            </dl>
+          </details>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Debtor list with error types    -->
+      <!-- ============================== -->
+      <div th:if="${claim.debtorsWithErrors != null and !#lists.isEmpty(claim.debtorsWithErrors)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.debtors}">Skyldnerliste</h2>
+          <table class="skat-table" th:aria-label="#{hearing.detail.debtors.table.arialabel}">
+            <caption class="skat-sr-only" th:text="#{hearing.detail.debtors.table.caption}">Skyldnere med fejltyper</caption>
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{hearing.detail.debtor.col.type}">Skyldner-type</th>
+                <th scope="col" th:text="#{hearing.detail.debtor.col.identifier}">Skyldner-ID</th>
+                <th scope="col" th:text="#{hearing.detail.debtor.col.errorTypes}">Fejltyper</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="debtor : ${claim.debtorsWithErrors}">
+                <td th:text="${debtor.debtorType}">CPR</td>
+                <td th:text="${debtor.debtorIdentifier}">010190****</td>
+                <td>
+                  <ul th:if="${debtor.errorTypes != null and !#lists.isEmpty(debtor.errorTypes)}" class="skat-list--inline">
+                    <li th:each="err : ${debtor.errorTypes}" th:text="${err}">Fejltype</li>
+                  </ul>
+                  <span th:if="${debtor.errorTypes == null or #lists.isEmpty(debtor.errorTypes)}">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Error alert for claims with errors -->
+      <!-- ============================== -->
+      <div th:if="${claim.debtorsWithErrors != null and !#lists.isEmpty(claim.debtorsWithErrors)}"
+           class="skat-alert skat-alert--warning" role="status">
+        <p th:text="#{hearing.detail.error.alert}">Denne fordring har afvigelser fra indgangsfilterreglerne. Gennemgå fejlene og godkend eller tilbagekald fordringen.</p>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Hearing workflow context info    -->
+      <!-- ============================== -->
+      <div class="skat-alert skat-alert--info" role="status" style="margin-bottom: 1rem;">
+        <p th:text="#{hearing.detail.workflow.info}">Bemærk: En fordring i høring er IKKE modtaget til inddrivelse. Fordringshaverens egne forældelsesregler gælder i høringsperioden. Gældsstyrelsen behandler alle godkendte fordringer inden 14 dage.</p>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Approve / Withdraw actions      -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{hearing.detail.section.actions}">Handlinger</h2>
+
+          <!-- Approve form -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 th:text="#{hearing.action.approve.heading}">Godkend fordring</h3>
+            <form th:action="@{/fordringer/hoering/{id}/approve(id=${claimId})}" method="post"
+                  th:object="${approveForm}"
+                  onsubmit="return confirm(this.dataset.confirmMsg);"
+                  th:attr="data-confirm-msg=#{hearing.action.approve.confirm}">
+              <div class="skat-form-group">
+                <label for="justification" th:text="#{hearing.action.approve.justification.label}">Begrundelse (påkrævet)</label>
+                <textarea id="justification" th:field="*{justification}" class="skat-input"
+                          rows="3" required
+                          th:aria-describedby="justification-error"
+                          th:placeholder="#{hearing.action.approve.justification.placeholder}"></textarea>
+                <span id="justification-error"
+                      th:if="${#fields.hasErrors('justification')}"
+                      class="skat-form-error" role="alert"
+                      th:text="#{hearing.action.approve.justification.required}">Begrundelse er påkrævet.</span>
+              </div>
+              <button type="submit" class="skat-btn skat-btn--primary">
+                <span th:text="#{hearing.action.approve.button}">Godkend</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Withdraw form -->
+          <div>
+            <h3 th:text="#{hearing.action.withdraw.heading}">Tilbagekald fordring</h3>
+            <form th:action="@{/fordringer/hoering/{id}/withdraw(id=${claimId})}" method="post"
+                  th:object="${withdrawForm}"
+                  onsubmit="return confirm(this.dataset.confirmMsg);"
+                  th:attr="data-confirm-msg=#{hearing.action.withdraw.confirm}">
+              <div class="skat-form-group">
+                <label for="reason" th:text="#{hearing.action.withdraw.reason.label}">Årsag (påkrævet)</label>
+                <textarea id="reason" th:field="*{reason}" class="skat-input"
+                          rows="3" required
+                          th:aria-describedby="reason-error"
+                          th:placeholder="#{hearing.action.withdraw.reason.placeholder}"></textarea>
+                <span id="reason-error"
+                      th:if="${#fields.hasErrors('reason')}"
+                      class="skat-form-error" role="alert"
+                      th:text="#{hearing.action.withdraw.reason.required}">Årsag er påkrævet.</span>
+              </div>
+              <button type="submit" class="skat-btn skat-btn--secondary">
+                <span th:text="#{hearing.action.withdraw.button}">Tilbagekald</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </th:block>
+
+    <!-- Back to hearing list -->
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer/hoering}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{hearing.detail.btn.back}">Tilbage til høringslisten</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

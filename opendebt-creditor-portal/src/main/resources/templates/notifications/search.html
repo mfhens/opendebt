@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{notifications.page.title}">Underretninger</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{notifications.breadcrumb}">Underretninger</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{notifications.heading}">Underretninger</h1>
+
+    <!-- Backend error -->
+    <div th:if="${backendError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${backendError}">Backend-fejl.</span></p>
+    </div>
+
+    <!-- Backend warning (service unavailable but not critical) -->
+    <div th:if="${backendWarning != null}"
+         class="skat-alert skat-alert--warning" role="status">
+      <p><span class="ikon ikon-advarsel" aria-hidden="true"></span> <span th:text="${backendWarning}">Tjenesten er ikke tilgaengelig.</span></p>
+    </div>
+
+    <!-- Download error -->
+    <div th:if="${downloadError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p><span class="ikon ikon-problem" aria-hidden="true"></span> <span th:text="${downloadError}">Download-fejl.</span></p>
+    </div>
+
+    <!-- Search form -->
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <form method="post" th:action="@{/underretninger/search}" th:object="${searchForm}">
+          <!-- Date range -->
+          <div class="skat-form-row">
+            <div class="skat-form-group">
+              <label class="skat-label" for="dateFrom" th:text="#{notifications.search.dateFrom}">Fra dato</label>
+              <input id="dateFrom" type="date" class="skat-input"
+                     th:field="*{dateFrom}" />
+            </div>
+            <div class="skat-form-group">
+              <label class="skat-label" for="dateTo" th:text="#{notifications.search.dateTo}">Til dato</label>
+              <input id="dateTo" type="date" class="skat-input"
+                     th:field="*{dateTo}" />
+            </div>
+          </div>
+
+          <!-- Notification type checkboxes in fieldset with legend -->
+          <fieldset class="skat-fieldset">
+            <legend class="skat-legend" th:text="#{notifications.search.types.legend}">Underretningstyper</legend>
+            <div class="skat-checkbox-group" th:if="${availableTypes != null and !availableTypes.isEmpty()}">
+              <div class="skat-checkbox" th:each="type : ${availableTypes}">
+                <input type="checkbox"
+                       th:id="${'type-' + type.name()}"
+                       th:value="${type.name()}"
+                       th:field="*{notificationTypes}"
+                       class="skat-checkbox__input" />
+                <label th:for="${'type-' + type.name()}"
+                       th:text="#{${type.messageKey}}"
+                       class="skat-checkbox__label">Type</label>
+              </div>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="skat-btn skat-btn--primary"
+                  th:text="#{notifications.search.button}">Soeg</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Search results -->
+    <div id="notification-results">
+      <th:block th:replace="~{notifications/fragments/results :: notificationResults}"></th:block>
+    </div>
+
+    <!-- Download section (only shown after search with results) -->
+    <div th:if="${searchPerformed != null and searchResult != null and searchResult.matchingCount > 0}"
+         class="skat-card" style="margin-top: 1rem;">
+      <div class="skat-card__body">
+        <h2 th:text="#{notifications.download.heading}">Download</h2>
+        <form method="post" th:action="@{/underretninger/download}" th:object="${searchForm}">
+          <!-- Preserve search parameters as hidden fields -->
+          <input type="hidden" th:field="*{dateFrom}" />
+          <input type="hidden" th:field="*{dateTo}" />
+          <th:block th:each="type : ${searchForm.notificationTypes}">
+            <input type="hidden" name="notificationTypes" th:value="${type}" />
+          </th:block>
+
+          <!-- Format selection checkboxes -->
+          <fieldset class="skat-fieldset">
+            <legend class="skat-legend" th:text="#{notifications.download.format.legend}">Filformat</legend>
+            <div class="skat-checkbox-group">
+              <div class="skat-checkbox">
+                <input type="checkbox" id="formatPdf"
+                       th:field="*{formatPdf}"
+                       class="skat-checkbox__input" />
+                <label for="formatPdf" class="skat-checkbox__label"
+                       th:text="#{notifications.download.format.pdf}">PDF</label>
+              </div>
+              <div class="skat-checkbox">
+                <input type="checkbox" id="formatXml"
+                       th:field="*{formatXml}"
+                       class="skat-checkbox__input" />
+                <label for="formatXml" class="skat-checkbox__label"
+                       th:text="#{notifications.download.format.xml}">XML</label>
+              </div>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="skat-btn skat-btn--primary"
+                  th:text="#{notifications.download.button}">Download</button>
+        </form>
+
+        <!-- Download status (aria-live for screen readers) -->
+        <div id="download-status" class="skat-download-status" aria-live="polite" role="status">
+          <!-- HTMX or JS will update this region during download -->
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

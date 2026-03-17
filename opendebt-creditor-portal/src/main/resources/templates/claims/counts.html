@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{claims.counts.page.title}">Optællinger</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{claims.counts.breadcrumb}">Optællinger</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{claims.counts.heading}">Fordringsoversigt — Optællinger</h1>
+
+    <!-- Date range selection -->
+    <div class="skat-card" style="margin-bottom: 1rem;">
+      <div class="skat-card__body">
+        <form method="get" th:action="@{/fordringer/optaellinger}" class="skat-form-inline">
+          <div class="skat-form-group">
+            <label for="dateFrom" th:text="#{claims.filter.dateFrom}">Fra dato</label>
+            <input type="date" id="dateFrom" name="dateFrom" class="skat-input"
+                   th:value="${dateFrom}" />
+          </div>
+          <div class="skat-form-group">
+            <label for="dateTo" th:text="#{claims.filter.dateTo}">Til dato</label>
+            <input type="date" id="dateTo" name="dateTo" class="skat-input"
+                   th:value="${dateTo}" />
+          </div>
+          <button type="submit" class="skat-btn skat-btn--primary">
+            <span th:text="#{claims.counts.filter.button}">Filtrer</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Counts cards -->
+    <div class="skat-card-grid">
+      <div class="skat-card skat-card--count">
+        <div class="skat-card__title" th:text="#{claims.counts.recovery}">Fordringer i inddrivelse</div>
+        <div class="skat-card__body">
+          <span class="skat-count" th:text="${counts.inRecovery}">0</span>
+          <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer}"
+             th:text="#{dashboard.counts.view}">Se</a>
+        </div>
+      </div>
+      <div class="skat-card skat-card--count">
+        <div class="skat-card__title" th:text="#{claims.counts.zerobalance}">Nulfordringer</div>
+        <div class="skat-card__body">
+          <span class="skat-count" th:text="${counts.zeroBalance}">0</span>
+          <a class="skat-btn skat-btn--secondary skat-btn--sm" th:href="@{/fordringer/nulfordringer}"
+             th:text="#{dashboard.counts.view}">Se</a>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{claims.btn.back}">Tilbage til forsiden</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

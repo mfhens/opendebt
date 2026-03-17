@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{wizard.page.title}">Opret fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/}" th:text="#{layout.breadcrumb.home}">Forside</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{wizard.breadcrumb.current}">Opret fordring</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{wizard.heading}">Opret ny fordring</h1>
+
+    <!-- Step indicator -->
+    <nav class="skat-step-indicator" aria-label="Wizard progress">
+      <ol class="skat-step-indicator__list">
+        <li th:each="step : ${#numbers.sequence(1, totalSteps)}"
+            th:classappend="${step == currentStep} ? 'skat-step-indicator__item--active' : (${step < currentStep} ? 'skat-step-indicator__item--completed' : '')"
+            class="skat-step-indicator__item">
+          <span class="skat-step-indicator__number" th:text="${step}">1</span>
+          <span class="skat-step-indicator__label"
+                th:text="#{__${'wizard.step.' + step + '.label'}__}">Step</span>
+        </li>
+      </ol>
+      <p class="skat-sr-only" th:text="#{wizard.step.indicator(${currentStep}, ${totalSteps})}">Step 3 of 4</p>
+    </nav>
+
+    <!-- Submission error -->
+    <div th:if="${submissionError != null}"
+         class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${submissionError}">Submission failed.</p>
+    </div>
+
+    <h2 th:text="#{wizard.step3.heading}">Review your claim</h2>
+
+    <!-- Read-only review summary -->
+    <div class="skat-review-summary">
+
+      <!-- Debtor section -->
+      <h3 th:text="#{wizard.step3.section.debtor}">Debtor</h3>
+      <dl class="skat-description-list">
+        <dt th:text="#{wizard.step1.debtorType.label}">Debtor type</dt>
+        <dd th:text="${wizardForm.debtorType}">CPR</dd>
+
+        <dt th:text="#{wizard.step1.identifier.label}">Identifier</dt>
+        <dd th:text="${wizardForm.debtorIdentifier}">1234567890</dd>
+
+        <dt th:text="#{wizard.step3.debtor.name}">Name</dt>
+        <dd th:text="${wizardForm.debtorDisplayName}">John Doe</dd>
+      </dl>
+
+      <!-- Claim details section -->
+      <h3 th:text="#{wizard.step3.section.claimDetails}">Claim details</h3>
+      <dl class="skat-description-list">
+        <dt th:text="#{wizard.step2.claimType.label}">Claim type</dt>
+        <dd th:text="${wizardForm.claimType}">SKAT</dd>
+
+        <dt th:text="#{wizard.step2.amount.label}">Amount</dt>
+        <dd><span th:text="${#numbers.formatDecimal(wizardForm.amount, 1, 2)}">0.00</span> DKK</dd>
+
+        <dt th:text="#{wizard.step2.principalAmount.label}">Principal amount</dt>
+        <dd><span th:text="${#numbers.formatDecimal(wizardForm.principalAmount, 1, 2)}">0.00</span> DKK</dd>
+
+        <dt th:if="${wizardForm.creditorReference != null and !wizardForm.creditorReference.isEmpty()}"
+            th:text="#{wizard.step2.creditorReference.label}">Creditor reference</dt>
+        <dd th:if="${wizardForm.creditorReference != null and !wizardForm.creditorReference.isEmpty()}"
+            th:text="${wizardForm.creditorReference}">REF-001</dd>
+
+        <dt th:if="${wizardForm.description != null and !wizardForm.description.isEmpty()}"
+            th:text="#{wizard.step2.description.label}">Description</dt>
+        <dd th:if="${wizardForm.description != null and !wizardForm.description.isEmpty()}"
+            th:text="${wizardForm.description}">Description text</dd>
+
+        <dt th:text="#{wizard.step2.limitationDate.label}">Limitation date</dt>
+        <dd th:text="${wizardForm.limitationDate}">2027-01-01</dd>
+
+        <dt th:text="#{wizard.step2.estateProcessing.label}">Estate processing</dt>
+        <dd th:text="${wizardForm.estateProcessing != null and wizardForm.estateProcessing} ? #{wizard.step2.estateProcessing.yes} : #{wizard.step2.estateProcessing.no}">No</dd>
+
+        <dt th:if="${wizardForm.periodFrom != null}"
+            th:text="#{wizard.step2.periodFrom.label}">Period from</dt>
+        <dd th:if="${wizardForm.periodFrom != null}"
+            th:text="${wizardForm.periodFrom}">2026-01-01</dd>
+
+        <dt th:if="${wizardForm.periodTo != null}"
+            th:text="#{wizard.step2.periodTo.label}">Period to</dt>
+        <dd th:if="${wizardForm.periodTo != null}"
+            th:text="${wizardForm.periodTo}">2026-12-31</dd>
+
+        <dt th:if="${wizardForm.incorporationDate != null}"
+            th:text="#{wizard.step2.incorporationDate.label}">Incorporation date</dt>
+        <dd th:if="${wizardForm.incorporationDate != null}"
+            th:text="${wizardForm.incorporationDate}">2026-01-01</dd>
+
+        <dt th:if="${wizardForm.dueDate != null}"
+            th:text="#{wizard.step2.dueDate.label}">Due date</dt>
+        <dd th:if="${wizardForm.dueDate != null}"
+            th:text="${wizardForm.dueDate}">2026-06-01</dd>
+
+        <dt th:if="${wizardForm.lastTimelyPaymentDate != null}"
+            th:text="#{wizard.step2.lastTimelyPaymentDate.label}">Last timely payment date</dt>
+        <dd th:if="${wizardForm.lastTimelyPaymentDate != null}"
+            th:text="${wizardForm.lastTimelyPaymentDate}">2026-05-01</dd>
+
+        <dt th:if="${wizardForm.courtDate != null}"
+            th:text="#{wizard.step2.courtDate.label}">Court date</dt>
+        <dd th:if="${wizardForm.courtDate != null}"
+            th:text="${wizardForm.courtDate}">2026-03-01</dd>
+
+        <dt th:if="${wizardForm.settlementDate != null}"
+            th:text="#{wizard.step2.settlementDate.label}">Settlement date</dt>
+        <dd th:if="${wizardForm.settlementDate != null}"
+            th:text="${wizardForm.settlementDate}">2026-04-01</dd>
+
+        <dt th:if="${wizardForm.interestRule != null and !wizardForm.interestRule.isEmpty()}"
+            th:text="#{wizard.step2.interestRule.label}">Interest rule</dt>
+        <dd th:if="${wizardForm.interestRule != null and !wizardForm.interestRule.isEmpty()}"
+            th:text="${wizardForm.interestRule}">STANDARD</dd>
+
+        <dt th:if="${wizardForm.interestRateCode != null and !wizardForm.interestRateCode.isEmpty()}"
+            th:text="#{wizard.step2.interestRateCode.label}">Interest rate code</dt>
+        <dd th:if="${wizardForm.interestRateCode != null and !wizardForm.interestRateCode.isEmpty()}"
+            th:text="${wizardForm.interestRateCode}">STD</dd>
+
+        <dt th:if="${wizardForm.interestRate != null}"
+            th:text="#{wizard.step2.interestRate.label}">Interest rate</dt>
+        <dd th:if="${wizardForm.interestRate != null}"
+            th:text="${wizardForm.interestRate + '%'}">5%</dd>
+
+        <dt th:if="${wizardForm.claimNote != null and !wizardForm.claimNote.isEmpty()}"
+            th:text="#{wizard.step2.claimNote.label}">Claim note</dt>
+        <dd th:if="${wizardForm.claimNote != null and !wizardForm.claimNote.isEmpty()}"
+            th:text="${wizardForm.claimNote}">Note</dd>
+
+        <dt th:if="${wizardForm.debtorNote != null and !wizardForm.debtorNote.isEmpty()}"
+            th:text="#{wizard.step2.debtorNote.label}">Debtor note</dt>
+        <dd th:if="${wizardForm.debtorNote != null and !wizardForm.debtorNote.isEmpty()}"
+            th:text="${wizardForm.debtorNote}">Note</dd>
+      </dl>
+    </div>
+
+    <!-- Submission form with explicit confirmation -->
+    <form method="post" th:action="@{/fordring/opret/step/3}" novalidate="novalidate">
+      <div class="skat-form-group skat-form-actions">
+        <button type="submit" class="skat-btn skat-btn--primary"
+                th:text="#{wizard.btn.submit}"
+                onclick="return confirm(/*[[#{wizard.step3.confirm}]]*/ 'Are you sure?')">Submit claim</button>
+        <a class="skat-btn skat-btn--secondary" th:href="@{/fordring/opret/step/2}" th:text="#{wizard.btn.back}">Back</a>
+      </div>
+    </form>
+  </section>
+</body>
+</html>

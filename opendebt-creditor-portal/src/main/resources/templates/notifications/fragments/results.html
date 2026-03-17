@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Notification search results fragment (petition 035).
+    Displays the count of matching notifications after a search.
+  -->
+  <div th:fragment="notificationResults">
+    <div th:if="${searchPerformed != null and searchResult != null}" class="skat-card" style="margin-top: 1rem;">
+      <div class="skat-card__body">
+        <h2 th:text="#{notifications.results.heading}">Soegeresultat</h2>
+        <p>
+          <span th:text="#{notifications.results.count}">Antal matchende underretninger:</span>
+          <strong th:text="${searchResult.matchingCount}">0</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

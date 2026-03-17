@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{claim.detail.page.title}">Fordringsdetaljer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/fordringer}" th:text="#{claim.detail.breadcrumb.claims}">Fordringer</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="${claimId}">FDR-100</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{claim.detail.heading} + ' ' + ${claimId}">Fordringsdetaljer</h1>
+
+    <!-- Service error message -->
+    <div th:if="${serviceError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${serviceError}">Der opstod en fejl ved indlæsning af fordringsoplysninger.</p>
+    </div>
+
+    <!-- Zero-balance expired message -->
+    <div th:if="${claim != null and claim.zeroBalanceExpired}" class="skat-alert skat-alert--info" role="status">
+      <p th:text="#{claim.detail.zerobalance.expired}">Denne fordring har haft nulsaldo i mere end 60 dage. Detaljerede oplysninger er ikke længere tilgængelige.</p>
+    </div>
+
+    <th:block th:if="${claim != null and !claim.zeroBalanceExpired}">
+
+      <!-- ============================== -->
+      <!-- Claim information section       -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{claim.detail.section.info}">Fordringsoplysninger</h2>
+          <dl class="skat-dl">
+            <dt th:text="#{claim.detail.field.claimId}">Fordrings-ID</dt>
+            <dd th:text="${claim.claimId}">FDR-100</dd>
+
+            <dt th:text="#{claim.detail.field.claimType}">Fordringstype</dt>
+            <dd th:text="${claim.claimType}">SKAT</dd>
+
+            <dt th:text="#{claim.detail.field.claimCategory}">Fordringskategori</dt>
+            <dd th:text="${claim.claimCategory}">HOVEDFORDRING</dd>
+
+            <dt th:text="#{claim.detail.field.creditorDescription}">Fordringshaver-beskrivelse</dt>
+            <dd th:text="${claim.creditorDescription ?: '-'}">-</dd>
+
+            <dt th:text="#{claim.detail.field.receivedDate}">Modtagelsesdato</dt>
+            <dd th:text="${claim.receivedDate != null} ? ${#temporals.format(claim.receivedDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+
+            <dt th:text="#{claim.detail.field.period}">Periode</dt>
+            <dd>
+              <span th:text="${claim.periodFrom != null} ? ${#temporals.format(claim.periodFrom, 'dd.MM.yyyy')} : '-'">01.01.2025</span>
+              –
+              <span th:text="${claim.periodTo != null} ? ${#temporals.format(claim.periodTo, 'dd.MM.yyyy')} : '-'">31.12.2025</span>
+            </dd>
+
+            <dt th:text="#{claim.detail.field.incorporationDate}">Stiftelsesdato</dt>
+            <dd th:text="${claim.incorporationDate != null} ? ${#temporals.format(claim.incorporationDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+
+            <dt th:text="#{claim.detail.field.obligationId}">Obligations-ID</dt>
+            <dd th:text="${claim.obligationId ?: '-'}">OBL-001</dd>
+
+            <dt th:text="#{claim.detail.field.creditorReference}">Fordringshaver-reference</dt>
+            <dd th:text="${claim.creditorReference ?: '-'}">REF-001</dd>
+
+            <th:block th:if="${claim.relatedObligationId != null}">
+              <dt th:text="#{claim.detail.field.relatedObligationId}">Relateret obligations-ID</dt>
+              <dd th:text="${claim.relatedObligationId}">OBL-002</dd>
+            </th:block>
+
+            <!-- Single-debtor-only fields -->
+            <th:block th:if="${singleDebtor}">
+              <dt th:text="#{claim.detail.field.dueDate}">Forfaldsdato</dt>
+              <dd th:text="${claim.dueDate != null} ? ${#temporals.format(claim.dueDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+
+              <dt th:text="#{claim.detail.field.limitationDate}">Forældelsesdato</dt>
+              <dd th:text="${claim.limitationDate != null} ? ${#temporals.format(claim.limitationDate, 'dd.MM.yyyy')} : '-'">01.01.2030</dd>
+
+              <dt th:text="#{claim.detail.field.lastTimelyPaymentDate}">Sidste rettidige betalingsdag</dt>
+              <dd th:text="${claim.lastTimelyPaymentDate != null} ? ${#temporals.format(claim.lastTimelyPaymentDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+
+              <th:block th:if="${claim.courtDate != null}">
+                <dt th:text="#{claim.detail.field.courtDate}">Retsdato</dt>
+                <dd th:text="${#temporals.format(claim.courtDate, 'dd.MM.yyyy')}">01.06.2025</dd>
+              </th:block>
+            </th:block>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Financial information section   -->
+      <!-- ============================== -->
+      <div class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{claim.detail.section.financial}">Finansielle oplysninger</h2>
+
+          <!-- Financial breakdown table -->
+          <table class="skat-table" th:aria-label="#{claim.detail.financial.table.arialabel}">
+            <caption class="skat-sr-only" th:text="#{claim.detail.financial.table.caption}">Finansiel oversigt</caption>
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{claim.detail.financial.col.category}">Kategori</th>
+                <th scope="col" th:text="#{claim.detail.financial.col.original}">Oprindeligt beløb</th>
+                <th scope="col" th:text="#{claim.detail.financial.col.writeoff}">Nedskrivning</th>
+                <th scope="col" th:text="#{claim.detail.financial.col.payment}">Betaling</th>
+                <th scope="col" th:text="#{claim.detail.financial.col.balance}">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${claim.financialBreakdown == null or #lists.isEmpty(claim.financialBreakdown)}">
+                <td colspan="5" th:text="#{claim.detail.financial.empty}">Ingen data tilgængelig.</td>
+              </tr>
+              <tr th:each="row : ${claim.financialBreakdown}">
+                <td th:text="${row.category}">Hovedfordring</td>
+                <td th:text="${row.originalAmount != null} ? ${#numbers.formatDecimal(row.originalAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                <td th:text="${row.writeOffAmount != null} ? ${#numbers.formatDecimal(row.writeOffAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                <td th:text="${row.paymentAmount != null} ? ${#numbers.formatDecimal(row.paymentAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                <td th:text="${row.balance != null} ? ${#numbers.formatDecimal(row.balance, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Additional financial fields -->
+          <dl class="skat-dl" style="margin-top: 1rem;">
+            <dt th:text="#{claim.detail.field.interestRule}">Renteregel</dt>
+            <dd th:text="${claim.interestRule ?: '-'}">-</dd>
+
+            <dt th:text="#{claim.detail.field.interestRate}">Rentesats</dt>
+            <dd th:text="${claim.interestRate != null} ? ${#numbers.formatDecimal(claim.interestRate, 1, 'COMMA', 2, 'POINT')} + ' %' : '-'">0,00 %</dd>
+
+            <th:block th:if="${claim.extraInterestRate != null}">
+              <dt th:text="#{claim.detail.field.extraInterestRate}">Ekstra rentesats</dt>
+              <dd th:text="${#numbers.formatDecimal(claim.extraInterestRate, 1, 'COMMA', 2, 'POINT')} + ' %'">0,00 %</dd>
+            </th:block>
+
+            <dt th:text="#{claim.detail.field.totalDebt}">Total gæld</dt>
+            <dd th:text="${claim.totalDebt != null} ? ${#numbers.formatDecimal(claim.totalDebt, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.latestInterestAccrualDate}">Seneste rentetilskrivningsdato</dt>
+            <dd th:text="${claim.latestInterestAccrualDate != null} ? ${#temporals.format(claim.latestInterestAccrualDate, 'dd.MM.yyyy')} : '-'">01.01.2025</dd>
+
+            <dt th:text="#{claim.detail.field.originalPrincipal}">Oprindelig hovedstol</dt>
+            <dd th:text="${claim.originalPrincipal != null} ? ${#numbers.formatDecimal(claim.originalPrincipal, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.receivedAmount}">Modtaget beløb</dt>
+            <dd th:text="${claim.receivedAmount != null} ? ${#numbers.formatDecimal(claim.receivedAmount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.claimBalance}">Fordringssaldo</dt>
+            <dd th:text="${claim.claimBalance != null} ? ${#numbers.formatDecimal(claim.claimBalance, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.totalCreditorBalance}">Samlet fordringshaver-saldo</dt>
+            <dd th:text="${claim.totalCreditorBalance != null} ? ${#numbers.formatDecimal(claim.totalCreditorBalance, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.amountSentForRecovery}">Beløb indsendt til inddrivelse</dt>
+            <dd th:text="${claim.amountSentForRecovery != null} ? ${#numbers.formatDecimal(claim.amountSentForRecovery, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+
+            <dt th:text="#{claim.detail.field.amountSentWithWriteUps}">Beløb indsendt inkl. opskrivninger</dt>
+            <dd th:text="${claim.amountSentForRecoveryWithWriteUps != null} ? ${#numbers.formatDecimal(claim.amountSentForRecoveryWithWriteUps, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Write-ups section (collapsible) -->
+      <!-- ============================== -->
+      <div th:if="${claim.writeUps != null and !#lists.isEmpty(claim.writeUps)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <details>
+            <summary><h2 style="display: inline;" th:text="#{claim.detail.section.writeups}">Opskrivninger</h2></summary>
+            <table class="skat-table" th:aria-label="#{claim.detail.writeups.table.arialabel}">
+              <caption class="skat-sr-only" th:text="#{claim.detail.writeups.table.caption}">Opskrivninger</caption>
+              <thead>
+                <tr>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.actionId}">Aktions-ID</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.refActionId}">Reference-aktions-ID</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.formType}">Formtype</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.reason}">Årsag</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.amount}">Beløb</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.effectiveDate}">Virkningsdato</th>
+                  <th scope="col" th:text="#{claim.detail.writeup.col.debtorId}">Skyldner-ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="wu : ${claim.writeUps}" th:classappend="${wu.annulled} ? 'skat-row--annulled' : ''">
+                  <td th:text="${wu.actionId}">AKT-001</td>
+                  <td th:text="${wu.referenceActionId ?: '-'}">-</td>
+                  <td th:text="${wu.formType ?: '-'}">-</td>
+                  <td th:text="${wu.reason ?: '-'}">-</td>
+                  <td th:text="${wu.amount != null} ? ${#numbers.formatDecimal(wu.amount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                  <td th:text="${wu.effectiveDate != null} ? ${#temporals.format(wu.effectiveDate, 'dd.MM.yyyy')} : '-'">01.01.2025</td>
+                  <td th:text="${wu.debtorId ?: '-'}">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Write-downs section (collapsible) -->
+      <!-- ============================== -->
+      <div th:if="${claim.writeDowns != null and !#lists.isEmpty(claim.writeDowns)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <details>
+            <summary><h2 style="display: inline;" th:text="#{claim.detail.section.writedowns}">Nedskrivninger</h2></summary>
+            <table class="skat-table" th:aria-label="#{claim.detail.writedowns.table.arialabel}">
+              <caption class="skat-sr-only" th:text="#{claim.detail.writedowns.table.caption}">Nedskrivninger</caption>
+              <thead>
+                <tr>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.actionId}">Aktions-ID</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.refActionId}">Reference-aktions-ID</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.formType}">Formtype</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.reasonCode}">Årsagskode</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.amount}">Beløb</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.effectiveDate}">Virkningsdato</th>
+                  <th scope="col" th:text="#{claim.detail.writedown.col.debtorId}">Skyldner-ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="wd : ${claim.writeDowns}">
+                  <td th:text="${wd.actionId}">AKT-001</td>
+                  <td th:text="${wd.referenceActionId ?: '-'}">-</td>
+                  <td th:text="${wd.formType ?: '-'}">-</td>
+                  <td th:text="${wd.reasonCode ?: '-'}">-</td>
+                  <td th:text="${wd.amount != null} ? ${#numbers.formatDecimal(wd.amount, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                  <td th:text="${wd.effectiveDate != null} ? ${#temporals.format(wd.effectiveDate, 'dd.MM.yyyy')} : '-'">01.01.2025</td>
+                  <td th:text="${wd.debtorId ?: '-'}">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Related claims section (collapsible) -->
+      <!-- ============================== -->
+      <div th:if="${claim.relatedClaims != null and !#lists.isEmpty(claim.relatedClaims)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <details>
+            <summary><h2 style="display: inline;" th:text="#{claim.detail.section.relatedclaims}">Relaterede fordringer</h2></summary>
+            <table class="skat-table" th:aria-label="#{claim.detail.relatedclaims.table.arialabel}">
+              <caption class="skat-sr-only" th:text="#{claim.detail.relatedclaims.table.caption}">Relaterede fordringer</caption>
+              <thead>
+                <tr>
+                  <th scope="col" th:text="#{claim.detail.relatedclaim.col.claimId}">Fordrings-ID</th>
+                  <th scope="col" th:text="#{claim.detail.relatedclaim.col.claimType}">Fordringstype</th>
+                  <th scope="col" th:text="#{claim.detail.relatedclaim.col.category}">Kategori</th>
+                  <th scope="col" th:text="#{claim.detail.relatedclaim.col.balance}">Saldo</th>
+                  <th scope="col" th:text="#{claim.detail.relatedclaim.col.status}">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="rc : ${claim.relatedClaims}">
+                  <td>
+                    <a th:href="@{/fordring/{id}(id=${rc.claimId})}" th:text="${rc.claimId}">FDR-200</a>
+                  </td>
+                  <td th:text="${rc.claimType ?: '-'}">-</td>
+                  <td th:text="${rc.claimCategory ?: '-'}">-</td>
+                  <td th:text="${rc.balance != null} ? ${#numbers.formatDecimal(rc.balance, 1, 'COMMA', 2, 'POINT')} + ' DKK' : '-'">0,00 DKK</td>
+                  <td th:text="${rc.status ?: '-'}">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Debtor information section      -->
+      <!-- ============================== -->
+      <div th:if="${claim.debtors != null and !#lists.isEmpty(claim.debtors)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{claim.detail.section.debtors}">Skyldnere</h2>
+          <table class="skat-table" th:aria-label="#{claim.detail.debtors.table.arialabel}">
+            <caption class="skat-sr-only" th:text="#{claim.detail.debtors.table.caption}">Skyldnere</caption>
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{claim.detail.debtor.col.type}">ID-type</th>
+                <th scope="col" th:text="#{claim.detail.debtor.col.identifier}">Identifikator</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="debtor : ${claim.debtors}">
+                <td th:text="${debtor.identifierType}">CPR</td>
+                <td th:text="${debtor.identifier}">010190****</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Decisions section (single-debtor only) -->
+      <!-- ============================== -->
+      <div th:if="${singleDebtor and claim.decisions != null and !#lists.isEmpty(claim.decisions)}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{claim.detail.section.decisions}">Afgørelser</h2>
+          <table class="skat-table" th:aria-label="#{claim.detail.decisions.table.arialabel}">
+            <caption class="skat-sr-only" th:text="#{claim.detail.decisions.table.caption}">Afgørelser</caption>
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{claim.detail.decision.col.type}">Type</th>
+                <th scope="col" th:text="#{claim.detail.decision.col.date}">Dato</th>
+                <th scope="col" th:text="#{claim.detail.decision.col.description}">Beskrivelse</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="decision : ${claim.decisions}">
+                <td th:text="${decision.type}">Dom</td>
+                <td th:text="${decision.date != null} ? ${#temporals.format(decision.date, 'dd.MM.yyyy')} : '-'">01.06.2025</td>
+                <td th:text="${decision.description ?: '-'}">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================== -->
+      <!-- Action buttons (petition 034) -->
+      <!-- ============================== -->
+      <div th:if="${adjustmentAllowed}" class="skat-card" style="margin-bottom: 1rem;">
+        <div class="skat-card__body">
+          <h2 th:text="#{claim.detail.section.actions}">Handlinger</h2>
+          <div class="skat-form-actions">
+            <a th:if="${writeUpAllowed}" class="skat-btn skat-btn--primary"
+               th:href="@{/fordring/{id}/adjustment(id=${claimId}, direction='WRITE_UP')}"
+               th:text="#{claim.detail.btn.writeup}">Opskrivning</a>
+            <a th:if="${writeDownAllowed}" class="skat-btn skat-btn--primary"
+               th:href="@{/fordring/{id}/adjustment(id=${claimId}, direction='WRITE_DOWN')}"
+               th:text="#{claim.detail.btn.writedown}">Nedskrivning</a>
+          </div>
+        </div>
+      </div>
+
+    </th:block>
+
+    <!-- Back to claims list -->
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}">
+        <span class="ikon ikon-arrow-right" aria-hidden="true"></span>
+        <span th:text="#{claim.detail.btn.back}">Tilbage til fordringer</span>
+      </a>
+    </p>
+  </section>
+</body>
+</html>

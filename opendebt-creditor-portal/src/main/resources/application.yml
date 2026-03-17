@@ -69,6 +69,13 @@ opendebt:
   creditor:
     max-batch-size: 1000
     allowed-debt-types-file: classpath:debt-types.json
+  portal:
+    links:
+      agreement-material: ${PORTAL_LINK_AGREEMENT_MATERIAL:https://gaeldst.dk/fordringshaver/individuelle-aftaler}
+      contact: ${PORTAL_LINK_CONTACT:https://www.gaeldst.dk/fordringshaver/fordringshaversupport/}
+      guides: ${PORTAL_LINK_GUIDES:https://www.gaeldst.dk/fordringshaver/find-vejledninger/guides-til-fordringshaverportalen/}
+    rejected-claims:
+      show-debtor-details: ${PORTAL_REJECTED_SHOW_DEBTOR_DETAILS:true}
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
@@ -76,3 +83,7 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     creditor-service:
       url: ${CREDITOR_SERVICE_URL:http://localhost:8092}
+    person-registry:
+      url: ${PERSON_REGISTRY_URL:http://localhost:8083}
+    reporting-service:
+      url: ${REPORTING_SERVICE_URL:http://localhost:8094}

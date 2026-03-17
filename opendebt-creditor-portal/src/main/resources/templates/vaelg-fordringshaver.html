@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{selection.page.title}">Vaelg fordringshaver</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{selection.breadcrumb}">Vaelg fordringshaver</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{selection.heading}">Vaelg fordringshaver</h1>
+    <p th:text="#{selection.description}">Vaelg den fordringshaver, du ønsker at handle på vegne af.</p>
+
+    <div th:if="${creditors != null and !creditors.isEmpty()}">
+      <div class="skat-card" th:each="creditor : ${creditors}">
+        <div class="skat-card__body" style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <strong th:text="${creditor.externalCreditorId}">SKAT-DEMO-001</strong>
+            <span class="skat-badge"
+                  th:classappend="${creditor.activityStatus == 'ACTIVE'} ? ' skat-badge--success' : ' skat-badge--warning'"
+                  th:text="${creditor.activityStatus}">ACTIVE</span>
+          </div>
+          <form method="post" th:action="@{/vaelg-fordringshaver}">
+            <input type="hidden" name="creditorOrgId" th:value="${creditor.creditorOrgId}" />
+            <button type="submit" class="skat-btn skat-btn--primary skat-btn--sm" th:text="#{selection.select.button}">Vaelg</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${creditors == null or creditors.isEmpty()}" class="skat-alert skat-alert--info" role="status">
+      <p><span class="ikon ikon-information" aria-hidden="true"></span> <span th:text="#{selection.empty}">Ingen fordringshavere fundet.</span></p>
+    </div>
+  </section>
+</body>
+</html>
