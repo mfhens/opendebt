@@ -46,12 +46,12 @@ public class DebtTypeEntity {
   @Builder.Default
   private boolean interestApplicable = true;
 
-  @Column(name = "civilretlig")
+  @Column(name = "civil_law")
   @Builder.Default
-  private boolean civilretlig = false;
+  private boolean civilLaw = false;
 
-  @Column(name = "fordringstype_kode", length = 20)
-  private String fordringstypeKode;
+  @Column(name = "claim_type_code", length = 20)
+  private String claimTypeCode;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

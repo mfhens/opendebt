@@ -17,19 +17,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleEvent;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
-import dk.ufst.opendebt.debtservice.entity.FordringLifecycleState;
-import dk.ufst.opendebt.debtservice.entity.OverdragelseEvent;
+import dk.ufst.opendebt.debtservice.repository.ClaimLifecycleEventRepository;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
-import dk.ufst.opendebt.debtservice.repository.OverdragelseEventRepository;
 
 @ExtendWith(MockitoExtension.class)
-class FordringLifecycleServiceImplTest {
+class ClaimLifecycleServiceImplTest {
 
   @Mock private DebtRepository debtRepository;
-  @Mock private OverdragelseEventRepository overdragelseEventRepository;
+  @Mock private ClaimLifecycleEventRepository claimLifecycleEventRepository;
 
-  @InjectMocks private FordringLifecycleServiceImpl service;
+  @InjectMocks private ClaimLifecycleServiceImpl service;
 
   // =========================================================================
   // transitionToRestance
@@ -38,39 +38,39 @@ class FordringLifecycleServiceImplTest {
   @Test
   void transitionToRestance_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.REGISTERED);
-    debt.setSidsteRettigeBetalingsdato(LocalDate.now().minusDays(1));
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.now().minusDays(1));
     debt.setOutstandingBalance(new BigDecimal("1000"));
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
     DebtEntity result = service.transitionToRestance(debtId);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.RESTANCE);
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.RESTANCE);
     verify(debtRepository).save(debt);
-    verify(overdragelseEventRepository).save(any(OverdragelseEvent.class));
+    verify(claimLifecycleEventRepository).save(any(ClaimLifecycleEvent.class));
   }
 
   @Test
   void transitionToRestance_srbNotExpired_throws() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.REGISTERED);
-    debt.setSidsteRettigeBetalingsdato(LocalDate.now().plusDays(10));
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.now().plusDays(10));
     debt.setOutstandingBalance(new BigDecimal("1000"));
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
 
     assertThatThrownBy(() -> service.transitionToRestance(debtId))
         .isInstanceOf(OpenDebtException.class)
-        .hasMessageContaining("SRB has not expired");
+        .hasMessageContaining("has not expired");
   }
 
   @Test
   void transitionToRestance_alreadyPaid_throws() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.REGISTERED);
-    debt.setSidsteRettigeBetalingsdato(LocalDate.now().minusDays(1));
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.now().minusDays(1));
     debt.setOutstandingBalance(BigDecimal.ZERO);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
 
@@ -80,164 +80,164 @@ class FordringLifecycleServiceImplTest {
   }
 
   // =========================================================================
-  // overdragTilInddrivelse
+  // transferForCollection
   // =========================================================================
 
   @Test
-  void overdragTilInddrivelse_success() {
+  void transferForCollection_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.RESTANCE);
-    debt.setSidsteRettigeBetalingsdato(LocalDate.now().minusDays(5));
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.RESTANCE);
+    debt.setLastPaymentDate(LocalDate.now().minusDays(5));
     debt.setOutstandingBalance(new BigDecimal("500"));
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.overdragTilInddrivelse(debtId);
+    DebtEntity result = service.transferForCollection(debtId);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.OVERDRAGET);
-    assertThat(result.getModtagelsestidspunkt()).isNotNull();
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.OVERDRAGET);
+    assertThat(result.getReceivedAt()).isNotNull();
     verify(debtRepository).save(debt);
   }
 
   @Test
-  void overdragTilInddrivelse_notRestance_throws() {
+  void transferForCollection_notRestance_throws() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.REGISTERED);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
 
-    assertThatThrownBy(() -> service.overdragTilInddrivelse(debtId))
+    assertThatThrownBy(() -> service.transferForCollection(debtId))
         .isInstanceOf(OpenDebtException.class)
-        .hasMessageContaining("Overdragelse requires state RESTANCE");
+        .hasMessageContaining("requires state RESTANCE");
   }
 
   // =========================================================================
-  // transitionToHoering
+  // transitionToHearing
   // =========================================================================
 
   @Test
-  void transitionToHoering_success() {
+  void transitionToHearing_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.REGISTERED);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.transitionToHoering(debtId);
+    DebtEntity result = service.transitionToHearing(debtId);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.HOERING);
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.HOERING);
   }
 
   @Test
-  void transitionToHoering_fromRestance_throws() {
+  void transitionToHearing_fromRestance_throws() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.RESTANCE);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.RESTANCE);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
 
-    assertThatThrownBy(() -> service.transitionToHoering(debtId))
+    assertThatThrownBy(() -> service.transitionToHearing(debtId))
         .isInstanceOf(OpenDebtException.class)
         .hasMessageContaining("Invalid lifecycle transition");
   }
 
   // =========================================================================
-  // resolveHoering
+  // resolveHearing
   // =========================================================================
 
   @Test
-  void resolveHoering_accepted() {
+  void resolveHearing_accepted() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.HOERING);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.HOERING);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.resolveHoering(debtId, true);
+    DebtEntity result = service.resolveHearing(debtId, true);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.OVERDRAGET);
-    assertThat(result.getModtagelsestidspunkt()).isNotNull();
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.OVERDRAGET);
+    assertThat(result.getReceivedAt()).isNotNull();
   }
 
   @Test
-  void resolveHoering_rejected() {
+  void resolveHearing_rejected() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.HOERING);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.HOERING);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.resolveHoering(debtId, false);
+    DebtEntity result = service.resolveHearing(debtId, false);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.REGISTERED);
-    assertThat(result.getModtagelsestidspunkt()).isNull();
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.REGISTERED);
+    assertThat(result.getReceivedAt()).isNull();
   }
 
   // =========================================================================
-  // tilbagekald
+  // withdraw
   // =========================================================================
 
   @Test
-  void tilbagekald_fromOverdraget_success() {
+  void withdraw_fromOverdraget_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.OVERDRAGET);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.OVERDRAGET);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.tilbagekald(debtId, "FEJL");
+    DebtEntity result = service.withdraw(debtId, "FEJL");
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.TILBAGEKALDT);
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.TILBAGEKALDT);
   }
 
   @Test
-  void tilbagekald_fromTerminal_throws() {
+  void withdraw_fromTerminal_throws() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.INDFRIET);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.INDFRIET);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
 
-    assertThatThrownBy(() -> service.tilbagekald(debtId, "FEJL"))
+    assertThatThrownBy(() -> service.withdraw(debtId, "FEJL"))
         .isInstanceOf(OpenDebtException.class)
-        .hasMessageContaining("Cannot tilbagekald from terminal state");
+        .hasMessageContaining("Cannot withdraw from terminal state");
   }
 
   // =========================================================================
-  // afskriv
+  // writeOff
   // =========================================================================
 
   @Test
-  void afskriv_success() {
+  void writeOff_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.OVERDRAGET);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.OVERDRAGET);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.afskriv(debtId, "REASON-01");
+    DebtEntity result = service.writeOff(debtId, "REASON-01");
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.AFSKREVET);
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.AFSKREVET);
   }
 
   // =========================================================================
-  // markIndfriet
+  // markFullyPaid
   // =========================================================================
 
   @Test
-  void markIndfriet_success() {
+  void markFullyPaid_success() {
     UUID debtId = UUID.randomUUID();
-    DebtEntity debt = debtEntity(debtId, FordringLifecycleState.OVERDRAGET);
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.OVERDRAGET);
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(overdragelseEventRepository.save(any(OverdragelseEvent.class)))
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    DebtEntity result = service.markIndfriet(debtId);
+    DebtEntity result = service.markFullyPaid(debtId);
 
-    assertThat(result.getLifecycleState()).isEqualTo(FordringLifecycleState.INDFRIET);
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.INDFRIET);
   }
 
   // =========================================================================
@@ -246,68 +246,43 @@ class FordringLifecycleServiceImplTest {
 
   @Test
   void canTransition_validPairs() {
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.REGISTERED, FordringLifecycleState.RESTANCE))
+    assertThat(service.canTransition(ClaimLifecycleState.REGISTERED, ClaimLifecycleState.RESTANCE))
+        .isTrue();
+    assertThat(service.canTransition(ClaimLifecycleState.REGISTERED, ClaimLifecycleState.HOERING))
+        .isTrue();
+    assertThat(service.canTransition(ClaimLifecycleState.RESTANCE, ClaimLifecycleState.OVERDRAGET))
         .isTrue();
     assertThat(
-            service.canTransition(
-                FordringLifecycleState.REGISTERED, FordringLifecycleState.HOERING))
+            service.canTransition(ClaimLifecycleState.RESTANCE, ClaimLifecycleState.TILBAGEKALDT))
+        .isTrue();
+    assertThat(service.canTransition(ClaimLifecycleState.HOERING, ClaimLifecycleState.OVERDRAGET))
+        .isTrue();
+    assertThat(service.canTransition(ClaimLifecycleState.HOERING, ClaimLifecycleState.REGISTERED))
         .isTrue();
     assertThat(
-            service.canTransition(
-                FordringLifecycleState.RESTANCE, FordringLifecycleState.OVERDRAGET))
+            service.canTransition(ClaimLifecycleState.OVERDRAGET, ClaimLifecycleState.TILBAGEKALDT))
         .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.RESTANCE, FordringLifecycleState.TILBAGEKALDT))
+    assertThat(service.canTransition(ClaimLifecycleState.OVERDRAGET, ClaimLifecycleState.AFSKREVET))
         .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.HOERING, FordringLifecycleState.OVERDRAGET))
-        .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.HOERING, FordringLifecycleState.REGISTERED))
-        .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.OVERDRAGET, FordringLifecycleState.TILBAGEKALDT))
-        .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.OVERDRAGET, FordringLifecycleState.AFSKREVET))
-        .isTrue();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.OVERDRAGET, FordringLifecycleState.INDFRIET))
+    assertThat(service.canTransition(ClaimLifecycleState.OVERDRAGET, ClaimLifecycleState.INDFRIET))
         .isTrue();
   }
 
   @Test
   void canTransition_invalidPairs() {
     assertThat(
-            service.canTransition(
-                FordringLifecycleState.REGISTERED, FordringLifecycleState.OVERDRAGET))
+            service.canTransition(ClaimLifecycleState.REGISTERED, ClaimLifecycleState.OVERDRAGET))
+        .isFalse();
+    assertThat(service.canTransition(ClaimLifecycleState.REGISTERED, ClaimLifecycleState.AFSKREVET))
+        .isFalse();
+    assertThat(service.canTransition(ClaimLifecycleState.RESTANCE, ClaimLifecycleState.HOERING))
         .isFalse();
     assertThat(
-            service.canTransition(
-                FordringLifecycleState.REGISTERED, FordringLifecycleState.AFSKREVET))
+            service.canTransition(ClaimLifecycleState.TILBAGEKALDT, ClaimLifecycleState.REGISTERED))
         .isFalse();
-    assertThat(
-            service.canTransition(FordringLifecycleState.RESTANCE, FordringLifecycleState.HOERING))
+    assertThat(service.canTransition(ClaimLifecycleState.AFSKREVET, ClaimLifecycleState.OVERDRAGET))
         .isFalse();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.TILBAGEKALDT, FordringLifecycleState.REGISTERED))
-        .isFalse();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.AFSKREVET, FordringLifecycleState.OVERDRAGET))
-        .isFalse();
-    assertThat(
-            service.canTransition(
-                FordringLifecycleState.INDFRIET, FordringLifecycleState.REGISTERED))
+    assertThat(service.canTransition(ClaimLifecycleState.INDFRIET, ClaimLifecycleState.REGISTERED))
         .isFalse();
   }
 
@@ -315,7 +290,7 @@ class FordringLifecycleServiceImplTest {
   // Helpers
   // =========================================================================
 
-  private DebtEntity debtEntity(UUID id, FordringLifecycleState state) {
+  private DebtEntity debtEntity(UUID id, ClaimLifecycleState state) {
     return DebtEntity.builder()
         .id(id)
         .debtorPersonId(UUID.randomUUID())

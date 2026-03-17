@@ -39,9 +39,9 @@ public class HoeringEntity {
   @Column(name = "deviation_description", nullable = false, length = 500)
   private String deviationDescription;
 
-  /** Fordringshaver justification if approved. */
+  /** Creditor justification if approved. */
   @Column(name = "fordringshaver_begrundelse", length = 1000)
-  private String fordingshaverBegrundelse;
+  private String creditorJustification;
 
   /** RIM caseworker decision notes. */
   @Column(name = "rim_decision", length = 500)

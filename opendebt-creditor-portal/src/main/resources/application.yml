@@ -65,6 +65,7 @@ opendebt:
       - da-DK
       - en-GB
       - uk-UA
+      - sjn
   creditor:
     max-batch-size: 1000
     allowed-debt-types-file: classpath:debt-types.json

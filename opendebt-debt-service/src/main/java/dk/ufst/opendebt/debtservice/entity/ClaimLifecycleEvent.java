@@ -8,13 +8,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "overdragelse_events")
+@Table(name = "claim_lifecycle_events")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OverdragelseEvent {
+public class ClaimLifecycleEvent {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,14 +23,14 @@ public class OverdragelseEvent {
   @Column(name = "debt_id", nullable = false)
   private UUID debtId;
 
-  @Column(name = "fordringshaver_id", nullable = false)
-  private UUID fordringshaverId;
+  @Column(name = "creditor_id", nullable = false)
+  private UUID creditorId;
 
-  @Column(name = "modtager_id")
-  private UUID modtagerId;
+  @Column(name = "recipient_id")
+  private UUID recipientId;
 
-  @Column(name = "tidspunkt", nullable = false)
-  private LocalDateTime tidspunkt;
+  @Column(name = "occurred_at", nullable = false)
+  private LocalDateTime occurredAt;
 
   @Column(name = "previous_state", length = 20)
   private String previousState;
@@ -44,6 +44,6 @@ public class OverdragelseEvent {
   @PrePersist
   void prePersist() {
     if (createdAt == null) createdAt = LocalDateTime.now();
-    if (tidspunkt == null) tidspunkt = LocalDateTime.now();
+    if (occurredAt == null) occurredAt = LocalDateTime.now();
   }
 }

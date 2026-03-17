@@ -6,7 +6,7 @@ import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
 /**
- * Validates that a beskrivelse field complies with PSRM GDPR requirements:
+ * Validates that a description field complies with PSRM GDPR requirements:
  *
  * <ul>
  *   <li>Maximum 100 characters
@@ -15,12 +15,11 @@ import jakarta.validation.Payload;
  * </ul>
  */
 @Documented
-@Constraint(validatedBy = BeskrivelseSafeValidator.class)
+@Constraint(validatedBy = DescriptionSafeValidator.class)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface BeskrivelseSafe {
-  String message() default
-      "Beskrivelse indeholder ugyldigt indhold (maks 100 tegn, ingen CPR-numre)";
+public @interface DescriptionSafe {
+  String message() default "Description contains invalid content (max 100 chars, no CPR numbers)";
 
   Class<?>[] groups() default {};
 

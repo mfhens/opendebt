@@ -21,7 +21,7 @@ import lombok.*;
       @Index(name = "idx_debt_status", columnList = "status"),
       @Index(name = "idx_debt_readiness", columnList = "readiness_status"),
       @Index(name = "idx_debt_due_date", columnList = "due_date"),
-      @Index(name = "idx_debt_hovedfordrings_id", columnList = "hovedfordrings_id"),
+      @Index(name = "idx_debt_parent_claim_id", columnList = "parent_claim_id"),
       @Index(name = "idx_debt_lifecycle_state", columnList = "lifecycle_state")
     })
 @Getter
@@ -77,72 +77,72 @@ public class DebtEntity {
   @Column(name = "outstanding_balance", precision = 15, scale = 2)
   private BigDecimal outstandingBalance;
 
-  // --- PSRM Stamdata Fields (W7-STAM-01) ---
+  // --- PSRM Master Data Fields (W7-STAM-01) ---
 
-  @Column(name = "hovedstol", precision = 15, scale = 2)
-  private BigDecimal hovedstol;
+  @Column(name = "principal", precision = 15, scale = 2)
+  private BigDecimal principal;
 
-  @Column(name = "fordringshaver_reference", length = 50)
-  private String fordingshaverReference;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "fordringsart", length = 10)
-  private FordringsartEnum fordringsart;
+  @Column(name = "creditor_reference", length = 50)
+  private String creditorReference;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "fordring_kategori", length = 5)
-  private FordringKategori fordringKategori;
+  @Column(name = "claim_art", length = 10)
+  private ClaimArtEnum claimArt;
 
-  @Column(name = "hovedfordrings_id")
-  private UUID hovedfordringsId;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "claim_category", length = 5)
+  private ClaimCategory claimCategory;
 
-  @Column(name = "foraeldelsesdato")
-  private LocalDate foraeldelsesdato;
+  @Column(name = "parent_claim_id")
+  private UUID parentClaimId;
 
-  @Column(name = "beskrivelse", length = 100)
-  private String beskrivelse;
+  @Column(name = "limitation_date")
+  private LocalDate limitationDate;
 
-  @Column(name = "periode_fra")
-  private LocalDate periodeFra;
+  @Column(name = "description", length = 100)
+  private String description;
 
-  @Column(name = "periode_til")
-  private LocalDate periodeTil;
+  @Column(name = "period_from")
+  private LocalDate periodFrom;
 
-  @Column(name = "stiftelsesdato")
-  private LocalDate stiftelsesdato;
+  @Column(name = "period_to")
+  private LocalDate periodTo;
 
-  @Column(name = "forfaldsdato")
-  private LocalDate forfaldsdato;
+  @Column(name = "inception_date")
+  private LocalDate inceptionDate;
 
-  @Column(name = "srb")
-  private LocalDate sidsteRettigeBetalingsdato;
+  @Column(name = "payment_deadline")
+  private LocalDate paymentDeadline;
 
-  @Column(name = "bobehandling")
-  private Boolean bobehandling;
+  @Column(name = "last_payment_date")
+  private LocalDate lastPaymentDate;
 
-  @Column(name = "domsdato")
-  private LocalDate domsdato;
+  @Column(name = "estate_processing")
+  private Boolean estateProcessing;
 
-  @Column(name = "forligsdato")
-  private LocalDate forligsdato;
+  @Column(name = "judgment_date")
+  private LocalDate judgmentDate;
 
-  @Embedded private RentevalgEmbeddable rentevalg;
+  @Column(name = "settlement_date")
+  private LocalDate settlementDate;
 
-  @Column(name = "fordringsnote", length = 500)
-  private String fordringsnote;
+  @Embedded private InterestSelectionEmbeddable interestSelection;
 
-  @Column(name = "kundenote", length = 500)
-  private String kundenote;
+  @Column(name = "claim_note", length = 500)
+  private String claimNote;
 
-  @Column(name = "p_nummer", length = 20)
-  private String pNummer;
+  @Column(name = "customer_note", length = 500)
+  private String customerNote;
+
+  @Column(name = "p_number", length = 20)
+  private String pNumber;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "lifecycle_state", length = 20)
-  private FordringLifecycleState lifecycleState;
+  private ClaimLifecycleState lifecycleState;
 
-  @Column(name = "modtagelsestidspunkt")
-  private LocalDateTime modtagelsestidspunkt;
+  @Column(name = "received_at")
+  private LocalDateTime receivedAt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)

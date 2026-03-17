@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
-import dk.ufst.opendebt.debtservice.entity.FordringLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.HoeringEntity;
 import dk.ufst.opendebt.debtservice.entity.HoeringStatus;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -33,7 +33,7 @@ public class HoeringServiceImpl implements HoeringService {
   public HoeringEntity createHoering(UUID debtId, String deviationDescription) {
     DebtEntity debt = findDebt(debtId);
 
-    if (debt.getLifecycleState() != FordringLifecycleState.REGISTERED) {
+    if (debt.getLifecycleState() != ClaimLifecycleState.REGISTERED) {
       throw new OpenDebtException(
           "Debt must be in REGISTERED state to create a hearing, current state: "
               + debt.getLifecycleState(),
@@ -41,7 +41,7 @@ public class HoeringServiceImpl implements HoeringService {
           OpenDebtException.ErrorSeverity.WARNING);
     }
 
-    debt.setLifecycleState(FordringLifecycleState.HOERING);
+    debt.setLifecycleState(ClaimLifecycleState.HOERING);
     debtRepository.save(debt);
 
     HoeringEntity hoering =
@@ -62,21 +62,21 @@ public class HoeringServiceImpl implements HoeringService {
   }
 
   @Override
-  public HoeringEntity fordingshaverApprove(UUID hoeringId, String begrundelse) {
+  public HoeringEntity creditorApprove(UUID hoeringId, String begrundelse) {
     HoeringEntity hoering = findHoering(hoeringId);
 
     validateStatus(hoering, HoeringStatus.AFVENTER_FORDRINGSHAVER, "approve");
 
-    hoering.setFordingshaverBegrundelse(begrundelse);
+    hoering.setCreditorJustification(begrundelse);
     hoering.setHoeringStatus(HoeringStatus.AFVENTER_RIM);
 
     HoeringEntity saved = hoeringRepository.save(hoering);
-    log.info("Hearing {} approved by fordringshaver, now awaiting RIM decision", saved.getId());
+    log.info("Hearing {} approved by creditor, now awaiting RIM decision", saved.getId());
     return saved;
   }
 
   @Override
-  public HoeringEntity fordingshaverWithdraw(UUID hoeringId) {
+  public HoeringEntity creditorWithdraw(UUID hoeringId) {
     HoeringEntity hoering = findHoering(hoeringId);
 
     validateStatus(hoering, HoeringStatus.AFVENTER_FORDRINGSHAVER, "withdraw");
@@ -85,12 +85,12 @@ public class HoeringServiceImpl implements HoeringService {
     hoering.setResolvedAt(LocalDateTime.now());
 
     DebtEntity debt = findDebt(hoering.getDebtId());
-    debt.setLifecycleState(FordringLifecycleState.REGISTERED);
+    debt.setLifecycleState(ClaimLifecycleState.REGISTERED);
     debtRepository.save(debt);
 
     HoeringEntity saved = hoeringRepository.save(hoering);
     log.info(
-        "Hearing {} withdrawn by fordringshaver, debt {} reset to REGISTERED",
+        "Hearing {} withdrawn by creditor, debt {} reset to REGISTERED",
         saved.getId(),
         hoering.getDebtId());
     return saved;
@@ -109,14 +109,14 @@ public class HoeringServiceImpl implements HoeringService {
 
     if (accepted) {
       hoering.setHoeringStatus(HoeringStatus.GODKENDT);
-      debt.setLifecycleState(FordringLifecycleState.OVERDRAGET);
+      debt.setLifecycleState(ClaimLifecycleState.OVERDRAGET);
       log.info(
           "Hearing {} accepted by RIM, debt {} transitioned to OVERDRAGET",
           hoeringId,
           hoering.getDebtId());
     } else {
       hoering.setHoeringStatus(HoeringStatus.AFVIST);
-      debt.setLifecycleState(FordringLifecycleState.REGISTERED);
+      debt.setLifecycleState(ClaimLifecycleState.REGISTERED);
       log.info(
           "Hearing {} rejected by RIM, debt {} reset to REGISTERED",
           hoeringId,

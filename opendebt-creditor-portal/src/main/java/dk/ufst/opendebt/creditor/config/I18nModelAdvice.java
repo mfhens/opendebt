@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class I18nModelAdvice {
 
   private static final List<String> LANGUAGE_DISPLAY_ORDER =
-      List.of("da", "en", "de", "pl", "lt", "ro", "uk");
+      List.of("da", "en", "de", "pl", "lt", "ro", "uk", "sjn");
 
   private static final Map<String, String> LOCALE_NATIVE_NAMES =
       Map.ofEntries(
@@ -29,7 +29,8 @@ public class I18nModelAdvice {
           Map.entry("fr", "Fran\u00e7ais"),
           Map.entry("sv", "Svenska"),
           Map.entry("nb", "Norsk"),
-          Map.entry("nn", "Nynorsk"));
+          Map.entry("nn", "Nynorsk"),
+          Map.entry("sjn", "Edhellen"));
 
   private final I18nProperties i18nProperties;
 

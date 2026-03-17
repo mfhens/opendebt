@@ -251,7 +251,7 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
       UUID transactionId = UUID.randomUUID();
       String desc =
           String.format(
-              "Rente genberegnet: %s til %s, hovedstol=%s, dage=%d",
+              "Interest recalculated: %s to %s, principal=%s, days=%d",
               period.getPeriodStart(),
               period.getPeriodEnd(),
               period.getPrincipalBalance().toPlainString(),

@@ -67,6 +67,9 @@ ALTER TABLE debts_history ADD COLUMN modtagelsestidspunkt TIMESTAMPTZ;
 ALTER TABLE debt_types_history ADD COLUMN civilretlig BOOLEAN DEFAULT FALSE;
 ALTER TABLE debt_types_history ADD COLUMN fordringstype_kode VARCHAR(20);
 
+-- Disable versioning trigger to avoid PK conflicts from multiple updates on the same row
+ALTER TABLE debts DISABLE TRIGGER debts_versioning_trigger;
+
 -- Initialize lifecycle_state for existing debts
 UPDATE debts SET lifecycle_state = 'OVERDRAGET' WHERE status IN ('IN_COLLECTION', 'ACTIVE');
 UPDATE debts SET lifecycle_state = 'INDFRIET' WHERE status = 'PAID';
@@ -82,6 +85,9 @@ UPDATE debts SET fordringsart = 'INDR' WHERE fordringsart IS NULL;
 
 -- Initialize fordring_kategori as HF for existing debts
 UPDATE debts SET fordring_kategori = 'HF' WHERE fordring_kategori IS NULL;
+
+-- Re-enable versioning trigger
+ALTER TABLE debts ENABLE TRIGGER debts_versioning_trigger;
 
 -- Relax principal_amount constraint to allow 0-fordringer (W7-ZERO-01 preparation)
 ALTER TABLE debts DROP CONSTRAINT IF EXISTS chk_principal_positive;

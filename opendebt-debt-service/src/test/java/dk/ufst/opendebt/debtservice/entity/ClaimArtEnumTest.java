@@ -4,20 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-class FordringsartEnumTest {
+class ClaimArtEnumTest {
 
   @Test
   void indrExists() {
-    assertThat(FordringsartEnum.valueOf("INDR")).isEqualTo(FordringsartEnum.INDR);
+    assertThat(ClaimArtEnum.valueOf("INDR")).isEqualTo(ClaimArtEnum.INDR);
   }
 
   @Test
   void modrExists() {
-    assertThat(FordringsartEnum.valueOf("MODR")).isEqualTo(FordringsartEnum.MODR);
+    assertThat(ClaimArtEnum.valueOf("MODR")).isEqualTo(ClaimArtEnum.MODR);
   }
 
   @Test
   void onlyTwoValues() {
-    assertThat(FordringsartEnum.values()).hasSize(2);
+    assertThat(ClaimArtEnum.values()).hasSize(2);
   }
 }

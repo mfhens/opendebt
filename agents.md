@@ -92,6 +92,47 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {} // In d
 
 ## Code Standards
 
+### Implementation Language and Domain Terminology (CRITICAL)
+
+**All source code (Java, JS, SQL), comments, log messages, and API contracts are written in English.** Do not mix languages within source code. Danish terms must never appear in identifiers, string literals, or code comments — use the English equivalents exclusively.
+
+**`docs/begrebsmodel/` is the single authoritative source for domain terminology.** Section 2.1 of the begrebsmodel provides the canonical Danish→English mapping. When naming classes, fields, methods, database columns, REST resources, or DTOs, use the English equivalent from that table. When translating UI text into any locale, use the Danish column as the source concept.
+
+| Begrebsmodel Danish | English for code | Example usage |
+|---------------------|-----------------|---------------|
+| Fordringshaver | Creditor | `CreditorService`, `creditor_org_id` |
+| Skyldner | Debtor | `DebtorPersonId`, `debtor_person_id` |
+| Fordring | Claim | `ClaimEntity`, `/api/v1/claims` |
+| Restance | Overdue Claim | `OverdueClaimDto` |
+| Fordringstype | Claim Type | `ClaimType`, `claim_type_code` |
+| Fordringsart | Claim Art | `ClaimArt` |
+| Hovedstol | Principal | `principalAmount`, `principal_amount` |
+| Betalingsfrist | Payment Deadline | `paymentDeadline` |
+| Forældelse | Limitation | `limitationDate` |
+| Overdragelse til inddrivelse | Transfer for Collection | `TransferForCollectionEvent` |
+| Inddrivelsesskridt | Collection Measure | `CollectionMeasure` |
+| Modregning | Set-off | `SetOffService` |
+| Lønindeholdelse | Wage Garnishment | `WageGarnishmentService` |
+| Udlæg | Attachment | `AttachmentService` |
+| Afdragsordning | Instalment Arrangement | `InstalmentArrangementDto` |
+| Hæftelse | Liability | `LiabilityEntity`, `liability_type` |
+| Indsigelse | Objection | `ObjectionService` |
+| Underretning | Notification | `NotificationService` |
+| Påkrav | Demand for Payment | `DemandForPaymentDto` |
+| Rykker | Reminder Notice | `ReminderNoticeDto` |
+| Dækning | Recovery | `RecoveryEntity` |
+| Inddrivelsesrente | Recovery Interest | `recoveryInterestRate` |
+| Regulering | Claim Adjustment | `ClaimAdjustmentEvent` |
+| Opskrivning | Write-up | `WriteUpDto` |
+| Nedskrivning | Write-down | `WriteDownDto` |
+| Tilbagekald | Withdrawal | `WithdrawalService` |
+| Genindsendelse | Resubmission | `ResubmissionDto` |
+| Høring | Hearing | `HearingEntity` |
+| Fordringskompleks | Claim Complex | `claimComplexId` |
+| Sag | Case | `CaseEntity` |
+
+**For i18n message bundles** (`messages_*.properties`): each locale file must be written entirely in its target language. The begrebsmodel Danish terms are the source concepts; each locale translates them into its own language. New locale bundles must include a header comment mapping domain terms back to the begrebsmodel.
+
 ### Package Structure
 ```
 dk.ufst.opendebt.<service>/
@@ -147,21 +188,9 @@ throw new OpenDebtException(
 );
 ```
 
-## Danish Domain Terminology
+## Domain Terminology Reference
 
-Use correct Danish terminology in code and documentation:
-
-| Danish | English | Usage |
-|--------|---------|-------|
-| Fordringshaver | Creditor | Institution submitting debt |
-| Skyldner | Debtor | Person/company owing debt |
-| Gæld | Debt | The amount owed |
-| Indrivelse | Collection | Debt collection process |
-| Indrivelsesparat | Ready for collection | Debt validation status |
-| Modregning | Offsetting | Deducting from payments due |
-| Lønindeholdelse | Wage garnishment | Deducting from salary |
-| Borger | Citizen | Individual person |
-| Sag | Case | Collection case |
+**`docs/begrebsmodel/` is the single source of truth.** See the full mapping table in "Implementation Language and Domain Terminology" above. Code uses **English only**; Danish terms appear only in i18n message bundles for the `da` locale and in documentation that discusses the Danish legal/business domain. When in doubt, consult `docs/begrebsmodel/Inddrivelse-begrebsmodel-UFST-v3.md` section 2.1.
 
 ## Testing Requirements
 

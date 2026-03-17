@@ -5,13 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class BeskrivelseSafeValidatorTest {
+class DescriptionSafeValidatorTest {
 
-  private BeskrivelseSafeValidator validator;
+  private DescriptionSafeValidator validator;
 
   @BeforeEach
   void setUp() {
-    validator = new BeskrivelseSafeValidator();
+    validator = new DescriptionSafeValidator();
   }
 
   @Test

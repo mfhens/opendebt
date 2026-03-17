@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 
 import dk.ufst.opendebt.debtservice.dto.KvitteringResponse;
 import dk.ufst.opendebt.debtservice.dto.SlutstatusEnum;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
-import dk.ufst.opendebt.debtservice.entity.FordringLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.HoeringEntity;
 import dk.ufst.opendebt.debtservice.entity.HoeringStatus;
 
@@ -98,7 +98,7 @@ class KvitteringServiceImplTest {
         .debtTypeCode("600")
         .principalAmount(new BigDecimal("10000"))
         .dueDate(LocalDate.of(2026, 6, 1))
-        .lifecycleState(FordringLifecycleState.REGISTERED)
+        .lifecycleState(ClaimLifecycleState.REGISTERED)
         .status(DebtEntity.DebtStatus.PENDING)
         .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
         .build();

@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class BeskrivelseSafeValidator implements ConstraintValidator<BeskrivelseSafe, String> {
+public class DescriptionSafeValidator implements ConstraintValidator<DescriptionSafe, String> {
 
   private static final int MAX_LENGTH = 100;
   private static final Pattern CPR_PATTERN = Pattern.compile("\\d{10}");

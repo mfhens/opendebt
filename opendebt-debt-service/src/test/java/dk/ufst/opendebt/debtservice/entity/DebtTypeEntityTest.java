@@ -68,8 +68,8 @@ class DebtTypeEntityTest {
             entity.isActive(),
             entity.isRequiresManualReview(),
             entity.isInterestApplicable(),
-            entity.isCivilretlig(),
-            entity.getFordringstypeKode(),
+            entity.isCivilLaw(),
+            entity.getClaimTypeCode(),
             entity.getCreatedAt(),
             entity.getUpdatedAt());
 

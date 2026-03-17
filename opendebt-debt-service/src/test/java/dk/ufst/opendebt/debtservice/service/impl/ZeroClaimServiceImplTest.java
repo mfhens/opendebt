@@ -16,40 +16,40 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.entity.ClaimArtEnum;
+import dk.ufst.opendebt.debtservice.entity.ClaimCategory;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
-import dk.ufst.opendebt.debtservice.entity.FordringKategori;
-import dk.ufst.opendebt.debtservice.entity.FordringsartEnum;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ZeroFordringServiceImplTest {
+class ZeroClaimServiceImplTest {
 
   @Mock private DebtRepository debtRepository;
 
-  private ZeroFordringServiceImpl service;
+  private ZeroClaimServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new ZeroFordringServiceImpl(debtRepository);
+    service = new ZeroClaimServiceImpl(debtRepository);
   }
 
   // =========================================================================
-  // validateZeroFordring
+  // validateZeroClaim
   // =========================================================================
 
   @Test
-  void validateZeroFordring_validHF_success() {
+  void validateZeroClaim_validHF_success() {
     DebtEntity entity = zeroHfEntity();
 
-    assertThatCode(() -> service.validateZeroFordring(entity)).doesNotThrowAnyException();
+    assertThatCode(() -> service.validateZeroClaim(entity)).doesNotThrowAnyException();
   }
 
   @Test
-  void validateZeroFordring_ufWithZeroPrincipal_throws() {
+  void validateZeroClaim_ufWithZeroPrincipal_throws() {
     DebtEntity entity = zeroHfEntity();
-    entity.setFordringKategori(FordringKategori.UF);
+    entity.setClaimCategory(ClaimCategory.UF);
 
-    assertThatThrownBy(() -> service.validateZeroFordring(entity))
+    assertThatThrownBy(() -> service.validateZeroClaim(entity))
         .isInstanceOf(OpenDebtException.class)
         .satisfies(
             ex -> {
@@ -57,111 +57,109 @@ class ZeroFordringServiceImplTest {
               assertThatCode(() -> ode.getErrorCode()).doesNotThrowAnyException();
               assert ode.getErrorCode().equals("ZERO_PRINCIPAL_NOT_ALLOWED_FOR_UF");
             })
-        .hasMessageContaining("Underfordring cannot have zero principal");
+        .hasMessageContaining("Sub-claim cannot have zero principal");
   }
 
   @Test
-  void validateZeroFordring_hfWithPositivePrincipal_noOp() {
+  void validateZeroClaim_hfWithPositivePrincipal_noOp() {
     DebtEntity entity = zeroHfEntity();
     entity.setPrincipalAmount(new BigDecimal("1000"));
 
     // Should be a no-op for positive principal — no exception
-    assertThatCode(() -> service.validateZeroFordring(entity)).doesNotThrowAnyException();
+    assertThatCode(() -> service.validateZeroClaim(entity)).doesNotThrowAnyException();
   }
 
   @Test
-  void validateZeroFordring_missingStamdata_throws() {
+  void validateZeroClaim_missingStamdata_throws() {
     DebtEntity entity = zeroHfEntity();
-    entity.setForaeldelsesdato(null); // Remove required stamdata
+    entity.setLimitationDate(null); // Remove required stamdata
 
-    assertThatThrownBy(() -> service.validateZeroFordring(entity))
+    assertThatThrownBy(() -> service.validateZeroClaim(entity))
         .isInstanceOf(OpenDebtException.class)
         .satisfies(
             ex -> {
               OpenDebtException ode = (OpenDebtException) ex;
-              assert ode.getErrorCode().equals("ZERO_FORDRING_MISSING_STAMDATA");
+              assert ode.getErrorCode().equals("ZERO_CLAIM_MISSING_STAMDATA");
             })
-        .hasMessageContaining("foraeldelsesdato");
+        .hasMessageContaining("limitationDate");
   }
 
   // =========================================================================
-  // validateUnderfordringReference
+  // validateSubClaimReference
   // =========================================================================
 
   @Test
-  void validateUnderfordring_validReference_success() {
-    UUID hovedfordringsId = UUID.randomUUID();
-    DebtEntity underfordring = ufEntity(hovedfordringsId);
-    DebtEntity hovedfordring = hfEntityWithPrincipal(hovedfordringsId, new BigDecimal("5000"));
+  void validateSubClaim_validReference_success() {
+    UUID parentClaimId = UUID.randomUUID();
+    DebtEntity subClaim = ufEntity(parentClaimId);
+    DebtEntity parentClaim = hfEntityWithPrincipal(parentClaimId, new BigDecimal("5000"));
 
-    when(debtRepository.findById(hovedfordringsId)).thenReturn(Optional.of(hovedfordring));
+    when(debtRepository.findById(parentClaimId)).thenReturn(Optional.of(parentClaim));
 
-    assertThatCode(() -> service.validateUnderfordringReference(underfordring))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> service.validateSubClaimReference(subClaim)).doesNotThrowAnyException();
   }
 
   @Test
-  void validateUnderfordring_referencesZeroFordring_success() {
-    UUID hovedfordringsId = UUID.randomUUID();
-    DebtEntity underfordring = ufEntity(hovedfordringsId);
-    DebtEntity hovedfordring = hfEntityWithPrincipal(hovedfordringsId, BigDecimal.ZERO);
+  void validateSubClaim_referencesZeroClaim_success() {
+    UUID parentClaimId = UUID.randomUUID();
+    DebtEntity subClaim = ufEntity(parentClaimId);
+    DebtEntity parentClaim = hfEntityWithPrincipal(parentClaimId, BigDecimal.ZERO);
 
-    when(debtRepository.findById(hovedfordringsId)).thenReturn(Optional.of(hovedfordring));
+    when(debtRepository.findById(parentClaimId)).thenReturn(Optional.of(parentClaim));
 
-    assertThatCode(() -> service.validateUnderfordringReference(underfordring))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> service.validateSubClaimReference(subClaim)).doesNotThrowAnyException();
   }
 
   @Test
-  void validateUnderfordring_nullHovedfordringsId_throws() {
-    DebtEntity underfordring = ufEntity(null);
+  void validateSubClaim_nullParentClaimId_throws() {
+    DebtEntity subClaim = ufEntity(null);
 
-    assertThatThrownBy(() -> service.validateUnderfordringReference(underfordring))
+    assertThatThrownBy(() -> service.validateSubClaimReference(subClaim))
         .isInstanceOf(OpenDebtException.class)
         .satisfies(
             ex -> {
               OpenDebtException ode = (OpenDebtException) ex;
-              assert ode.getErrorCode().equals("HOVEDFORDRINGS_ID_REQUIRED");
+              assert ode.getErrorCode().equals("PARENT_CLAIM_ID_REQUIRED");
             })
-        .hasMessageContaining("hovedfordringsId");
+        .hasMessageContaining("parentClaimId");
   }
 
   @Test
-  void validateUnderfordring_hovedfordringNotFound_throws() {
-    UUID hovedfordringsId = UUID.randomUUID();
-    DebtEntity underfordring = ufEntity(hovedfordringsId);
+  void validateSubClaim_parentClaimNotFound_throws() {
+    UUID parentClaimId = UUID.randomUUID();
+    DebtEntity subClaim = ufEntity(parentClaimId);
 
-    when(debtRepository.findById(hovedfordringsId)).thenReturn(Optional.empty());
+    when(debtRepository.findById(parentClaimId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.validateUnderfordringReference(underfordring))
+    assertThatThrownBy(() -> service.validateSubClaimReference(subClaim))
         .isInstanceOf(OpenDebtException.class)
         .satisfies(
             ex -> {
               OpenDebtException ode = (OpenDebtException) ex;
-              assert ode.getErrorCode().equals("HOVEDFORDRING_NOT_FOUND");
+              assert ode.getErrorCode().equals("PARENT_CLAIM_NOT_FOUND");
             })
-        .hasMessageContaining("hovedfordring not found");
+        .hasMessageContaining("main claim not found");
   }
 
   @Test
-  void validateUnderfordring_hfDoesNotNeedReference() {
+  void validateSubClaim_hfDoesNotNeedReference() {
     DebtEntity hf =
         DebtEntity.builder()
             .id(UUID.randomUUID())
-            .fordringKategori(FordringKategori.HF)
+            .claimCategory(ClaimCategory.HF)
             .principalAmount(new BigDecimal("1000"))
-            .hovedfordringsId(null)
+            .parentClaimId(null)
             .build();
 
     // HF should not trigger reference validation — no exception
-    assertThatCode(() -> service.validateUnderfordringReference(hf)).doesNotThrowAnyException();
+    assertThatCode(() -> service.validateSubClaimReference(hf)).doesNotThrowAnyException();
   }
 
   // =========================================================================
   // Helpers
   // =========================================================================
 
-  /** Creates a valid 0-fordring HF entity with all required stamdata. */
+  /** Creates a valid zero-principal claim HF entity with all required stamdata. */
   private DebtEntity zeroHfEntity() {
     return DebtEntity.builder()
         .id(UUID.randomUUID())
@@ -169,32 +167,32 @@ class ZeroFordringServiceImplTest {
         .creditorOrgId(UUID.randomUUID())
         .debtTypeCode("600")
         .principalAmount(BigDecimal.ZERO)
-        .fordringKategori(FordringKategori.HF)
-        .fordringsart(FordringsartEnum.INDR)
-        .foraeldelsesdato(LocalDate.of(2030, 12, 31))
+        .claimCategory(ClaimCategory.HF)
+        .claimArt(ClaimArtEnum.INDR)
+        .limitationDate(LocalDate.of(2030, 12, 31))
         .dueDate(LocalDate.of(2026, 6, 1))
         .status(DebtEntity.DebtStatus.ACTIVE)
         .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
         .build();
   }
 
-  /** Creates an underfordring (UF) referencing a hovedfordring. */
-  private DebtEntity ufEntity(UUID hovedfordringsId) {
+  /** Creates a sub-claim (UF) referencing a parent claim. */
+  private DebtEntity ufEntity(UUID parentClaimId) {
     return DebtEntity.builder()
         .id(UUID.randomUUID())
         .debtorPersonId(UUID.randomUUID())
         .creditorOrgId(UUID.randomUUID())
         .debtTypeCode("600")
         .principalAmount(new BigDecimal("150"))
-        .fordringKategori(FordringKategori.UF)
-        .hovedfordringsId(hovedfordringsId)
+        .claimCategory(ClaimCategory.UF)
+        .parentClaimId(parentClaimId)
         .dueDate(LocalDate.of(2026, 6, 1))
         .status(DebtEntity.DebtStatus.ACTIVE)
         .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
         .build();
   }
 
-  /** Creates a hovedfordring (HF) with a specific principal amount. */
+  /** Creates a main claim (HF) with a specific principal amount. */
   private DebtEntity hfEntityWithPrincipal(UUID id, BigDecimal principalAmount) {
     return DebtEntity.builder()
         .id(id)
@@ -202,9 +200,9 @@ class ZeroFordringServiceImplTest {
         .creditorOrgId(UUID.randomUUID())
         .debtTypeCode("600")
         .principalAmount(principalAmount)
-        .fordringKategori(FordringKategori.HF)
-        .fordringsart(FordringsartEnum.INDR)
-        .foraeldelsesdato(LocalDate.of(2030, 12, 31))
+        .claimCategory(ClaimCategory.HF)
+        .claimArt(ClaimArtEnum.INDR)
+        .limitationDate(LocalDate.of(2030, 12, 31))
         .dueDate(LocalDate.of(2026, 6, 1))
         .status(DebtEntity.DebtStatus.ACTIVE)
         .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
