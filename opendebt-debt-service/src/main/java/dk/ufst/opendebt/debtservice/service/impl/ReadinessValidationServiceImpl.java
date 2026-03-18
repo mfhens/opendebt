@@ -9,8 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
 import lombok.RequiredArgsConstructor;
@@ -29,20 +31,26 @@ public class ReadinessValidationServiceImpl implements ReadinessValidationServic
 
   private final DebtRepository debtRepository;
   private final DebtServiceImpl debtService;
+  private final ClaimValidationService claimValidationService;
   private final ObjectProvider<ReadinessValidationService> readinessValidationServiceProvider;
 
   @Override
   @Transactional
   public DebtDto validateReadiness(UUID debtId) {
     DebtEntity entity = findEntityById(debtId);
-    // AIDEV-TODO: Replace with Drools rules engine call. Rules must check: mandatory claim data,
-    // debt type code validity, dispute/appeal status, legal deadline compliance.
-    boolean ready = entity.getPrincipalAmount() != null && entity.getDueDate() != null;
+    DebtDto dto = debtService.getDebtById(debtId);
+    ClaimValidationResult validationResult = claimValidationService.validate(dto);
+    boolean ready = validationResult.isValid();
     if (ready) {
       entity.setReadinessStatus(DebtEntity.ReadinessStatus.READY_FOR_COLLECTION);
     } else {
       entity.setReadinessStatus(DebtEntity.ReadinessStatus.NOT_READY);
-      entity.setReadinessRejectionReason("Missing mandatory claim data");
+      String reasons =
+          validationResult.getErrors().stream()
+              .map(e -> e.getErrorCode() + ": " + e.getDescription())
+              .reduce((a, b) -> a + "; " + b)
+              .orElse("Validation failed");
+      entity.setReadinessRejectionReason(reasons);
     }
     entity.setReadinessValidatedAt(LocalDateTime.now());
     debtRepository.save(entity);

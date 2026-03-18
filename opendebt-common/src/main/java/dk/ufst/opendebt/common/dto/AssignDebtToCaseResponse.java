@@ -1,0 +1,19 @@
+package dk.ufst.opendebt.common.dto;
+
+import java.util.UUID;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AssignDebtToCaseResponse {
+
+  private UUID caseId;
+  private String caseNumber;
+  private boolean newCase;
+}

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{case.detail.title} + ' ' + ${caseDto?.caseNumber}">Sag</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/cases}" th:text="#{cases.title}">Sager</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="${caseDto?.caseNumber ?: '—'}">SAG-001</span>
+  </span>
+  <section layout:fragment="content">
+    <h1>
+      <span th:text="#{case.detail.title}">Sag</span>
+      <span th:text="${caseDto?.caseNumber}" th:if="${caseDto != null}">SAG-001</span>
+    </h1>
+
+    <!-- Backend error alert -->
+    <div class="skat-alert skat-alert--error" th:if="${backendError}">
+      <span class="ikon ikon-problem" aria-hidden="true"></span>
+      <span th:text="${backendError}">Backend error</span>
+    </div>
+
+    <!-- Case info card -->
+    <div class="skat-card" th:if="${caseDto != null}">
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{case.detail.title.label}">Titel</dt>
+          <dd th:text="${caseDto.title ?: '—'}">—</dd>
+          <dt th:text="#{case.detail.state}">Tilstand</dt>
+          <dd>
+            <span class="skat-badge" th:if="${caseDto.caseState != null}"
+                  th:classappend="${caseDto.caseState.name() == 'CREATED' or caseDto.caseState.name() == 'ASSESSED'} ? 'skat-badge--success' : (${caseDto.caseState.name().startsWith('CLOSED')} ? 'skat-badge--error' : 'skat-badge--warning')"
+                  th:text="#{${'state.' + caseDto.caseState.name()}}">Oprettet</span>
+            <span th:if="${caseDto.caseState == null}" th:text="'—'">—</span>
+          </dd>
+          <dt th:text="#{case.detail.type}">Sagstype</dt>
+          <dd th:text="${caseDto.caseType ?: '—'}">—</dd>
+          <dt th:text="#{cases.table.debtor}">Skyldner</dt>
+          <dd th:text="${debtorDisplay ?: '—'}">—</dd>
+          <dt th:text="#{cases.table.caseworker}">Sagsbehandler</dt>
+          <dd th:text="${caseDto.primaryCaseworkerId ?: '—'}">—</dd>
+          <dt th:text="#{cases.table.createdAt}" th:if="${caseDto.createdAt != null}">Oprettet</dt>
+          <dd th:if="${caseDto.createdAt != null}" th:text="${#temporals.format(caseDto.createdAt, 'dd-MM-yyyy HH:mm')}">—</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="skat-card" th:if="${caseDto != null}" style="margin-top: 1rem;">
+      <div class="skat-card__body">
+        <div role="tablist" style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--color-border--light); margin-bottom: 1rem; flex-wrap: wrap;">
+          <button role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true"
+                  class="skat-btn skat-btn--sm skat-btn--primary"
+                  onclick="showTab('overview')" th:text="#{case.detail.tab.overview}">Overblik</button>
+          <button role="tab" id="tab-parties" aria-controls="panel-parties" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('parties')" th:text="#{case.detail.tab.parties}">Sagsparter</button>
+          <button role="tab" id="tab-debts" aria-controls="panel-debts" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('debts')" th:text="#{case.detail.tab.debts}">Fordringer</button>
+          <button role="tab" id="tab-posteringslog" aria-controls="panel-posteringslog" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('posteringslog')"
+                  th:attr="hx-get=@{/cases/{id}/posteringslog(id=${caseDto.id})}"
+                  hx-target="#panel-posteringslog" hx-swap="innerHTML" hx-trigger="click once"
+                  th:text="#{case.detail.tab.posteringslog}">Posteringslog</button>
+          <button role="tab" id="tab-events" aria-controls="panel-events" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('events')" th:text="#{case.detail.tab.events}">H&#230;ndelseslog</button>
+          <button role="tab" id="tab-measures" aria-controls="panel-measures" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('measures')" th:text="#{case.detail.tab.measures}">Inddrivelsesskridt</button>
+          <button role="tab" id="tab-objections" aria-controls="panel-objections" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('objections')" th:text="#{case.detail.tab.objections}">Indsigelser</button>
+          <button role="tab" id="tab-journal" aria-controls="panel-journal" aria-selected="false"
+                  class="skat-btn skat-btn--sm skat-btn--secondary"
+                  onclick="showTab('journal')" th:text="#{case.detail.tab.journal}">Journal</button>
+        </div>
+
+        <!-- Overview tab panel -->
+        <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+          <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+            <dt th:text="#{case.detail.description}">Beskrivelse</dt>
+            <dd th:text="${caseDto.description ?: '—'}">—</dd>
+            <dt th:text="#{case.detail.subject.classification}">Emne</dt>
+            <dd th:text="${caseDto.subjectClassification ?: '—'}">—</dd>
+            <dt th:text="#{case.detail.action.classification}">Handling</dt>
+            <dd th:text="${caseDto.actionClassification ?: '—'}">—</dd>
+            <dt th:text="#{case.detail.owner.org}">Ejerorganisation</dt>
+            <dd th:text="${caseDto.ownerOrganisationId ?: '—'}">—</dd>
+            <dt th:text="#{case.detail.responsible.unit}">Ansvarlig enhed</dt>
+            <dd th:text="${caseDto.responsibleUnitId ?: '—'}">—</dd>
+            <dt th:if="${caseDto.openObjections > 0}" th:text="#{case.detail.open.objections}">&#197;bne indsigelser</dt>
+            <dd th:if="${caseDto.openObjections > 0}" th:text="${caseDto.openObjections}">0</dd>
+          </dl>
+          <div th:if="${caseDto.parties != null and !caseDto.parties.isEmpty()}" style="margin-top: 1rem;">
+            <h3 th:text="#{case.detail.tab.parties}">Sagsparter</h3>
+            <table class="skat-table">
+              <thead>
+                <tr>
+                  <th scope="col" th:text="#{party.person.id}">Person-ID</th>
+                  <th scope="col" th:text="#{party.role}">Rolle</th>
+                  <th scope="col" th:text="#{party.type}">Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="p : ${caseDto.parties}">
+                  <td th:text="${p.personId}">—</td>
+                  <td th:text="#{${'party.role.' + p.partyRole}}">—</td>
+                  <td th:text="${p.partyType ?: '—'}">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Parties tab panel -->
+        <div role="tabpanel" id="panel-parties" aria-labelledby="tab-parties" style="display: none;">
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{party.person.id}">Person-ID</th>
+                <th scope="col" th:text="#{party.role}">Rolle</th>
+                <th scope="col" th:text="#{party.type}">Type</th>
+                <th scope="col" th:text="#{party.activeFrom}">Aktiv fra</th>
+                <th scope="col" th:text="#{party.activeTo}">Aktiv til</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${parties == null or parties.isEmpty()}">
+                <td colspan="5" th:text="#{parties.empty}">Ingen sagsparter fundet.</td>
+              </tr>
+              <tr th:each="p : ${parties}">
+                <td th:text="${p.personId}">—</td>
+                <td th:text="#{${'party.role.' + p.partyRole}}">—</td>
+                <td th:text="${p.partyType ?: '—'}">—</td>
+                <td th:text="${p.activeFrom != null} ? ${#temporals.format(p.activeFrom, 'dd-MM-yyyy')} : '—'">—</td>
+                <td th:text="${p.activeTo != null} ? ${#temporals.format(p.activeTo, 'dd-MM-yyyy')} : '—'">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Debts tab panel -->
+        <div role="tabpanel" id="panel-debts" aria-labelledby="tab-debts" style="display: none;">
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{debt.detail.title}">Fordring</th>
+                <th scope="col" th:text="#{debt.detail.balance.principal}">Hovedstol</th>
+                <th scope="col" th:text="#{debt.detail.balance.interest}">Rente</th>
+                <th scope="col" th:text="#{debt.detail.balance.total}">Samlet</th>
+                <th scope="col" th:text="#{cases.table.status}">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${debts == null or debts.isEmpty()}">
+                <td colspan="5" th:text="#{cases.empty}">Ingen fordringer fundet.</td>
+              </tr>
+              <tr th:each="d : ${debts}">
+                <td>
+                  <a th:href="@{/cases/{caseId}/debts/{debtId}(caseId=${caseDto.id}, debtId=${d.id})}"
+                     th:text="${d.externalReference ?: d.id}">DEBT-001</a>
+                </td>
+                <td th:text="${d.principalAmount != null} ? ${#numbers.formatDecimal(d.principalAmount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</td>
+                <td th:text="${d.interestAmount != null} ? ${#numbers.formatDecimal(d.interestAmount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</td>
+                <td th:text="${d.outstandingBalance != null} ? ${#numbers.formatDecimal(d.outstandingBalance, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</td>
+                <td>
+                  <span class="skat-badge" th:text="${d.status}">ACTIVE</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Posteringslog tab panel -->
+        <div role="tabpanel" id="panel-posteringslog" aria-labelledby="tab-posteringslog" style="display: none;">
+          <p th:text="#{posteringslog.title}">Posteringslog</p>
+        </div>
+
+        <!-- Events tab panel -->
+        <div role="tabpanel" id="panel-events" aria-labelledby="tab-events" style="display: none;">
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{event.type}">H&#230;ndelsestype</th>
+                <th scope="col" th:text="#{event.description}">Beskrivelse</th>
+                <th scope="col" th:text="#{event.performedBy}">Udf&#248;rt af</th>
+                <th scope="col" th:text="#{event.performedAt}">Tidspunkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${events == null or events.isEmpty()}">
+                <td colspan="4" th:text="#{events.empty}">Ingen h&#230;ndelser fundet.</td>
+              </tr>
+              <tr th:each="e : ${events}">
+                <td th:text="${e.eventType ?: '—'}">—</td>
+                <td th:text="${e.description ?: '—'}">—</td>
+                <td th:text="${e.performedBy ?: '—'}">—</td>
+                <td th:text="${e.performedAt != null} ? ${#temporals.format(e.performedAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Collection measures tab panel -->
+        <div role="tabpanel" id="panel-measures" aria-labelledby="tab-measures" style="display: none;">
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{measure.type.label}">Type</th>
+                <th scope="col" th:text="#{cases.table.status}">Status</th>
+                <th scope="col" th:text="#{measure.startDate}">Startdato</th>
+                <th scope="col" th:text="#{measure.endDate}">Slutdato</th>
+                <th scope="col" th:text="#{measure.amount}">Bel&#248;b</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${measures == null or measures.isEmpty()}">
+                <td colspan="5" th:text="#{measures.empty}">Ingen inddrivelsesskridt fundet.</td>
+              </tr>
+              <tr th:each="m : ${measures}">
+                <td>
+                  <span th:if="${m.measureType != null}" th:text="#{${'measure.type.' + m.measureType}}">—</span>
+                  <span th:if="${m.measureType == null}">—</span>
+                </td>
+                <td th:text="${m.status ?: '—'}">—</td>
+                <td th:text="${m.startDate != null} ? ${#temporals.format(m.startDate, 'dd-MM-yyyy')} : '—'">—</td>
+                <td th:text="${m.endDate != null} ? ${#temporals.format(m.endDate, 'dd-MM-yyyy')} : '—'">—</td>
+                <td th:text="${m.amount != null} ? ${#numbers.formatDecimal(m.amount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Objections tab panel -->
+        <div role="tabpanel" id="panel-objections" aria-labelledby="tab-objections" style="display: none;">
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{objection.type.label}">Type</th>
+                <th scope="col" th:text="#{cases.table.status}">Status</th>
+                <th scope="col" th:text="#{objection.description}">Beskrivelse</th>
+                <th scope="col" th:text="#{objection.receivedAt}">Modtaget</th>
+                <th scope="col" th:text="#{objection.resolvedAt}">Afgjort</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${objections == null or objections.isEmpty()}">
+                <td colspan="5" th:text="#{objections.empty}">Ingen indsigelser fundet.</td>
+              </tr>
+              <tr th:each="o : ${objections}">
+                <td>
+                  <span th:if="${o.objectionType != null}" th:text="#{${'objection.type.' + o.objectionType}}">—</span>
+                  <span th:if="${o.objectionType == null}">—</span>
+                </td>
+                <td th:text="${o.status ?: '—'}">—</td>
+                <td th:text="${o.description ?: '—'}">—</td>
+                <td th:text="${o.receivedAt != null} ? ${#temporals.format(o.receivedAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+                <td th:text="${o.resolvedAt != null} ? ${#temporals.format(o.resolvedAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Journal tab panel -->
+        <div role="tabpanel" id="panel-journal" aria-labelledby="tab-journal" style="display: none;">
+          <h3 th:text="#{journal.entries.title}">Journalposter</h3>
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{journal.entry.title}">Titel</th>
+                <th scope="col" th:text="#{journal.entry.time}">Tidspunkt</th>
+                <th scope="col" th:text="#{journal.entry.direction}">Retning</th>
+                <th scope="col" th:text="#{journal.entry.type}">Dokumenttype</th>
+                <th scope="col" th:text="#{journal.entry.registeredBy}">Registreret af</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${journalEntries == null or journalEntries.isEmpty()}">
+                <td colspan="5" th:text="#{journal.entries.empty}">Ingen journalposter fundet.</td>
+              </tr>
+              <tr th:each="je : ${journalEntries}">
+                <td th:text="${je.journalEntryTitle ?: '—'}">—</td>
+                <td th:text="${je.journalEntryTime != null} ? ${#temporals.format(je.journalEntryTime, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+                <td th:text="${je.documentDirection ?: '—'}">—</td>
+                <td th:text="${je.documentType ?: '—'}">—</td>
+                <td th:text="${je.registeredBy ?: '—'}">—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 style="margin-top: 1rem;" th:text="#{journal.notes.title}">Notater</h3>
+          <table class="skat-table">
+            <thead>
+              <tr>
+                <th scope="col" th:text="#{journal.note.title}">Titel</th>
+                <th scope="col" th:text="#{journal.note.text}">Tekst</th>
+                <th scope="col" th:text="#{journal.note.author}">Forfatter</th>
+                <th scope="col" th:text="#{journal.note.createdAt}">Oprettet</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${journalNotes == null or journalNotes.isEmpty()}">
+                <td colspan="4" th:text="#{journal.notes.empty}">Ingen notater fundet.</td>
+              </tr>
+              <tr th:each="jn : ${journalNotes}">
+                <td th:text="${jn.noteTitle ?: '—'}">—</td>
+                <td th:text="${jn.noteText ?: '—'}">—</td>
+                <td th:text="${jn.authorId ?: '—'}">—</td>
+                <td th:text="${jn.createdAt != null} ? ${#temporals.format(jn.createdAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/cases}">&#8592; <span th:text="#{cases.title}">Sager</span></a>
+    </p>
+
+    <script>
+      function showTab(tabName) {
+        document.querySelectorAll('[role="tabpanel"]').forEach(function(p) { p.style.display = 'none'; });
+        document.querySelectorAll('[role="tab"]').forEach(function(t) {
+          t.setAttribute('aria-selected', 'false');
+          t.classList.remove('skat-btn--primary');
+          t.classList.add('skat-btn--secondary');
+        });
+        document.getElementById('panel-' + tabName).style.display = 'block';
+        var tab = document.getElementById('tab-' + tabName);
+        tab.setAttribute('aria-selected', 'true');
+        tab.classList.remove('skat-btn--secondary');
+        tab.classList.add('skat-btn--primary');
+      }
+    </script>
+  </section>
+</body>
+</html>

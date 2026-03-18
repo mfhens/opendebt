@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title layout:title-pattern="$CONTENT_TITLE - #{layout.title.suffix}" th:text="#{layout.title.suffix}">OpenDebt Sagsbehandlerportal</title>
+  <link rel="stylesheet" th:href="@{/css/skat-tokens.css}" />
+  <script th:src="@{/webjars/htmx.org/2.0.4/dist/htmx.min.js}" defer></script>
+  <script th:src="@{/js/a11y.js}" defer></script>
+</head>
+<body>
+  <div class="skat-page">
+
+    <!-- Skip link for accessibility (ADR-0021) -->
+    <a class="skat-skip-link" href="#main-content" th:text="#{layout.skip.link}">Gaa til hovedindhold</a>
+
+    <!-- Language selector ribbon -->
+    <div th:replace="~{fragments/language-selector :: languageSelector}"></div>
+
+    <!-- Header -->
+    <header class="skat-header" role="banner">
+      <div class="skat-header__inner">
+        <a class="skat-header__logo" th:href="@{/}">OpenDebt Sagsbehandler</a>
+        <nav class="skat-header__nav" th:aria-label="#{layout.nav.label}">
+          <a th:href="@{/cases}"><span class="ikon ikon-gaeld" aria-hidden="true"></span> <span th:text="#{layout.nav.cases}">Sager</span></a>
+          <a th:href="@{/demo-login}"><span class="ikon ikon-log-ind" aria-hidden="true"></span> <span th:text="#{demo.login.switch}">Skift bruger</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="skat-breadcrumb" role="navigation" th:aria-label="#{layout.breadcrumb.label}">
+      <div class="skat-breadcrumb__inner">
+        <a th:href="@{/cases}" th:text="#{layout.breadcrumb.home}">Forside</a>
+        <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+        <span layout:fragment="breadcrumb">Side</span>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <main id="main-content" class="skat-content" role="main">
+      <div class="skat-content-layout">
+        <!-- Portal secondary navigation -->
+        <aside class="skat-content-layout__nav">
+          <div th:replace="~{fragments/caseworker-nav :: caseworkerNav(${currentPage ?: 'cases'})}"></div>
+        </aside>
+        <!-- Page content -->
+        <div class="skat-content-layout__main">
+          <section layout:fragment="content">
+            <!-- Child pages replace this section -->
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="skat-footer" role="contentinfo">
+      <div class="skat-footer__inner">
+        <a th:href="@{/}"><span class="ikon ikon-hjaelp" aria-hidden="true"></span> <span th:text="#{layout.footer.accessibility}">Tilgaengelighedserklaering</span></a>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

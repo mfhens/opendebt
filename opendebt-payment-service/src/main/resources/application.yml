@@ -78,6 +78,8 @@ opendebt:
       schedule: "0 0 2 * * ?"
   bookkeeping:
     enabled: true
+    crossing:
+      max-lookback-months: 12
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}

@@ -78,6 +78,7 @@ public class DebtEventEntity {
     REFUND,
     UDLAEG_REGISTERED,
     UDLAEG_CORRECTED,
-    CORRECTION
+    CORRECTION,
+    COVERAGE_REVERSED
   }
 }

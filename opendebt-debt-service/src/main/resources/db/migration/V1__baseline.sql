@@ -162,7 +162,7 @@ CREATE TABLE debts (
     limitation_date DATE,
     description VARCHAR(100),
     period_from DATE,
-    period_til DATE,
+    period_to DATE,
     inception_date DATE,
     payment_deadline DATE,
     last_payment_date DATE,

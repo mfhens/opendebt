@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,4 +45,42 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntryEntity, 
 
   /** Checks if a transaction has already been reversed. */
   boolean existsByReversalOfTransactionId(UUID transactionId);
+
+  // --- Paginated query methods for ledger query API ---
+
+  Page<LedgerEntryEntity> findByDebtIdOrderByEffectiveDateAscPostingDateAsc(
+      UUID debtId, Pageable pageable);
+
+  Page<LedgerEntryEntity> findByDebtIdInOrderByEffectiveDateAscPostingDateAsc(
+      List<UUID> debtIds, Pageable pageable);
+
+  @Query(
+      "SELECT e FROM LedgerEntryEntity e WHERE e.debtId = :debtId "
+          + "AND (:fromDate IS NULL OR e.effectiveDate >= :fromDate) "
+          + "AND (:toDate IS NULL OR e.effectiveDate <= :toDate) "
+          + "AND (:category IS NULL OR e.entryCategory = :category) "
+          + "AND (:includeStorno = true OR e.entryCategory != 'STORNO') "
+          + "ORDER BY e.effectiveDate ASC, e.postingDate ASC")
+  Page<LedgerEntryEntity> findByDebtIdFiltered(
+      @Param("debtId") UUID debtId,
+      @Param("fromDate") LocalDate fromDate,
+      @Param("toDate") LocalDate toDate,
+      @Param("category") LedgerEntryEntity.EntryCategory category,
+      @Param("includeStorno") boolean includeStorno,
+      Pageable pageable);
+
+  @Query(
+      "SELECT e FROM LedgerEntryEntity e WHERE e.debtId IN :debtIds "
+          + "AND (:fromDate IS NULL OR e.effectiveDate >= :fromDate) "
+          + "AND (:toDate IS NULL OR e.effectiveDate <= :toDate) "
+          + "AND (:category IS NULL OR e.entryCategory = :category) "
+          + "AND (:includeStorno = true OR e.entryCategory != 'STORNO') "
+          + "ORDER BY e.effectiveDate ASC, e.postingDate ASC")
+  Page<LedgerEntryEntity> findByDebtIdsFiltered(
+      @Param("debtIds") List<UUID> debtIds,
+      @Param("fromDate") LocalDate fromDate,
+      @Param("toDate") LocalDate toDate,
+      @Param("category") LedgerEntryEntity.EntryCategory category,
+      @Param("includeStorno") boolean includeStorno,
+      Pageable pageable);
 }

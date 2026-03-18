@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Reusable posteringslog (transaction log) fragment.
+    Loaded via HTMX into case-detail and debt-detail pages.
+    Provides filtering controls, visual indicators for storno/crossing entries,
+    and transaction grouping by transactionId.
+  -->
+  <div th:fragment="posteringslog">
+
+    <!-- Filter controls -->
+    <form style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 1rem;"
+          th:attr="hx-get=${debtId != null} ? @{/cases/{caseId}/debts/{debtId}/posteringslog(caseId=${caseId}, debtId=${debtId})} : @{/cases/{caseId}/posteringslog(caseId=${caseId})}"
+          hx-target="closest div[th\\:fragment]" hx-swap="outerHTML">
+      <div class="skat-form-group" style="margin-bottom: 0;">
+        <label class="skat-label" for="filter-category" th:text="#{posteringslog.filter.category}">Filtrer kategori</label>
+        <select id="filter-category" name="category" class="skat-input" style="max-width: 14rem;">
+          <option value="">—</option>
+          <option value="DEBT_REGISTRATION" th:selected="${category == 'DEBT_REGISTRATION'}" th:text="#{category.DEBT_REGISTRATION}">Registrering</option>
+          <option value="PAYMENT" th:selected="${category == 'PAYMENT'}" th:text="#{category.PAYMENT}">Betaling</option>
+          <option value="INTEREST_ACCRUAL" th:selected="${category == 'INTEREST_ACCRUAL'}" th:text="#{category.INTEREST_ACCRUAL}">Rentetilskrivning</option>
+          <option value="OFFSETTING" th:selected="${category == 'OFFSETTING'}" th:text="#{category.OFFSETTING}">Modregning</option>
+          <option value="STORNO" th:selected="${category == 'STORNO'}" th:text="#{category.STORNO}">Storno</option>
+          <option value="CORRECTION" th:selected="${category == 'CORRECTION'}" th:text="#{category.CORRECTION}">Korrektion</option>
+          <option value="COVERAGE_REVERSAL" th:selected="${category == 'COVERAGE_REVERSAL'}" th:text="#{category.COVERAGE_REVERSAL}">D&#230;kningsoph&#230;velse</option>
+          <option value="WRITE_OFF" th:selected="${category == 'WRITE_OFF'}" th:text="#{category.WRITE_OFF}">Afskrivning</option>
+          <option value="REFUND" th:selected="${category == 'REFUND'}" th:text="#{category.REFUND}">Tilbagebetaling</option>
+        </select>
+      </div>
+      <div class="skat-form-group" style="margin-bottom: 0;">
+        <label class="skat-label" for="filter-from" th:text="#{posteringslog.filter.fromDate}">Fra dato</label>
+        <input type="date" id="filter-from" name="fromDate" class="skat-input" style="max-width: 10rem;"
+               th:value="${fromDate}" />
+      </div>
+      <div class="skat-form-group" style="margin-bottom: 0;">
+        <label class="skat-label" for="filter-to" th:text="#{posteringslog.filter.toDate}">Til dato</label>
+        <input type="date" id="filter-to" name="toDate" class="skat-input" style="max-width: 10rem;"
+               th:value="${toDate}" />
+      </div>
+      <button type="submit" class="skat-btn skat-btn--primary skat-btn--sm" th:text="#{posteringslog.filter.apply}">Anvend</button>
+    </form>
+
+    <!-- Posteringslog table -->
+    <table class="skat-table">
+      <thead>
+        <tr>
+          <th scope="col" th:text="#{posteringslog.effectiveDate}">V&#230;rdidag</th>
+          <th scope="col" th:text="#{posteringslog.postingDate}">Bogf&#248;ringsdag</th>
+          <th scope="col" th:text="#{posteringslog.account}">Konto</th>
+          <th scope="col" th:text="#{posteringslog.debitCredit}">Debet/Kredit</th>
+          <th scope="col" th:text="#{posteringslog.amount}">Bel&#248;b</th>
+          <th scope="col" th:text="#{posteringslog.category}">Kategori</th>
+          <th scope="col" th:text="#{posteringslog.reference}">Reference</th>
+          <th scope="col" th:text="#{posteringslog.debt}">Fordring</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${ledgerEntries == null or ledgerEntries.isEmpty()}">
+          <td colspan="8">Ingen posteringer fundet.</td>
+        </tr>
+        <tr th:each="entry : ${ledgerEntries}"
+            th:classappend="${entry.entryCategory == 'STORNO'} ? 'storno-entry' : (${entry.entryCategory == 'COVERAGE_REVERSAL'} ? 'crossing-group' : '')">
+          <td th:text="${entry.effectiveDate != null} ? ${#temporals.format(entry.effectiveDate, 'dd-MM-yyyy')} : '—'">01-01-2026</td>
+          <td th:text="${entry.postingDate != null} ? ${#temporals.format(entry.postingDate, 'dd-MM-yyyy')} : '—'">01-01-2026</td>
+          <td th:text="${entry.accountCode != null} ? ${entry.accountCode + ' ' + (entry.accountName ?: '')} : '—'">1000 Hovedstol</td>
+          <td th:text="${entry.entryType ?: '—'}">DEBIT</td>
+          <td th:text="${entry.amount != null} ? ${#numbers.formatDecimal(entry.amount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</td>
+          <td>
+            <span th:text="${entry.entryCategory ?: '—'}">PAYMENT</span>
+            <span class="storno-badge" th:if="${entry.entryCategory == 'STORNO'}" th:text="#{posteringslog.badge.storno}">Storno</span>
+            <span class="crossing-badge" th:if="${entry.entryCategory == 'COVERAGE_REVERSAL'}" th:text="#{posteringslog.badge.crossing}">Krydsende</span>
+            <span class="recalculated-badge" th:if="${entry.entryCategory == 'CORRECTION'}" th:text="#{posteringslog.badge.recalculated}">Omberegnet</span>
+          </td>
+          <td th:text="${entry.reference ?: '—'}">—</td>
+          <td th:text="${entry.debtId != null} ? ${entry.debtId.toString().substring(0, 8) + '...'} : '—'">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

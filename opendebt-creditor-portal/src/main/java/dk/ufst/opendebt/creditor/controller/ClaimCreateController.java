@@ -467,7 +467,7 @@ public class ClaimCreateController {
         .creditorOrgId(creditorOrgId)
         .principalAmount(form.getPrincipalAmount())
         .outstandingBalance(form.getAmount())
-        .dueDate(form.getDueDate())
+        .dueDate(form.getDueDate() != null ? form.getDueDate() : form.getLastTimelyPaymentDate())
         .debtTypeCode(form.getClaimType())
         .description(form.getDescription())
         .status("SUBMITTED")

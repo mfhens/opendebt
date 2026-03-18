@@ -20,8 +20,10 @@ import org.springframework.beans.factory.ObjectProvider;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +31,7 @@ class ReadinessValidationServiceImplTest {
 
   @Mock private DebtRepository debtRepository;
   @Mock private DebtServiceImpl debtService;
+  @Mock private ClaimValidationService claimValidationService;
   @Mock private ObjectProvider<ReadinessValidationService> readinessValidationServiceProvider;
 
   private ReadinessValidationServiceImpl service;
@@ -37,13 +40,17 @@ class ReadinessValidationServiceImplTest {
   void setUp() {
     service =
         new ReadinessValidationServiceImpl(
-            debtRepository, debtService, readinessValidationServiceProvider);
+            debtRepository,
+            debtService,
+            claimValidationService,
+            readinessValidationServiceProvider);
   }
 
   @Test
-  void validateReadiness_marksDebtReadyWhenMandatoryDataExists() {
+  void validateReadiness_marksDebtReadyWhenValidationPasses() {
     UUID debtId = UUID.randomUUID();
     DebtEntity entity = debtEntity(debtId);
+    DebtDto dto = DebtDto.builder().id(debtId).build();
     DebtDto expected =
         DebtDto.builder()
             .id(debtId)
@@ -52,7 +59,8 @@ class ReadinessValidationServiceImplTest {
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(debtService.getDebtById(debtId)).thenReturn(expected);
+    when(debtService.getDebtById(debtId)).thenReturn(dto, expected);
+    when(claimValidationService.validate(dto)).thenReturn(ClaimValidationResult.builder().build());
 
     DebtDto result = service.validateReadiness(debtId);
 
@@ -64,22 +72,33 @@ class ReadinessValidationServiceImplTest {
   }
 
   @Test
-  void validateReadiness_marksDebtNotReadyWhenMandatoryDataMissing() {
+  void validateReadiness_marksDebtNotReadyWhenValidationFails() {
     UUID debtId = UUID.randomUUID();
     DebtEntity entity = debtEntity(debtId);
-    entity.setDueDate(null);
+    DebtDto dto = DebtDto.builder().id(debtId).build();
     DebtDto expected =
         DebtDto.builder().id(debtId).readinessStatus(DebtDto.ReadinessStatus.NOT_READY).build();
+    ClaimValidationResult failResult =
+        ClaimValidationResult.builder()
+            .errors(
+                List.of(
+                    ClaimValidationResult.ValidationError.builder()
+                        .ruleId("R1")
+                        .errorCode("MISSING_DUE_DATE")
+                        .description("Due date is required")
+                        .build()))
+            .build();
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(entity));
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(debtService.getDebtById(debtId)).thenReturn(expected);
+    when(debtService.getDebtById(debtId)).thenReturn(dto, expected);
+    when(claimValidationService.validate(dto)).thenReturn(failResult);
 
     DebtDto result = service.validateReadiness(debtId);
 
     assertThat(result).isSameAs(expected);
     assertThat(entity.getReadinessStatus()).isEqualTo(DebtEntity.ReadinessStatus.NOT_READY);
-    assertThat(entity.getReadinessRejectionReason()).isEqualTo("Missing mandatory claim data");
+    assertThat(entity.getReadinessRejectionReason()).contains("MISSING_DUE_DATE");
   }
 
   @Test
@@ -132,6 +151,8 @@ class ReadinessValidationServiceImplTest {
     when(debtRepository.save(any(DebtEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(debtService.getDebtById(any(UUID.class))).thenReturn(DebtDto.builder().build());
+    when(claimValidationService.validate(any(DebtDto.class)))
+        .thenReturn(ClaimValidationResult.builder().build());
 
     int validated = service.validateBatchReadiness(creditorId.toString());
 

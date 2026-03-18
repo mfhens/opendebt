@@ -1,0 +1,20 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:
+          jwk-set-uri:
+      client:
+        registration:
+          keycloak:
+            client-id: disabled
+            client-secret: disabled
+            authorization-grant-type: authorization_code
+        provider:
+          keycloak:
+            issuer-uri: https://disabled.example.com
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration

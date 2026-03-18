@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Caseworker portal secondary navigation fragment.
+    Included within the main content area on all caseworker portal pages.
+  -->
+  <nav th:fragment="caseworkerNav(currentPage)" class="skat-portal-nav" th:aria-label="#{nav.portal.label}">
+    <ul class="skat-portal-nav__list">
+      <!-- Sager (Cases) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/cases}"
+           th:text="#{layout.nav.cases}"
+           th:classappend="${currentPage == 'cases'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'cases'} ? 'page' : ''"
+           class="skat-portal-nav__link">Sager</a>
+      </li>
+
+      <!-- Separator -->
+      <li class="skat-portal-nav__separator" role="separator" aria-hidden="true"></li>
+
+      <!-- Skift bruger (Switch user) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/demo-login}"
+           th:text="#{demo.login.switch}"
+           th:classappend="${currentPage == 'demo-login'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'demo-login'} ? 'page' : ''"
+           class="skat-portal-nav__link">Skift bruger</a>
+      </li>
+    </ul>
+
+    <!-- Logged-in caseworker indicator -->
+    <div class="skat-portal-nav__status" role="status" th:aria-label="#{nav.status.label}" th:if="${caseworker != null}">
+      <span class="skat-portal-nav__status-dot" aria-hidden="true"></span>
+      <span th:text="${caseworker.name + ' (' + caseworker.role + ')'}">Anna Jensen (CASEWORKER)</span>
+    </div>
+  </nav>
+</body>
+</html>

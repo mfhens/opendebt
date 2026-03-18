@@ -20,6 +20,7 @@
         <module>opendebt-debt-service</module>
         <module>opendebt-creditor-service</module>
         <module>opendebt-creditor-portal</module>
+        <module>opendebt-caseworker-portal</module>
         <module>opendebt-citizen-portal</module>
         <module>opendebt-payment-service</module>
         <module>opendebt-letter-service</module>

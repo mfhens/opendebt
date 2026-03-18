@@ -13,13 +13,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.*;
 
+/**
+ * OIO Sag-aligned case entity for debt collection case management.
+ *
+ * <p>Deprecated columns from the previous schema are kept for backward compatibility but are no
+ * longer populated by the application. See V3 migration for details.
+ */
 @Entity
 @Table(
     name = "cases",
     indexes = {
-      @Index(name = "idx_case_debtor_person_id", columnList = "debtor_person_id"),
-      @Index(name = "idx_case_status", columnList = "status"),
-      @Index(name = "idx_case_caseworker", columnList = "assigned_caseworker_id")
+      @Index(name = "idx_case_case_state", columnList = "case_state"),
+      @Index(name = "idx_case_case_type", columnList = "case_type"),
+      @Index(name = "idx_case_primary_caseworker", columnList = "primary_caseworker_id"),
+      @Index(name = "idx_case_parent_case_id", columnList = "parent_case_id")
     })
 @Getter
 @Setter
@@ -35,41 +42,61 @@ public class CaseEntity {
   @Column(name = "case_number", unique = true, nullable = false, length = 20)
   private String caseNumber;
 
-  /** Reference to person-registry.persons - NO PII stored here */
-  @Column(name = "debtor_person_id", nullable = false)
-  private UUID debtorPersonId;
+  // ── OIO Sag core fields ──────────────────────────────────────────────
+
+  @Column(name = "title", nullable = false, length = 200)
+  private String title;
+
+  @Column(name = "description", columnDefinition = "TEXT")
+  private String description;
+
+  @Column(name = "confidential_title", length = 200)
+  private String confidentialTitle;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "status", nullable = false, length = 30)
-  private CaseStatus status;
+  @Column(name = "case_state", nullable = false, length = 30)
+  private CaseState caseState;
 
-  @Column(name = "total_debt", precision = 15, scale = 2)
-  private BigDecimal totalDebt;
+  @Column(name = "state_changed_at")
+  private LocalDateTime stateChangedAt;
 
-  @Column(name = "total_paid", precision = 15, scale = 2)
-  private BigDecimal totalPaid;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "case_type", nullable = false, length = 30)
+  private CaseType caseType;
 
-  @Column(name = "total_remaining", precision = 15, scale = 2)
-  private BigDecimal totalRemaining;
+  @Column(name = "subject_classification", length = 30)
+  private String subjectClassification;
 
-  @ElementCollection
-  @CollectionTable(name = "case_debt_ids", joinColumns = @JoinColumn(name = "case_id"))
-  @Column(name = "debt_id")
+  @Column(name = "action_classification", length = 30)
+  private String actionClassification;
+
+  @Column(name = "precedent_indicator", nullable = false)
   @Builder.Default
-  private List<UUID> debtIds = new ArrayList<>();
+  private boolean precedentIndicator = false;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "active_strategy", length = 30)
-  private CollectionStrategy activeStrategy;
+  @Column(name = "retention_override")
+  private Boolean retentionOverride;
 
-  @Column(name = "assigned_caseworker_id", length = 100)
-  private String assignedCaseworkerId;
+  // ── Organisation / ownership ─────────────────────────────────────────
 
-  @Column(name = "notes", columnDefinition = "TEXT")
-  private String notes;
+  @Column(name = "owner_organisation_id", length = 100)
+  private String ownerOrganisationId;
 
-  @Column(name = "last_activity_at")
-  private LocalDateTime lastActivityAt;
+  @Column(name = "responsible_unit_id", length = 100)
+  private String responsibleUnitId;
+
+  @Column(name = "primary_caseworker_id", length = 100)
+  private String primaryCaseworkerId;
+
+  // ── Hierarchy / workflow ─────────────────────────────────────────────
+
+  @Column(name = "parent_case_id")
+  private UUID parentCaseId;
+
+  @Column(name = "workflow_process_instance_id", length = 100)
+  private String workflowProcessInstanceId;
+
+  // ── Metadata ─────────────────────────────────────────────────────────
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -84,6 +111,94 @@ public class CaseEntity {
 
   @Version private Long version;
 
+  // ── Deprecated columns (kept for V3 migration backward compat) ──────
+  // These columns still exist in the database but are no longer used by the
+  // application.  They will be dropped in a future migration.
+
+  /**
+   * @deprecated Moved to {@link CasePartyEntity} with role PRIMARY_DEBTOR.
+   */
+  @Deprecated
+  @Column(name = "debtor_person_id", insertable = false, updatable = false)
+  private UUID debtorPersonId;
+
+  /**
+   * @deprecated Replaced by {@link #caseState}.
+   */
+  @Deprecated
+  @Column(name = "status", insertable = false, updatable = false, length = 30)
+  private String status;
+
+  /**
+   * @deprecated Computed on demand from debt-service.
+   */
+  @Deprecated
+  @Column(name = "total_debt", insertable = false, updatable = false, precision = 15, scale = 2)
+  private BigDecimal totalDebt;
+
+  /**
+   * @deprecated Computed on demand from debt-service.
+   */
+  @Deprecated
+  @Column(name = "total_paid", insertable = false, updatable = false, precision = 15, scale = 2)
+  private BigDecimal totalPaid;
+
+  /**
+   * @deprecated Computed on demand from debt-service.
+   */
+  @Deprecated
+  @Column(
+      name = "total_remaining",
+      insertable = false,
+      updatable = false,
+      precision = 15,
+      scale = 2)
+  private BigDecimal totalRemaining;
+
+  /**
+   * @deprecated Replaced by {@link CollectionMeasureEntity}.
+   */
+  @Deprecated
+  @Column(name = "active_strategy", insertable = false, updatable = false, length = 30)
+  private String activeStrategy;
+
+  /**
+   * @deprecated Replaced by {@link #primaryCaseworkerId}.
+   */
+  @Deprecated
+  @Column(name = "assigned_caseworker_id", insertable = false, updatable = false, length = 100)
+  private String assignedCaseworkerId;
+
+  /**
+   * @deprecated Replaced by {@link CaseJournalNoteEntity}.
+   */
+  @Deprecated
+  @Column(name = "notes", insertable = false, updatable = false, columnDefinition = "TEXT")
+  private String notes;
+
+  /**
+   * @deprecated Replaced by {@link CaseEventEntity}.
+   */
+  @Deprecated
+  @Column(name = "last_activity_at", insertable = false, updatable = false)
+  private LocalDateTime lastActivityAt;
+
+  /**
+   * @deprecated Replaced by {@link CaseDebtEntity}.
+   */
+  @Deprecated
+  @ElementCollection
+  @CollectionTable(name = "case_debt_ids", joinColumns = @JoinColumn(name = "case_id"))
+  @Column(name = "debt_id")
+  @Builder.Default
+  private List<UUID> debtIds = new ArrayList<>();
+
+  // ── Legacy enum types kept for reference (no longer used on entity) ──
+
+  /**
+   * @deprecated Use {@link CaseState} instead.
+   */
+  @Deprecated
   public enum CaseStatus {
     OPEN,
     IN_PROGRESS,
@@ -97,6 +212,10 @@ public class CaseEntity {
     CLOSED_CANCELLED
   }
 
+  /**
+   * @deprecated Use {@link MeasureType} instead.
+   */
+  @Deprecated
   public enum CollectionStrategy {
     VOLUNTARY_PAYMENT,
     PAYMENT_PLAN,

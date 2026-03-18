@@ -1,6 +1,5 @@
 package dk.ufst.opendebt.caseservice.repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,28 +11,26 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import dk.ufst.opendebt.caseservice.entity.CaseEntity;
-import dk.ufst.opendebt.caseservice.entity.CaseEntity.CaseStatus;
+import dk.ufst.opendebt.caseservice.entity.CaseState;
 
 @Repository
 public interface CaseRepository extends JpaRepository<CaseEntity, UUID> {
 
   Optional<CaseEntity> findByCaseNumber(String caseNumber);
 
-  List<CaseEntity> findByDebtorId(String debtorId);
+  Page<CaseEntity> findByCaseState(CaseState caseState, Pageable pageable);
 
-  Page<CaseEntity> findByStatus(CaseStatus status, Pageable pageable);
-
-  Page<CaseEntity> findByAssignedCaseworkerId(String caseworkerId, Pageable pageable);
+  Page<CaseEntity> findByPrimaryCaseworkerId(String caseworkerId, Pageable pageable);
 
   @Query(
       "SELECT c FROM CaseEntity c WHERE "
-          + "(:status IS NULL OR c.status = :status) AND "
-          + "(:caseworkerId IS NULL OR c.assignedCaseworkerId = :caseworkerId)")
+          + "(:caseState IS NULL OR c.caseState = :caseState) AND "
+          + "(:caseworkerId IS NULL OR c.primaryCaseworkerId = :caseworkerId)")
   Page<CaseEntity> findByFilters(
-      @Param("status") CaseStatus status,
+      @Param("caseState") CaseState caseState,
       @Param("caseworkerId") String caseworkerId,
       Pageable pageable);
 
-  @Query("SELECT COUNT(c) FROM CaseEntity c WHERE c.status = :status")
-  long countByStatus(@Param("status") CaseStatus status);
+  @Query("SELECT COUNT(c) FROM CaseEntity c WHERE c.caseState = :caseState")
+  long countByCaseState(@Param("caseState") CaseState caseState);
 }

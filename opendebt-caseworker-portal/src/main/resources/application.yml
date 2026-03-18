@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: opendebt-caseworker-portal
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+    mode: HTML
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/opendebt}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8080/realms/opendebt/protocol/openid-connect/certs}
+      client:
+        registration:
+          keycloak:
+            client-id: opendebt-caseworker-portal
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/opendebt}
+
+server:
+  port: 8087
+  servlet:
+    context-path: /caseworker-portal
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    dk.ufst.opendebt: INFO
+
+opendebt:
+  i18n:
+    default-locale: da-DK
+    supported-locales:
+      - da-DK
+      - en-GB
+  services:
+    case-service:
+      url: ${CASE_SERVICE_URL:http://localhost:8081}
+    debt-service:
+      url: ${DEBT_SERVICE_URL:http://localhost:8082}
+    payment-service:
+      url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+    person-registry:
+      url: ${PERSON_REGISTRY_URL:http://localhost:8083}

@@ -87,6 +87,7 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+
         <!-- Testing -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
@@ -130,6 +131,14 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>db/migration/.archive/**</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

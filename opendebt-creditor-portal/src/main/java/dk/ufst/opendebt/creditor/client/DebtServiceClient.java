@@ -673,21 +673,30 @@ public class DebtServiceClient {
     log.debug("Submitting claim via wizard for creditor: {}", request.getCreditorOrgId());
 
     try {
-      PortalDebtDto response =
+      // Build a full DebtDto for the submit endpoint
+      java.util.Map<String, Object> submitRequest = new java.util.LinkedHashMap<>();
+      submitRequest.put(
+          "debtorId",
+          request.getDebtorPersonId() != null ? request.getDebtorPersonId().toString() : null);
+      submitRequest.put(
+          "creditorId",
+          request.getCreditorOrgId() != null ? request.getCreditorOrgId().toString() : null);
+      submitRequest.put("debtTypeCode", request.getDebtTypeCode());
+      submitRequest.put("principalAmount", request.getPrincipalAmount());
+      submitRequest.put("outstandingBalance", request.getOutstandingBalance());
+      submitRequest.put("dueDate", request.getDueDate());
+      submitRequest.put("description", request.getDescription());
+      submitRequest.put("claimArt", "INDR");
+
+      java.util.Map<String, Object> response =
           webClient
               .post()
-              .uri("/debt-service/api/v1/debts")
-              .bodyValue(request)
+              .uri("/debt-service/api/v1/debts/submit")
+              .bodyValue(submitRequest)
               .retrieve()
-              .onStatus(
-                  HttpStatusCode::is5xxServerError,
-                  resp ->
-                      Mono.error(
-                          new OpenDebtException(
-                              "Debt service unavailable",
-                              "DEBT_SERVICE_UNAVAILABLE",
-                              OpenDebtException.ErrorSeverity.CRITICAL)))
-              .bodyToMono(PortalDebtDto.class)
+              .bodyToMono(
+                  new org.springframework.core.ParameterizedTypeReference<
+                      java.util.Map<String, Object>>() {})
               .block();
 
       if (response == null) {
@@ -698,20 +707,41 @@ public class DebtServiceClient {
             .build();
       }
 
-      String status = response.getStatus();
-      if ("HEARING".equalsIgnoreCase(status) || "HOERING".equalsIgnoreCase(status)) {
+      String outcome = (String) response.get("outcome");
+
+      if ("AFVIST".equals(outcome)) {
+        @SuppressWarnings("unchecked")
+        var rawErrors = (java.util.List<java.util.Map<String, Object>>) response.get("errors");
+        java.util.List<ValidationErrorDto> validationErrors = java.util.Collections.emptyList();
+        if (rawErrors != null) {
+          validationErrors =
+              rawErrors.stream()
+                  .map(
+                      e ->
+                          ValidationErrorDto.builder()
+                              .errorCode(0)
+                              .description(
+                                  e.getOrDefault("errorCode", "")
+                                      + ": "
+                                      + e.getOrDefault("description", ""))
+                              .build())
+                  .toList();
+        }
         return ClaimSubmissionResultDto.builder()
-            .outcome("HOERING")
-            .claimId(response.getId())
-            .processingStatus(status)
+            .outcome("AFVIST")
+            .processingStatus("REJECTED")
+            .errors(validationErrors)
             .build();
       }
 
-      // Default: accepted
+      String claimIdStr =
+          response.get("claimId") != null ? response.get("claimId").toString() : null;
+      UUID claimId = claimIdStr != null ? UUID.fromString(claimIdStr) : null;
+
       return ClaimSubmissionResultDto.builder()
-          .outcome("UDFOERT")
-          .claimId(response.getId())
-          .processingStatus(status != null ? status : "ACCEPTED")
+          .outcome(outcome != null ? outcome : "UDFOERT")
+          .claimId(claimId)
+          .processingStatus(outcome != null ? outcome : "ACCEPTED")
           .build();
     } catch (OpenDebtException ex) {
       if ("DEBT_VALIDATION_ERROR".equals(ex.getErrorCode())) {

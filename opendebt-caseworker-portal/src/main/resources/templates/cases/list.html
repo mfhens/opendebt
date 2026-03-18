@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{cases.title}">Sager</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{cases.title}">Sager</span>
+  <section layout:fragment="content">
+    <h1 th:text="#{cases.title}">Sager</h1>
+
+    <!-- Backend error alert -->
+    <div class="skat-alert skat-alert--error" th:if="${backendError}">
+      <span class="ikon ikon-problem" aria-hidden="true"></span>
+      <span th:text="${backendError}">Backend error</span>
+    </div>
+
+    <div class="skat-card">
+      <div class="skat-card__body">
+        <table class="skat-table">
+          <thead>
+            <tr>
+              <th scope="col" th:text="#{cases.table.caseNumber}">Sagsnummer</th>
+              <th scope="col" th:text="#{case.detail.title.label}">Titel</th>
+              <th scope="col" th:text="#{case.detail.state}">Tilstand</th>
+              <th scope="col" th:text="#{cases.table.caseworker}">Sagsbehandler</th>
+              <th scope="col" th:text="#{case.detail.type}">Sagstype</th>
+              <th scope="col" th:text="#{cases.table.createdAt}">Oprettet</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${cases == null or cases.content.isEmpty()}">
+              <td colspan="6" th:text="#{cases.empty}">Ingen sager fundet.</td>
+            </tr>
+            <tr th:each="c : ${cases?.content}">
+              <td>
+                <a th:href="@{/cases/{id}(id=${c.id})}" th:text="${c.caseNumber}">SAG-001</a>
+              </td>
+              <td th:text="${c.title ?: '—'}">—</td>
+              <td>
+                <span class="skat-badge" th:if="${c.caseState != null}"
+                      th:classappend="${c.caseState.name() == 'CREATED' or c.caseState.name() == 'ASSESSED'} ? 'skat-badge--success' : (${c.caseState.name().startsWith('CLOSED')} ? 'skat-badge--error' : 'skat-badge--warning')"
+                      th:text="#{${'state.' + c.caseState.name()}}">CREATED</span>
+                <span th:if="${c.caseState == null}" th:text="'—'">—</span>
+              </td>
+              <td th:text="${c.primaryCaseworkerId ?: '—'}">—</td>
+              <td th:text="${c.caseType ?: '—'}">—</td>
+              <td th:text="${c.createdAt != null} ? ${#temporals.format(c.createdAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

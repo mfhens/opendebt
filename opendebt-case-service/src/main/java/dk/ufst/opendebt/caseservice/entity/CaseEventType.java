@@ -1,0 +1,21 @@
+package dk.ufst.opendebt.caseservice.entity;
+
+/** Types of events that can be recorded on a case. */
+public enum CaseEventType {
+  CASE_CREATED,
+  STATE_CHANGED,
+  CASEWORKER_ASSIGNED,
+  PARTY_ADDED,
+  PARTY_REMOVED,
+  DEBT_ADDED,
+  DEBT_REMOVED,
+  JOURNAL_ENTRY_ADDED,
+  NOTE_ADDED,
+  STRATEGY_CHANGED,
+  COLLECTION_MEASURE_INITIATED,
+  OBJECTION_RECEIVED,
+  HEARING_STARTED,
+  HEARING_RESOLVED,
+  WORKFLOW_TASK_COMPLETED,
+  CASE_CLOSED
+}

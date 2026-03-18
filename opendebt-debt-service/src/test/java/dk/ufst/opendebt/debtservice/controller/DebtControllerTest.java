@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
+import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
@@ -25,12 +26,14 @@ class DebtControllerTest {
 
   @Mock private DebtService debtService;
   @Mock private ReadinessValidationService readinessValidationService;
+  @Mock private ClaimSubmissionService claimSubmissionService;
 
   private DebtController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new DebtController(debtService, readinessValidationService);
+    controller =
+        new DebtController(debtService, readinessValidationService, claimSubmissionService);
   }
 
   @Test

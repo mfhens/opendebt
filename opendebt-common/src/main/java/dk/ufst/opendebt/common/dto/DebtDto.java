@@ -46,6 +46,44 @@ public class DebtDto {
 
   private BigDecimal outstandingBalance;
 
+  private String claimArt;
+
+  private String claimCategory;
+
+  private String creditorReference;
+
+  private String description;
+
+  private LocalDate limitationDate;
+
+  private LocalDate periodFrom;
+
+  private LocalDate periodTo;
+
+  private LocalDate inceptionDate;
+
+  private LocalDate paymentDeadline;
+
+  private LocalDate lastPaymentDate;
+
+  private Boolean estateProcessing;
+
+  private LocalDate judgmentDate;
+
+  private LocalDate settlementDate;
+
+  private String interestRule;
+
+  private String interestRateCode;
+
+  private BigDecimal additionalInterestRate;
+
+  private String claimNote;
+
+  private String customerNote;
+
+  private String lifecycleState;
+
   private DebtStatus status;
 
   private ReadinessStatus readinessStatus;

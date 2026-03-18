@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
+import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
@@ -30,6 +32,7 @@ public class DebtController {
 
   private final DebtService debtService;
   private final ReadinessValidationService readinessValidationService;
+  private final ClaimSubmissionService claimSubmissionService;
 
   @GetMapping
   @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
@@ -68,6 +71,22 @@ public class DebtController {
   @Operation(summary = "Register a new debt", description = "Registers a new debt for collection")
   public ResponseEntity<DebtDto> createDebt(@Valid @RequestBody DebtDto debtDto) {
     return ResponseEntity.status(HttpStatus.CREATED).body(debtService.createDebt(debtDto));
+  }
+
+  @PostMapping("/submit")
+  @PreAuthorize("hasRole('CREDITOR') or hasRole('ADMIN')")
+  @Operation(
+      summary = "Submit a claim for collection",
+      description =
+          "Validates the claim against inddrivelsesparathed rules and returns "
+              + "UDFOERT (accepted), AFVIST (rejected), or HOERING (pending review)")
+  public ResponseEntity<ClaimSubmissionResponse> submitClaim(@Valid @RequestBody DebtDto debtDto) {
+    ClaimSubmissionResponse response = claimSubmissionService.submitClaim(debtDto);
+    HttpStatus httpStatus =
+        response.getOutcome() == ClaimSubmissionResponse.Outcome.AFVIST
+            ? HttpStatus.UNPROCESSABLE_ENTITY
+            : HttpStatus.CREATED;
+    return ResponseEntity.status(httpStatus).body(response);
   }
 
   @PutMapping("/{id}")

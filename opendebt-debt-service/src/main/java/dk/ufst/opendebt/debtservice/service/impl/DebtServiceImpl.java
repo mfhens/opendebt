@@ -16,7 +16,9 @@ import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.config.FordringMetrics;
+import dk.ufst.opendebt.debtservice.entity.ClaimArtEnum;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
+import dk.ufst.opendebt.debtservice.entity.InterestSelectionEmbeddable;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.service.DebtService;
@@ -88,6 +90,26 @@ public class DebtServiceImpl implements DebtService {
             .externalReference(dto.getExternalReference())
             .ocrLine(dto.getOcrLine())
             .outstandingBalance(calculateTotal(dto))
+            .claimArt(parseClaimArt(dto.getClaimArt()))
+            .creditorReference(dto.getCreditorReference())
+            .description(dto.getDescription())
+            .limitationDate(dto.getLimitationDate())
+            .periodFrom(dto.getPeriodFrom())
+            .periodTo(dto.getPeriodTo())
+            .inceptionDate(dto.getInceptionDate())
+            .paymentDeadline(dto.getPaymentDeadline())
+            .lastPaymentDate(dto.getLastPaymentDate())
+            .estateProcessing(dto.getEstateProcessing())
+            .judgmentDate(dto.getJudgmentDate())
+            .settlementDate(dto.getSettlementDate())
+            .interestSelection(
+                InterestSelectionEmbeddable.builder()
+                    .interestRule(dto.getInterestRule())
+                    .interestRateCode(dto.getInterestRateCode())
+                    .additionalInterestRate(dto.getAdditionalInterestRate())
+                    .build())
+            .claimNote(dto.getClaimNote())
+            .customerNote(dto.getCustomerNote())
             .status(DebtEntity.DebtStatus.PENDING)
             .readinessStatus(DebtEntity.ReadinessStatus.PENDING_REVIEW)
             .build();
@@ -194,6 +216,35 @@ public class DebtServiceImpl implements DebtService {
         .externalReference(entity.getExternalReference())
         .ocrLine(entity.getOcrLine())
         .outstandingBalance(entity.getOutstandingBalance())
+        .claimArt(entity.getClaimArt() != null ? entity.getClaimArt().name() : null)
+        .claimCategory(entity.getClaimCategory() != null ? entity.getClaimCategory().name() : null)
+        .creditorReference(entity.getCreditorReference())
+        .description(entity.getDescription())
+        .limitationDate(entity.getLimitationDate())
+        .periodFrom(entity.getPeriodFrom())
+        .periodTo(entity.getPeriodTo())
+        .inceptionDate(entity.getInceptionDate())
+        .paymentDeadline(entity.getPaymentDeadline())
+        .lastPaymentDate(entity.getLastPaymentDate())
+        .estateProcessing(entity.getEstateProcessing())
+        .judgmentDate(entity.getJudgmentDate())
+        .settlementDate(entity.getSettlementDate())
+        .interestRule(
+            entity.getInterestSelection() != null
+                ? entity.getInterestSelection().getInterestRule()
+                : null)
+        .interestRateCode(
+            entity.getInterestSelection() != null
+                ? entity.getInterestSelection().getInterestRateCode()
+                : null)
+        .additionalInterestRate(
+            entity.getInterestSelection() != null
+                ? entity.getInterestSelection().getAdditionalInterestRate()
+                : null)
+        .claimNote(entity.getClaimNote())
+        .customerNote(entity.getCustomerNote())
+        .lifecycleState(
+            entity.getLifecycleState() != null ? entity.getLifecycleState().name() : null)
         .status(
             entity.getStatus() != null
                 ? DebtDto.DebtStatus.valueOf(entity.getStatus().name())
@@ -227,6 +278,17 @@ public class DebtServiceImpl implements DebtService {
 
   private DebtEntity.ReadinessStatus mapReadiness(DebtDto.ReadinessStatus status) {
     return DebtEntity.ReadinessStatus.valueOf(status.name());
+  }
+
+  private ClaimArtEnum parseClaimArt(String claimArt) {
+    if (claimArt == null || claimArt.isBlank()) {
+      return ClaimArtEnum.INDR;
+    }
+    try {
+      return ClaimArtEnum.valueOf(claimArt.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      return ClaimArtEnum.INDR;
+    }
   }
 
   private void validateCreditorAction(UUID creditorOrgId, CreditorAction action) {

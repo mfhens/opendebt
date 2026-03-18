@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{debt.detail.title} + ' ' + ${debt?.externalReference}">Fordring</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/cases}" th:text="#{cases.title}">Sager</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <a th:href="@{/cases/{id}(id=${caseId})}" th:text="${caseDto?.caseNumber ?: '—'}">SAG-001</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="${debt?.externalReference ?: debt?.id ?: '—'}">DEBT-001</span>
+  </span>
+  <section layout:fragment="content">
+    <h1>
+      <span th:text="#{debt.detail.title}">Fordring</span>
+      <span th:text="${debt?.externalReference ?: debt?.id}" th:if="${debt != null}">DEBT-001</span>
+    </h1>
+
+    <!-- Backend error alert -->
+    <div class="skat-alert skat-alert--error" th:if="${backendError}">
+      <span class="ikon ikon-problem" aria-hidden="true"></span>
+      <span th:text="${backendError}">Backend error</span>
+    </div>
+
+    <!-- Debt info card -->
+    <div class="skat-card" th:if="${debt != null}">
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{cases.table.status}">Status</dt>
+          <dd><span class="skat-badge" th:text="${debt.status}">ACTIVE</span></dd>
+          <dt th:text="#{debt.detail.balance.principal}">Hovedstol</dt>
+          <dd th:text="${debt.principalAmount != null} ? ${#numbers.formatDecimal(debt.principalAmount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+          <dt th:text="#{debt.detail.balance.interest}">Rente</dt>
+          <dd th:text="${debt.interestAmount != null} ? ${#numbers.formatDecimal(debt.interestAmount, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+          <dt th:text="#{debt.detail.balance.total}">Samlet</dt>
+          <dd th:text="${debt.outstandingBalance != null} ? ${#numbers.formatDecimal(debt.outstandingBalance, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Balance summary card -->
+    <div class="skat-card" th:if="${summary != null}" style="margin-top: 1rem;">
+      <h2 class="skat-card__title" th:text="#{posteringslog.title}">Posteringslog</h2>
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{debt.detail.balance.principal}">Hovedstol</dt>
+          <dd th:text="${summary.principalBalance != null} ? ${#numbers.formatDecimal(summary.principalBalance, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+          <dt th:text="#{debt.detail.balance.interest}">Rente</dt>
+          <dd th:text="${summary.interestBalance != null} ? ${#numbers.formatDecimal(summary.interestBalance, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+          <dt th:text="#{debt.detail.balance.total}">Samlet</dt>
+          <dd th:text="${summary.totalBalance != null} ? ${#numbers.formatDecimal(summary.totalBalance, 1, 'COMMA', 2, 'POINT')} + ' kr.' : '—'">0,00 kr.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Posteringslog table -->
+    <div class="skat-card" style="margin-top: 1rem;">
+      <div class="skat-card__body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 class="skat-card__title" style="margin-bottom: 0;" th:text="#{posteringslog.title}">Posteringslog</h2>
+          <a class="skat-btn skat-btn--secondary skat-btn--sm"
+             th:href="@{/cases/{caseId}/debts/{debtId}/posteringslog/csv(caseId=${caseId}, debtId=${debt?.id})}"
+             th:text="#{posteringslog.download.csv}">Download CSV</a>
+        </div>
+
+        <div id="debt-posteringslog"
+             th:attr="hx-get=@{/cases/{caseId}/debts/{debtId}/posteringslog(caseId=${caseId}, debtId=${debt?.id})}"
+             hx-trigger="load" hx-swap="innerHTML">
+          <!-- Loaded via HTMX -->
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/cases/{id}(id=${caseId})}">&#8592; <span th:text="#{case.detail.title}">Sag</span></a>
+    </p>
+  </section>
+</body>
+</html>

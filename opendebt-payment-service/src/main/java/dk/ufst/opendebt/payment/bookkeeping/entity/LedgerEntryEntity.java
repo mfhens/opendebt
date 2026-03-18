@@ -109,6 +109,7 @@ public class LedgerEntryEntity {
     WRITE_OFF,
     REFUND,
     STORNO,
-    CORRECTION
+    CORRECTION,
+    COVERAGE_REVERSAL
   }
 }
