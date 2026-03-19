@@ -63,8 +63,8 @@ jacoco.exec
 # OWASP
 dependency-check-report.*
 
-# MkDocs build output
-site/
+# MkDocs build output (at repo root, not docs/site source)
+/site/
 
 # Build logs and SonarCloud artifacts
 mvn-output*.log

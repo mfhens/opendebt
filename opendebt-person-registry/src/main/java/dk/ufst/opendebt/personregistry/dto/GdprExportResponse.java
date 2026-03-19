@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.personregistry.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,14 +30,23 @@ public class GdprExportResponse {
   private String email;
   private String phone;
 
+  // Digital communication preferences
+  private Boolean digitalPostEnabled;
+  private Boolean eboksEnabled;
+
   // Consent and retention info
   private LocalDateTime consentGivenAt;
   private String consentType;
-  private String dataRetentionUntil;
+  private LocalDate dataRetentionUntil;
 
   // Access history
   private LocalDateTime lastAccessedAt;
   private Long accessCount;
+
+  // Deletion tracking
+  private LocalDateTime deletionRequestedAt;
+  private LocalDateTime deletedAt;
+  private String deletionReason;
 
   // Record metadata
   private LocalDateTime createdAt;
