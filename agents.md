@@ -25,6 +25,12 @@ Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagram
 - `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
 - `agents.md` - ADR references, package structure, patterns
 - Relevant ADR in `docs/adr/` if an architectural decision is affected
+- `docs/site/technical/` - Developer guide, architecture, API reference, domain model (English)
+- `docs/site/fordringshaver/` - Creditor user guide (Danish) if creditor-facing features change
+- `docs/site/skyldner/` - Citizen user guide (Danish) if citizen-facing features change
+- `docs/site/sagsbehandler/` - Caseworker user guide (Danish) if caseworker-facing features change
+
+The documentation site is built with MkDocs (`mkdocs.yml` at repo root). Run `mkdocs serve` to preview locally.
 
 ## Architecture Principles
 

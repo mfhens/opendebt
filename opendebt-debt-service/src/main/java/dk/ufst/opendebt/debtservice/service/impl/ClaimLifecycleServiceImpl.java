@@ -115,7 +115,41 @@ public class ClaimLifecycleServiceImpl implements ClaimLifecycleService {
 
   @Override
   @Transactional
+  public DebtEntity evaluateClaimState(UUID debtId, LocalDate evaluationDate) {
+    DebtEntity debt = findDebt(debtId);
+
+    if (debt.getLifecycleState() != ClaimLifecycleState.REGISTERED) {
+      return debt;
+    }
+
+    LocalDate deadline = debt.getLastPaymentDate();
+    if (deadline == null || !deadline.isBefore(evaluationDate)) {
+      return debt;
+    }
+
+    BigDecimal outstanding =
+        debt.getOutstandingBalance() != null ? debt.getOutstandingBalance() : BigDecimal.ZERO;
+    if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
+      return debt;
+    }
+
+    ClaimLifecycleState previous = debt.getLifecycleState();
+    debt.setLifecycleState(ClaimLifecycleState.RESTANCE);
+    DebtEntity saved = debtRepository.save(debt);
+    recordEvent(saved, previous, ClaimLifecycleState.RESTANCE);
+    log.info("Debt {} evaluated as RESTANCE on {}", debtId, evaluationDate);
+    return saved;
+  }
+
+  @Override
+  @Transactional
   public DebtEntity transferForCollection(UUID debtId) {
+    return transferForCollection(debtId, null);
+  }
+
+  @Override
+  @Transactional
+  public DebtEntity transferForCollection(UUID debtId, UUID recipientId) {
     DebtEntity debt = findDebt(debtId);
 
     if (debt.getLifecycleState() != ClaimLifecycleState.RESTANCE) {
@@ -144,8 +178,11 @@ public class ClaimLifecycleServiceImpl implements ClaimLifecycleService {
     debt.setLifecycleState(ClaimLifecycleState.OVERDRAGET);
     debt.setReceivedAt(LocalDateTime.now());
     DebtEntity saved = debtRepository.save(debt);
-    recordEvent(saved, previous, ClaimLifecycleState.OVERDRAGET);
-    log.info("Debt {} transferred for collection (RESTANCE → OVERDRAGET)", debtId);
+    recordEvent(saved, previous, ClaimLifecycleState.OVERDRAGET, recipientId);
+    log.info(
+        "Debt {} transferred for collection (RESTANCE → OVERDRAGET), recipient={}",
+        debtId,
+        recipientId);
     return saved;
   }
 
@@ -298,10 +335,19 @@ public class ClaimLifecycleServiceImpl implements ClaimLifecycleService {
 
   private void recordEvent(
       DebtEntity debt, ClaimLifecycleState previous, ClaimLifecycleState newState) {
+    recordEvent(debt, previous, newState, null);
+  }
+
+  private void recordEvent(
+      DebtEntity debt,
+      ClaimLifecycleState previous,
+      ClaimLifecycleState newState,
+      UUID recipientId) {
     ClaimLifecycleEvent event =
         ClaimLifecycleEvent.builder()
             .debtId(debt.getId())
             .creditorId(debt.getCreditorOrgId())
+            .recipientId(recipientId)
             .previousState(previous != null ? previous.name() : null)
             .newState(newState.name())
             .build();

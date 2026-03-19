@@ -72,6 +72,8 @@ opendebt:
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
+    creditor-service:
+      url: ${CREDITOR_SERVICE_URL:http://localhost:8092}
     case-service:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     payment-service:

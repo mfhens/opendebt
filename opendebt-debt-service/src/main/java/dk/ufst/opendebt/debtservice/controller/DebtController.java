@@ -1,6 +1,7 @@
 package dk.ufst.opendebt.debtservice.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
+import dk.ufst.opendebt.debtservice.dto.TransferForCollectionRequest;
+import dk.ufst.opendebt.debtservice.service.ClaimLifecycleService;
 import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
@@ -33,6 +36,7 @@ public class DebtController {
   private final DebtService debtService;
   private final ReadinessValidationService readinessValidationService;
   private final ClaimSubmissionService claimSubmissionService;
+  private final ClaimLifecycleService claimLifecycleService;
 
   @GetMapping
   @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
@@ -123,6 +127,34 @@ public class DebtController {
   public ResponseEntity<DebtDto> rejectReadiness(
       @PathVariable UUID id, @RequestParam String reason) {
     return ResponseEntity.ok(readinessValidationService.rejectReadiness(id, reason));
+  }
+
+  @PostMapping("/{id}/evaluate-state")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('SERVICE')")
+  @Operation(
+      summary = "Evaluate claim lifecycle state",
+      description =
+          "Evaluates whether a claim should transition to RESTANCE based on payment deadline and balance")
+  public ResponseEntity<DebtDto> evaluateClaimState(
+      @PathVariable UUID id,
+      @Parameter(description = "Evaluation date (defaults to today)")
+          @RequestParam(required = false)
+          LocalDate evaluationDate) {
+    LocalDate date = evaluationDate != null ? evaluationDate : LocalDate.now();
+    return ResponseEntity.ok(debtService.toDto(claimLifecycleService.evaluateClaimState(id, date)));
+  }
+
+  @PostMapping("/{id}/transfer-for-collection")
+  @PreAuthorize("hasRole('CREDITOR') or hasRole('ADMIN')")
+  @Operation(
+      summary = "Transfer a restance for collection",
+      description =
+          "Transfers a restance to the restanceinddrivelsesmyndighed (overdragelse til inddrivelse)")
+  public ResponseEntity<DebtDto> transferForCollection(
+      @PathVariable UUID id, @Valid @RequestBody TransferForCollectionRequest request) {
+    return ResponseEntity.ok(
+        debtService.toDto(
+            claimLifecycleService.transferForCollection(id, request.getRecipientId())));
   }
 
   @DeleteMapping("/{id}")

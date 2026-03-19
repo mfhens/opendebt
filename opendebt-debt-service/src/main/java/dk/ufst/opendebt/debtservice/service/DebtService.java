@@ -34,4 +34,6 @@ public interface DebtService {
   List<DebtDto> findByOcrLine(String ocrLine);
 
   DebtDto writeDown(UUID id, java.math.BigDecimal amount);
+
+  DebtDto toDto(dk.ufst.opendebt.debtservice.entity.DebtEntity entity);
 }

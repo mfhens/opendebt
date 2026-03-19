@@ -1,0 +1,98 @@
+docs_dir: docs/site
+site_dir: site
+site_name: OpenDebt Documentation
+site_description: Comprehensive documentation for the OpenDebt debt collection system
+site_url: https://opendebt.dk/docs/
+repo_url: https://github.com/ufst/opendebt
+repo_name: ufst/opendebt
+
+theme:
+  name: material
+  language: da
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Skift til mork tilstand
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Skift til lys tilstand
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - toc.integrate
+
+plugins:
+  - search:
+      lang:
+        - da
+        - en
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Hjem: index.md
+  - Teknisk dokumentation:
+    - Oversigt: technical/index.md
+    - Udviklervejledning: technical/developer-guide.md
+    - Arkitektur: technical/architecture.md
+    - ADR-indeks: technical/adr-index.md
+    - API-reference: technical/api-reference.md
+    - Domænemodel: technical/domain-model.md
+    - Drift og overvågning: technical/operations.md
+  - Fordringshaver:
+    - Oversigt: fordringshaver/index.md
+    - Oprettelse af fordringer: fordringshaver/oprettelse-fordringer.md
+    - Fordringens livscyklus: fordringshaver/livscyklus.md
+    - Regulering af fordringer: fordringshaver/regulering.md
+    - Underretningsmeddelelser: fordringshaver/underretninger.md
+    - Afstemning og rapporter: fordringshaver/afstemning.md
+    - M2M-integration: fordringshaver/m2m-integration.md
+    - FAQ: fordringshaver/faq.md
+  - Skyldner:
+    - Oversigt: skyldner/index.md
+    - Login med MitID: skyldner/login.md
+    - Mit gældsoverblik: skyldner/gaeldsoverblik.md
+    - Betaling: skyldner/betaling.md
+    - Indsigelse og klage: skyldner/indsigelse.md
+    - Renteregler: skyldner/renter.md
+    - Kontakt og hjælp: skyldner/kontakt.md
+    - Tilgængelighed: skyldner/tilgaengelighed.md
+  - Sagsbehandler:
+    - Oversigt: sagsbehandler/index.md
+    - Sagsoversigt: sagsbehandler/sagsoversigt.md
+    - Fordringer: sagsbehandler/fordringer.md
+    - Inddrivelsesskridt: sagsbehandler/inddrivelse.md
+    - Hæftelse: sagsbehandler/haeftelse.md
+    - Indsigelseshåndtering: sagsbehandler/indsigelse.md
+    - Bogføring og tidslinje: sagsbehandler/bogfoering.md

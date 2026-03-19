@@ -52,6 +52,13 @@ public class CreditorController {
     return ResponseEntity.ok(dto);
   }
 
+  @GetMapping("/{creditorOrgId}/agreement")
+  @PreAuthorize("hasRole('SERVICE') or hasRole('CASEWORKER') or hasRole('ADMIN')")
+  @Operation(summary = "Get creditor agreement configuration")
+  public ResponseEntity<CreditorAgreementDto> getAgreement(@PathVariable UUID creditorOrgId) {
+    return ResponseEntity.ok(creditorService.getAgreement(creditorOrgId));
+  }
+
   @PostMapping("/{creditorOrgId}/validate-action")
   @PreAuthorize("hasRole('SERVICE') or hasRole('CASEWORKER')")
   @Operation(

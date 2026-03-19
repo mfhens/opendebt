@@ -60,7 +60,7 @@ public class Petition013Steps {
   @Given("a user submits an invalid form in an OpenDebt UI")
   public void userSubmitsInvalidForm() throws IOException {
     formFieldHtml = loadTemplate("templates/fragments/form-field.html");
-    fordringFormHtml = loadTemplate("templates/fordring-ny.html");
+    fordringFormHtml = loadTemplate("templates/claims/create/step-details.html");
     assertThat(formFieldHtml).isNotEmpty();
     assertThat(fordringFormHtml).isNotEmpty();
   }
@@ -88,8 +88,8 @@ public class Petition013Steps {
     assertThat(formFieldHtml)
         .as("Error messages must have text content, not just color")
         .contains("skat-error-message");
-    // The form also has a global error summary with text
-    assertThat(fordringFormHtml).contains("Der er fejl i formularen");
+    // The wizard step form has inline error messages with role="alert"
+    assertThat(fordringFormHtml).contains("role=\"alert\"");
   }
 
   // Scenario 3: Accessibility is part of release readiness

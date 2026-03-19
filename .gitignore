@@ -63,6 +63,14 @@ jacoco.exec
 # OWASP
 dependency-check-report.*
 
+# MkDocs build output
+site/
+
+# Build logs and SonarCloud artifacts
+mvn-output*.log
+sonar-duplications.json
+sonar-feedback.json
+
 # Docker
 docker-compose.override.yml
 

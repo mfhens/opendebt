@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <div th:fragment="languageSelector" class="skat-language-selector" role="navigation" th:aria-label="#{layout.lang.selector.label}">
+    <div class="skat-language-selector__inner">
+      <span th:each="localeTag : ${orderedSupportedLocales}">
+        <a th:href="@{/(lang=${localeTag})}"
+           th:text="${localeNativeNames[T(java.util.Locale).forLanguageTag(localeTag).language]}"
+           th:classappend="${#strings.equals(localeTag, #locale.toLanguageTag()) || #strings.equals(T(java.util.Locale).forLanguageTag(localeTag).language, #locale.language)} ? 'active' : ''"
+           class="skat-language-selector__link">Dansk</a>
+      </span>
+    </div>
+  </div>
+</body>
+</html>

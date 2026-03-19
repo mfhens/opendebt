@@ -3,6 +3,7 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -238,6 +239,94 @@ class ClaimLifecycleServiceImplTest {
     DebtEntity result = service.markFullyPaid(debtId);
 
     assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.INDFRIET);
+  }
+
+  // =========================================================================
+  // evaluateClaimState
+  // =========================================================================
+
+  @Test
+  void evaluateClaimState_transitionsToRestance_whenDeadlineExpiredAndUnpaid() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.of(2026, 3, 1));
+    debt.setOutstandingBalance(new BigDecimal("1000"));
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
+    when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    DebtEntity result = service.evaluateClaimState(debtId, LocalDate.of(2026, 3, 2));
+
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.RESTANCE);
+    verify(debtRepository).save(debt);
+  }
+
+  @Test
+  void evaluateClaimState_noTransition_whenFullyPaid() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.of(2026, 3, 1));
+    debt.setOutstandingBalance(BigDecimal.ZERO);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
+
+    DebtEntity result = service.evaluateClaimState(debtId, LocalDate.of(2026, 3, 2));
+
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.REGISTERED);
+    verify(debtRepository, never()).save(any());
+  }
+
+  @Test
+  void evaluateClaimState_noTransition_whenDeadlineNotExpired() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.REGISTERED);
+    debt.setLastPaymentDate(LocalDate.of(2026, 3, 5));
+    debt.setOutstandingBalance(new BigDecimal("1000"));
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
+
+    DebtEntity result = service.evaluateClaimState(debtId, LocalDate.of(2026, 3, 2));
+
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.REGISTERED);
+    verify(debtRepository, never()).save(any());
+  }
+
+  @Test
+  void evaluateClaimState_noTransition_whenAlreadyRestance() {
+    UUID debtId = UUID.randomUUID();
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.RESTANCE);
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
+
+    DebtEntity result = service.evaluateClaimState(debtId, LocalDate.of(2026, 3, 2));
+
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.RESTANCE);
+    verify(debtRepository, never()).save(any());
+  }
+
+  // =========================================================================
+  // transferForCollection with recipientId
+  // =========================================================================
+
+  @Test
+  void transferForCollection_withRecipient_recordsRecipientInEvent() {
+    UUID debtId = UUID.randomUUID();
+    UUID recipientId = UUID.randomUUID();
+    DebtEntity debt = debtEntity(debtId, ClaimLifecycleState.RESTANCE);
+    debt.setLastPaymentDate(LocalDate.now().minusDays(5));
+    debt.setOutstandingBalance(new BigDecimal("500"));
+    when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
+    when(debtRepository.save(any(DebtEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(claimLifecycleEventRepository.save(any(ClaimLifecycleEvent.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    DebtEntity result = service.transferForCollection(debtId, recipientId);
+
+    assertThat(result.getLifecycleState()).isEqualTo(ClaimLifecycleState.OVERDRAGET);
+    verify(claimLifecycleEventRepository)
+        .save(
+            argThat(
+                event ->
+                    recipientId.equals(event.getRecipientId())
+                        && "OVERDRAGET".equals(event.getNewState())));
   }
 
   // =========================================================================

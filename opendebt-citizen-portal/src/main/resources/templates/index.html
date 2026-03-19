@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{landing.page.title}">Overblik over din gaeld</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{landing.breadcrumb}">Overblik over din gaeld</span>
+
+  <section layout:fragment="content">
+    <h1 th:text="#{landing.heading}">Overblik over din gaeld</h1>
+
+    <p th:utext="#{landing.intro}">Her kan du faa overblik over din gaeld.</p>
+
+    <!-- Ways to view debt -->
+    <h2 th:text="#{landing.ways.heading}">Saadan ser du din gaeld</h2>
+
+    <ul>
+      <li>
+        <strong th:text="#{landing.ways.selfservice.label}">Digital selvbetjening:</strong>
+        <span th:text="#{landing.ways.selfservice.text}">Log ind med MitID.</span>
+        <a th:href="${citizenLinks.mitGaeldsoverblik}" class="skat-button skat-button--primary" th:text="#{landing.cta.mitgaeldsoverblik}">Se din gaeld</a>
+      </li>
+      <li>
+        <strong th:text="#{landing.ways.letters.label}">Breve:</strong>
+        <span th:text="#{landing.ways.letters.text}">Vi sender breve til din digitale postkasse.</span>
+      </li>
+      <li>
+        <strong th:text="#{landing.ways.phone.label}">Telefon:</strong>
+        <span th:text="#{landing.ways.phone.text}">Ring til os paa</span>
+        <a th:href="'tel:' + ${citizenLinks.phoneInternational}" th:text="${citizenLinks.phoneNumber}">70 15 73 04</a>
+      </li>
+    </ul>
+
+    <p th:text="#{landing.snapshot.notice}">Bemerk: Et gaeldsoverblik er et oejebliksbillede. Renter tilskrives dagligt.</p>
+
+    <!-- Debt errors section -->
+    <div class="skat-notice">
+      <h2 th:text="#{landing.errors.heading}">Mulige fejl i aeldre gaeld</h2>
+      <p th:utext="#{landing.errors.text(${citizenLinks.debtErrors})}">Information om fejl i gaeld fra 2013-2015.</p>
+    </div>
+
+    <!-- FAQ section -->
+    <h2 th:text="#{landing.faq.heading}">Ofte stillede spoergsmaal</h2>
+
+    <div class="skat-faq">
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q1}">Hvor kan jeg se min samlede gaeld?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a1(${citizenLinks.mitGaeldsoverblik})}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q2}">Hvordan betaler jeg min gaeld?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a2(${citizenLinks.paymentInfo})}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q3}">Hvor meget skal jeg betale i rente?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a3(${citizenLinks.interestRates})}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q4}">Hvad goer jeg, hvis jeg har svaert ved at betale?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a4(${citizenLinks.paymentDifficulties})}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q5}">Kan jeg faa raadgivning om min gaeld?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a5(${citizenLinks.debtCounselling})}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q6}">Skal jeg betale, selv om min gaeld er gammel?</summary>
+        <div class="skat-faq__answer" th:text="#{landing.faq.a6}">Svar</div>
+      </details>
+
+      <details class="skat-faq__item">
+        <summary th:text="#{landing.faq.q7}">Hvem inddriver I gaeld for?</summary>
+        <div class="skat-faq__answer" th:utext="#{landing.faq.a7(${citizenLinks.creditorList})}">Svar</div>
+      </details>
+    </div>
+  </section>
+</body>
+</html>

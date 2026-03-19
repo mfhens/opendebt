@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.debtservice.service;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
@@ -13,8 +14,24 @@ public interface ClaimLifecycleService {
    */
   DebtEntity transitionToRestance(UUID debtId);
 
+  /**
+   * Evaluate a claim's lifecycle state as of a given date. If the claim is REGISTERED and the
+   * payment deadline has passed with outstanding balance > 0, it transitions to RESTANCE. If
+   * already paid, no transition occurs.
+   *
+   * @return the (possibly updated) debt entity
+   */
+  DebtEntity evaluateClaimState(UUID debtId, LocalDate evaluationDate);
+
   /** Transition RESTANCE → OVERDRAGET with pre-condition checks for transfer for collection. */
   DebtEntity transferForCollection(UUID debtId);
+
+  /**
+   * Transition RESTANCE → OVERDRAGET, recording the receiving restanceinddrivelsesmyndighed.
+   *
+   * @param recipientId UUID of the receiving collection authority
+   */
+  DebtEntity transferForCollection(UUID debtId, UUID recipientId);
 
   /** Transition REGISTERED → HOERING (entry filter deviation). */
   DebtEntity transitionToHearing(UUID debtId);

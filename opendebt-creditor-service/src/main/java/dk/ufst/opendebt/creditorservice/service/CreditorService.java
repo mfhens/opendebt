@@ -17,4 +17,6 @@ public interface CreditorService {
   Optional<CreditorDto> findCreditorByCreditorOrgId(UUID creditorOrgId);
 
   List<CreditorDto> listActive();
+
+  CreditorAgreementDto getAgreement(UUID creditorOrgId);
 }

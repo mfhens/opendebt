@@ -93,6 +93,31 @@ public class CreditorServiceImpl implements CreditorService {
   }
 
   @Override
+  public CreditorAgreementDto getAgreement(UUID creditorOrgId) {
+    CreditorEntity entity =
+        creditorRepository
+            .findByCreditorOrgId(creditorOrgId)
+            .orElseThrow(
+                () ->
+                    new CreditorNotFoundException(
+                        "Creditor not found with organization ID: " + creditorOrgId));
+    return CreditorAgreementDto.builder()
+        .portalActionsAllowed(Boolean.TRUE.equals(entity.getAllowPortalActions()))
+        .allowCreateRecoveryClaims(Boolean.TRUE.equals(entity.getAllowCreateRecoveryClaims()))
+        .allowWriteDown(Boolean.TRUE.equals(entity.getAllowWriteDown()))
+        .allowWriteUpAdjustment(Boolean.TRUE.equals(entity.getAllowWriteUpAdjustment()))
+        .allowWriteDownPayment(
+            Boolean.TRUE.equals(entity.getAllowWriteDownCancelledWriteUpPayment()))
+        .allowWriteUpPayment(Boolean.TRUE.equals(entity.getAllowWriteUpCancelledWriteDownPayment()))
+        .allowPrincipalCorrection(Boolean.TRUE.equals(entity.getAllowIncorrectPrincipalReport()))
+        .allowedClaimTypes(
+            List.of("SKAT", "MOMS", "BOEDE", "UNDERHOLDSBIDRAG", "DAGINSTITUTION", "EJENDOMSSKAT"))
+        .allowedDebtorTypes(List.of("CPR", "CVR", "SE"))
+        .allowedInterestRules(List.of("STANDARD", "NONE"))
+        .build();
+  }
+
+  @Override
   public List<CreditorDto> listActive() {
     return creditorRepository
         .findByActivityStatusOrderByExternalCreditorIdAsc(ActivityStatus.ACTIVE)

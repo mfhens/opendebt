@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title layout:title-pattern="$CONTENT_TITLE - #{layout.title.suffix}" th:text="#{layout.title.suffix}">OpenDebt Borgerportal</title>
+  <link rel="stylesheet" th:href="@{/css/skat-tokens.css}" />
+  <script th:src="@{/webjars/htmx.org/2.0.4/dist/htmx.min.js}" defer></script>
+</head>
+<body>
+  <div class="skat-page">
+
+    <a class="skat-skip-link" href="#main-content" th:text="#{layout.skip.link}">Gaa til hovedindhold</a>
+
+    <div th:replace="~{fragments/language-selector :: languageSelector}"></div>
+
+    <header class="skat-header" role="banner">
+      <div class="skat-header__inner">
+        <a class="skat-header__logo" th:href="@{/}">OpenDebt</a>
+        <nav class="skat-header__nav" th:aria-label="#{layout.nav.label}">
+          <a th:href="@{/}"><span th:text="#{layout.nav.citizen}">Borger</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="skat-breadcrumb" role="navigation" th:aria-label="#{layout.breadcrumb.label}">
+      <div class="skat-breadcrumb__inner">
+        <a th:href="@{/}" th:text="#{layout.breadcrumb.home}">Forside</a>
+        <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+        <span layout:fragment="breadcrumb">Side</span>
+      </div>
+    </div>
+
+    <main id="main-content" class="skat-content" role="main">
+      <section layout:fragment="content">
+      </section>
+    </main>
+
+    <footer class="skat-footer" role="contentinfo">
+      <div class="skat-footer__inner">
+        <a th:href="@{/was}" th:text="#{layout.footer.accessibility}">Tilgaengelighedserklaering</a>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>

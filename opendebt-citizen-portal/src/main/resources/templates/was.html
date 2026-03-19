@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{was.page.title}">Tilgaengelighedserklaering</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb" th:text="#{was.breadcrumb}">Tilgaengelighedserklaering</span>
+
+  <section layout:fragment="content">
+    <h1 th:text="#{was.heading}">Tilgaengelighedserklaering</h1>
+
+    <p th:text="#{was.intro}">Denne erklaering gaelder for borgerportalen i OpenDebt.</p>
+
+    <h2 th:text="#{was.compliance.heading}">Overholdelse af krav</h2>
+    <p th:text="#{was.compliance.text}">Vi tilstraeber at overholde WCAG 2.1 niveau AA.</p>
+
+    <h2 th:text="#{was.contact.heading}">Kontakt os</h2>
+    <p th:utext="#{was.contact.text(${citizenLinks.phoneNumber})}">Ring til os.</p>
+
+    <h2 th:text="#{was.enforcement.heading}">Klageprocedure</h2>
+    <p th:text="#{was.enforcement.text}">Du kan klage til Digitaliseringsstyrelsen.</p>
+  </section>
+</body>
+</html>

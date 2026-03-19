@@ -56,6 +56,11 @@ logging:
   level:
     dk.ufst.opendebt: INFO
 
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
 opendebt:
   i18n:
     default-locale: da-DK
@@ -66,6 +71,16 @@ opendebt:
     tastselv-integration:
       enabled: true
       base-url: ${TASTSELV_BASE_URL:https://www.tastselv.skat.dk}
+    external-links:
+      mit-gaeldsoverblik: ${MIT_GAELDSOVERBLIK_URL:https://mitgaeldsoverblik.gaeldst.dk/}
+      payment-info: ${PAYMENT_INFO_URL:https://gaeldst.dk/borger/saadan-betaler-du-din-gaeld}
+      interest-rates: ${INTEREST_RATES_URL:https://gaeldst.dk/borger/betal-min-gaeld/renter-og-gebyrer}
+      payment-difficulties: ${PAYMENT_DIFFICULTIES_URL:https://gaeldst.dk/borger/hvis-du-ikke-kan-betale-din-gaeld}
+      debt-counselling: ${DEBT_COUNSELLING_URL:https://gaeldst.dk/borger/hvis-du-ikke-kan-betale-din-gaeld/brug-for-raadgivning-om-din-gaeld}
+      creditor-list: ${CREDITOR_LIST_URL:https://gaeldst.dk/borger/om-gaeld-til-inddrivelse/se-hvem-vi-inddriver-gaeld-for}
+      debt-errors: ${DEBT_ERRORS_URL:https://gaeldst.dk/borger/om-gaeld-til-inddrivelse/hvis-der-er-fejl-i-din-gaeld}
+      phone-number: "70 15 73 04"
+      phone-international: "+45 70 15 73 04"
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}

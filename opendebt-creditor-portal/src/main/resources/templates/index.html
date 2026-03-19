@@ -97,34 +97,7 @@
       <p th:text="#{dashboard.counts.loading}">Indlæser fordringsoversigt…</p>
     </div>
 
-    <!-- Shortcuts section -->
-    <h2 th:text="#{dashboard.shortcuts.heading}">Genveje</h2>
-    <div class="skat-card-grid">
-      <div class="skat-card">
-        <span class="ikon ikon-tilfoej skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title" th:text="#{dashboard.shortcut.create.title}">Opret fordring</div>
-        <div class="skat-card__body">
-          <p th:text="#{dashboard.shortcut.create.description}">Indsend en ny fordring til inddrivelse.</p>
-          <a class="skat-btn skat-btn--primary" th:href="@{/fordring/ny}"><span class="ikon ikon-tilfoej" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.create.button}">Opret fordring</span></a>
-        </div>
-      </div>
-      <div class="skat-card">
-        <span class="ikon ikon-gaeld skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title" th:text="#{dashboard.shortcut.debts.title}">Se fordringer</div>
-        <div class="skat-card__body">
-          <p th:text="#{dashboard.shortcut.debts.description}">Se og administrer dine indsendte fordringer.</p>
-          <a class="skat-btn skat-btn--secondary" th:href="@{/fordringer}"><span class="ikon ikon-se" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.debts.button}">Se fordringer</span></a>
-        </div>
-      </div>
-      <div class="skat-card">
-        <span class="ikon ikon-henvendelser skat-card__icon" aria-hidden="true"></span>
-        <div class="skat-card__title" th:text="#{dashboard.shortcut.cases.title}">Se sager</div>
-        <div class="skat-card__body">
-          <p th:text="#{dashboard.shortcut.cases.description}">Følg status på inddrivelsessager.</p>
-          <a class="skat-btn skat-btn--secondary" th:href="@{/sager}"><span class="ikon ikon-se" aria-hidden="true"></span> <span th:text="#{dashboard.shortcut.cases.button}">Se sager</span></a>
-        </div>
-      </div>
-    </div>
+
 
     </th:block><!-- end creditor != null -->
   </section>

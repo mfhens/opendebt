@@ -200,9 +200,8 @@ public class DebtServiceImpl implements DebtService {
                     OpenDebtException.ErrorSeverity.WARNING));
   }
 
-  // AIDEV-NOTE: debtorId and creditorId are serialised as UUID strings in DebtDto (no PII).
-  // Per ADR-0014, names/addresses are never stored here — only person-registry UUIDs.
-  private DebtDto toDto(DebtEntity entity) {
+  @Override
+  public DebtDto toDto(DebtEntity entity) {
     return DebtDto.builder()
         .id(entity.getId())
         .debtorId(entity.getDebtorPersonId() != null ? entity.getDebtorPersonId().toString() : null)
