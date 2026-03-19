@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-17
-  updated_by: factory-droid (Phase 9 implemented — all 10 creditor portal feature pages done, 242 tests pass)
+  updated_at: 2026-03-19
+  updated_by: factory-droid (Petitions 003-007, 011, 022-025, 043, 044 implemented — 258 debt-service tests pass)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -185,7 +185,7 @@ program:
 
     petition003:
       title: Formalization of fordring, restance, and overdragelse til inddrivelse
-      status: ready_for_implementation
+      status: implemented
       phase: phase-1
       psrm_enriched: true
       depends_on:
@@ -242,7 +242,7 @@ program:
 
     petition011:
       title: Fordringshaver M2M ingress via integration-gateway
-      status: ready_for_implementation
+      status: implemented
       phase: phase-2
       depends_on:
         - petition009
@@ -311,7 +311,7 @@ program:
 
     petition004:
       title: Underretning, paakrav, and rykker
-      status: architecture_ready
+      status: implemented
       phase: phase-3
       psrm_enriched: true
       depends_on:
@@ -328,7 +328,7 @@ program:
 
     petition005:
       title: Haeftelse for multiple skyldnere
-      status: architecture_ready
+      status: implemented
       phase: phase-3
       psrm_enriched: true
       depends_on:
@@ -342,7 +342,7 @@ program:
 
     petition006:
       title: Indsigelse workflow blockering
-      status: architecture_ready
+      status: implemented
       phase: phase-3
       psrm_enriched: true
       depends_on:
@@ -356,7 +356,7 @@ program:
 
     petition007:
       title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
-      status: architecture_ready
+      status: implemented
       phase: phase-3
       psrm_enriched: true
       depends_on:
@@ -473,7 +473,7 @@ program:
 
     petition022:
       title: Skyldnerportal (citizen portal) landing page
-      status: not_started
+      status: implemented
       phase: phase-6
       depends_on:
         - petition013
@@ -490,7 +490,7 @@ program:
 
     petition023:
       title: Person Registry citizen (CPR) lookup API
-      status: not_started
+      status: implemented
       phase: phase-7
       depends_on: []
       last_reviewed: 2026-03-17
@@ -501,7 +501,7 @@ program:
 
     petition024:
       title: Citizen-facing debt summary endpoint
-      status: not_started
+      status: implemented
       phase: phase-7
       psrm_enriched: true
       depends_on:
@@ -511,7 +511,7 @@ program:
 
     petition025:
       title: MitID/TastSelv OAuth2 browser flow for citizen portal
-      status: not_started
+      status: implemented
       phase: phase-7
       depends_on:
         - petition023
@@ -721,27 +721,26 @@ program:
       next_step: Implement FIRST in Phase 9. All other petition029-037 pages depend on this navigation structure.
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-17, post Phase 9 implementation)
+  # STATUS SUMMARY (2026-03-19, post corrupted-session recovery)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
-  # implemented:  petition001, petition008, petition010, petition015, petition016, petition017, petition018,
+  # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
+  #               petition008, petition010, petition011, petition015, petition016, petition017,
+  #               petition018, petition022, petition023, petition024, petition025,
   #               petition029, petition030, petition031, petition032, petition033, petition034,
-  #               petition035, petition036, petition037, petition038
+  #               petition035, petition036, petition037, petition038, petition043, petition044
   # in_progress:  petition002
-  # ready:        petition003, petition011, petition019
-  # architecture: petition004, petition005, petition006, petition007
-  # not_started:  petition022-028
+  # ready:        petition019
+  # not_started:  petition026, petition027, petition028
   #
-  # Total: 38 petitions
-  #   6 validated, 17 implemented, 1 in_progress, 3 ready, 4 architecture_ready, 7 not_started
+  # Total: 40 petitions
+  #   6 validated, 29 implemented, 1 in_progress, 1 ready, 3 not_started
   #
-  # COMPLETED: Wave 1 (mostly), Wave 2, Wave 3, Wave 4, Wave 5, Phase 9
-  # IN PROGRESS: Wave 1 (W1-ACC-03, W1-ACC-04 remain)
-  # READY TO START: Wave 6 (citizen portal), petition019 (SOAP), petition011 (M2M)
-  # BLOCKED BY DEPENDENCIES: Wave 7 (needs petition003 lifecycle model)
+  # COMPLETED: Phases 1-7, Phase 9, Phase 10, Phase 11
+  # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
+  # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service, unblocked)
   #
-  # Creditor portal: 242 tests pass (0 failures)
-  # Phase 9 delivered: 10 petitions, ~80 new files, ~600 i18n keys across 4 locales
+  # Debt-service: 258 tests pass (0 failures)
 
   # ===========================================================================
   # Technical Debt and Infrastructure Backlog

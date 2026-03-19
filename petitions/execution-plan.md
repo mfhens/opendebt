@@ -11,11 +11,10 @@
 |--------|-------|
 | Total petitions | 40 |
 | Validated | 6 |
-| Implemented | 20 |
+| Implemented | 29 |
 | In progress | 1 |
 | Ready for implementation | 1 |
-| Architecture ready | 4 |
-| Not started | 8 |
+| Not started | 3 |
 
 ### By phase
 
@@ -24,15 +23,15 @@
 | Phase 0 | Foundation (petition001-002) | petition001 done, petition002 in progress |
 | Phase 1 | Core domain / creditor (petition003, 008-010) | All implemented |
 | Phase 2 | Creditor channels / UI (petition011-014, 019) | petition011 implemented, petition012-014 validated, petition019 ready |
-| Phase 3 | Downstream collection model (petition004-007) | All architecture_ready, unblocked |
+| Phase 3 | Downstream collection model (petition004-007) | **All implemented** |
 | Phase 4 | Fordring validation rules (petition015-018) | All implemented |
 | Phase 5 | Cross-cutting quality (petition020-021) | All validated |
-| Phase 6 | Citizen portal landing (petition022) | Implemented (uncommitted) |
-| Phase 7 | Citizen auth / APIs (petition023-025) | Not started |
-| Phase 8 | Citizen self-service (petition026-028) | Not started |
+| Phase 6 | Citizen portal landing (petition022) | **Implemented** |
+| Phase 7 | Citizen auth / APIs (petition023-025) | **All implemented** |
+| Phase 8 | Citizen self-service (petition026-028) | Not started (unblocked) |
 | Phase 9 | Creditor portal features (petition029-038) | All implemented |
-| Phase 10 | Batch processing / scale (petition043) | Not started |
-| Phase 11 | Documentation (petition044) | Not started |
+| Phase 10 | Batch processing / scale (petition043) | **Implemented** |
+| Phase 11 | Documentation (petition044) | **Implemented** |
 
 ### Recent work (2026-03-17 to 2026-03-19)
 
@@ -44,36 +43,36 @@
 - Added creditor-service `/agreement` endpoint for portal claim wizard
 - Removed duplicate FordringController and dashboard shortcuts from creditor portal
 - Changed license from Apache 2.0 to source-available (read-only)
-- **Implemented petition003** (fordring lifecycle model): evaluateClaimState, transferForCollection with recipient audit trail, REST endpoints, 4 BDD scenarios, all 126 tests pass
-- **Created petition043** (batch processing): daily RESTANCE transition, interest accrual, deadline monitoring for 1M debt portfolio
-- **Implemented petition022** (citizen portal landing page): Thymeleaf layout, landing page with FAQ, accessibility statement, i18n bundles, SecurityConfig (uncommitted)
-- **Implemented petition011** (M2M ingress via integration-gateway): CreditorM2mController, CreditorServiceClient (access resolution), DebtServiceClient (claim forwarding), correlation/audit propagation, 3 BDD scenarios + 13 unit tests, all 32 gateway tests pass
+- **Implemented petition003** (fordring lifecycle model): evaluateClaimState, transferForCollection with recipient audit trail, REST endpoints, 4 BDD scenarios
+- **Implemented petition011** (M2M ingress via integration-gateway): CreditorM2mController, CreditorServiceClient, DebtServiceClient, 3 BDD scenarios + 13 unit tests
+- **Implemented petition022** (citizen portal landing page): Thymeleaf layout, FAQ, accessibility, i18n, SecurityConfig
+- **Implemented petition023** (person registry CPR lookup API): PersonController, PersonService, 3 endpoints
+- **Implemented petition024** (citizen debt summary endpoint): CitizenDebtController, CitizenDebtService, pagination, status filter
+- **Implemented petition025** (MitID/TastSelv OAuth2 flow): SecurityConfig OAuth2, PersonRegistryClient, CPR resolution
+- **Implemented petition004** (notification system): NotificationService, paakrav/rykker, OCR lines, 8 unit tests + 10 BDD scenarios
+- **Implemented petition005** (liability): LiabilityService, SOLE/JOINT_AND_SEVERAL/PROPORTIONAL, 12 unit tests + 8 BDD scenarios
+- **Implemented petition006** (objection workflow): ObjectionService, collection blocking, 11 unit tests + 6 BDD scenarios
+- **Implemented petition007** (collection measures): CollectionMeasureService, SET_OFF/WAGE_GARNISHMENT/ATTACHMENT, 11 unit tests + 7 BDD scenarios
+- **Implemented petition043** (batch processing): RestanceTransitionJob, InterestAccrualJob, DeadlineMonitoringJob, 12 unit tests + 7 BDD scenarios, all 258 debt-service tests pass
+- **Implemented petition044** (comprehensive documentation): MkDocs site with technical, fordringshaver, skyldner, sagsbehandler guides
 
 ---
 
 ## What can be worked on now (unblocked)
 
-### ~~Priority 1: petition003 -- Fordring lifecycle model~~ IMPLEMENTED 2026-03-19
-
-### ~~Priority 1: petition022 -- Citizen portal landing page~~ IMPLEMENTED 2026-03-19
-
-### ~~Priority 2: petition011 -- M2M ingress via integration-gateway~~ IMPLEMENTED 2026-03-19
-
 ### Priority 1: petition019 -- Legacy SOAP endpoints
 
 **Why:** All validation rule dependencies (petition015-018) are implemented. Can proceed independently.
 
-### Priority 4: petition043 -- Batch processing for daily lifecycle and interest
+### Priority 2: Phase 8 -- Citizen self-service (petitions 026-028)
 
-**Why:** Required for production readiness at 1M debt scale. Depends on petition003 (implemented). No blockers. Introduces Spring Batch or bulk SQL jobs for daily RESTANCE transitions, inddrivelsesrente accrual, and deadline monitoring.
-
-**Estimated effort:** ~8 sessions across 2 sprints.
+**Why:** All dependencies are now met: petition022 (landing page), petition024 (debt summary), petition025 (MitID auth) are all implemented. Phase 8 is fully unblocked.
 
 ### Also unblocked (lower priority)
 
 - W1-ACC-03/04: Wire shared access resolution into integration-gateway, creditor-portal, and debt-service
-- person-registry PersonServiceImpl: Currently a skeleton; blocks person name lookups from both portals
 - TB-008: Replace readiness validation stub with Drools rules engine call (petition015 is implemented)
+- petition002: Complete end-to-end demo validation
 
 ---
 
@@ -155,12 +154,16 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 020 | OpenTelemetry-based observability |
 | 021 | Internationalization (i18n) |
 
-### Implemented (20)
+### Implemented (29)
 
 | Petition | Title |
 |----------|-------|
 | 001 | OCR-based payment matching |
 | 003 | Fordring lifecycle model |
+| 004 | Underretning, paakrav, rykker |
+| 005 | Haeftelse for multiple skyldnere |
+| 006 | Indsigelse workflow |
+| 007 | Inddrivelsesskridt (collection measures) |
 | 008 | Fordringshaver data model |
 | 010 | Channel binding and access resolution |
 | 011 | M2M ingress via integration-gateway |
@@ -169,6 +172,9 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 017 | Fordring lifecycle/reference rules |
 | 018 | Fordring content validation rules |
 | 022 | Citizen portal landing page |
+| 023 | Person Registry CPR lookup API |
+| 024 | Citizen-facing debt summary endpoint |
+| 025 | MitID/TastSelv OAuth2 auth flow |
 | 029 | Portal -- claims lists |
 | 030 | Portal -- claim detail |
 | 031 | Portal -- claims in hearing |
@@ -179,6 +185,8 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 036 | Portal -- reconciliation |
 | 037 | Portal -- monthly reports |
 | 038 | Portal -- dashboard/navigation/settings |
+| 043 | Batch processing (daily lifecycle and interest) |
+| 044 | Comprehensive documentation |
 
 ### In progress (1)
 
@@ -192,26 +200,13 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 |----------|-------|-----------|
 | 019 | Legacy SOAP endpoints | petition015-018 implemented |
 
-### Architecture ready (4) -- all unblocked by petition003
+### Not started (3) -- all unblocked
 
 | Petition | Title | Blocked by |
 |----------|-------|------------|
-| 004 | Underretning, paakrav, rykker | -- (petition003 done) |
-| 005 | Haeftelse for multiple skyldnere | -- (petition003 done) |
-| 006 | Indsigelse workflow | -- (petition003 done) |
-| 007 | Inddrivelsesskridt | -- (petition003 done) |
-
-### Not started (8)
-
-| Petition | Title | Blocked by |
-|----------|-------|------------|
-| 023 | Person Registry CPR lookup API | -- |
-| 024 | Citizen-facing debt summary | petition023 |
-| 025 | MitID/TastSelv OAuth2 flow | petition023 |
-| 026 | Mit gaeldsoverblik page | petition022, 024, 025 |
-| 027 | Citizen payment initiation | petition024, 026 |
-| 028 | Digital Post integration | petition025, 026 |
-| 044 | Comprehensive documentation (technical EN + user DA) | -- |
+| 026 | Mit gaeldsoverblik page | -- (all deps implemented) |
+| 027 | Citizen payment initiation | petition026 |
+| 028 | Digital Post integration | petition026 |
 
 ---
 
@@ -239,11 +234,8 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 
 ## Recommended next actions
 
-1. ~~**Implement petition003** (lifecycle model) to unblock Wave 7~~ **DONE 2026-03-19**
-2. ~~**Start Wave 6** (citizen portal, petition022)~~ **DONE 2026-03-19**
-3. ~~**Implement petition011** (M2M ingress via integration-gateway)~~ **DONE 2026-03-19**
-4. **Start Wave 7** (petitions 004-007) -- all unblocked now that petition003 is implemented
-5. **Implement petition019** (Legacy SOAP endpoints) -- all dependencies met
-6. **Implement petition043** (batch processing) -- critical for production at 1M debt scale
-7. **Implement PersonServiceImpl** in person-registry -- blocks name lookups for both portals
-8. **Wire Drools rules** into readiness validation (TB-008) -- low-hanging fruit since rules exist
+1. **Implement petition019** (Legacy SOAP endpoints) -- all dependencies met, last Phase 2 item
+2. **Implement Phase 8** (petitions 026-028) -- citizen self-service, all unblocked
+3. **Wire Drools rules** into readiness validation (TB-008) -- low-hanging fruit since rules exist
+4. **Complete petition002** end-to-end demo validation
+5. **Wire shared access resolution** (W1-ACC-03/04) into integration-gateway, creditor-portal, debt-service

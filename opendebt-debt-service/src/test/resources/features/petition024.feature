@@ -9,10 +9,10 @@ Feature: Citizen Debt Summary Endpoint
 
   Scenario: Citizen retrieves debt summary with authenticated person_id
     Given I am authenticated as a citizen with person_id
-    And I have 3 active debts totaling 25000 kr
+    And I have 3 active debts totaling 30000 kr
     When I request my debt summary
     Then I should receive a list of 3 debts
-    And the total outstanding amount should be 25000 kr
+    And the total outstanding amount should be 30000 kr
     And each debt should include debt type, amounts, due date, and status
     And no PII should be present in the response
     And no creditor internal fields should be present

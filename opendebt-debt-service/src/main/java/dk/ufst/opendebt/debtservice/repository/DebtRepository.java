@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.debtservice.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity.DebtStatus;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity.ReadinessStatus;
@@ -52,4 +54,25 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
       @Param("readinessStatus") ReadinessStatus readinessStatus);
 
   List<DebtEntity> findByOcrLine(String ocrLine);
+
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.lifecycleState = :state "
+          + "AND d.paymentDeadline < :cutoffDate "
+          + "AND d.outstandingBalance > 0")
+  Page<DebtEntity> findEligibleForRestanceTransition(
+      @Param("state") ClaimLifecycleState state,
+      @Param("cutoffDate") LocalDate cutoffDate,
+      Pageable pageable);
+
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.lifecycleState = :state "
+          + "AND d.outstandingBalance > 0")
+  Page<DebtEntity> findByLifecycleStateAndPositiveBalance(
+      @Param("state") ClaimLifecycleState state, Pageable pageable);
+
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.limitationDate IS NOT NULL "
+          + "AND d.limitationDate <= :warningDate "
+          + "AND d.lifecycleState NOT IN ('TILBAGEKALDT', 'AFSKREVET', 'INDFRIET')")
+  List<DebtEntity> findApproachingLimitation(@Param("warningDate") LocalDate warningDate);
 }

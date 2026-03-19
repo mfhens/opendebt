@@ -26,7 +26,7 @@ Feature: Indsigelse and workflow blocking during dispute handling
   Scenario: Duplicate active objection is rejected
     Given a debt exists with an active objection
     When a second objection is attempted
-    Then the system rejects with "Active objection already exists"
+    Then the objection is rejected with message "Active objection already exists"
 
   Scenario: Objection history is preserved for audit
     Given a debt exists with a resolved objection

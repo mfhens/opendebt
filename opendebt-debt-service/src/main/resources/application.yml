@@ -70,6 +70,17 @@ logging:
     org.springframework.security: INFO
 
 opendebt:
+  batch:
+    page-size: 1000
+    restance-transition:
+      cron: "0 0 2 * * *"
+    interest-accrual:
+      cron: "0 30 2 * * *"
+    deadline-monitoring:
+      cron: "0 0 3 * * *"
+    limitation-warning-days: 90
+  interest:
+    annual-rate: 0.0575
   debt:
     supported-debt-types: 600
     readiness-validation:

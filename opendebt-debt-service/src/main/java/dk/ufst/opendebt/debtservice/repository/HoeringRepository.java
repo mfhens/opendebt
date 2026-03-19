@@ -1,5 +1,7 @@
 package dk.ufst.opendebt.debtservice.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,4 +19,7 @@ public interface HoeringRepository extends JpaRepository<HoeringEntity, UUID> {
   Optional<HoeringEntity> findByDebtId(UUID debtId);
 
   Page<HoeringEntity> findByHoeringStatus(HoeringStatus status, Pageable pageable);
+
+  List<HoeringEntity> findByHoeringStatusAndSlaDeadlineBefore(
+      HoeringStatus status, LocalDateTime deadline);
 }
