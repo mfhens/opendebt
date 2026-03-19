@@ -1,0 +1,15 @@
+package dk.ufst.opendebt.debtservice.repository;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity;
+
+@Repository
+public interface CollectionMeasureRepository extends JpaRepository<CollectionMeasureEntity, UUID> {
+
+  List<CollectionMeasureEntity> findByDebtIdOrderByInitiatedAtDesc(UUID debtId);
+}
