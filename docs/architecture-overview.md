@@ -159,6 +159,13 @@ erDiagram
     DEBTS ||--o{ PAYMENTS : "debt_id"
     DEBTS ||--o{ LEDGER_ENTRIES : "debt_id"
     DEBTS ||--o{ DEBT_EVENTS : "debt_id"
+    DEBTS ||--o{ LIFECYCLE_EVENTS : "debt_id"
+    DEBTS ||--o{ HOERING : "debt_id"
+    DEBTS ||--o{ NOTIFICATIONS : "debt_id"
+    DEBTS ||--o{ LIABILITIES : "debt_id"
+    DEBTS ||--o{ OBJECTIONS : "debt_id"
+    DEBTS ||--o{ COLLECTION_MEASURES : "debt_id"
+    DEBTS ||--o{ INTEREST_JOURNAL : "debt_id"
 
     PERSON_REGISTRY {
         uuid id PK
@@ -243,6 +250,77 @@ erDiagram
         varchar code PK
         varchar name
         varchar account_type
+    }
+
+    LIFECYCLE_EVENTS {
+        uuid id PK
+        uuid debt_id FK
+        varchar previous_state
+        varchar new_state
+        uuid recipient_id
+        timestamp event_time
+    }
+
+    HOERING {
+        uuid id PK
+        uuid debt_id FK
+        varchar hoering_status
+        varchar deviation_description
+        timestamp sla_deadline
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid debt_id FK
+        varchar type
+        varchar channel
+        varchar delivery_state
+        varchar ocr_line
+    }
+
+    LIABILITIES {
+        uuid id PK
+        uuid debt_id FK
+        uuid debtor_person_id
+        varchar liability_type
+        numeric share_percentage
+        boolean active
+    }
+
+    OBJECTIONS {
+        uuid id PK
+        uuid debt_id FK
+        uuid debtor_person_id
+        varchar status
+        varchar reason
+        varchar resolution_note
+    }
+
+    COLLECTION_MEASURES {
+        uuid id PK
+        uuid debt_id FK
+        varchar measure_type
+        varchar status
+        numeric amount
+        timestamp completed_at
+    }
+
+    INTEREST_JOURNAL {
+        uuid id PK
+        uuid debt_id FK
+        date accrual_date
+        numeric balance_snapshot
+        numeric rate
+        numeric interest_amount
+    }
+
+    BATCH_JOB_EXECUTIONS {
+        uuid id PK
+        varchar job_name
+        date execution_date
+        varchar status
+        int records_processed
+        int records_failed
     }
 ```
 
@@ -397,8 +475,8 @@ flowchart LR
 | Flyway migration V1 | Done | Persons, organizations, audit |
 | GDPR soft-delete | Done | `markAsDeleted()` clears encrypted fields |
 
-**API endpoints:**
-- `POST /api/v1/persons/lookup` - Lookup or create person (primary API for other services)
+**API endpoints (petition023 + existing):**
+- `POST /api/v1/persons/lookup` - Lookup or create person by CPR (primary API for citizen auth and M2M ingress; returns UUID only, no PII in response)
 - `GET /api/v1/persons/{id}` - Get person details (PII)
 - `PUT /api/v1/persons/{id}` - Update person
 - `GET /api/v1/persons/{id}/exists` - Existence check (no PII returned)
@@ -409,34 +487,96 @@ flowchart LR
 
 ### debt-service (Port 8082)
 
-**Purpose:** Debt registration and lifecycle management for `fordringer`, `restancer`, and readiness validation (indrivelsesparathed). It remains the owning service for creditor-submitted claims.
+**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, and batch processing.
 
-**Implementation status:** IMPLEMENTED
+**Implementation status:** IMPLEMENTED (88 Java files, 7 migrations)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| DebtEntity | Done | Principal, interest, fees, status, readiness, ocrLine, outstandingBalance |
+| **Core entities** | | |
+| DebtEntity | Done | Principal, interest, fees, status, readiness, ocrLine, outstandingBalance, PSRM stamdata fields, lifecycleState |
 | DebtTypeEntity | Done | ~600 debt types with legal basis |
-| DebtController | Done | Full CRUD + readiness validation |
-| DebtService | Done | Interface defined |
-| DebtServiceImpl | Done | Full CRUD + findByOcrLine + writeDown |
+| ClaimLifecycleState | Done | Enum: REGISTERED, RESTANCE, HOERING, OVERDRAGET, TILBAGEKALDT, AFSKREVET, INDFRIET |
+| ClaimLifecycleEvent | Done | Immutable audit of lifecycle state transitions with recipientId |
+| ClaimArtEnum, ClaimCategory | Done | PSRM claim art and category enums |
+| InterestSelectionEmbeddable | Done | Embeddable interest configuration |
+| **Lifecycle (petition003)** | | |
+| ClaimLifecycleService / Impl | Done | evaluateClaimState, transferForCollection, transitionToHearing, resolveHearing, withdraw, writeOff, markFullyPaid |
+| **Hearing (petition003)** | | |
+| HoeringEntity / HoeringStatus | Done | Hearing workflow with SLA deadline tracking |
+| HoeringService / Impl | Done | Create, approve, reject, withdraw hearings |
+| HoeringRepository | Done | JPA with status + SLA deadline queries |
+| **Notifications (petition004)** | | |
+| NotificationEntity | Done | Type (PAAKRAV/RYKKER/...), channel, deliveryState, ocrLine |
+| NotificationService / Impl | Done | issueDemandForPayment, issueReminder, getNotificationHistory |
+| NotificationController | Done | REST API for notification operations |
+| **Liabilities (petition005)** | | |
+| LiabilityEntity | Done | SOLE, JOINT_AND_SEVERAL, PROPORTIONAL with sharePercentage |
+| LiabilityService / Impl | Done | Add/remove/query liabilities with validation |
+| LiabilityController | Done | REST API for liability management |
+| **Objections (petition006)** | | |
+| ObjectionEntity | Done | ACTIVE, UPHELD, REJECTED with resolution notes |
+| ObjectionService / Impl | Done | Register, resolve, hasActiveObjection, collection blocking |
+| ObjectionController | Done | REST API for objection management |
+| **Collection measures (petition007)** | | |
+| CollectionMeasureEntity | Done | SET_OFF, WAGE_GARNISHMENT, ATTACHMENT with status tracking |
+| CollectionMeasureService / Impl | Done | Initiate, complete, cancel measures (requires OVERDRAGET state) |
+| CollectionMeasureController | Done | REST API for collection measures |
+| **Citizen debt (petition024)** | | |
+| CitizenDebtController | Done | Citizen-facing debt summary (person_id from JWT) |
+| CitizenDebtService / Impl | Done | Pagination, status filter, no PII/creditor internals |
+| **Batch processing (petition043)** | | |
+| BatchJobExecutionEntity | Done | Job execution tracking for idempotency and audit |
+| InterestJournalEntry | Done | Storno-compatible interest journal with balance snapshot |
+| RestanceTransitionJob | Done | Daily REGISTERED->RESTANCE for expired payment deadlines |
+| InterestAccrualJob | Done | Daily inddrivelsesrente at 5.75% for OVERDRAGET claims |
+| DeadlineMonitoringJob | Done | Daily forældelsesfrist and hearing SLA monitoring |
+| **Foundation** | | |
+| DebtController | Done | Full CRUD + readiness + lifecycle + submit |
+| DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown |
 | ReadinessValidationService | Done | Calls rules-engine for evaluation |
-| DebtRepository | Done | JPA with filtering indexes |
+| ClaimValidationService / Impl | Done | Drools-based claim validation |
+| ClaimSubmissionService / Impl | Done | End-to-end claim submission flow |
+| KvitteringService / Impl | Done | PSRM kvittering response (UDFOERT/AFVIST/HOERING) |
+| ZeroClaimService / Impl | Done | 0-fordring pattern for interest claims |
+| DebtRepository | Done | JPA with batch queries for lifecycle and interest |
 | FordringMetrics | Done | `fordring_submissions_total` counter (ADR-0024) |
 | logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
-| Flyway migration V1 | Done | Debts, debt_types, audit, history |
-| Flyway migration V2 | Done | ocr_line (unique), outstanding_balance |
+| Flyway V1 | Done | Baseline: debts, debt_types, claim_lifecycle_events, hoering, audit |
+| Flyway V2 | Done | Demo seed data |
+| Flyway V3 | Done | Notifications table |
+| Flyway V4 | Done | Liabilities table |
+| Flyway V5 | Done | Objections table |
+| Flyway V6 | Done | Collection measures table |
+| Flyway V7 | Done | Batch job executions + interest journal entries |
 
-**API endpoints:**
+**API endpoints (28):**
 - `GET/POST /api/v1/debts` - List/create debts
 - `GET/PUT /api/v1/debts/{id}` - Get/update debt
+- `POST /api/v1/debts/submit` - Submit claim (full validation + kvittering)
 - `GET /api/v1/debts/debtor/{debtorId}` - Debts by debtor
 - `GET /api/v1/debts/by-ocr?ocrLine={ocrLine}` - Find debts by OCR-linje
 - `POST /api/v1/debts/{id}/validate-readiness` - Validate indrivelsesparathed
 - `POST /api/v1/debts/{id}/approve-readiness` - Manual approval
 - `POST /api/v1/debts/{id}/reject-readiness` - Rejection with reason
+- `POST /api/v1/debts/{id}/evaluate-state` - Evaluate lifecycle state
+- `POST /api/v1/debts/{id}/transfer-for-collection` - Transfer for collection (RESTANCE->OVERDRAGET)
 - `POST /api/v1/debts/{id}/write-down?amount={amount}` - Write down outstanding balance
 - `DELETE /api/v1/debts/{id}` - Cancel (soft delete)
+- `POST /api/v1/debts/{debtId}/demand-for-payment` - Issue paakrav notification
+- `POST /api/v1/debts/{debtId}/reminder` - Issue rykker notification
+- `GET /api/v1/debts/{debtId}/notifications` - Notification history
+- `POST /api/v1/debts/{debtId}/liabilities` - Add liability
+- `DELETE /api/v1/debts/{debtId}/liabilities/{id}` - Remove liability
+- `GET /api/v1/debts/{debtId}/liabilities` - List liabilities
+- `POST /api/v1/debts/{debtId}/objections` - Register objection
+- `PUT /api/v1/debts/{debtId}/objections/{id}/resolve` - Resolve objection
+- `GET /api/v1/debts/{debtId}/objections` - List objections
+- `POST /api/v1/debts/{debtId}/collection-measures` - Initiate measure
+- `POST /api/v1/debts/{debtId}/collection-measures/{id}/complete` - Complete measure
+- `POST /api/v1/debts/{debtId}/collection-measures/{id}/cancel` - Cancel measure
+- `GET /api/v1/debts/{debtId}/collection-measures` - List measures
+- `GET /api/v1/citizen/debts` - Citizen debt summary (CITIZEN role, person_id from JWT)
 
 ---
 
@@ -573,27 +713,36 @@ flowchart LR
 
 ### integration-gateway (Port 8089)
 
-**Purpose:** External system integration via DUPLA. This is the target M2M ingress for creditor systems as well as SKB CREMUL/DEBMUL processing.
+**Purpose:** External system integration via DUPLA. Owns M2M ingress for creditor systems (petition011) and SKB CREMUL/DEBMUL processing.
 
-**Implementation status:** PARTIALLY IMPLEMENTED
+**Implementation status:** PARTIALLY IMPLEMENTED (22 Java files)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | IntegrationGatewayApplication | Done | Spring Boot app |
+| WebClientConfig | Done | WebClient.Builder bean (ADR-0024 trace propagation) |
+| **Creditor M2M ingress (petition011)** | **Done** | |
+| CreditorM2mController | Done | `POST /api/v1/creditor/m2m/claims/submit` |
+| CreditorIngressService / Impl | Done | Orchestrates access resolution + claim forwarding |
+| CreditorServiceClient | Done | REST client for creditor-service (access resolution) |
+| DebtServiceClient | Done | REST client for debt-service (claim submission) |
+| ClaimSubmissionRequest / Result | Done | DTOs for M2M claim flow |
+| GatewayClaimResponse / GatewayErrorResponse | Done | Response DTOs |
+| AccessResolutionRequest / Response | Done | Channel binding resolution DTOs |
+| CreditorAction / ChannelType | Done | Enums |
 | **SKB adapter** | **Done** | |
 | CreditAdvice / DebitAdvice / SkbMessage | Done | EDIFACT model classes |
-| SkbEdifactService | Done | Parse CREMUL, generate DEBMUL |
-| SkbEdifactServiceImpl | Done | Smooks-based, DEBMUL generation working |
+| SkbEdifactService / Impl | Done | Smooks-based CREMUL parsing, DEBMUL generation |
 | SkbController | Done | REST API for CREMUL upload + DEBMUL download |
 | cremul-config.xml (Smooks) | Done | Template (TODO: map to SKB directory version) |
-| **Unit tests** | **Done** | SkbEdifactServiceImplTest |
-| Creditor M2M ingress | Planned | DUPLA/OCES3 entry point for debt submission and status queries |
+| **Unit tests** | **Done** | CreditorM2mControllerTest, CreditorIngressServiceImplTest, SkbEdifactServiceImplTest, 3 BDD scenarios |
 | DUPLA client | Not started | OCES3 certificate integration |
 | CPR/CVR register client | Not started | External lookups |
 | Digital Post client | Not started | Letter delivery |
 | File polling for CREMUL | Not started | Scheduled pickup from SKB directory |
 
 **API endpoints:**
+- `POST /api/v1/creditor/m2m/claims/submit` - M2M claim submission (creditor access resolution + forwarding to debt-service)
 - `POST /api/v1/skb/cremul/parse` - Upload and parse CREMUL file
 - `POST /api/v1/skb/debmul/generate` - Generate DEBMUL file
 
@@ -717,17 +866,37 @@ flowchart LR
 
 ### citizen-portal (Port 8086)
 
-**Purpose:** UI/API for borgere (citizens) to view debts and make payments. TastSelv/MitID integration.
+**Purpose:** UI/BFF for borgere (citizens) to view debts and make payments. TastSelv/MitID integration via OAuth2/OIDC.
 
 **Accessibility requirement:** Must comply with ADR-0021 and the applicable requirements from EN 301 549 / WCAG 2.1 AA, and must have its own accessibility statement.
 
-**Implementation status:** SCAFFOLD ONLY
+**Implementation status:** PARTIALLY IMPLEMENTED (15 Java files)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | CitizenPortalApplication | Done | Spring Boot app |
-| application.yml | Done | References debt, case, payment services |
-| Controllers/Views | Not started | |
+| application.yml | Done | OAuth2, person-registry, i18n config |
+| **Landing page (petition022)** | **Done** | |
+| LandingPageController | Done | `GET /` landing page with FAQ |
+| AccessibilityController | Done | `GET /was` accessibility statement |
+| I18nConfig / I18nProperties / I18nModelAdvice | Done | i18n infrastructure with locale switching |
+| CitizenLinksProperties / CitizenLinksModelAdvice | Done | Portal link configuration |
+| Thymeleaf templates | Done | index.html, was.html, layout/default.html, language-selector fragment |
+| messages_da.properties / messages_en_GB.properties | Done | 72 i18n keys per locale |
+| SecurityConfig (public pages) | Done | Permits landing, /was, static resources; requires auth elsewhere |
+| **MitID/TastSelv auth (petition025)** | **Done** | |
+| SecurityConfig (OAuth2) | Done | `.oauth2Login()` with tastselv client registration |
+| CitizenOidcUserService / CitizenOidcUser | Done | Custom OIDC user with CPR extraction and person_id resolution |
+| CitizenAuthProperties | Done | Configurable CPR claim name |
+| PersonRegistryClient | Done | REST client for person-registry CPR lookup (WebClient.Builder, ADR-0024) |
+| WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
+| DashboardController | Done | `GET /dashboard` for authenticated citizens |
+| **Tests** | **Done** | LandingPageControllerTest, DashboardControllerTest, SecurityConfigTest, CitizenOidcUserServiceTest, PersonRegistryClientTest, ArchitectureTest |
+
+**Page routes:**
+- `GET /` - Landing page (public)
+- `GET /was` - Accessibility statement (public)
+- `GET /dashboard` - Authenticated citizen dashboard
 
 ---
 
@@ -763,7 +932,7 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 |----------|---------|------------|
 | opendebt_person | person-registry | persons, organizations |
 | opendebt_case | case-service | cases, case_debt_ids, ACT_* (Flowable) |
-| opendebt_debt | debt-service | debts, debt_types |
+| opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries |
 | opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
 | opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts |
 | opendebt_letter | letter-service | letters, letter_templates |
@@ -852,7 +1021,33 @@ Pre-defined API specs (API-first, ADR-0004):
 | PaymentMatchingServiceImplTest | payment-service | 10 | OCR matching, write-down, overpayment rules, manual routing |
 | SkbEdifactServiceImplTest | integration-gateway | 6 | CREMUL parsing, DEBMUL generation, UTF-8 |
 | DebtServiceImplTest | debt-service | 8 | findByOcrLine, writeDown, balance clamping, status transitions |
+| ClaimLifecycleServiceImplTest | debt-service | 20 | Lifecycle transitions, evaluateClaimState, transferForCollection, hearing, withdraw, writeOff |
+| NotificationServiceImplTest | debt-service | 8 | Paakrav/rykker creation, OCR line generation, notification history |
+| LiabilityServiceImplTest | debt-service | 12 | SOLE/JOINT_AND_SEVERAL/PROPORTIONAL, share validation, deactivation |
+| ObjectionServiceImplTest | debt-service | 11 | Register, resolve (UPHELD/REJECTED), hasActiveObjection, collection blocking |
+| CollectionMeasureServiceImplTest | debt-service | 11 | SET_OFF/WAGE_GARNISHMENT/ATTACHMENT, state validation, complete, cancel |
+| CitizenDebtServiceImplTest | debt-service | 6 | Citizen debt summary, pagination, status filter |
+| HoeringServiceImplTest | debt-service | 7 | Create, approve, reject, withdraw hearings |
+| KvitteringServiceImplTest | debt-service | 3 | UDFOERT/AFVIST/HOERING kvittering responses |
+| ZeroClaimServiceImplTest | debt-service | 9 | 0-fordring pattern for interest references |
+| RestanceTransitionJobTest | debt-service | 4 | Batch RESTANCE transition, idempotency, failure handling |
+| InterestAccrualJobTest | debt-service | 4 | Interest calculation accuracy, idempotency, skip existing |
+| DeadlineMonitoringJobTest | debt-service | 4 | Approaching limitation, expired SLA, idempotency |
+| NotificationControllerTest | debt-service | 4 | REST endpoint tests for notification operations |
+| LiabilityControllerTest | debt-service | 5 | REST endpoint tests for liability operations |
+| ObjectionControllerTest | debt-service | 4 | REST endpoint tests for objection operations |
+| CollectionMeasureControllerTest | debt-service | 5 | REST endpoint tests for collection measure operations |
+| CitizenDebtControllerTest | debt-service | 6 | REST endpoint tests for citizen debt summary |
+| RunCucumberTest (petition002-007,024,043) | debt-service | 59 | BDD scenarios across 8 petitions |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
+| CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |
+| CreditorIngressServiceImplTest | integration-gateway | 8 | Access resolution + claim forwarding orchestration |
+| RunCucumberTest (petition011) | integration-gateway | 3 | BDD: M2M claim submission, access denied, correlation propagation |
+| LandingPageControllerTest | citizen-portal | 3 | Landing page model attributes, FAQ |
+| DashboardControllerTest | citizen-portal | 3 | Authenticated dashboard |
+| SecurityConfigTest | citizen-portal | 3 | Public vs authenticated page access |
+| CitizenOidcUserServiceTest | citizen-portal | 4 | CPR extraction, person_id resolution |
+| PersonRegistryClientTest | citizen-portal | 3 | CPR lookup, error handling |
 | CreditorServiceClientTest | creditor-portal | 5 | Creditor lookup, access resolution, error handling |
 | DebtServiceClientTest | creditor-portal | 5 | Debt listing, creation, validation errors, server errors |
 | CaseServiceClientTest | creditor-portal | 2 | Case listing, server error handling |
@@ -870,19 +1065,19 @@ Pre-defined API specs (API-first, ADR-0004):
 
 ## Implementation Summary
 
-| Service | Status | Java Files | Endpoints | DB Migrations |
+| Service | Status | Java Files | Endpoints / Routes | DB Migrations |
 |---------|--------|-----------|-----------|---------------|
-| opendebt-common | Done | 6 | - | - |
+| opendebt-common | Done | 32 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
-| debt-service | Done | 7 | 10 | V1, V2 |
+| debt-service | Done | 88 | 28 | V1-V7 |
 | case-service | Done | 10 | 8 | V1 |
-| rules-engine | Done | 16 | 534 | V1 |
+| rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
 | payment-service | Partial | 22 | 1 | V1, V2, V3 |
-| integration-gateway | Partial | 7 | 2 | - |
-| creditor-service | Done | 34 | 4 | V1, V2 |
+| integration-gateway | Partial | 22 | 3 | - |
+| creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | Scaffold | 1 | 0 | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
-| creditor-portal | Partial | 22 | 5 | 3 (petition012/013/014) |
-| citizen-portal | Scaffold | 1 | 0 | - |
-| **Total** | | **129** | **40** | **15** |
+| creditor-portal | Partial | 72 | 48 | - |
+| citizen-portal | Partial | 15 | 3 | - |
+| **Total** | | **321** | **105** | **16** |
