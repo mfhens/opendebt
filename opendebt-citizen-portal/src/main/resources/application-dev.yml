@@ -1,0 +1,39 @@
+# Development profile: Uses local Keycloak as TastSelv mock
+# Start Keycloak with: docker-compose up keycloak
+# Default dev user: testborger / password (CPR: 0101011234)
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          tastselv:
+            client-id: opendebt-citizen
+            client-secret: citizen-dev-secret
+            scope: openid,profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          tastselv:
+            issuer-uri: http://localhost:8080/realms/opendebt
+            authorization-uri: http://localhost:8080/realms/opendebt/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/opendebt/protocol/openid-connect/token
+            user-info-uri: http://localhost:8080/realms/opendebt/protocol/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8080/realms/opendebt/protocol/openid-connect/certs
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/opendebt
+
+opendebt:
+  citizen:
+    auth:
+      # In dev mode, Keycloak uses a custom attribute for CPR
+      cpr-claim-name: cpr_number
+  services:
+    person-registry:
+      url: http://localhost:8084
+
+logging:
+  level:
+    dk.ufst.opendebt.citizen: DEBUG
+    org.springframework.security: DEBUG

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{error.identity.title}">Identitet ikke fundet</title>
+</head>
+<body>
+  <section layout:fragment="breadcrumb" th:text="#{error.identity.breadcrumb}">Fejl</section>
+  <section layout:fragment="content">
+    <h1 th:text="#{error.identity.heading}">Din identitet kunne ikke bekraeftes</h1>
+    <div class="skat-alert skat-alert--error" role="alert">
+      <p th:text="#{error.identity.message}">Vi kunne ikke bekraefte din identitet hos Gaeldsstyrelsen. Kontakt os venligst.</p>
+    </div>
+    <div class="skat-card">
+      <p th:text="#{error.identity.contact}">Ring til os paa 70 15 73 04 (mandag-fredag 09:00-15:00).</p>
+    </div>
+    <a th:href="@{/}" class="skat-btn skat-btn--primary" th:text="#{error.identity.back}">Gaa til forsiden</a>
+  </section>
+</body>
+</html>

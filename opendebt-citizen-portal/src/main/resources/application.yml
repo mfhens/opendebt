@@ -2,6 +2,11 @@ spring:
   application:
     name: opendebt-citizen-portal
 
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
   security:
     oauth2:
       resourceserver:
@@ -56,18 +61,10 @@ logging:
   level:
     dk.ufst.opendebt: INFO
 
-  thymeleaf:
-    cache: false
-    prefix: classpath:/templates/
-    suffix: .html
-
 opendebt:
-  i18n:
-    default-locale: da-DK
-    supported-locales:
-      - da-DK
-      - en-GB
   citizen:
+    auth:
+      cpr-claim-name: "dk:gov:saml:attribute:CprNumberIdentifier"
     tastselv-integration:
       enabled: true
       base-url: ${TASTSELV_BASE_URL:https://www.tastselv.skat.dk}
@@ -81,7 +78,14 @@ opendebt:
       debt-errors: ${DEBT_ERRORS_URL:https://gaeldst.dk/borger/om-gaeld-til-inddrivelse/hvis-der-er-fejl-i-din-gaeld}
       phone-number: "70 15 73 04"
       phone-international: "+45 70 15 73 04"
+  i18n:
+    default-locale: da-DK
+    supported-locales:
+      - da-DK
+      - en-GB
   services:
+    person-registry:
+      url: ${PERSON_REGISTRY_URL:http://localhost:8084}
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
     case-service:

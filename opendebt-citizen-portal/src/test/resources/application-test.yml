@@ -13,3 +13,15 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/test
+
+management:
+  tracing:
+    enabled: false
+
+opendebt:
+  citizen:
+    auth:
+      cpr-claim-name: cpr_number
+  services:
+    person-registry:
+      url: http://localhost:8084
