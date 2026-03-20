@@ -19,7 +19,7 @@
     <nav class="skat-step-indicator" aria-label="Wizard progress">
       <ol class="skat-step-indicator__list">
         <li th:each="step : ${#numbers.sequence(1, totalSteps)}"
-            th:classappend="${step == currentStep} ? 'skat-step-indicator__item--active' : (${step < currentStep} ? 'skat-step-indicator__item--completed' : '')"
+            th:classappend="${step == currentStep ? 'skat-step-indicator__item--active' : (step < currentStep ? 'skat-step-indicator__item--completed' : '')}"
             class="skat-step-indicator__item">
           <span class="skat-step-indicator__number" th:text="${step}">1</span>
           <span class="skat-step-indicator__label"
