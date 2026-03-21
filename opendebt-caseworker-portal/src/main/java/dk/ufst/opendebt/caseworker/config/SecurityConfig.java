@@ -2,20 +2,26 @@ package dk.ufst.opendebt.caseworker.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Security configuration for caseworker-portal. Permits all requests for development/demo purposes
- * until Keycloak OAuth2 browser flow is fully wired. Once Keycloak is configured for browser login,
- * this should be updated to require authentication for portal pages and use {@code .oauth2Login()}
- * with the existing OAuth2 Client registration.
+ * Security configuration for caseworker-portal in dev/demo mode.
+ * Permits all requests without authentication.
+ *
+ * <p>This bean is ONLY active when the {@code dev} Spring profile is set
+ * (e.g. {@code --spring.profiles.active=dev}). In all other environments
+ * OAuth2 client autoconfiguration (via application.yml) enforces Keycloak login.
+ * Once a production-grade {@code .oauth2Login()} flow is implemented, this class
+ * should be replaced by a profile-aware pair of SecurityFilterChain beans.
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@Profile("dev")
 public class SecurityConfig {
 
   @Bean
