@@ -33,6 +33,11 @@ import lombok.*;
 @Builder
 public class BusinessConfigEntity {
 
+  public enum ReviewStatus {
+    PENDING_REVIEW,
+    APPROVED
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
@@ -65,10 +70,32 @@ public class BusinessConfigEntity {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "review_status", length = 20)
+  private ReviewStatus reviewStatus;
+
   @Version private Long version;
 
   /** Parse configValue as BigDecimal. */
   public BigDecimal getDecimalValue() {
     return new BigDecimal(configValue);
+  }
+
+  /** Returns the computed lifecycle status of this entry as of the given date. */
+  public String getComputedStatus(LocalDate asOf) {
+    if (reviewStatus == ReviewStatus.PENDING_REVIEW) {
+      return "PENDING_REVIEW";
+    } else if (validFrom.isAfter(asOf)) {
+      return "FUTURE";
+    } else if (validTo != null && !validTo.isAfter(asOf)) {
+      return "EXPIRED";
+    } else {
+      return "ACTIVE";
+    }
+  }
+
+  /** Returns the computed lifecycle status of this entry as of today. */
+  public String getComputedStatus() {
+    return getComputedStatus(LocalDate.now());
   }
 }
