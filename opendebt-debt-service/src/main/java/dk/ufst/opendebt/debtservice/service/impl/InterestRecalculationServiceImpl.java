@@ -96,22 +96,50 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
         deleted,
         from);
 
-    // Step 2: recalculate each day in [from, today) using the corrected balance.
+    // Step 2: recalculate each day in [from, today) resolving the correct rate per day.
+    // When the business config rate changes mid-period, each day uses the rate effective on
+    // that exact date (petition 046 §FR-5 timeline replay with rate boundary splitting).
     // today is excluded — it will be picked up by the next scheduled batch run.
     BigDecimal balance = debt.getOutstandingBalance();
-    BigDecimal dailyInterest =
-        balance.multiply(annualRate).divide(DAYS_IN_YEAR, 2, RoundingMode.HALF_UP);
+    BigDecimal currentRate = annualRate;
+    LocalDate currentRateDate = from;
 
     List<InterestJournalEntry> entries = new ArrayList<>();
     LocalDate cursor = from;
     while (cursor.isBefore(today)) {
+      // Re-resolve rate only when needed (on first day or if rate may have changed)
+      if (cursor.equals(from) || cursor.getMonthValue() == 1 && cursor.getDayOfMonth() == 1) {
+        try {
+          BigDecimal resolvedRate = configService.getDecimalValue("RATE_INDR_STD", cursor);
+          if (!resolvedRate.equals(currentRate)) {
+            log.debug(
+                "Rate boundary crossed at {}: {} → {} for debtId={}",
+                cursor,
+                currentRate,
+                resolvedRate,
+                debtId);
+            currentRate = resolvedRate;
+            currentRateDate = cursor;
+          }
+        } catch (BusinessConfigService.ConfigurationNotFoundException e) {
+          log.warn(
+              "No rate found for RATE_INDR_STD on {}, continuing with rate {} from {}",
+              cursor,
+              currentRate,
+              currentRateDate);
+        }
+      }
+
+      BigDecimal dailyInterest =
+          balance.multiply(currentRate).divide(DAYS_IN_YEAR, 2, RoundingMode.HALF_UP);
+
       entries.add(
           InterestJournalEntry.builder()
               .debtId(debtId)
               .accrualDate(cursor)
               .effectiveDate(cursor)
               .balanceSnapshot(balance)
-              .rate(annualRate)
+              .rate(currentRate)
               .interestAmount(dailyInterest)
               .build());
       cursor = cursor.plusDays(1);
@@ -120,7 +148,10 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
     interestRepository.saveAll(entries);
 
     BigDecimal total =
-        dailyInterest.multiply(new BigDecimal(entries.size())).setScale(2, RoundingMode.HALF_UP);
+        entries.stream()
+            .map(InterestJournalEntry::getInterestAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .setScale(2, RoundingMode.HALF_UP);
 
     log.info(
         "Crossing recalculation complete: debtId={}, from={}, to={}, written={}, total={}",
