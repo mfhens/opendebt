@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{config.detail.title} + ' — ' + ${configKey}">Konfiguration — Nøgle</title>
+</head>
+<body>
+
+<span layout:fragment="breadcrumb">
+  <a th:href="@{/konfiguration}" th:text="#{config.breadcrumb}">Konfiguration</a>
+  <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+  <span th:text="${configKey}">RATE_INDR_STD</span>
+</span>
+
+<section layout:fragment="content">
+
+  <h1><span th:text="#{config.detail.title}">Konfigurationsnøgle</span>: <code th:text="${configKey}">RATE_INDR_STD</code></h1>
+
+  <!-- Success / Error flash messages -->
+  <div class="skat-alert skat-alert--success" th:if="${successMessage}" role="alert">
+    <span class="ikon ikon-check" aria-hidden="true"></span>
+    <span th:text="${successMessage}">Succes</span>
+  </div>
+  <div class="skat-alert skat-alert--error" th:if="${errorMessage}" role="alert">
+    <span class="ikon ikon-problem" aria-hidden="true"></span>
+    <span th:text="${errorMessage}">Fejl</span>
+  </div>
+  <div class="skat-alert skat-alert--error" th:if="${backendError}" role="alert">
+    <span class="ikon ikon-problem" aria-hidden="true"></span>
+    <span th:text="${backendError}">Tjenesten er ikke tilgængelig.</span>
+  </div>
+
+  <!-- Version history timeline -->
+  <div class="skat-card">
+    <h2 th:text="#{config.detail.history.title}">Versionshistorik</h2>
+
+    <div th:if="${history == null or history.isEmpty()}" class="skat-empty-state">
+      <p th:text="#{config.detail.history.empty}">Ingen historik fundet.</p>
+    </div>
+
+    <table class="skat-table" th:if="${history != null and !history.isEmpty()}" role="grid">
+      <thead>
+        <tr>
+          <th scope="col" th:text="#{config.table.value}">Værdi</th>
+          <th scope="col" th:text="#{config.table.validFrom}">Gyldig fra</th>
+          <th scope="col" th:text="#{config.table.validTo}">Gyldig til</th>
+          <th scope="col" th:text="#{config.table.status}">Status</th>
+          <th scope="col" th:text="#{config.table.legalBasis}">Retsgrundlag</th>
+          <th scope="col" th:text="#{config.table.createdBy}">Oprettet af</th>
+          <th scope="col" th:text="#{config.table.createdAt}">Oprettet</th>
+          <th scope="col" th:text="#{config.table.actions}" th:if="${canEdit}">Handlinger</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="e : ${history}"
+            th:classappend="${e.computedStatus == 'ACTIVE'} ? 'skat-table__row--highlighted' : ''">
+          <td th:text="${e.configValue}">0.0575</td>
+          <td th:text="${e.validFrom}">2024-01-01</td>
+          <td th:text="${e.validTo ?: '—'}">—</td>
+          <td>
+            <span class="skat-badge"
+                  th:classappend="${e.computedStatus == 'ACTIVE'} ? 'skat-badge--success' :
+                                 (${e.computedStatus == 'FUTURE'} ? 'skat-badge--info' :
+                                 (${e.computedStatus == 'PENDING_REVIEW'} ? 'skat-badge--warning' : 'skat-badge--neutral'))"
+                  th:text="#{${'config.status.' + (e.computedStatus ?: 'UNKNOWN')}}">Aktiv</span>
+          </td>
+          <td th:text="${e.legalBasis ?: '—'}">§ 5</td>
+          <td th:text="${e.createdBy ?: '—'}">system</td>
+          <td th:text="${e.createdAt != null ? #temporals.format(e.createdAt, 'dd.MM.yyyy HH:mm') : '—'}">01.01.2024</td>
+          <td th:if="${canEdit}">
+            <!-- Approve pending -->
+            <form th:if="${e.computedStatus == 'PENDING_REVIEW'}"
+                  th:action="@{/konfiguration/{id}/approve(id=${e.id})}"
+                  method="post" style="display:inline">
+              <button type="submit" class="skat-btn skat-btn--primary skat-btn--sm"
+                      th:text="#{config.action.approve}">Godkend</button>
+            </form>
+            <!-- Reject pending -->
+            <form th:if="${e.computedStatus == 'PENDING_REVIEW'}"
+                  th:action="@{/konfiguration/{id}/reject(id=${e.id})}"
+                  method="post" style="display:inline">
+              <button type="submit" class="skat-btn skat-btn--secondary skat-btn--sm"
+                      th:text="#{config.action.reject}">Afvis</button>
+            </form>
+            <!-- Delete future -->
+            <form th:if="${e.computedStatus == 'FUTURE'}"
+                  th:action="@{/konfiguration/{id}/delete(id=${e.id})}"
+                  method="post" style="display:inline">
+              <input type="hidden" name="returnKey" th:value="${configKey}" />
+              <button type="submit" class="skat-btn skat-btn--danger skat-btn--sm"
+                      th:text="#{config.action.delete}"
+                      onclick="return confirm('Slet fremtidig konfigurationsversion?')">Slet</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- NB-rate derived-rate preview panel (HTMX, for RATE_NB_UDLAAN only) -->
+  <div class="skat-card" th:if="${configKey == 'RATE_NB_UDLAAN' and canEdit}">
+    <h2 th:text="#{config.preview.title}">Forhåndsvisning af afledte renter</h2>
+    <p th:text="#{config.preview.description}">
+      Angiv en ny NB-udlånsrente og startdato for at forhåndsvise, hvad de afledte renter ville blive.
+    </p>
+    <form class="skat-form skat-form--inline"
+          hx-get="/caseworker-portal/konfiguration/RATE_NB_UDLAAN/preview"
+          hx-target="#derived-preview-panel"
+          hx-swap="innerHTML"
+          aria-label="#{config.preview.title}">
+      <div class="skat-form__group">
+        <label for="nbRate" th:text="#{config.preview.nbRate}">NB-udlånsrente (%)</label>
+        <input type="number" id="nbRate" name="nbRate" class="skat-input skat-input--sm"
+               step="0.01" min="0" max="30" placeholder="5.75" required />
+      </div>
+      <div class="skat-form__group">
+        <label for="previewValidFrom" th:text="#{config.preview.validFrom}">Gyldig fra</label>
+        <input type="date" id="previewValidFrom" name="validFrom" class="skat-input skat-input--sm" required />
+      </div>
+      <button type="submit" class="skat-btn skat-btn--secondary"
+              th:text="#{config.preview.submit}">Forhåndsvis</button>
+    </form>
+    <div id="derived-preview-panel" class="skat-spacer--top">
+      <!-- HTMX will load derived-preview fragment here -->
+    </div>
+  </div>
+
+  <!-- Create new version form (editors only) -->
+  <div class="skat-card skat-card--form" th:if="${canEdit}">
+    <h2 th:text="#{config.create.newVersion}">Opret ny version</h2>
+    <form th:action="@{/konfiguration}" method="post" class="skat-form"
+          aria-label="#{config.create.newVersion}">
+      <input type="hidden" name="configKey" th:value="${configKey}" />
+
+      <div class="skat-form__group">
+        <label for="newValue" th:text="#{config.form.value}">Ny værdi</label>
+        <input type="text" id="newValue" name="configValue" class="skat-input" required
+               th:placeholder="${history != null and !history.isEmpty()} ? ${history[0].configValue} : ''" />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="newValueType" th:text="#{config.form.valueType}">Datatype</label>
+        <select id="newValueType" name="valueType" class="skat-select" required>
+          <option value="DECIMAL" th:selected="${history != null and !history.isEmpty() and history[0].valueType == 'DECIMAL'}">Decimal</option>
+          <option value="INTEGER" th:selected="${history != null and !history.isEmpty() and history[0].valueType == 'INTEGER'}">Heltal</option>
+          <option value="STRING" th:selected="${history != null and !history.isEmpty() and history[0].valueType == 'STRING'}">Tekst</option>
+          <option value="BOOLEAN" th:selected="${history != null and !history.isEmpty() and history[0].valueType == 'BOOLEAN'}">Boolean</option>
+        </select>
+      </div>
+
+      <div class="skat-form__group">
+        <label for="newValidFrom" th:text="#{config.form.validFrom}">Gyldig fra</label>
+        <input type="date" id="newValidFrom" name="validFrom" class="skat-input" required />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="newValidTo" th:text="#{config.form.validTo}">Gyldig til (valgfrit)</label>
+        <input type="date" id="newValidTo" name="validTo" class="skat-input" />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="newDescription" th:text="#{config.form.description}">Beskrivelse</label>
+        <input type="text" id="newDescription" name="description" class="skat-input"
+               required maxlength="500" />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="newLegalBasis" th:text="#{config.form.legalBasis}">Retsgrundlag</label>
+        <input type="text" id="newLegalBasis" name="legalBasis" class="skat-input"
+               placeholder="§ 5, stk. 1, i renteloven" required maxlength="255"
+               th:value="${history != null and !history.isEmpty()} ? ${history[0].legalBasis} : ''" />
+      </div>
+
+      <div class="skat-form__actions">
+        <button type="submit" class="skat-btn skat-btn--primary"
+                th:text="#{config.action.create}">Opret</button>
+        <a th:href="@{/konfiguration}" class="skat-btn skat-btn--secondary"
+           th:text="#{config.action.back}">Tilbage</a>
+      </div>
+    </form>
+  </div>
+
+  <div th:if="${!canEdit}" class="skat-spacer--top">
+    <a th:href="@{/konfiguration}" class="skat-btn skat-btn--secondary"
+       th:text="#{config.action.back}">Tilbage</a>
+  </div>
+
+</section>
+</body>
+</html>

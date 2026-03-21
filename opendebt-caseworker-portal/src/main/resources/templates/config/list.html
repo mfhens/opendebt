@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{config.list.title}">Forretningskonfiguration</title>
+</head>
+<body>
+
+<span layout:fragment="breadcrumb">
+  <span th:text="#{config.breadcrumb}">Konfiguration</span>
+</span>
+
+<section layout:fragment="content">
+
+  <h1 th:text="#{config.list.title}">Forretningskonfiguration</h1>
+  <p class="skat-lead" th:text="#{config.list.description}">
+    Tidsversionerede forretningsværdier (renter, gebyrer, tærskler).
+  </p>
+
+  <!-- Success / Error flash messages -->
+  <div class="skat-alert skat-alert--success" th:if="${successMessage}" role="alert">
+    <span class="ikon ikon-check" aria-hidden="true"></span>
+    <span th:text="${successMessage}">Succes</span>
+  </div>
+  <div class="skat-alert skat-alert--error" th:if="${errorMessage}" role="alert">
+    <span class="ikon ikon-problem" aria-hidden="true"></span>
+    <span th:text="${errorMessage}">Fejl</span>
+  </div>
+  <div class="skat-alert skat-alert--error" th:if="${backendError}" role="alert">
+    <span class="ikon ikon-problem" aria-hidden="true"></span>
+    <span th:text="${backendError}">Tjenesten er ikke tilgængelig.</span>
+  </div>
+
+  <!-- Groups: Renter, Gebyrer, Tærskler -->
+  <div th:if="${grouped != null and !grouped.isEmpty()}">
+
+    <!-- Renter group -->
+    <div class="skat-card" th:if="${grouped.containsKey('RATE_INDR_STD') or grouped.containsKey('RATE_TOLD_STD') or grouped.containsKey('RATE_NB_UDLAAN')}">
+      <h2 th:text="#{config.group.renter}">Renter</h2>
+      <table class="skat-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col" th:text="#{config.table.key}">Nøgle</th>
+            <th scope="col" th:text="#{config.table.value}">Værdi</th>
+            <th scope="col" th:text="#{config.table.validFrom}">Gyldig fra</th>
+            <th scope="col" th:text="#{config.table.validTo}">Gyldig til</th>
+            <th scope="col" th:text="#{config.table.status}">Status</th>
+            <th scope="col" th:text="#{config.table.actions}">Handlinger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <th:block th:each="entry : ${#maps.values(grouped)}">
+            <th:block th:each="e : ${entry}"
+                      th:if="${e.configKey != null and (e.configKey.startsWith('RATE_') or e.configKey.startsWith('TOLD_'))}">
+              <tr>
+                <td><a th:href="@{/konfiguration/{key}(key=${e.configKey})}" th:text="${e.configKey}">RATE_INDR_STD</a></td>
+                <td th:text="${e.configValue}">0.0575</td>
+                <td th:text="${e.validFrom}">2024-01-01</td>
+                <td th:text="${e.validTo ?: '—'}">—</td>
+                <td>
+                  <span class="skat-badge"
+                        th:classappend="${e.computedStatus == 'ACTIVE'} ? 'skat-badge--success' :
+                                       (${e.computedStatus == 'FUTURE'} ? 'skat-badge--info' :
+                                       (${e.computedStatus == 'PENDING_REVIEW'} ? 'skat-badge--warning' : 'skat-badge--neutral'))"
+                        th:text="#{${'config.status.' + (e.computedStatus ?: 'UNKNOWN')}}">Aktiv</span>
+                </td>
+                <td>
+                  <a th:href="@{/konfiguration/{key}(key=${e.configKey})}"
+                     class="skat-btn skat-btn--tertiary skat-btn--sm"
+                     th:text="#{config.action.history}">Historik</a>
+                  <form th:if="${canEdit and e.computedStatus == 'PENDING_REVIEW'}"
+                        th:action="@{/konfiguration/{id}/approve(id=${e.id})}"
+                        method="post" style="display:inline">
+                    <button type="submit" class="skat-btn skat-btn--primary skat-btn--sm"
+                            th:text="#{config.action.approve}">Godkend</button>
+                  </form>
+                  <form th:if="${canEdit and e.computedStatus == 'PENDING_REVIEW'}"
+                        th:action="@{/konfiguration/{id}/reject(id=${e.id})}"
+                        method="post" style="display:inline">
+                    <button type="submit" class="skat-btn skat-btn--secondary skat-btn--sm"
+                            th:text="#{config.action.reject}">Afvis</button>
+                  </form>
+                </td>
+              </tr>
+            </th:block>
+          </th:block>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Gebyrer group -->
+    <div class="skat-card" th:if="${grouped.containsKey('FEE_GEBYR') or grouped.containsKey('FEE_STANDARDGEBYR')}">
+      <h2 th:text="#{config.group.gebyrer}">Gebyrer</h2>
+      <table class="skat-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col" th:text="#{config.table.key}">Nøgle</th>
+            <th scope="col" th:text="#{config.table.value}">Værdi</th>
+            <th scope="col" th:text="#{config.table.validFrom}">Gyldig fra</th>
+            <th scope="col" th:text="#{config.table.validTo}">Gyldig til</th>
+            <th scope="col" th:text="#{config.table.status}">Status</th>
+            <th scope="col" th:text="#{config.table.actions}">Handlinger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <th:block th:each="entry : ${#maps.values(grouped)}">
+            <th:block th:each="e : ${entry}"
+                      th:if="${e.configKey != null and e.configKey.startsWith('FEE_')}">
+              <tr>
+                <td><a th:href="@{/konfiguration/{key}(key=${e.configKey})}" th:text="${e.configKey}">FEE_GEBYR</a></td>
+                <td th:text="${e.configValue}">250.00</td>
+                <td th:text="${e.validFrom}">2024-01-01</td>
+                <td th:text="${e.validTo ?: '—'}">—</td>
+                <td>
+                  <span class="skat-badge"
+                        th:classappend="${e.computedStatus == 'ACTIVE'} ? 'skat-badge--success' :
+                                       (${e.computedStatus == 'FUTURE'} ? 'skat-badge--info' :
+                                       (${e.computedStatus == 'PENDING_REVIEW'} ? 'skat-badge--warning' : 'skat-badge--neutral'))"
+                        th:text="#{${'config.status.' + (e.computedStatus ?: 'UNKNOWN')}}">Aktiv</span>
+                </td>
+                <td>
+                  <a th:href="@{/konfiguration/{key}(key=${e.configKey})}"
+                     class="skat-btn skat-btn--tertiary skat-btn--sm"
+                     th:text="#{config.action.history}">Historik</a>
+                </td>
+              </tr>
+            </th:block>
+          </th:block>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Alle øvrige / Tærskler group -->
+    <div class="skat-card">
+      <h2 th:text="#{config.group.other}">Øvrige konfigurationer</h2>
+      <table class="skat-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col" th:text="#{config.table.key}">Nøgle</th>
+            <th scope="col" th:text="#{config.table.value}">Aktuel værdi</th>
+            <th scope="col" th:text="#{config.table.validFrom}">Gyldig fra</th>
+            <th scope="col" th:text="#{config.table.status}">Status</th>
+            <th scope="col" th:text="#{config.table.actions}">Handlinger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <th:block th:each="mapEntry : ${grouped}">
+            <th:block th:each="e : ${mapEntry.value}"
+                      th:if="${e.configKey != null
+                              and !e.configKey.startsWith('RATE_')
+                              and !e.configKey.startsWith('TOLD_')
+                              and !e.configKey.startsWith('FEE_')}">
+              <tr>
+                <td><a th:href="@{/konfiguration/{key}(key=${e.configKey})}" th:text="${e.configKey}">THRESHOLD_MIN</a></td>
+                <td th:text="${e.configValue}">100</td>
+                <td th:text="${e.validFrom}">2024-01-01</td>
+                <td>
+                  <span class="skat-badge"
+                        th:classappend="${e.computedStatus == 'ACTIVE'} ? 'skat-badge--success' :
+                                       (${e.computedStatus == 'FUTURE'} ? 'skat-badge--info' :
+                                       (${e.computedStatus == 'PENDING_REVIEW'} ? 'skat-badge--warning' : 'skat-badge--neutral'))"
+                        th:text="#{${'config.status.' + (e.computedStatus ?: 'UNKNOWN')}}">Aktiv</span>
+                </td>
+                <td>
+                  <a th:href="@{/konfiguration/{key}(key=${e.configKey})}"
+                     class="skat-btn skat-btn--tertiary skat-btn--sm"
+                     th:text="#{config.action.history}">Historik</a>
+                </td>
+              </tr>
+            </th:block>
+          </th:block>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Empty state -->
+  <div class="skat-empty-state" th:if="${grouped == null or grouped.isEmpty()}">
+    <span class="ikon ikon-information" aria-hidden="true"></span>
+    <p th:text="#{config.list.empty}">Ingen konfigurationsværdier fundet.</p>
+  </div>
+
+  <!-- Create new config entry form (editors only) -->
+  <div class="skat-card skat-card--form" th:if="${canEdit}">
+    <h2 th:text="#{config.create.title}">Opret ny konfigurationsværdi</h2>
+    <form th:action="@{/konfiguration}" method="post" class="skat-form"
+          aria-label="#{config.create.title}">
+
+      <div class="skat-form__group">
+        <label for="configKey" th:text="#{config.form.key}">Nøgle</label>
+        <select id="configKey" name="configKey" class="skat-select" required>
+          <option value="">-- Vælg --</option>
+          <option value="RATE_NB_UDLAAN" th:text="#{config.key.RATE_NB_UDLAAN}">Nationalbankens udlånsrente</option>
+          <option value="RATE_INDR_STD" th:text="#{config.key.RATE_INDR_STD}">Inddrivelsesrente standard</option>
+          <option value="RATE_TOLD_STD" th:text="#{config.key.RATE_TOLD_STD}">Toldinddrivelsesrente standard</option>
+          <option value="RATE_TOLD_AFD" th:text="#{config.key.RATE_TOLD_AFD}">Toldinddrivelsesrente afdrag</option>
+          <option value="FEE_STANDARDGEBYR" th:text="#{config.key.FEE_STANDARDGEBYR}">Standardgebyr</option>
+          <option value="THRESHOLD_MIN_INTEREST" th:text="#{config.key.THRESHOLD_MIN_INTEREST}">Minimumrentegrænse</option>
+        </select>
+      </div>
+
+      <div class="skat-form__group">
+        <label for="configValue" th:text="#{config.form.value}">Værdi</label>
+        <input type="text" id="configValue" name="configValue" class="skat-input"
+               placeholder="0.0575" required />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="valueType" th:text="#{config.form.valueType}">Datatype</label>
+        <select id="valueType" name="valueType" class="skat-select" required>
+          <option value="DECIMAL">Decimal</option>
+          <option value="INTEGER">Heltal</option>
+          <option value="STRING">Tekst</option>
+          <option value="BOOLEAN">Boolean</option>
+        </select>
+      </div>
+
+      <div class="skat-form__group">
+        <label for="validFrom" th:text="#{config.form.validFrom}">Gyldig fra</label>
+        <input type="date" id="validFrom" name="validFrom" class="skat-input" required />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="validTo" th:text="#{config.form.validTo}">Gyldig til (valgfrit)</label>
+        <input type="date" id="validTo" name="validTo" class="skat-input" />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="description" th:text="#{config.form.description}">Beskrivelse</label>
+        <input type="text" id="description" name="description" class="skat-input"
+               required maxlength="500" />
+      </div>
+
+      <div class="skat-form__group">
+        <label for="legalBasis" th:text="#{config.form.legalBasis}">Retsgrundlag</label>
+        <input type="text" id="legalBasis" name="legalBasis" class="skat-input"
+               placeholder="§ 5, stk. 1, i renteloven" required maxlength="255" />
+      </div>
+
+      <div class="skat-form__actions">
+        <button type="submit" class="skat-btn skat-btn--primary"
+                th:text="#{config.action.create}">Opret</button>
+        <button type="reset" class="skat-btn skat-btn--secondary"
+                th:text="#{config.action.reset}">Nulstil</button>
+      </div>
+    </form>
+  </div>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    HTMX fragment: derived rate preview panel.
+    Loaded into #derived-preview-panel via hx-get on the detail page.
+  -->
+  <div th:fragment="derivedPreview">
+    <div class="skat-alert skat-alert--error" th:if="${previewError}" role="alert">
+      <span th:text="${previewError}">Fejl</span>
+    </div>
+
+    <div th:if="${preview != null and !preview.isEmpty()}">
+      <p>
+        <strong th:text="#{config.preview.result.intro}">Forhåndsvisning af afledte renter for NB-rente:</strong>
+        <code th:text="${nbRate}">5.75</code>%
+        <span th:text="#{config.preview.result.from}">fra</span>
+        <code th:text="${validFrom}">2024-01-01</code>
+      </p>
+      <table class="skat-table skat-table--compact" role="grid">
+        <thead>
+          <tr>
+            <th scope="col" th:text="#{config.table.key}">Nøgle</th>
+            <th scope="col" th:text="#{config.table.value}">Afledt værdi</th>
+            <th scope="col" th:text="#{config.table.description}">Beskrivelse</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="e : ${preview}">
+            <td><code th:text="${e.configKey}">RATE_INDR_STD</code></td>
+            <td th:text="${e.configValue}">8.75</td>
+            <td th:text="${e.description ?: '—'}">Inddrivelsesrente</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="skat-help-text" th:text="#{config.preview.result.note}">
+        Disse renter oprettes automatisk, når den nye NB-rente gemmes.
+      </p>
+    </div>
+
+    <div th:if="${preview == null or preview.isEmpty()}" class="skat-empty-state">
+      <p th:text="#{config.preview.result.empty}">Ingen afledte renter beregnet.</p>
+    </div>
+  </div>
+</body>
+</html>
