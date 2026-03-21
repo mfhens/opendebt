@@ -45,6 +45,14 @@ public class ClaimAdjustmentController {
   private static final int CPR_VISIBLE_DIGITS = 6;
   private static final String CPR_MASK = "****";
 
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String VIEW_ADJUSTMENT_FORM = "claims/adjustment/form";
+  private static final String PAGE_CLAIMS_RECOVERY = "claims-recovery";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
+  private static final String MODEL_SERVICE_ERROR = "serviceError";
+  private static final String MODEL_CLAIM_ID = "claimId";
+  private static final String MODEL_ADJUSTMENT_FORM = "adjustmentForm";
+
   private final DebtServiceClient debtServiceClient;
   private final CreditorServiceClient creditorServiceClient;
   private final PortalSessionService portalSessionService;
@@ -60,7 +68,7 @@ public class ClaimAdjustmentController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     CreditorAgreementDto agreement = creditorServiceClient.getCreditorAgreement(actingCreditor);
@@ -69,8 +77,8 @@ public class ClaimAdjustmentController {
           "serviceError",
           messageSource.getMessage(
               "adjustment.error.nopermission", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("currentPage", "claims-recovery");
-      return "claims/adjustment/form";
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
+      return VIEW_ADJUSTMENT_FORM;
     }
 
     ClaimAdjustmentType.Direction dir = parseDirection(direction);
@@ -83,29 +91,29 @@ public class ClaimAdjustmentController {
           "serviceError",
           messageSource.getMessage(
               "adjustment.error.notypes", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("currentPage", "claims-recovery");
-      return "claims/adjustment/form";
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
+      return VIEW_ADJUSTMENT_FORM;
     }
 
     ClaimDetailDto claimDetail = loadClaimDetail(id, model);
     if (claimDetail == null) {
-      return "claims/adjustment/form";
+      return VIEW_ADJUSTMENT_FORM;
     }
     censorDebtorCprNumbers(claimDetail);
 
-    model.addAttribute("claimId", id);
+    model.addAttribute(MODEL_CLAIM_ID, id);
     model.addAttribute("claim", claimDetail);
     model.addAttribute("direction", dir.name());
     model.addAttribute("allowedTypes", allowedTypes);
     model.addAttribute("multiDebtor", claimDetail.getDebtorCount() > 1);
     model.addAttribute("debtors", claimDetail.getDebtors());
-    model.addAttribute("currentPage", "claims-recovery");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
 
     if (!model.containsAttribute("adjustmentForm")) {
-      model.addAttribute("adjustmentForm", new ClaimAdjustmentRequestDto());
+      model.addAttribute(MODEL_ADJUSTMENT_FORM, new ClaimAdjustmentRequestDto());
     }
 
-    return "claims/adjustment/form";
+    return VIEW_ADJUSTMENT_FORM;
   }
 
   /** Processes the adjustment form submission. */
@@ -121,7 +129,7 @@ public class ClaimAdjustmentController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     CreditorAgreementDto agreement = creditorServiceClient.getCreditorAgreement(actingCreditor);
@@ -130,8 +138,8 @@ public class ClaimAdjustmentController {
           "serviceError",
           messageSource.getMessage(
               "adjustment.error.nopermission", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("currentPage", "claims-recovery");
-      return "claims/adjustment/form";
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
+      return VIEW_ADJUSTMENT_FORM;
     }
 
     // Validate the selected adjustment type is permitted
@@ -207,11 +215,11 @@ public class ClaimAdjustmentController {
   public String showReceipt(@PathVariable UUID id, Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
-    model.addAttribute("claimId", id);
-    model.addAttribute("currentPage", "claims-recovery");
+    model.addAttribute(MODEL_CLAIM_ID, id);
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
 
     // Receipt is passed via flash attributes from the POST redirect
     if (!model.containsAttribute("receipt")) {
@@ -272,14 +280,14 @@ public class ClaimAdjustmentController {
       censorDebtorCprNumbers(claimDetail);
     }
 
-    model.addAttribute("claimId", claimId);
+    model.addAttribute(MODEL_CLAIM_ID, claimId);
     model.addAttribute("claim", claimDetail);
     model.addAttribute("direction", dir.name());
     model.addAttribute("allowedTypes", allowedTypes);
     model.addAttribute("multiDebtor", claimDetail != null && claimDetail.getDebtorCount() > 1);
     model.addAttribute("debtors", claimDetail != null ? claimDetail.getDebtors() : null);
-    model.addAttribute("currentPage", "claims-recovery");
-    return "claims/adjustment/form";
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
+    return VIEW_ADJUSTMENT_FORM;
   }
 
   /** Censors CPR numbers in debtor list, showing only the first 6 digits. */

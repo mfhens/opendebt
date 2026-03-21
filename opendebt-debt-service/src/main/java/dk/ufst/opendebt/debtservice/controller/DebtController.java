@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
+import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
 import dk.ufst.opendebt.debtservice.dto.TransferForCollectionRequest;
 import dk.ufst.opendebt.debtservice.service.ClaimLifecycleService;
 import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
+import dk.ufst.opendebt.debtservice.service.InterestRecalculationService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,7 @@ public class DebtController {
   private final ReadinessValidationService readinessValidationService;
   private final ClaimSubmissionService claimSubmissionService;
   private final ClaimLifecycleService claimLifecycleService;
+  private final InterestRecalculationService interestRecalculationService;
 
   @GetMapping
   @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
@@ -181,5 +184,24 @@ public class DebtController {
       description = "Reduces the outstanding balance of a debt by the specified amount")
   public ResponseEntity<DebtDto> writeDown(@PathVariable UUID id, @RequestParam BigDecimal amount) {
     return ResponseEntity.ok(debtService.writeDown(id, amount));
+  }
+
+  @PostMapping("/{id}/interest/recalculate")
+  @PreAuthorize("hasRole('SERVICE')")
+  @Operation(
+      summary = "Retroactively recalculate interest after a crossing transaction",
+      description =
+          "Deletes interest_journal_entries for the debt from the given date forward and"
+              + " recalculates them using the current (post write-down) outstanding balance."
+              + " Called by payment-service via Flowable orchestration (ADR-0019) when a crossing"
+              + " transaction is detected (petition039).")
+  public ResponseEntity<InterestRecalculationResult> recalculateInterest(
+      @PathVariable UUID id,
+      @Parameter(
+              description =
+                  "Earliest accrual date to recalculate (inclusive). Must be in the past.")
+          @RequestParam
+          LocalDate from) {
+    return ResponseEntity.ok(interestRecalculationService.recalculateFromDate(id, from));
   }
 }

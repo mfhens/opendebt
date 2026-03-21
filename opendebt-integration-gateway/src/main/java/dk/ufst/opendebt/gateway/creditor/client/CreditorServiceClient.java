@@ -10,6 +10,8 @@ import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.gateway.creditor.dto.AccessResolutionRequest;
 import dk.ufst.opendebt.gateway.creditor.dto.AccessResolutionResponse;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -25,6 +27,8 @@ public class CreditorServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = "creditor-service", fallbackMethod = "resolveAccessFallback")
+  @Retry(name = "creditor-service")
   public AccessResolutionResponse resolveAccess(AccessResolutionRequest request) {
     log.debug(
         "Resolving access for channel={} identity={}",
@@ -68,5 +72,19 @@ public class CreditorServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(AccessResolutionResponse.class)
         .block();
+  }
+
+  private AccessResolutionResponse resolveAccessFallback(
+      AccessResolutionRequest request, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    throw new OpenDebtException(
+        "Creditor service unavailable",
+        "CREDITOR_SERVICE_UNAVAILABLE",
+        OpenDebtException.ErrorSeverity.CRITICAL);
   }
 }

@@ -18,12 +18,18 @@ import dk.ufst.opendebt.creditor.dto.ContactEmailUpdateDto;
 import dk.ufst.opendebt.creditor.dto.CreditorAgreementDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
 public class CreditorServiceClient {
+
+  private static final String CIRCUIT_BREAKER_NAME = "creditor-service";
+  private static final String ERR_SERVICE_UNAVAILABLE = "Creditor service unavailable";
+  private static final String ERROR_CODE_UNAVAILABLE = "CREDITOR_SERVICE_UNAVAILABLE";
 
   private final WebClient webClient;
 
@@ -33,6 +39,8 @@ public class CreditorServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "listAllActiveFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public List<PortalCreditorDto> listAllActive() {
     try {
       List<PortalCreditorDto> result =
@@ -49,6 +57,8 @@ public class CreditorServiceClient {
     }
   }
 
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getByCreditorOrgIdFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public PortalCreditorDto getByCreditorOrgId(UUID creditorOrgId) {
     log.debug("Fetching creditor by orgId: {}", creditorOrgId);
 
@@ -80,14 +90,16 @@ public class CreditorServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Creditor service unavailable",
-                        "CREDITOR_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(PortalCreditorDto.class)
         .block();
   }
 
   /** Fetches the creditor agreement configuration. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getCreditorAgreementFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public CreditorAgreementDto getCreditorAgreement(UUID creditorOrgId) {
     log.debug("Fetching creditor agreement for orgId: {}", creditorOrgId);
 
@@ -112,8 +124,8 @@ public class CreditorServiceClient {
               response ->
                   Mono.error(
                       new OpenDebtException(
-                          "Creditor service unavailable",
-                          "CREDITOR_SERVICE_UNAVAILABLE",
+                          ERR_SERVICE_UNAVAILABLE,
+                          ERROR_CODE_UNAVAILABLE,
                           OpenDebtException.ErrorSeverity.CRITICAL)))
           .bodyToMono(CreditorAgreementDto.class)
           .block();
@@ -124,6 +136,7 @@ public class CreditorServiceClient {
   }
 
   /** Updates the creditor contact email. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "updateContactEmailFallback")
   public void updateContactEmail(UUID creditorOrgId, ContactEmailUpdateDto updateDto) {
     log.debug("Updating contact email for creditor: {}", creditorOrgId);
 
@@ -149,13 +162,15 @@ public class CreditorServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Creditor service unavailable",
-                        "CREDITOR_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .toBodilessEntity()
         .block();
   }
 
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "resolveAccessFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public AccessResolutionResponse resolveAccess(AccessResolutionRequest request) {
     log.debug("Resolving access for channel: {}", request.getChannelType());
 
@@ -180,10 +195,66 @@ public class CreditorServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Creditor service unavailable",
-                        "CREDITOR_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(AccessResolutionResponse.class)
         .block();
+  }
+
+  private List<PortalCreditorDto> listAllActiveFallback(Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listAllActive: {}", t.getMessage());
+    return Collections.emptyList();
+  }
+
+  private PortalCreditorDto getByCreditorOrgIdFallback(UUID creditorOrgId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getByCreditorOrgId: {}", t.getMessage());
+    return null;
+  }
+
+  private CreditorAgreementDto getCreditorAgreementFallback(UUID creditorOrgId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getCreditorAgreement: {}", t.getMessage());
+    return null;
+  }
+
+  private void updateContactEmailFallback(
+      UUID creditorOrgId, ContactEmailUpdateDto updateDto, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for updateContactEmail: {}", t.getMessage());
+  }
+
+  private AccessResolutionResponse resolveAccessFallback(
+      AccessResolutionRequest request, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for resolveAccess: {}", t.getMessage());
+    return null;
   }
 }

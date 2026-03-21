@@ -31,6 +31,9 @@ public class ClaimsListController {
   private static final String CPR_TYPE = "CPR";
   private static final int CPR_VISIBLE_DIGITS = 6;
   private static final String CPR_MASK = "****";
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
+  private static final String MODEL_LIST_TYPE = "listType";
 
   private final DebtServiceClient debtServiceClient;
   private final PortalSessionService portalSessionService;
@@ -40,10 +43,10 @@ public class ClaimsListController {
   public String recoveryList(Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
-    model.addAttribute("currentPage", "claims-recovery");
-    model.addAttribute("listType", "recovery");
+    model.addAttribute(MODEL_CURRENT_PAGE, "claims-recovery");
+    model.addAttribute(MODEL_LIST_TYPE, "recovery");
     return "claims/recovery-list";
   }
 
@@ -93,10 +96,10 @@ public class ClaimsListController {
   public String zeroBalanceList(Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
-    model.addAttribute("currentPage", "claims-zerobalance");
-    model.addAttribute("listType", "zerobalance");
+    model.addAttribute(MODEL_CURRENT_PAGE, "claims-zerobalance");
+    model.addAttribute(MODEL_LIST_TYPE, "zerobalance");
     return "claims/zero-balance-list";
   }
 
@@ -151,14 +154,14 @@ public class ClaimsListController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimCountsDto counts = loadClaimCounts(actingCreditor, dateFrom, dateTo);
     model.addAttribute("counts", counts);
     model.addAttribute("dateFrom", dateFrom);
     model.addAttribute("dateTo", dateTo);
-    model.addAttribute("currentPage", "claims-counts");
+    model.addAttribute(MODEL_CURRENT_PAGE, "claims-counts");
     return "claims/counts";
   }
 
@@ -261,11 +264,11 @@ public class ClaimsListController {
       LocalDate dateFrom,
       LocalDate dateTo) {
     model.addAttribute("claims", claims.getContent());
-    model.addAttribute("currentPage", claims.getNumber());
+    model.addAttribute(MODEL_CURRENT_PAGE, claims.getNumber());
     model.addAttribute("totalPages", claims.getTotalPages());
     model.addAttribute("totalElements", claims.getTotalElements());
     model.addAttribute("pageSize", claims.getSize());
-    model.addAttribute("listType", listType);
+    model.addAttribute(MODEL_LIST_TYPE, listType);
     model.addAttribute("sortBy", sortBy);
     model.addAttribute("sortDirection", sortDirection);
     model.addAttribute("searchQuery", searchQuery);

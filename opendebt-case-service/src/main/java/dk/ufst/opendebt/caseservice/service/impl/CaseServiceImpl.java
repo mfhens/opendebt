@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +26,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class CaseServiceImpl implements CaseService {
+
+  private static final String CASE_NOT_FOUND_PREFIX = "Case not found: ";
+  private static final String CASE_NOT_FOUND_CODE = "CASE_NOT_FOUND";
+  private static final String SYSTEM_USER = "system";
 
   private final CaseRepository caseRepository;
   private final CasePartyRepository casePartyRepository;
@@ -53,7 +56,8 @@ public class CaseServiceImpl implements CaseService {
     CaseEntity entity =
         caseRepository
             .findById(id)
-            .orElseThrow(() -> new OpenDebtException("Case not found: " + id, "CASE_NOT_FOUND"));
+            .orElseThrow(
+                () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
     return toDto(entity);
   }
 
@@ -65,7 +69,7 @@ public class CaseServiceImpl implements CaseService {
     List<CasePartyEntity> parties =
         casePartyRepository.findByCaseIdAndPartyRole(null, PartyRole.PRIMARY_DEBTOR).stream()
             .filter(p -> p.getPersonId().equals(debtorPersonId))
-            .collect(Collectors.toList());
+            .toList();
 
     // Fallback: query all parties for this person
     if (parties.isEmpty()) {
@@ -75,7 +79,7 @@ public class CaseServiceImpl implements CaseService {
     return parties.stream()
         .map(p -> caseRepository.findById(p.getCaseId()).map(this::toDto).orElse(null))
         .filter(dto -> dto != null)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -108,7 +112,8 @@ public class CaseServiceImpl implements CaseService {
     CaseEntity entity =
         caseRepository
             .findById(id)
-            .orElseThrow(() -> new OpenDebtException("Case not found: " + id, "CASE_NOT_FOUND"));
+            .orElseThrow(
+                () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
     if (dto.getTitle() != null) entity.setTitle(dto.getTitle());
     if (dto.getDescription() != null) entity.setDescription(dto.getDescription());
     if (dto.getCaseState() != null) {
@@ -127,7 +132,8 @@ public class CaseServiceImpl implements CaseService {
     CaseEntity entity =
         caseRepository
             .findById(id)
-            .orElseThrow(() -> new OpenDebtException("Case not found: " + id, "CASE_NOT_FOUND"));
+            .orElseThrow(
+                () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
     entity.setPrimaryCaseworkerId(caseworkerId);
     log.info("Assigned case {} to caseworker {}", id, caseworkerId);
     return toDto(caseRepository.save(entity));
@@ -139,7 +145,8 @@ public class CaseServiceImpl implements CaseService {
     CaseEntity entity =
         caseRepository
             .findById(id)
-            .orElseThrow(() -> new OpenDebtException("Case not found: " + id, "CASE_NOT_FOUND"));
+            .orElseThrow(
+                () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
     CaseState newState = mapCaseState(closureState);
     entity.setCaseState(newState);
     entity.setStateChangedAt(LocalDateTime.now());
@@ -151,11 +158,11 @@ public class CaseServiceImpl implements CaseService {
   @Transactional
   public void addDebtToCase(UUID caseId, UUID debtId) {
     if (!caseRepository.existsById(caseId)) {
-      throw new OpenDebtException("Case not found: " + caseId, "CASE_NOT_FOUND");
+      throw new OpenDebtException(CASE_NOT_FOUND_PREFIX + caseId, CASE_NOT_FOUND_CODE);
     }
     if (!caseDebtRepository.existsByCaseIdAndDebtIdAndRemovedAtIsNull(caseId, debtId)) {
       CaseDebtEntity caseDebt =
-          CaseDebtEntity.builder().caseId(caseId).debtId(debtId).addedBy("system").build();
+          CaseDebtEntity.builder().caseId(caseId).debtId(debtId).addedBy(SYSTEM_USER).build();
       caseDebtRepository.save(caseDebt);
       log.info("Added debt {} to case {}", debtId, caseId);
     }
@@ -171,7 +178,7 @@ public class CaseServiceImpl implements CaseService {
         .ifPresent(
             cd -> {
               cd.setRemovedAt(LocalDateTime.now());
-              cd.setRemovedBy("system");
+              cd.setRemovedBy(SYSTEM_USER);
               caseDebtRepository.save(cd);
               log.info("Removed debt {} from case {}", debtId, caseId);
             });
@@ -217,7 +224,7 @@ public class CaseServiceImpl implements CaseService {
             .stateChangedAt(LocalDateTime.now())
             .caseType(CaseType.DEBT_COLLECTION)
             .ownerOrganisationId("UFST")
-            .createdBy("system")
+            .createdBy(SYSTEM_USER)
             .build();
     CaseEntity savedCase = caseRepository.save(newCase);
 
@@ -229,7 +236,7 @@ public class CaseServiceImpl implements CaseService {
             .partyRole(PartyRole.PRIMARY_DEBTOR)
             .partyType(PartyType.PERSON)
             .activeFrom(LocalDate.now())
-            .addedBy("system")
+            .addedBy(SYSTEM_USER)
             .build();
     casePartyRepository.save(partyEntity);
 
@@ -260,9 +267,7 @@ public class CaseServiceImpl implements CaseService {
   @Transactional(readOnly = true)
   public List<CasePartyDto> getParties(UUID caseId) {
     findOrThrow(caseId);
-    return casePartyRepository.findByCaseId(caseId).stream()
-        .map(this::toPartyDto)
-        .collect(Collectors.toList());
+    return casePartyRepository.findByCaseId(caseId).stream().map(this::toPartyDto).toList();
   }
 
   @Override
@@ -306,7 +311,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseDebtRepository.findByCaseIdAndRemovedAtIsNull(caseId).stream()
         .map(this::toDebtDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   // ── Journal ──────────────────────────────────────────────────────────
@@ -317,7 +322,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseJournalEntryRepository.findByCaseIdOrderByJournalEntryTimeDesc(caseId).stream()
         .map(this::toJournalEntryDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -356,7 +361,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseJournalNoteRepository.findByCaseIdOrderByCreatedAtDesc(caseId).stream()
         .map(this::toJournalNoteDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -384,7 +389,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseEventRepository.findByCaseIdOrderByPerformedAtDesc(caseId).stream()
         .map(this::toEventDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   // ── State transitions ────────────────────────────────────────────────
@@ -425,7 +430,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return collectionMeasureRepository.findByCaseId(caseId).stream()
         .map(this::toMeasureDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -460,9 +465,7 @@ public class CaseServiceImpl implements CaseService {
   @Transactional(readOnly = true)
   public List<ObjectionDto> getObjections(UUID caseId) {
     findOrThrow(caseId);
-    return objectionRepository.findByCaseId(caseId).stream()
-        .map(this::toObjectionDto)
-        .collect(Collectors.toList());
+    return objectionRepository.findByCaseId(caseId).stream().map(this::toObjectionDto).toList();
   }
 
   @Override
@@ -504,7 +507,7 @@ public class CaseServiceImpl implements CaseService {
     entity.setStatus(ObjectionStatus.valueOf(resolution.getStatus()));
     entity.setCaseworkerAssessment(resolution.getDescription());
     entity.setResolvedAt(LocalDateTime.now());
-    entity.setResolvedBy("system");
+    entity.setResolvedBy(SYSTEM_USER);
     ObjectionEntity saved = objectionRepository.save(entity);
     recordEvent(
         caseId, CaseEventType.HEARING_RESOLVED, "Objection resolved: " + resolution.getStatus());
@@ -520,7 +523,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseLegalBasisRepository.findByCaseId(caseId).stream()
         .map(this::toLegalBasisDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -548,7 +551,7 @@ public class CaseServiceImpl implements CaseService {
     findOrThrow(caseId);
     return caseRelationRepository.findBySourceCaseIdOrTargetCaseId(caseId, caseId).stream()
         .map(this::toRelationDto)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -573,7 +576,8 @@ public class CaseServiceImpl implements CaseService {
   private CaseEntity findOrThrow(UUID caseId) {
     return caseRepository
         .findById(caseId)
-        .orElseThrow(() -> new OpenDebtException("Case not found: " + caseId, "CASE_NOT_FOUND"));
+        .orElseThrow(
+            () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + caseId, CASE_NOT_FOUND_CODE));
   }
 
   private void recordEvent(UUID caseId, CaseEventType eventType, String description) {
@@ -582,7 +586,7 @@ public class CaseServiceImpl implements CaseService {
             .caseId(caseId)
             .eventType(eventType)
             .description(description)
-            .performedBy("system")
+            .performedBy(SYSTEM_USER)
             .performedAt(LocalDateTime.now())
             .build();
     caseEventRepository.save(event);
@@ -604,7 +608,7 @@ public class CaseServiceImpl implements CaseService {
                         .activeFrom(p.getActiveFrom())
                         .activeTo(p.getActiveTo())
                         .build())
-            .collect(Collectors.toList());
+            .toList();
 
     // Derive debtorId from PRIMARY_DEBTOR party (backward compat)
     String debtorId =
@@ -619,7 +623,7 @@ public class CaseServiceImpl implements CaseService {
     List<UUID> debtIds =
         caseDebtRepository.findByCaseIdAndRemovedAtIsNull(entity.getId()).stream()
             .map(CaseDebtEntity::getDebtId)
-            .collect(Collectors.toList());
+            .toList();
 
     // Count open objections
     int openObjections =

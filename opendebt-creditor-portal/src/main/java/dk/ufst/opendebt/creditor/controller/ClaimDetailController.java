@@ -33,6 +33,9 @@ public class ClaimDetailController {
   private static final String CPR_TYPE = "CPR";
   private static final int CPR_VISIBLE_DIGITS = 6;
   private static final String CPR_MASK = "****";
+  private static final String MODEL_ADJUSTMENT_ALLOWED = "adjustmentAllowed";
+  private static final String MODEL_WRITE_UP_ALLOWED = "writeUpAllowed";
+  private static final String MODEL_WRITE_DOWN_ALLOWED = "writeDownAllowed";
 
   private final DebtServiceClient debtServiceClient;
   private final CreditorServiceClient creditorServiceClient;
@@ -107,19 +110,19 @@ public class ClaimDetailController {
                 || agreement.isAllowWriteUpPayment()
                 || agreement.isAllowPrincipalCorrection();
         boolean writeDown = agreement.isAllowWriteDown() || agreement.isAllowWriteDownPayment();
-        model.addAttribute("adjustmentAllowed", writeUp || writeDown);
-        model.addAttribute("writeUpAllowed", writeUp);
-        model.addAttribute("writeDownAllowed", writeDown);
+        model.addAttribute(MODEL_ADJUSTMENT_ALLOWED, writeUp || writeDown);
+        model.addAttribute(MODEL_WRITE_UP_ALLOWED, writeUp);
+        model.addAttribute(MODEL_WRITE_DOWN_ALLOWED, writeDown);
       } else {
-        model.addAttribute("adjustmentAllowed", false);
-        model.addAttribute("writeUpAllowed", false);
-        model.addAttribute("writeDownAllowed", false);
+        model.addAttribute(MODEL_ADJUSTMENT_ALLOWED, false);
+        model.addAttribute(MODEL_WRITE_UP_ALLOWED, false);
+        model.addAttribute(MODEL_WRITE_DOWN_ALLOWED, false);
       }
     } catch (Exception ex) {
       log.debug("Could not load creditor agreement for adjustment flags: {}", ex.getMessage());
-      model.addAttribute("adjustmentAllowed", false);
-      model.addAttribute("writeUpAllowed", false);
-      model.addAttribute("writeDownAllowed", false);
+      model.addAttribute(MODEL_ADJUSTMENT_ALLOWED, false);
+      model.addAttribute(MODEL_WRITE_UP_ALLOWED, false);
+      model.addAttribute(MODEL_WRITE_DOWN_ALLOWED, false);
     }
   }
 

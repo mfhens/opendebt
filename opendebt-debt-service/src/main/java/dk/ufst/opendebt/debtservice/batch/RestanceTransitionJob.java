@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity;
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity.BatchStatus;
@@ -40,7 +39,6 @@ public class RestanceTransitionJob {
     execute(LocalDate.now());
   }
 
-  @Transactional
   public BatchJobExecutionEntity execute(LocalDate evaluationDate) {
     if (batchRepository.existsByJobNameAndExecutionDate(JOB_NAME, evaluationDate)) {
       log.info("RESTANCE transition already executed for {}, skipping", evaluationDate);

@@ -17,6 +17,8 @@ import dk.ufst.opendebt.creditor.dto.ReconciliationDetailDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationListItemDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationResponseDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -27,6 +29,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 public class ReconciliationServiceClient {
+
+  private static final String CIRCUIT_BREAKER_NAME = "debt-service-read";
+  private static final String ERR_SERVICE_UNAVAILABLE = "Debt service unavailable";
+  private static final String ERROR_CODE_UNAVAILABLE = "DEBT_SERVICE_UNAVAILABLE";
 
   private final WebClient webClient;
 
@@ -49,6 +55,8 @@ public class ReconciliationServiceClient {
    * @param reconciliationEndTo optional reconciliation end date range end
    * @return list of reconciliation periods, or empty list on failure
    */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "listReconciliationsFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public List<ReconciliationListItemDto> listReconciliations(
       UUID creditorOrgId,
       String status,
@@ -112,8 +120,8 @@ public class ReconciliationServiceClient {
                   response ->
                       Mono.error(
                           new OpenDebtException(
-                              "Debt service unavailable",
-                              "DEBT_SERVICE_UNAVAILABLE",
+                              ERR_SERVICE_UNAVAILABLE,
+                              ERROR_CODE_UNAVAILABLE,
                               OpenDebtException.ErrorSeverity.CRITICAL)))
               .bodyToMono(new ParameterizedTypeReference<List<ReconciliationListItemDto>>() {})
               .block();
@@ -130,6 +138,8 @@ public class ReconciliationServiceClient {
    * @param reconciliationId the reconciliation period ID
    * @return the reconciliation detail, or null on failure
    */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getReconciliationDetailFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public ReconciliationDetailDto getReconciliationDetail(UUID reconciliationId) {
     log.debug("Fetching reconciliation detail for id: {}", reconciliationId);
 
@@ -158,8 +168,8 @@ public class ReconciliationServiceClient {
               response ->
                   Mono.error(
                       new OpenDebtException(
-                          "Debt service unavailable",
-                          "DEBT_SERVICE_UNAVAILABLE",
+                          ERR_SERVICE_UNAVAILABLE,
+                          ERROR_CODE_UNAVAILABLE,
                           OpenDebtException.ErrorSeverity.CRITICAL)))
           .bodyToMono(ReconciliationDetailDto.class)
           .block();
@@ -175,6 +185,8 @@ public class ReconciliationServiceClient {
    * @param reconciliationId the reconciliation period ID
    * @return the basis data, or a zeroed DTO if unavailable
    */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getReconciliationBasisFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public ReconciliationBasisDto getReconciliationBasis(UUID reconciliationId) {
     log.debug("Fetching reconciliation basis for id: {}", reconciliationId);
 
@@ -204,8 +216,8 @@ public class ReconciliationServiceClient {
                   response ->
                       Mono.error(
                           new OpenDebtException(
-                              "Debt service unavailable",
-                              "DEBT_SERVICE_UNAVAILABLE",
+                              ERR_SERVICE_UNAVAILABLE,
+                              ERROR_CODE_UNAVAILABLE,
                               OpenDebtException.ErrorSeverity.CRITICAL)))
               .bodyToMono(ReconciliationBasisDto.class)
               .block();
@@ -222,6 +234,9 @@ public class ReconciliationServiceClient {
    * @param reconciliationId the reconciliation period ID
    * @param response the reconciliation response
    */
+  @CircuitBreaker(
+      name = CIRCUIT_BREAKER_NAME,
+      fallbackMethod = "submitReconciliationResponseFallback")
   public void submitReconciliationResponse(
       UUID reconciliationId, ReconciliationResponseDto response) {
     log.debug("Submitting reconciliation response for id: {}", reconciliationId);
@@ -251,10 +266,66 @@ public class ReconciliationServiceClient {
             resp ->
                 Mono.error(
                     new OpenDebtException(
-                        "Debt service unavailable",
-                        "DEBT_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .toBodilessEntity()
         .block();
+  }
+
+  private List<ReconciliationListItemDto> listReconciliationsFallback(
+      UUID creditorOrgId,
+      String status,
+      LocalDate periodEndFrom,
+      LocalDate periodEndTo,
+      LocalDate reconciliationStartFrom,
+      LocalDate reconciliationStartTo,
+      LocalDate reconciliationEndFrom,
+      LocalDate reconciliationEndTo,
+      Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listReconciliations: {}", t.getMessage());
+    return Collections.emptyList();
+  }
+
+  private ReconciliationDetailDto getReconciliationDetailFallback(
+      UUID reconciliationId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getReconciliationDetail: {}", t.getMessage());
+    return null;
+  }
+
+  private ReconciliationBasisDto getReconciliationBasisFallback(
+      UUID reconciliationId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getReconciliationBasis: {}", t.getMessage());
+    return ReconciliationBasisDto.builder().build();
+  }
+
+  private void submitReconciliationResponseFallback(
+      UUID reconciliationId, ReconciliationResponseDto response, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn(
+        "Circuit breaker fallback triggered for submitReconciliationResponse: {}", t.getMessage());
   }
 }

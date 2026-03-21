@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import dk.ufst.opendebt.creditor.dto.NotificationSearchResultDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -40,6 +41,7 @@ public class NotificationServiceClient {
    * @param notificationTypes list of notification type codes to filter, may be {@code null}
    * @return search result with matching count, or {@code null} if backend is unavailable
    */
+  @CircuitBreaker(name = "notification-service", fallbackMethod = "searchNotificationsFallback")
   public NotificationSearchResultDto searchNotifications(
       UUID creditorOrgId, LocalDate dateFrom, LocalDate dateTo, List<String> notificationTypes) {
     log.debug(
@@ -87,6 +89,7 @@ public class NotificationServiceClient {
    * @param formatXml whether to include XML format
    * @return the zip file bytes, or {@code null} if backend is unavailable
    */
+  @CircuitBreaker(name = "notification-service", fallbackMethod = "downloadNotificationsFallback")
   public byte[] downloadNotifications(
       UUID creditorOrgId,
       LocalDate dateFrom,
@@ -128,5 +131,27 @@ public class NotificationServiceClient {
       log.warn("Notification download unavailable: {}", ex.getMessage());
       return null;
     }
+  }
+
+  private NotificationSearchResultDto searchNotificationsFallback(
+      UUID creditorOrgId,
+      LocalDate dateFrom,
+      LocalDate dateTo,
+      List<String> notificationTypes,
+      Throwable t) {
+    log.warn("Notification service circuit breaker open: {}", t.getMessage());
+    return null;
+  }
+
+  private byte[] downloadNotificationsFallback(
+      UUID creditorOrgId,
+      LocalDate dateFrom,
+      LocalDate dateTo,
+      List<String> notificationTypes,
+      boolean formatPdf,
+      boolean formatXml,
+      Throwable t) {
+    log.warn("Notification service circuit breaker open: {}", t.getMessage());
+    return null;
   }
 }

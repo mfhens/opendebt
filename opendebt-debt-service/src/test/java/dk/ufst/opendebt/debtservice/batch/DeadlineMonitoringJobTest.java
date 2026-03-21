@@ -54,7 +54,7 @@ class DeadlineMonitoringJobTest {
 
     HoeringEntity h1 = testHoering(today.minusDays(3));
     when(hoeringRepository.findByHoeringStatusAndSlaDeadlineBefore(
-            eq(HoeringStatus.AFVENTER_FORDRINGSHAVER), eq(today.atStartOfDay())))
+            HoeringStatus.AFVENTER_FORDRINGSHAVER, today.atStartOfDay()))
         .thenReturn(List.of(h1));
 
     BatchJobExecutionEntity result = job.execute(today);
@@ -85,7 +85,7 @@ class DeadlineMonitoringJobTest {
         .thenAnswer(inv -> inv.getArgument(0));
     when(debtRepository.findApproachingLimitation(today.plusDays(90))).thenReturn(List.of());
     when(hoeringRepository.findByHoeringStatusAndSlaDeadlineBefore(
-            eq(HoeringStatus.AFVENTER_FORDRINGSHAVER), eq(today.atStartOfDay())))
+            HoeringStatus.AFVENTER_FORDRINGSHAVER, today.atStartOfDay()))
         .thenReturn(List.of());
 
     BatchJobExecutionEntity result = job.execute(today);
@@ -105,7 +105,7 @@ class DeadlineMonitoringJobTest {
     DebtEntity d1 = testDebtWithLimitation(today.plusDays(30));
     when(debtRepository.findApproachingLimitation(today.plusDays(90))).thenReturn(List.of(d1));
     when(hoeringRepository.findByHoeringStatusAndSlaDeadlineBefore(
-            eq(HoeringStatus.AFVENTER_FORDRINGSHAVER), eq(today.atStartOfDay())))
+            HoeringStatus.AFVENTER_FORDRINGSHAVER, today.atStartOfDay()))
         .thenReturn(List.of());
 
     BatchJobExecutionEntity result = job.execute(today);

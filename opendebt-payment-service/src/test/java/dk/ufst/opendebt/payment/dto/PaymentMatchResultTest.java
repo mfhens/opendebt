@@ -55,7 +55,9 @@ class PaymentMatchResultTest {
             result.getWriteDownAmount(),
             result.getExcessAmount(),
             result.getExcessOutcome(),
-            result.isRoutedToManualMatching());
+            result.isRoutedToManualMatching(),
+            false,
+            null);
 
     assertThat(copied.getPaymentId()).isEqualTo(paymentId);
     assertThat(copied.getMatchedDebtId()).isEqualTo(debtId);
@@ -74,7 +76,9 @@ class PaymentMatchResultTest {
             new BigDecimal("100"),
             new BigDecimal("25"),
             OverpaymentOutcome.PAYOUT,
-            false);
+            false,
+            false,
+            null);
     PaymentMatchResult same =
         new PaymentMatchResult(
             paymentId,
@@ -83,7 +87,9 @@ class PaymentMatchResultTest {
             new BigDecimal("100"),
             new BigDecimal("25"),
             OverpaymentOutcome.PAYOUT,
-            false);
+            false,
+            false,
+            null);
 
     assertThat(base).isEqualTo(base);
     assertThat(base).isEqualTo(same);
@@ -99,7 +105,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.PAYOUT,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -109,7 +117,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.PAYOUT,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -119,7 +129,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.PAYOUT,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -129,7 +141,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("101"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.PAYOUT,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -139,7 +153,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("30"),
                 OverpaymentOutcome.PAYOUT,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -149,7 +165,9 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.COVER_OTHER_DEBTS,
-                false));
+                false,
+                false,
+                null));
     assertThat(base)
         .isNotEqualTo(
             new PaymentMatchResult(
@@ -159,15 +177,19 @@ class PaymentMatchResultTest {
                 new BigDecimal("100"),
                 new BigDecimal("25"),
                 OverpaymentOutcome.PAYOUT,
-                true));
+                true,
+                false,
+                null));
   }
 
   @Test
   void equalsAndHashCodeHandleNullFieldsAndSubclass() {
-    PaymentMatchResult base = new PaymentMatchResult(null, false, null, null, null, null, false);
-    PaymentMatchResult same = new PaymentMatchResult(null, false, null, null, null, null, false);
+    PaymentMatchResult base =
+        new PaymentMatchResult(null, false, null, null, null, null, false, false, null);
+    PaymentMatchResult same =
+        new PaymentMatchResult(null, false, null, null, null, null, false, false, null);
     PaymentMatchResult withManualRoute =
-        new PaymentMatchResult(null, false, null, null, null, null, true);
+        new PaymentMatchResult(null, false, null, null, null, null, true, false, null);
     SpecialPaymentMatchResult subclass = new SpecialPaymentMatchResult();
 
     assertThat(base).isEqualTo(same);

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -35,6 +36,7 @@ public class PersonRegistryClient {
    * @param personId the person UUID
    * @return a display-safe name string
    */
+  @CircuitBreaker(name = "person-registry", fallbackMethod = "getDisplayNameFallback")
   public String getDisplayName(UUID personId) {
     if (personId == null) {
       return "—";
@@ -50,5 +52,10 @@ public class PersonRegistryClient {
       log.warn("Person registry unavailable for display name lookup: {}", ex.getMessage());
       return "—";
     }
+  }
+
+  private String getDisplayNameFallback(UUID personId, Throwable t) {
+    log.warn("Person registry circuit breaker open: {}", t.getMessage());
+    return "—";
   }
 }

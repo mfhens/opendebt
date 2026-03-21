@@ -105,7 +105,7 @@ class SettingsControllerTest {
 
     assertThat(viewName).isEqualTo("redirect:/indstillinger");
     assertThat(redirectAttributes.getFlashAttributes().get("successMessage")).isNotNull();
-    verify(creditorServiceClient).updateContactEmail(eq(TEST_CREDITOR_ORG_ID), eq(form));
+    verify(creditorServiceClient).updateContactEmail(TEST_CREDITOR_ORG_ID, form);
   }
 
   @Test

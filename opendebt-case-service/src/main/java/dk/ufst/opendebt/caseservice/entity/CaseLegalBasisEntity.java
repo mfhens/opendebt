@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.generator.EventType;
 
 import lombok.*;
 
@@ -40,7 +42,7 @@ public class CaseLegalBasisEntity {
   @Column(name = "description", columnDefinition = "TEXT")
   private String description;
 
-  @CreationTimestamp
+  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 }

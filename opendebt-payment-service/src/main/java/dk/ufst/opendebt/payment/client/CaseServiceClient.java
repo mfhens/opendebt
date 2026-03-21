@@ -11,6 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.dto.CaseDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +38,8 @@ public class CaseServiceClient {
    * @param caseId the case ID
    * @return list of debt IDs belonging to the case
    */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getDebtIdsForCaseFallback")
+  @Retry(name = "case-service")
   public List<UUID> getDebtIdsForCase(UUID caseId) {
     log.debug("Fetching debt IDs for case {}", caseId);
 
@@ -70,5 +74,16 @@ public class CaseServiceClient {
       return List.of();
     }
     return caseDto.getDebtIds();
+  }
+
+  private List<UUID> getDebtIdsForCaseFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getDebtIdsForCase: {}", t.getMessage());
+    return List.of();
   }
 }

@@ -36,13 +36,21 @@ class DebtControllerTest {
   @Mock private ClaimSubmissionService claimSubmissionService;
   @Mock private ClaimLifecycleService claimLifecycleService;
 
+  @Mock
+  private dk.ufst.opendebt.debtservice.service.InterestRecalculationService
+      interestRecalculationService;
+
   private DebtController controller;
 
   @BeforeEach
   void setUp() {
     controller =
         new DebtController(
-            debtService, readinessValidationService, claimSubmissionService, claimLifecycleService);
+            debtService,
+            readinessValidationService,
+            claimSubmissionService,
+            claimLifecycleService,
+            interestRecalculationService);
   }
 
   @Test
@@ -193,7 +201,7 @@ class DebtControllerTest {
     var response = controller.evaluateClaimState(debtId, null);
 
     assertThat(response.getStatusCode().value()).isEqualTo(200);
-    verify(claimLifecycleService).evaluateClaimState(eq(debtId), eq(LocalDate.now()));
+    verify(claimLifecycleService).evaluateClaimState(debtId, LocalDate.now());
   }
 
   @Test

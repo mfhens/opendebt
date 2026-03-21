@@ -57,42 +57,50 @@ public class CaseDto {
   /**
    * @deprecated Derived from PRIMARY_DEBTOR party.
    */
-  @Deprecated private String debtorId;
+  @Deprecated(since = "v2", forRemoval = true)
+  private String debtorId;
 
   /**
    * @deprecated No longer stored; resolved via person-registry.
    */
-  @Deprecated private String debtorName;
+  @Deprecated(since = "v2", forRemoval = true)
+  private String debtorName;
 
   /**
    * @deprecated Mapped from {@link #caseState}. Use caseState instead.
    */
-  @Deprecated private CaseStatus status;
+  @Deprecated(since = "v2", forRemoval = true)
+  private CaseStatus status;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated private BigDecimal totalDebt;
+  @Deprecated(since = "v2", forRemoval = true)
+  private BigDecimal totalDebt;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated private BigDecimal totalPaid;
+  @Deprecated(since = "v2", forRemoval = true)
+  private BigDecimal totalPaid;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated private BigDecimal totalRemaining;
+  @Deprecated(since = "v2", forRemoval = true)
+  private BigDecimal totalRemaining;
 
   /**
    * @deprecated Derived from CaseDebtEntity.
    */
-  @Deprecated private List<UUID> debtIds;
+  @Deprecated(since = "v2", forRemoval = true)
+  private List<UUID> debtIds;
 
   /**
    * @deprecated Replaced by CollectionMeasureDto.
    */
-  @Deprecated private CollectionStrategy activeStrategy;
+  @Deprecated(since = "v2", forRemoval = true)
+  private CollectionStrategy activeStrategy;
 
   private LocalDateTime createdAt;
 
@@ -101,17 +109,20 @@ public class CaseDto {
   /**
    * @deprecated Use {@link #primaryCaseworkerId}.
    */
-  @Deprecated private String assignedCaseworkerId;
+  @Deprecated(since = "v2", forRemoval = true)
+  private String assignedCaseworkerId;
 
   /**
    * @deprecated Replaced by CaseEventEntity.
    */
-  @Deprecated private LocalDateTime lastActivityAt;
+  @Deprecated(since = "v2", forRemoval = true)
+  private LocalDateTime lastActivityAt;
 
   /**
    * @deprecated Replaced by CaseJournalNoteDto.
    */
-  @Deprecated private String notes;
+  @Deprecated(since = "v2", forRemoval = true)
+  private String notes;
 
   /** OIO Sag-aligned case lifecycle states. */
   public enum CaseState {
@@ -128,7 +139,7 @@ public class CaseDto {
   /**
    * @deprecated Use {@link CaseState} instead.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   public enum CaseStatus {
     OPEN,
     IN_PROGRESS,
@@ -145,7 +156,7 @@ public class CaseDto {
   /**
    * @deprecated Use CollectionMeasureDto instead.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   public enum CollectionStrategy {
     VOLUNTARY_PAYMENT,
     PAYMENT_PLAN,

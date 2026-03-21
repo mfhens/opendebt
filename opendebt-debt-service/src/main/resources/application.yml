@@ -43,7 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,batch
   endpoint:
     health:
       show-details: when_authorized
@@ -91,3 +91,36 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     creditor-service:
       url: ${CREDITOR_SERVICE_URL:http://localhost:8092}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      creditor-service:
+        baseConfig: default
+      case-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      creditor-service:
+        baseConfig: default
+      case-service:
+        baseConfig: default

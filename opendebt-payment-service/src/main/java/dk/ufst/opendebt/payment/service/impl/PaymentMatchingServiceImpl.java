@@ -4,11 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.payment.bookkeeping.BookkeepingService;
+import dk.ufst.opendebt.payment.bookkeeping.model.CrossingDetectionResult;
+import dk.ufst.opendebt.payment.bookkeeping.model.TimelineReplayResult;
+import dk.ufst.opendebt.payment.bookkeeping.service.CrossingTransactionDetector;
+import dk.ufst.opendebt.payment.bookkeeping.service.TimelineReplayService;
 import dk.ufst.opendebt.payment.client.DebtServiceClient;
 import dk.ufst.opendebt.payment.dto.IncomingPaymentDto;
 import dk.ufst.opendebt.payment.dto.OverpaymentOutcome;
@@ -33,6 +38,11 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>If overpayment, delegate to rules for excess amount handling
  *   <li>If no unique match, route to manual matching on the case
  * </ol>
+ *
+ * <p>Crossing transactions (petition039): when the payment's {@code valueDate} (vaerdidag) precedes
+ * previously posted events on the same debt, a full timeline replay is triggered internally (storno
+ * + interest recalculation in payment-service ledger) and the debt-service interest journal is
+ * corrected via a synchronous REST call (ADR-0019 orchestration).
  */
 @Slf4j
 @Service
@@ -43,6 +53,11 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
   private final BookkeepingService bookkeepingService;
   private final PaymentRepository paymentRepository;
   private final OverpaymentRulesService overpaymentRulesService;
+  private final CrossingTransactionDetector crossingTransactionDetector;
+  private final TimelineReplayService timelineReplayService;
+
+  @Value("${opendebt.interest.annual-rate:0.0575}")
+  private BigDecimal annualInterestRate;
 
   @Override
   @Transactional
@@ -54,10 +69,8 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
         incomingPayment.getAmount(),
         incomingPayment.getCremulReference());
 
-    // Step 1: Attempt OCR-based lookup
     List<DebtDto> matchingDebts = lookupDebtsByOcr(ocrLine);
 
-    // Step 2: Check for unique match
     if (matchingDebts.size() != 1) {
       log.info(
           "OCR-linje '{}' did not uniquely identify a debt (found {}), routing to manual matching",
@@ -66,7 +79,6 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
       return routeToManualMatching(incomingPayment);
     }
 
-    // Step 3: Unique match found - auto-match
     DebtDto matchedDebt = matchingDebts.get(0);
     log.info(
         "OCR-linje '{}' uniquely matched debt {}, proceeding with auto-match",
@@ -106,28 +118,33 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
     BigDecimal paidAmount = incomingPayment.getAmount();
     BigDecimal outstandingBalance = matchedDebt.getOutstandingBalance();
 
-    // Determine write-down amount and excess
     BigDecimal writeDownAmount;
     BigDecimal excessAmount;
     OverpaymentOutcome excessOutcome = null;
 
     if (paidAmount.compareTo(outstandingBalance) <= 0) {
-      // Normal or underpayment: write down by actual paid amount
       writeDownAmount = paidAmount;
       excessAmount = BigDecimal.ZERO;
     } else {
-      // Overpayment: write down the full outstanding balance, handle excess via rules
       writeDownAmount = outstandingBalance;
       excessAmount = paidAmount.subtract(outstandingBalance);
       excessOutcome = overpaymentRulesService.resolveOutcome(matchedDebt.getId());
       log.info("Overpayment detected: excess={}, outcome={}", excessAmount, excessOutcome);
     }
 
-    // Create payment record
     PaymentEntity payment = createPaymentRecord(incomingPayment, matchedDebt.getId());
     payment.setStatus(PaymentEntity.PaymentStatus.COMPLETED);
     payment.setProcessedAt(LocalDateTime.now());
     PaymentEntity saved = paymentRepository.save(payment);
+
+    // ── Crossing transaction detection (petition039) ───────────────────────────
+    // Detect BEFORE recording bookkeeping entries so the crossing check sees the
+    // pre-payment event timeline. If a crossing is found, replay immediately after
+    // recording the payment so storno and recalculation happen atomically within
+    // this transaction.
+    CrossingDetectionResult crossing =
+        crossingTransactionDetector.detectCrossing(
+            matchedDebt.getId(), incomingPayment.getValueDate());
 
     // AIDEV-NOTE: Bookkeeping is recorded before the write-down call so that a failed write-down
     // (network error to debt-service) does not leave an unrecorded ledger entry.
@@ -139,8 +156,40 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
         incomingPayment.getValueDate(),
         incomingPayment.getCremulReference());
 
+    // If a crossing was detected, replay the ledger timeline within payment-service
+    // (storno of affected ledger_entries + recalculated interest entries).
+    TimelineReplayResult replayResult = null;
+    if (crossing.isCrossingDetected()) {
+      log.info(
+          "Crossing transaction detected for debt={}, crossingPoint={}, affectedEvents={}."
+              + " Triggering timeline replay.",
+          matchedDebt.getId(),
+          crossing.getCrossingPoint(),
+          crossing.getAffectedEvents().size());
+
+      replayResult =
+          timelineReplayService.replayTimeline(
+              matchedDebt.getId(),
+              crossing.getCrossingPoint(),
+              annualInterestRate,
+              incomingPayment.getCremulReference());
+
+      log.info(
+          "Timeline replay complete for debt={}: stornoEntries={}, newEntries={}, interestDelta={}",
+          matchedDebt.getId(),
+          replayResult.getStornoEntriesPosted(),
+          replayResult.getNewEntriesPosted(),
+          replayResult.getInterestDelta());
+    }
+
     // Write down the debt via debt-service API
     debtServiceClient.writeDown(matchedDebt.getId(), writeDownAmount);
+
+    // If crossing, also correct the interest_journal_entries in debt-service.
+    // Must be called AFTER write-down so the corrected balance is already in place.
+    if (crossing.isCrossingDetected()) {
+      debtServiceClient.recalculateInterest(matchedDebt.getId(), crossing.getCrossingPoint());
+    }
 
     return PaymentMatchResult.builder()
         .paymentId(saved.getId())
@@ -150,6 +199,8 @@ public class PaymentMatchingServiceImpl implements PaymentMatchingService {
         .excessAmount(excessAmount)
         .excessOutcome(excessOutcome)
         .routedToManualMatching(false)
+        .crossingDetected(crossing.isCrossingDetected())
+        .crossingPoint(crossing.isCrossingDetected() ? crossing.getCrossingPoint() : null)
         .build();
   }
 

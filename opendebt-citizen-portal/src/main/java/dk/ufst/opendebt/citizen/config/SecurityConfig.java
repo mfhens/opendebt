@@ -1,6 +1,5 @@
 package dk.ufst.opendebt.citizen.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,14 +11,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-  @Autowired(required = false)
-  private CitizenOidcUserService citizenOidcUserService;
-
-  @Autowired(required = false)
-  private ClientRegistrationRepository clientRegistrationRepository;
-
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      @org.springframework.beans.factory.annotation.Autowired(required = false)
+          CitizenOidcUserService citizenOidcUserService,
+      @org.springframework.beans.factory.annotation.Autowired(required = false)
+          ClientRegistrationRepository clientRegistrationRepository)
+      throws Exception {
     http.authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(

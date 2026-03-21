@@ -8,6 +8,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import dk.ufst.opendebt.creditor.dto.DebtorVerificationResultDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -41,6 +43,8 @@ public class PersonRegistryClient {
    * @param lastName the last name to match
    * @return verification result with matched person data or error
    */
+  @CircuitBreaker(name = "person-registry", fallbackMethod = "verifyCprFallback")
+  @Retry(name = "person-registry")
   public DebtorVerificationResultDto verifyCpr(
       String cprNumber, String firstName, String lastName) {
     log.debug("Verifying CPR debtor (stubbed): {}", maskIdentifier(cprNumber));
@@ -70,6 +74,8 @@ public class PersonRegistryClient {
    * @param cvrNumber the CVR number to verify
    * @return verification result with company information or error
    */
+  @CircuitBreaker(name = "person-registry", fallbackMethod = "verifyCvrFallback")
+  @Retry(name = "person-registry")
   public DebtorVerificationResultDto verifyCvr(String cvrNumber) {
     log.debug("Verifying CVR debtor (stubbed): {}", cvrNumber);
 
@@ -96,6 +102,8 @@ public class PersonRegistryClient {
    * @param seNumber the SE number to verify
    * @return verification result with company information or error
    */
+  @CircuitBreaker(name = "person-registry", fallbackMethod = "verifySeeFallback")
+  @Retry(name = "person-registry")
   public DebtorVerificationResultDto verifySe(String seNumber) {
     log.debug("Verifying SE debtor (stubbed): {}", seNumber);
 
@@ -120,5 +128,48 @@ public class PersonRegistryClient {
       return "****";
     }
     return "****" + identifier.substring(identifier.length() - 4);
+  }
+
+  private DebtorVerificationResultDto verifyCprFallback(
+      String cprNumber, String firstName, String lastName, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for verifyCpr: {}", t.getMessage());
+    return DebtorVerificationResultDto.builder()
+        .verified(false)
+        .errorMessage("Person registry is unavailable. Please try again later.")
+        .build();
+  }
+
+  private DebtorVerificationResultDto verifyCvrFallback(String cvrNumber, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for verifyCvr: {}", t.getMessage());
+    return DebtorVerificationResultDto.builder()
+        .verified(false)
+        .errorMessage("Person registry is unavailable. Please try again later.")
+        .build();
+  }
+
+  private DebtorVerificationResultDto verifySeeFallback(String seNumber, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for verifySe: {}", t.getMessage());
+    return DebtorVerificationResultDto.builder()
+        .verified(false)
+        .errorMessage("Person registry is unavailable. Please try again later.")
+        .build();
   }
 }

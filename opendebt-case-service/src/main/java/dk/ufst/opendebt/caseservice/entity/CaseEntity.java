@@ -8,8 +8,9 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.generator.EventType;
 
 import lombok.*;
 
@@ -98,11 +99,11 @@ public class CaseEntity {
 
   // ── Metadata ─────────────────────────────────────────────────────────
 
-  @CreationTimestamp
+  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp
+  @CurrentTimestamp(source = SourceType.VM)
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
@@ -111,42 +112,42 @@ public class CaseEntity {
 
   @Version private Long version;
 
-  // ── Deprecated columns (kept for V3 migration backward compat) ──────
+  // ── Deprecated columns(kept for V3 migration backward compat) ──────
   // These columns still exist in the database but are no longer used by the
   // application.  They will be dropped in a future migration.
 
   /**
    * @deprecated Moved to {@link CasePartyEntity} with role PRIMARY_DEBTOR.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "debtor_person_id", insertable = false, updatable = false)
   private UUID debtorPersonId;
 
   /**
    * @deprecated Replaced by {@link #caseState}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "status", insertable = false, updatable = false, length = 30)
   private String status;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "total_debt", insertable = false, updatable = false, precision = 15, scale = 2)
   private BigDecimal totalDebt;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "total_paid", insertable = false, updatable = false, precision = 15, scale = 2)
   private BigDecimal totalPaid;
 
   /**
    * @deprecated Computed on demand from debt-service.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(
       name = "total_remaining",
       insertable = false,
@@ -158,35 +159,35 @@ public class CaseEntity {
   /**
    * @deprecated Replaced by {@link CollectionMeasureEntity}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "active_strategy", insertable = false, updatable = false, length = 30)
   private String activeStrategy;
 
   /**
    * @deprecated Replaced by {@link #primaryCaseworkerId}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "assigned_caseworker_id", insertable = false, updatable = false, length = 100)
   private String assignedCaseworkerId;
 
   /**
    * @deprecated Replaced by {@link CaseJournalNoteEntity}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "notes", insertable = false, updatable = false, columnDefinition = "TEXT")
   private String notes;
 
   /**
    * @deprecated Replaced by {@link CaseEventEntity}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "last_activity_at", insertable = false, updatable = false)
   private LocalDateTime lastActivityAt;
 
   /**
    * @deprecated Replaced by {@link CaseDebtEntity}.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   @ElementCollection
   @CollectionTable(name = "case_debt_ids", joinColumns = @JoinColumn(name = "case_id"))
   @Column(name = "debt_id")
@@ -198,7 +199,7 @@ public class CaseEntity {
   /**
    * @deprecated Use {@link CaseState} instead.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   public enum CaseStatus {
     OPEN,
     IN_PROGRESS,
@@ -215,7 +216,7 @@ public class CaseEntity {
   /**
    * @deprecated Use {@link MeasureType} instead.
    */
-  @Deprecated
+  @Deprecated(since = "v2", forRemoval = true)
   public enum CollectionStrategy {
     VOLUNTARY_PAYMENT,
     PAYMENT_PLAN,

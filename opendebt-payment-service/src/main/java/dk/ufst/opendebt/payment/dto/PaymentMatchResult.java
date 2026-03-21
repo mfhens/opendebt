@@ -34,4 +34,16 @@ public class PaymentMatchResult {
 
   /** True when the payment could not be auto-matched and was routed to manual matching. */
   private boolean routedToManualMatching;
+
+  /**
+   * True when the payment's effective date preceded previously posted events and a full timeline
+   * replay (storno + interest recalculation) was triggered (petition039).
+   */
+  private boolean crossingDetected;
+
+  /**
+   * The earliest date from which the timeline was replayed (null when no crossing). Interest
+   * journal entries in debt-service are recalculated from this date forward.
+   */
+  private java.time.LocalDate crossingPoint;
 }

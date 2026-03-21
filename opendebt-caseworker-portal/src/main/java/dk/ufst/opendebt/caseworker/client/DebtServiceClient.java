@@ -12,6 +12,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -29,6 +31,8 @@ public class DebtServiceClient {
   }
 
   /** Lists debts by their IDs (used to resolve the debtIds list from a case). */
+  @CircuitBreaker(name = "debt-service-read", fallbackMethod = "listDebtsByIdsFallback")
+  @Retry(name = "debt-service-read")
   public RestPage<DebtDto> listDebtsByIds(List<UUID> debtIds) {
     if (debtIds == null || debtIds.isEmpty()) {
       return new RestPage<>(List.of(), 0, 20, 0, 0);
@@ -66,6 +70,8 @@ public class DebtServiceClient {
   }
 
   /** Retrieves a single debt by ID. */
+  @CircuitBreaker(name = "debt-service-read", fallbackMethod = "getDebtFallback")
+  @Retry(name = "debt-service-read")
   public DebtDto getDebt(UUID debtId) {
     log.debug("Getting debt: {}", debtId);
 
@@ -93,5 +99,27 @@ public class DebtServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(DebtDto.class)
         .block();
+  }
+
+  private RestPage<DebtDto> listDebtsByIdsFallback(List<UUID> debtIds, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listDebtsByIds: {}", t.getMessage());
+    return new RestPage<>(List.of(), 0, 20, 0, 0);
+  }
+
+  private DebtDto getDebtFallback(UUID debtId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getDebt: {}", t.getMessage());
+    return null;
   }
 }

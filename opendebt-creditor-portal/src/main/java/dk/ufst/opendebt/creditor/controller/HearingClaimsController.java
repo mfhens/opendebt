@@ -47,6 +47,12 @@ public class HearingClaimsController {
   private static final int CPR_VISIBLE_DIGITS = 6;
   private static final String CPR_MASK = "****";
 
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
+  private static final String MODEL_APPROVE_FORM = "approveForm";
+  private static final String MODEL_WITHDRAW_FORM = "withdrawForm";
+  private static final String PAGE_CLAIMS_HEARING = "claims-hearing";
+
   /** Action codes that indicate a write-up (opskrivning). */
   private static final Set<String> WRITE_UP_ACTION_CODES =
       Set.of(
@@ -66,9 +72,9 @@ public class HearingClaimsController {
   public String hearingList(Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
-    model.addAttribute("currentPage", "claims-hearing");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_HEARING);
     model.addAttribute("listType", "hearing");
     return "claims/hearing-list";
   }
@@ -111,7 +117,7 @@ public class HearingClaimsController {
   public String hearingDetail(@PathVariable UUID id, Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     HearingClaimDetailDto detail = loadHearingClaimDetail(id, model);
@@ -126,9 +132,9 @@ public class HearingClaimsController {
     }
 
     model.addAttribute("claimId", id);
-    model.addAttribute("currentPage", "claims-hearing");
-    model.addAttribute("approveForm", new HearingApproveRequestDto());
-    model.addAttribute("withdrawForm", new HearingWithdrawRequestDto());
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_HEARING);
+    model.addAttribute(MODEL_APPROVE_FORM, new HearingApproveRequestDto());
+    model.addAttribute(MODEL_WITHDRAW_FORM, new HearingWithdrawRequestDto());
     return "claims/hearing-detail";
   }
 
@@ -136,7 +142,7 @@ public class HearingClaimsController {
   @PostMapping("/fordringer/hoering/{id}/approve")
   public String approveHearing(
       @PathVariable UUID id,
-      @Valid @ModelAttribute("approveForm") HearingApproveRequestDto approveForm,
+      @Valid @ModelAttribute(MODEL_APPROVE_FORM) HearingApproveRequestDto approveForm,
       BindingResult bindingResult,
       Model model,
       HttpSession session,
@@ -144,7 +150,7 @@ public class HearingClaimsController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     if (bindingResult.hasErrors()) {
@@ -173,7 +179,7 @@ public class HearingClaimsController {
   @PostMapping("/fordringer/hoering/{id}/withdraw")
   public String withdrawHearing(
       @PathVariable UUID id,
-      @Valid @ModelAttribute("withdrawForm") HearingWithdrawRequestDto withdrawForm,
+      @Valid @ModelAttribute(MODEL_WITHDRAW_FORM) HearingWithdrawRequestDto withdrawForm,
       BindingResult bindingResult,
       Model model,
       HttpSession session,
@@ -181,7 +187,7 @@ public class HearingClaimsController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     if (bindingResult.hasErrors()) {
@@ -221,12 +227,12 @@ public class HearingClaimsController {
           "showChangedPrincipal", FEJLAGTIG_HOVEDSTOL_CODE.equals(detail.getActionCode()));
     }
     model.addAttribute("claimId", id);
-    model.addAttribute("currentPage", "claims-hearing");
-    if (!model.containsAttribute("approveForm")) {
-      model.addAttribute("approveForm", new HearingApproveRequestDto());
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_HEARING);
+    if (!model.containsAttribute(MODEL_APPROVE_FORM)) {
+      model.addAttribute(MODEL_APPROVE_FORM, new HearingApproveRequestDto());
     }
-    if (!model.containsAttribute("withdrawForm")) {
-      model.addAttribute("withdrawForm", new HearingWithdrawRequestDto());
+    if (!model.containsAttribute(MODEL_WITHDRAW_FORM)) {
+      model.addAttribute(MODEL_WITHDRAW_FORM, new HearingWithdrawRequestDto());
     }
     if (error != null) {
       model.addAttribute("actionError", error);

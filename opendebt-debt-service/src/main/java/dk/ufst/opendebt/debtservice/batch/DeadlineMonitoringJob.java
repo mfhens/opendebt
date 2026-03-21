@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity;
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity.BatchStatus;
@@ -40,7 +39,6 @@ public class DeadlineMonitoringJob {
     execute(LocalDate.now());
   }
 
-  @Transactional
   public BatchJobExecutionEntity execute(LocalDate checkDate) {
     if (batchRepository.existsByJobNameAndExecutionDate(JOB_NAME, checkDate)) {
       log.info("Deadline monitoring already executed for {}, skipping", checkDate);

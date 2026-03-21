@@ -7,8 +7,9 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.generator.EventType;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -57,11 +58,11 @@ import lombok.Setter;
 @Setter
 public abstract class AuditableEntity {
 
-  @CreationTimestamp
+  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp
+  @CurrentTimestamp(source = SourceType.VM)
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 

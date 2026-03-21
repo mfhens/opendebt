@@ -9,6 +9,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.PortalCaseDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -24,6 +26,8 @@ public class CaseServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = "case-service", fallbackMethod = "listCasesFallback")
+  @Retry(name = "case-service")
   public RestPage<PortalCaseDto> listCases() {
     log.debug("Listing cases");
 
@@ -51,5 +55,16 @@ public class CaseServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<RestPage<PortalCaseDto>>() {})
         .block();
+  }
+
+  private RestPage<PortalCaseDto> listCasesFallback(Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listCases: {}", t.getMessage());
+    return new RestPage<>(java.util.List.of(), 0, 20, 0, 0);
   }
 }

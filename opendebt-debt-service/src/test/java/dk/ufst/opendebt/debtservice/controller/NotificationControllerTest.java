@@ -1,6 +1,5 @@
 package dk.ufst.opendebt.debtservice.controller;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -56,8 +55,7 @@ class NotificationControllerTest {
             .ocrLine("+71<ABCD1234EFGH5678+")
             .build();
 
-    when(notificationService.issueDemandForPayment(eq(DEBT_ID), eq(CREDITOR_ORG_ID)))
-        .thenReturn(dto);
+    when(notificationService.issueDemandForPayment(DEBT_ID, CREDITOR_ORG_ID)).thenReturn(dto);
 
     IssueDemandRequest request = new IssueDemandRequest();
     request.setCreditorOrgId(CREDITOR_ORG_ID);
@@ -87,7 +85,7 @@ class NotificationControllerTest {
             .sentAt(Instant.now())
             .build();
 
-    when(notificationService.issueReminder(eq(DEBT_ID), eq(CREDITOR_ORG_ID))).thenReturn(dto);
+    when(notificationService.issueReminder(DEBT_ID, CREDITOR_ORG_ID)).thenReturn(dto);
 
     IssueDemandRequest request = new IssueDemandRequest();
     request.setCreditorOrgId(CREDITOR_ORG_ID);
@@ -111,7 +109,7 @@ class NotificationControllerTest {
             .deliveryState("SENT")
             .build();
 
-    when(notificationService.getNotificationHistory(eq(DEBT_ID))).thenReturn(List.of(dto));
+    when(notificationService.getNotificationHistory(DEBT_ID)).thenReturn(List.of(dto));
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/notifications", DEBT_ID))
@@ -122,7 +120,7 @@ class NotificationControllerTest {
 
   @Test
   void getNotificationHistory_emptyList_returnsOk() throws Exception {
-    when(notificationService.getNotificationHistory(eq(DEBT_ID))).thenReturn(List.of());
+    when(notificationService.getNotificationHistory(DEBT_ID)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/notifications", DEBT_ID))

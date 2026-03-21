@@ -6,8 +6,9 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.generator.EventType;
 
 import lombok.*;
 
@@ -100,11 +101,11 @@ public class PersonEntity {
   private String deletionReason;
 
   // Metadata
-  @CreationTimestamp
+  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp
+  @CurrentTimestamp(source = SourceType.VM)
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 

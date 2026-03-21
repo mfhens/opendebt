@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,6 +33,7 @@ public class PersonRegistryClient {
    * @param cpr the CPR number (NEVER logged)
    * @return the resolved person_id UUID
    */
+  @CircuitBreaker(name = "person-registry", fallbackMethod = "lookupOrCreatePersonFallback")
   public UUID lookupOrCreatePerson(String cpr) {
     log.debug("Resolving person_id via person-registry");
 
@@ -51,6 +53,16 @@ public class PersonRegistryClient {
 
     log.debug("Resolved person_id={}", response.personId());
     return response.personId();
+  }
+
+  private UUID lookupOrCreatePersonFallback(String cpr, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    throw new IllegalStateException("Person registry unavailable: " + t.getMessage(), t);
   }
 
   record PersonLookupRequest(String identifier, String identifierType) {}

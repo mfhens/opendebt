@@ -1,8 +1,6 @@
 package dk.ufst.opendebt.debtservice.batch;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -10,16 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity;
-import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity.BatchStatus;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
-import dk.ufst.opendebt.debtservice.entity.InterestJournalEntry;
-import dk.ufst.opendebt.debtservice.repository.BatchJobExecutionRepository;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
-import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 public class InterestAccrualJob {
 
   static final String JOB_NAME = "INTEREST_ACCRUAL";
-  private static final BigDecimal DAYS_IN_YEAR = new BigDecimal("365");
 
   private final DebtRepository debtRepository;
-  private final InterestJournalEntryRepository interestRepository;
-  private final BatchJobExecutionRepository batchRepository;
+  private final InterestAccrualJobHelper helper;
 
   @Value("${opendebt.batch.page-size:1000}")
   private int pageSize;
@@ -47,74 +38,60 @@ public class InterestAccrualJob {
     execute(LocalDate.now());
   }
 
-  @Transactional
+  /**
+   * Executes interest accrual for the given date. Each page of debts is processed and committed in
+   * its own transaction via {@link InterestAccrualJobHelper} so that:
+   *
+   * <ul>
+   *   <li>No single database transaction holds more than {@code pageSize} rows open at once.
+   *   <li>Progress is durable — a failure mid-run does not discard completed pages.
+   *   <li>The job is idempotent: re-running for the same date skips already-written entries.
+   * </ul>
+   */
   public BatchJobExecutionEntity execute(LocalDate accrualDate) {
-    if (batchRepository.existsByJobNameAndExecutionDate(JOB_NAME, accrualDate)) {
+    if (helper.alreadyExecuted(JOB_NAME, accrualDate)) {
       log.info("Interest accrual already executed for {}, skipping", accrualDate);
       return null;
     }
 
-    BatchJobExecutionEntity execution =
-        BatchJobExecutionEntity.builder()
-            .jobName(JOB_NAME)
-            .executionDate(accrualDate)
-            .startedAt(Instant.now())
-            .status(BatchStatus.RUNNING)
-            .build();
-    execution = batchRepository.save(execution);
+    // Commit the RUNNING record immediately so monitoring queries see it.
+    BatchJobExecutionEntity execution = helper.createExecution(JOB_NAME, accrualDate);
 
-    int processed = 0;
-    int failed = 0;
+    int totalProcessed = 0;
+    int totalFailed = 0;
     int page = 0;
 
-    Page<DebtEntity> debts;
-    do {
-      debts =
-          debtRepository.findByLifecycleStateAndPositiveBalance(
-              ClaimLifecycleState.OVERDRAGET, PageRequest.of(page, pageSize));
+    try {
+      Page<DebtEntity> debts;
+      do {
+        debts =
+            debtRepository.findByLifecycleStateAndPositiveBalance(
+                ClaimLifecycleState.OVERDRAGET, PageRequest.of(page, pageSize));
 
-      for (DebtEntity debt : debts.getContent()) {
-        try {
-          if (interestRepository.existsByDebtIdAndAccrualDate(debt.getId(), accrualDate)) {
-            continue;
-          }
+        int[] counts = helper.processPage(debts.getContent(), accrualDate, annualRate);
+        totalProcessed += counts[0];
+        totalFailed += counts[1];
 
-          BigDecimal balance = debt.getOutstandingBalance();
-          BigDecimal dailyInterest =
-              balance.multiply(annualRate).divide(DAYS_IN_YEAR, 2, RoundingMode.HALF_UP);
-
-          InterestJournalEntry entry =
-              InterestJournalEntry.builder()
-                  .debtId(debt.getId())
-                  .accrualDate(accrualDate)
-                  .effectiveDate(accrualDate)
-                  .balanceSnapshot(balance)
-                  .rate(annualRate)
-                  .interestAmount(dailyInterest)
-                  .build();
-
-          interestRepository.save(entry);
-          processed++;
-        } catch (Exception e) {
-          log.warn("Failed to accrue interest for debt={}: {}", debt.getId(), e.getMessage());
-          failed++;
+        if (page % 100 == 0) {
+          log.info(
+              "Interest accrual progress: page={}, processed={}, failed={}",
+              page,
+              totalProcessed,
+              totalFailed);
         }
-      }
-      page++;
-    } while (debts.hasNext());
+        page++;
+      } while (debts.hasNext());
+    } catch (Exception e) {
+      log.error("Interest accrual aborted at page {}: {}", page, e.getMessage(), e);
+      return helper.finalizeExecution(execution, totalProcessed, totalFailed + 1);
+    }
 
-    execution.setRecordsProcessed(processed);
-    execution.setRecordsFailed(failed);
-    execution.setCompletedAt(Instant.now());
-    execution.setStatus(failed > 0 ? BatchStatus.FAILED : BatchStatus.COMPLETED);
-    batchRepository.save(execution);
-
+    execution = helper.finalizeExecution(execution, totalProcessed, totalFailed);
     log.info(
         "Interest accrual completed: date={}, processed={}, failed={}",
         accrualDate,
-        processed,
-        failed);
-
+        totalProcessed,
+        totalFailed);
     return execution;
   }
 }

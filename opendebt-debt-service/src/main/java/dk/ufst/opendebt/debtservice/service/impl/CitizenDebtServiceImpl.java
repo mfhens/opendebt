@@ -3,7 +3,6 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,7 +54,7 @@ public class CitizenDebtServiceImpl implements CitizenDebtService {
 
     // Map to citizen DTOs (NO PII, NO creditor internals, NO readinessStatus)
     List<CitizenDebtItemDto> debtItems =
-        debtsPage.getContent().stream().map(this::mapToCitizenDto).collect(Collectors.toList());
+        debtsPage.getContent().stream().map(this::mapToCitizenDto).toList();
 
     // Calculate totals across ALL debts (not just current page)
     List<DebtEntity> allDebts = debtRepository.findByDebtorPersonId(personId);

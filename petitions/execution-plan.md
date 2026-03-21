@@ -1,6 +1,6 @@
 # OpenDebt Consolidated Execution Plan
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-03-20
 **Supersedes:** execution-plan-2026-03-14.md, execution-plan-2026-03-15.md, execution-plan-2026-03-16.md, execution-plan-wave7-psrm-collection.md, execution-plan-skyldnerportal.md
 
 ---
@@ -33,7 +33,9 @@
 | Phase 10 | Batch processing / scale (petition043) | **Implemented** |
 | Phase 11 | Documentation (petition044) | **Implemented** |
 
-### Recent work (2026-03-17 to 2026-03-19)
+### Recent work (2026-03-17 to 2026-03-20)
+
+- Implemented ADR-0026 inter-service resilience: Resilience4j circuit breakers and retries on all 20 client classes across 6 services
 
 - Implemented end-to-end claim submission flow (validation, submit endpoint, case auto-assignment)
 - Built caseworker-portal with demo-login, case/debt views, ledger timeline
@@ -226,7 +228,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | TB-010 | Bookkeeping balance validation | Medium | Not started |
 | TB-011 | Emit event to case-service for payment | Medium | Not started |
 | TB-012 | Saga/outbox for payment matching | High | Not started |
-| TB-013 | Resilience4j for payment-service client | Medium | Not started |
+| TB-013 | Resilience4j (ADR-0026) for all service clients | Medium | **Done** (2026-03-20) |
 | TB-014 | Backend reconciliation module | Medium | Not started |
 | TB-015 | Backend reporting/storage module | Medium | Not started |
 

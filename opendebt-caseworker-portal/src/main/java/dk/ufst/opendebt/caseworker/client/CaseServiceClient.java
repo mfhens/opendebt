@@ -18,6 +18,8 @@ import dk.ufst.opendebt.common.dto.CollectionMeasureDto;
 import dk.ufst.opendebt.common.dto.ObjectionDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -35,6 +37,8 @@ public class CaseServiceClient {
   }
 
   /** Lists cases with optional filters for status and caseworker assignment. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "listCasesFallback")
+  @Retry(name = "case-service")
   public RestPage<CaseDto> listCases(String status, String caseworkerId, int page, int size) {
     log.debug(
         "Listing cases: status={}, caseworkerId={}, page={}, size={}",
@@ -86,6 +90,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves a single case by ID. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getCaseFallback")
+  @Retry(name = "case-service")
   public CaseDto getCase(UUID caseId) {
     log.debug("Getting case: {}", caseId);
 
@@ -116,6 +122,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves the parties (sagsparter) for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getPartiesFallback")
+  @Retry(name = "case-service")
   public List<CasePartyDto> getParties(UUID caseId) {
     log.debug("Getting parties for case: {}", caseId);
 
@@ -129,6 +137,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves events (hændelseslog) for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getEventsFallback")
+  @Retry(name = "case-service")
   public List<CaseEventDto> getEvents(UUID caseId) {
     log.debug("Getting events for case: {}", caseId);
 
@@ -142,6 +152,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves collection measures (inddrivelsesskridt) for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getMeasuresFallback")
+  @Retry(name = "case-service")
   public List<CollectionMeasureDto> getMeasures(UUID caseId) {
     log.debug("Getting collection measures for case: {}", caseId);
 
@@ -155,6 +167,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves objections (indsigelser) for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getObjectionsFallback")
+  @Retry(name = "case-service")
   public List<ObjectionDto> getObjections(UUID caseId) {
     log.debug("Getting objections for case: {}", caseId);
 
@@ -168,6 +182,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves journal entries for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getJournalEntriesFallback")
+  @Retry(name = "case-service")
   public List<CaseJournalEntryDto> getJournalEntries(UUID caseId) {
     log.debug("Getting journal entries for case: {}", caseId);
 
@@ -181,6 +197,8 @@ public class CaseServiceClient {
   }
 
   /** Retrieves journal notes for a case. */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getJournalNotesFallback")
+  @Retry(name = "case-service")
   public List<CaseJournalNoteDto> getJournalNotes(UUID caseId) {
     log.debug("Getting journal notes for case: {}", caseId);
 
@@ -197,5 +215,94 @@ public class CaseServiceClient {
     return Mono.error(
         new OpenDebtException(
             "Failed to load " + resource + " for case: " + caseId, "CASE_RESOURCE_ERROR"));
+  }
+
+  private RestPage<CaseDto> listCasesFallback(
+      String status, String caseworkerId, int page, int size, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listCases: {}", t.getMessage());
+    return new RestPage<>(List.of(), page, size, 0, 0);
+  }
+
+  private CaseDto getCaseFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getCase: {}", t.getMessage());
+    return null;
+  }
+
+  private List<CasePartyDto> getPartiesFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getParties: {}", t.getMessage());
+    return List.of();
+  }
+
+  private List<CaseEventDto> getEventsFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getEvents: {}", t.getMessage());
+    return List.of();
+  }
+
+  private List<CollectionMeasureDto> getMeasuresFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getMeasures: {}", t.getMessage());
+    return List.of();
+  }
+
+  private List<ObjectionDto> getObjectionsFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getObjections: {}", t.getMessage());
+    return List.of();
+  }
+
+  private List<CaseJournalEntryDto> getJournalEntriesFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getJournalEntries: {}", t.getMessage());
+    return List.of();
+  }
+
+  private List<CaseJournalNoteDto> getJournalNotesFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getJournalNotes: {}", t.getMessage());
+    return List.of();
   }
 }

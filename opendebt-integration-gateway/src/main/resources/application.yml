@@ -78,3 +78,34 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     payment-service:
       url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      debt-service-write:
+        baseConfig: default
+      creditor-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      creditor-service:
+        baseConfig: default

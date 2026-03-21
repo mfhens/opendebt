@@ -81,7 +81,7 @@ class CollectionMeasureControllerTest {
             .completedAt(Instant.now())
             .build();
 
-    when(measureService.completeMeasure(eq(MEASURE_ID))).thenReturn(dto);
+    when(measureService.completeMeasure(MEASURE_ID)).thenReturn(dto);
 
     mockMvc
         .perform(
@@ -126,7 +126,7 @@ class CollectionMeasureControllerTest {
             .initiatedAt(Instant.now())
             .build();
 
-    when(measureService.getMeasures(eq(DEBT_ID))).thenReturn(List.of(dto));
+    when(measureService.getMeasures(DEBT_ID)).thenReturn(List.of(dto));
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/collection-measures", DEBT_ID))
@@ -136,7 +136,7 @@ class CollectionMeasureControllerTest {
 
   @Test
   void getMeasures_emptyList_returnsOk() throws Exception {
-    when(measureService.getMeasures(eq(DEBT_ID))).thenReturn(List.of());
+    when(measureService.getMeasures(DEBT_ID)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/collection-measures", DEBT_ID))

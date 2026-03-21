@@ -14,6 +14,8 @@ import dk.ufst.opendebt.caseworker.dto.PortalLedgerEntryDto;
 import dk.ufst.opendebt.caseworker.dto.PortalLedgerSummaryDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -25,6 +27,12 @@ import reactor.core.publisher.Mono;
 @Component
 public class PaymentServiceClient {
 
+  private static final String CIRCUIT_BREAKER_NAME = "payment-service";
+  private static final String ERR_CLIENT_PREFIX = "Payment service client error: ";
+  private static final String ERR_SERVICE_UNAVAILABLE = "Payment service unavailable";
+  private static final String ERROR_CODE_CLIENT = "PAYMENT_CLIENT_ERROR";
+  private static final String ERROR_CODE_UNAVAILABLE = "PAYMENT_SERVICE_UNAVAILABLE";
+
   private final WebClient webClient;
 
   public PaymentServiceClient(
@@ -34,6 +42,8 @@ public class PaymentServiceClient {
   }
 
   /** Retrieves ledger entries for a specific debt. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getLedgerByDebtFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public RestPage<PortalLedgerEntryDto> getLedgerByDebt(
       UUID debtId, String category, String fromDate, String toDate, int page, int size) {
     log.debug("Getting ledger for debt: {}", debtId);
@@ -72,21 +82,22 @@ public class PaymentServiceClient {
                         body ->
                             Mono.error(
                                 new OpenDebtException(
-                                    "Payment service client error: " + body,
-                                    "PAYMENT_CLIENT_ERROR"))))
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
         .onStatus(
             HttpStatusCode::is5xxServerError,
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Payment service unavailable",
-                        "PAYMENT_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<RestPage<PortalLedgerEntryDto>>() {})
         .block();
   }
 
   /** Retrieves ledger entries for all debts in a case. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getLedgerByCaseFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public RestPage<PortalLedgerEntryDto> getLedgerByCase(
       UUID caseId, String category, String fromDate, String toDate, int page, int size) {
     log.debug("Getting ledger for case: {}", caseId);
@@ -125,21 +136,22 @@ public class PaymentServiceClient {
                         body ->
                             Mono.error(
                                 new OpenDebtException(
-                                    "Payment service client error: " + body,
-                                    "PAYMENT_CLIENT_ERROR"))))
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
         .onStatus(
             HttpStatusCode::is5xxServerError,
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Payment service unavailable",
-                        "PAYMENT_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<RestPage<PortalLedgerEntryDto>>() {})
         .block();
   }
 
   /** Retrieves all events for a specific debt. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getEventsByDebtFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public List<PortalDebtEventDto> getEventsByDebt(UUID debtId) {
     log.debug("Getting events for debt: {}", debtId);
 
@@ -156,21 +168,22 @@ public class PaymentServiceClient {
                         body ->
                             Mono.error(
                                 new OpenDebtException(
-                                    "Payment service client error: " + body,
-                                    "PAYMENT_CLIENT_ERROR"))))
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
         .onStatus(
             HttpStatusCode::is5xxServerError,
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Payment service unavailable",
-                        "PAYMENT_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<List<PortalDebtEventDto>>() {})
         .block();
   }
 
   /** Retrieves the ledger summary (balances) for a specific debt. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getLedgerSummaryFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
   public PortalLedgerSummaryDto getLedgerSummary(UUID debtId) {
     log.debug("Getting ledger summary for debt: {}", debtId);
 
@@ -187,17 +200,74 @@ public class PaymentServiceClient {
                         body ->
                             Mono.error(
                                 new OpenDebtException(
-                                    "Payment service client error: " + body,
-                                    "PAYMENT_CLIENT_ERROR"))))
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
         .onStatus(
             HttpStatusCode::is5xxServerError,
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Payment service unavailable",
-                        "PAYMENT_SERVICE_UNAVAILABLE",
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(PortalLedgerSummaryDto.class)
         .block();
+  }
+
+  private RestPage<PortalLedgerEntryDto> getLedgerByDebtFallback(
+      UUID debtId,
+      String category,
+      String fromDate,
+      String toDate,
+      int page,
+      int size,
+      Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getLedgerByDebt: {}", t.getMessage());
+    return new RestPage<>(List.of(), page, size, 0, 0);
+  }
+
+  private RestPage<PortalLedgerEntryDto> getLedgerByCaseFallback(
+      UUID caseId,
+      String category,
+      String fromDate,
+      String toDate,
+      int page,
+      int size,
+      Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getLedgerByCase: {}", t.getMessage());
+    return new RestPage<>(List.of(), page, size, 0, 0);
+  }
+
+  private List<PortalDebtEventDto> getEventsByDebtFallback(UUID debtId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getEventsByDebt: {}", t.getMessage());
+    return List.of();
+  }
+
+  private PortalLedgerSummaryDto getLedgerSummaryFallback(UUID debtId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getLedgerSummary: {}", t.getMessage());
+    return null;
   }
 }

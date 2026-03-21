@@ -3,7 +3,6 @@ package dk.ufst.opendebt.creditor.controller;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -41,6 +40,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NotificationController {
 
+  private static final String VIEW_SEARCH = "notifications/search";
+  private static final String MODEL_SEARCH_FORM = "searchForm";
+  private static final String MODEL_SEARCH_RESULT = "searchResult";
+  private static final String MODEL_AVAILABLE_TYPES = "availableTypes";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
+  private static final String MODEL_SEARCH_PERFORMED = "searchPerformed";
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String PAGE_NOTIFICATIONS = "notifications";
+  private static final String KEY_BACKEND_UNAVAILABLE = "notifications.backend.unavailable";
+
   private final CreditorServiceClient creditorServiceClient;
   private final NotificationServiceClient notificationServiceClient;
   private final MessageSource messageSource;
@@ -51,20 +60,20 @@ public class NotificationController {
   public String showSearchPage(Model model, HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
-    model.addAttribute("currentPage", "notifications");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_NOTIFICATIONS);
     addActingCreditorToModel(model, session);
 
     List<NotificationType> availableTypes = resolveAvailableTypes(actingCreditor);
-    model.addAttribute("availableTypes", availableTypes);
+    model.addAttribute(MODEL_AVAILABLE_TYPES, availableTypes);
 
-    if (!model.containsAttribute("searchForm")) {
-      model.addAttribute("searchForm", new NotificationSearchDto());
+    if (!model.containsAttribute(MODEL_SEARCH_FORM)) {
+      model.addAttribute(MODEL_SEARCH_FORM, new NotificationSearchDto());
     }
 
-    return "notifications/search";
+    return VIEW_SEARCH;
   }
 
   /**
@@ -72,21 +81,21 @@ public class NotificationController {
    */
   @PostMapping("/search")
   public String searchNotifications(
-      @ModelAttribute("searchForm") NotificationSearchDto searchForm,
+      @ModelAttribute(MODEL_SEARCH_FORM) NotificationSearchDto searchForm,
       Model model,
       HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
-    model.addAttribute("currentPage", "notifications");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_NOTIFICATIONS);
     addActingCreditorToModel(model, session);
 
     List<NotificationType> availableTypes = resolveAvailableTypes(actingCreditor);
-    model.addAttribute("availableTypes", availableTypes);
-    model.addAttribute("searchForm", searchForm);
-    model.addAttribute("searchPerformed", true);
+    model.addAttribute(MODEL_AVAILABLE_TYPES, availableTypes);
+    model.addAttribute(MODEL_SEARCH_FORM, searchForm);
+    model.addAttribute(MODEL_SEARCH_PERFORMED, true);
 
     try {
       NotificationSearchResultDto result =
@@ -97,43 +106,43 @@ public class NotificationController {
               searchForm.getNotificationTypes());
 
       if (result != null) {
-        model.addAttribute("searchResult", result);
+        model.addAttribute(MODEL_SEARCH_RESULT, result);
       } else {
         model.addAttribute(
-            "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+            MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
         model.addAttribute(
             "backendWarning",
             messageSource.getMessage(
-                "notifications.backend.unavailable", null, LocaleContextHolder.getLocale()));
+                KEY_BACKEND_UNAVAILABLE, null, LocaleContextHolder.getLocale()));
       }
     } catch (Exception ex) {
       log.error("Notification search failed: {}", ex.getMessage());
       model.addAttribute(
-          "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+          MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
       model.addAttribute(
           "backendError",
           messageSource.getMessage(
               "notifications.search.error", null, LocaleContextHolder.getLocale()));
     }
 
-    return "notifications/search";
+    return VIEW_SEARCH;
   }
 
   /** HTMX endpoint that returns the search results fragment. Used for partial page updates. */
   @PostMapping("/search-fragment")
   public String searchNotificationsFragment(
-      @ModelAttribute("searchForm") NotificationSearchDto searchForm,
+      @ModelAttribute(MODEL_SEARCH_FORM) NotificationSearchDto searchForm,
       Model model,
       HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
       model.addAttribute(
-          "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+          MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
       return "notifications/fragments/results :: notificationResults";
     }
 
-    model.addAttribute("searchForm", searchForm);
-    model.addAttribute("searchPerformed", true);
+    model.addAttribute(MODEL_SEARCH_FORM, searchForm);
+    model.addAttribute(MODEL_SEARCH_PERFORMED, true);
 
     try {
       NotificationSearchResultDto result =
@@ -144,19 +153,19 @@ public class NotificationController {
               searchForm.getNotificationTypes());
 
       if (result != null) {
-        model.addAttribute("searchResult", result);
+        model.addAttribute(MODEL_SEARCH_RESULT, result);
       } else {
         model.addAttribute(
-            "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+            MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
         model.addAttribute(
             "backendWarning",
             messageSource.getMessage(
-                "notifications.backend.unavailable", null, LocaleContextHolder.getLocale()));
+                KEY_BACKEND_UNAVAILABLE, null, LocaleContextHolder.getLocale()));
       }
     } catch (Exception ex) {
       log.error("Notification search failed: {}", ex.getMessage());
       model.addAttribute(
-          "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+          MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
       model.addAttribute(
           "backendError",
           messageSource.getMessage(
@@ -169,12 +178,12 @@ public class NotificationController {
   /** POST /underretninger/download — downloads matching notifications as a zip file. */
   @PostMapping("/download")
   public Object downloadNotifications(
-      @ModelAttribute("searchForm") NotificationSearchDto searchForm,
+      @ModelAttribute(MODEL_SEARCH_FORM) NotificationSearchDto searchForm,
       Model model,
       HttpSession session) {
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     if (!searchForm.isFormatPdf() && !searchForm.isFormatXml()) {
@@ -199,7 +208,7 @@ public class NotificationController {
         return ResponseEntity.ok().headers(headers).body(zipBytes);
       }
 
-      return handleDownloadError(model, session, searchForm, "notifications.backend.unavailable");
+      return handleDownloadError(model, session, searchForm, KEY_BACKEND_UNAVAILABLE);
     } catch (Exception ex) {
       log.error("Notification download failed: {}", ex.getMessage());
       return handleDownloadError(model, session, searchForm, "notifications.download.error");
@@ -208,19 +217,19 @@ public class NotificationController {
 
   private String handleDownloadError(
       Model model, HttpSession session, NotificationSearchDto searchForm, String messageKey) {
-    model.addAttribute("currentPage", "notifications");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_NOTIFICATIONS);
     addActingCreditorToModel(model, session);
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     List<NotificationType> availableTypes = resolveAvailableTypes(actingCreditor);
-    model.addAttribute("availableTypes", availableTypes);
-    model.addAttribute("searchForm", searchForm);
-    model.addAttribute("searchPerformed", true);
+    model.addAttribute(MODEL_AVAILABLE_TYPES, availableTypes);
+    model.addAttribute(MODEL_SEARCH_FORM, searchForm);
+    model.addAttribute(MODEL_SEARCH_PERFORMED, true);
     model.addAttribute(
-        "searchResult", NotificationSearchResultDto.builder().matchingCount(0).build());
+        MODEL_SEARCH_RESULT, NotificationSearchResultDto.builder().matchingCount(0).build());
     model.addAttribute(
         "downloadError",
         messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale()));
-    return "notifications/search";
+    return VIEW_SEARCH;
   }
 
   /**
@@ -242,7 +251,7 @@ public class NotificationController {
 
       return allTypes.stream()
           .filter(type -> agreement.getEnabledNotificationTypes().contains(type.name()))
-          .collect(Collectors.toList());
+          .toList();
     } catch (Exception ex) {
       log.warn("Failed to resolve notification types from agreement: {}", ex.getMessage());
       return allTypes;

@@ -90,9 +90,9 @@ class RestanceTransitionJobTest {
     when(debtRepository.findEligibleForRestanceTransition(
             eq(ClaimLifecycleState.REGISTERED), eq(today), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(d1, d2)));
-    when(claimLifecycleService.evaluateClaimState(eq(d1.getId()), eq(today)))
+    when(claimLifecycleService.evaluateClaimState(d1.getId(), today))
         .thenThrow(new RuntimeException("DB error"));
-    when(claimLifecycleService.evaluateClaimState(eq(d2.getId()), eq(today))).thenReturn(d2);
+    when(claimLifecycleService.evaluateClaimState(d2.getId(), today)).thenReturn(d2);
 
     BatchJobExecutionEntity result = job.execute(today);
 

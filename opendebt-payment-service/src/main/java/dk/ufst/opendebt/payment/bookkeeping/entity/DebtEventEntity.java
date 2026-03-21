@@ -7,7 +7,8 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
 
 import lombok.*;
 
@@ -65,7 +66,7 @@ public class DebtEventEntity {
   @Column(name = "ledger_transaction_id")
   private UUID ledgerTransactionId;
 
-  @CreationTimestamp
+  @CurrentTimestamp(event = org.hibernate.generator.EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 

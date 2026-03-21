@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public class ClaimRejectedException extends RuntimeException {
 
-  private final ClaimSubmissionResult result;
+  private final transient ClaimSubmissionResult result;
 
   public ClaimRejectedException(ClaimSubmissionResult result) {
     super("Claim rejected by debt-service");

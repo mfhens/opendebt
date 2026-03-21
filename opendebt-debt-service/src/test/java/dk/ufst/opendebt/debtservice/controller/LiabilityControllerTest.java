@@ -122,7 +122,7 @@ class LiabilityControllerTest {
             .active(true)
             .build();
 
-    when(liabilityService.getLiabilities(eq(DEBT_ID))).thenReturn(List.of(dto));
+    when(liabilityService.getLiabilities(DEBT_ID)).thenReturn(List.of(dto));
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/liabilities", DEBT_ID))
@@ -133,7 +133,7 @@ class LiabilityControllerTest {
 
   @Test
   void getLiabilities_emptyList_returnsOk() throws Exception {
-    when(liabilityService.getLiabilities(eq(DEBT_ID))).thenReturn(List.of());
+    when(liabilityService.getLiabilities(DEBT_ID)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/liabilities", DEBT_ID))

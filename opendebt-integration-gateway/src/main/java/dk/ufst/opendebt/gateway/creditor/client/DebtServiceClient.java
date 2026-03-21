@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -24,6 +25,7 @@ public class DebtServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = "debt-service-write", fallbackMethod = "submitClaimFallback")
   public ClaimSubmissionResult submitClaim(DebtDto debtDto) {
     log.debug(
         "Submitting claim for creditor={} debtor={}",
@@ -51,5 +53,21 @@ public class DebtServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(ClaimSubmissionResult.class)
         .block();
+  }
+
+  private ClaimSubmissionResult submitClaimFallback(DebtDto debtDto, Throwable t) {
+    if (t instanceof ClaimRejectedException) {
+      throw (ClaimRejectedException) t;
+    }
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    throw new OpenDebtException(
+        "Debt service unavailable",
+        "DEBT_SERVICE_UNAVAILABLE",
+        OpenDebtException.ErrorSeverity.CRITICAL);
   }
 }

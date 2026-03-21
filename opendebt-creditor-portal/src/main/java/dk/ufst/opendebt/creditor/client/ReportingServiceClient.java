@@ -13,6 +13,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.ReportListItemDto;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +45,8 @@ public class ReportingServiceClient {
    * @param month the report month (1-12)
    * @return list of report items, or an empty list if the backend is unavailable
    */
+  @CircuitBreaker(name = "creditor-service", fallbackMethod = "listReportsFallback")
+  @Retry(name = "creditor-service")
   public List<ReportListItemDto> listReports(UUID creditorOrgId, int year, int month) {
     log.debug("Listing reports for creditor: {}, year: {}, month: {}", creditorOrgId, year, month);
 
@@ -93,6 +97,8 @@ public class ReportingServiceClient {
    * @param reportId the report UUID
    * @return the raw zip bytes, or {@code null} if the backend is unavailable
    */
+  @CircuitBreaker(name = "creditor-service", fallbackMethod = "downloadReportFallback")
+  @Retry(name = "creditor-service")
   public byte[] downloadReport(UUID reportId) {
     log.debug("Downloading report: {}", reportId);
 
@@ -125,5 +131,28 @@ public class ReportingServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(byte[].class)
         .block();
+  }
+
+  private List<ReportListItemDto> listReportsFallback(
+      UUID creditorOrgId, int year, int month, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for listReports: {}", t.getMessage());
+    return Collections.emptyList();
+  }
+
+  private byte[] downloadReportFallback(UUID reportId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for downloadReport: {}", t.getMessage());
+    return null;
   }
 }

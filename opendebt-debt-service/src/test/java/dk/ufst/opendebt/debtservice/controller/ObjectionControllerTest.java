@@ -113,7 +113,7 @@ class ObjectionControllerTest {
             .registeredAt(Instant.now())
             .build();
 
-    when(objectionService.getObjections(eq(DEBT_ID))).thenReturn(List.of(dto));
+    when(objectionService.getObjections(DEBT_ID)).thenReturn(List.of(dto));
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/objections", DEBT_ID))
@@ -123,7 +123,7 @@ class ObjectionControllerTest {
 
   @Test
   void getObjections_emptyList_returnsOk() throws Exception {
-    when(objectionService.getObjections(eq(DEBT_ID))).thenReturn(List.of());
+    when(objectionService.getObjections(DEBT_ID)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/debts/{debtId}/objections", DEBT_ID))

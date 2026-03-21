@@ -3,7 +3,6 @@ package dk.ufst.opendebt.creditor.dto;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Enum representing the eight supported claim adjustment (write-up / write-down) types defined by
@@ -55,9 +54,7 @@ public enum ClaimAdjustmentType {
 
   /** Returns all types for a given direction. */
   public static List<ClaimAdjustmentType> forDirection(Direction direction) {
-    return Arrays.stream(values())
-        .filter(t -> t.direction == direction)
-        .collect(Collectors.toList());
+    return Arrays.stream(values()).filter(t -> t.direction == direction).toList();
   }
 
   /**
@@ -71,6 +68,6 @@ public enum ClaimAdjustmentType {
       Direction direction, Set<String> grantedPermissions) {
     return forDirection(direction).stream()
         .filter(t -> grantedPermissions.contains(t.requiredPermission))
-        .collect(Collectors.toList());
+        .toList();
   }
 }

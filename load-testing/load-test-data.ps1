@@ -262,7 +262,7 @@ else {
 }
 
 # ── Summary ───────────────────────────────────────────────────────────────────
-$totalElapsed = Get-Date - $totalStart
+$totalElapsed = (Get-Date) - $totalStart
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Magenta

@@ -87,3 +87,46 @@ opendebt:
       url: ${PERSON_REGISTRY_URL:http://localhost:8083}
     reporting-service:
       url: ${REPORTING_SERVICE_URL:http://localhost:8094}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      debt-service-read:
+        baseConfig: default
+      case-service:
+        baseConfig: default
+      creditor-service:
+        baseConfig: default
+      person-registry:
+        baseConfig: default
+      notification-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      debt-service-read:
+        baseConfig: default
+      case-service:
+        baseConfig: default
+      creditor-service:
+        baseConfig: default
+      person-registry:
+        baseConfig: default

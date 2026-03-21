@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +23,7 @@ public class CaseServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = "case-service", fallbackMethod = "assignDebtToCaseFallback")
   public CaseAssignmentResult assignDebtToCase(String debtId, String debtorPersonId) {
     log.debug("Assigning debt {} for debtor {} to case", debtId, debtorPersonId);
 
@@ -35,6 +37,17 @@ public class CaseServiceClient {
         .retrieve()
         .bodyToMono(CaseAssignmentResult.class)
         .block();
+  }
+
+  private CaseAssignmentResult assignDebtToCaseFallback(
+      String debtId, String debtorPersonId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    throw new RuntimeException("Case service unavailable: " + t.getMessage(), t);
   }
 
   @Data

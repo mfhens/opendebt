@@ -3,7 +3,6 @@ package dk.ufst.opendebt.creditor.controller;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import jakarta.servlet.http.HttpSession;
@@ -69,9 +68,8 @@ public class ReportsController {
         IntStream.rangeClosed(currentYear - 5, currentYear)
             .boxed()
             .sorted((a, b) -> b - a)
-            .collect(Collectors.toList());
-    List<Integer> availableMonths =
-        IntStream.rangeClosed(1, 12).boxed().collect(Collectors.toList());
+            .toList();
+    List<Integer> availableMonths = IntStream.rangeClosed(1, 12).boxed().toList();
 
     model.addAttribute("availableYears", availableYears);
     model.addAttribute("availableMonths", availableMonths);
@@ -84,9 +82,7 @@ public class ReportsController {
 
       // Filter out reconciliation summary files (petition 037 FR-4)
       List<ReportListItemDto> reports =
-          allReports.stream()
-              .filter(r -> !r.isReconciliationSummary())
-              .collect(Collectors.toList());
+          allReports.stream().filter(r -> !r.isReconciliationSummary()).toList();
 
       model.addAttribute("reports", reports);
     } catch (Exception ex) {
@@ -121,9 +117,7 @@ public class ReportsController {
       List<ReportListItemDto> allReports =
           reportingServiceClient.listReports(actingCreditor, year, month);
       List<ReportListItemDto> reports =
-          allReports.stream()
-              .filter(r -> !r.isReconciliationSummary())
-              .collect(Collectors.toList());
+          allReports.stream().filter(r -> !r.isReconciliationSummary()).toList();
       model.addAttribute("reports", reports);
     } catch (Exception ex) {
       log.warn("Failed to load reports fragment: {}", ex.getMessage());

@@ -80,6 +80,8 @@ opendebt:
     enabled: true
     crossing:
       max-lookback-months: 12
+  interest:
+    annual-rate: 0.0575
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
@@ -87,3 +89,38 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     integration-gateway:
       url: ${INTEGRATION_GATEWAY_URL:http://localhost:8089}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      debt-service-read:
+        baseConfig: default
+      debt-service-write:
+        baseConfig: default
+      case-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        ignoreExceptions:
+          - dk.ufst.opendebt.common.exception.OpenDebtException
+          - org.springframework.web.client.HttpClientErrorException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+    instances:
+      debt-service-read:
+        baseConfig: default
+      case-service:
+        baseConfig: default

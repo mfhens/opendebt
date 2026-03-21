@@ -41,6 +41,12 @@ public class ClaimCreateController {
   static final String SESSION_WIZARD_RESULT = "claimWizardResult";
   static final String SESSION_WIZARD_AGREEMENT = "claimWizardAgreement";
 
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String MODEL_WIZARD_FORM = "wizardForm";
+  private static final String MODEL_AGREEMENT = "agreement";
+  private static final String REDIRECT_STEP_1 = "redirect:/fordring/opret/step/1";
+  private static final String VIEW_STEP_DEBTOR = "claims/create/step-debtor";
+
   private static final int TOTAL_STEPS = 4;
 
   private final PortalSessionService portalSessionService;
@@ -57,9 +63,9 @@ public class ClaimCreateController {
   @GetMapping
   public String entryPoint(HttpSession session) {
     if (portalSessionService.resolveActingCreditor(null, session) == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
-    return "redirect:/fordring/opret/step/1";
+    return REDIRECT_STEP_1;
   }
 
   // -----------------------------------------------------------------------
@@ -71,7 +77,7 @@ public class ClaimCreateController {
   public String showDebtorStep(Model model, HttpSession session) {
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     CreditorAgreementDto agreement = loadAgreement(creditorOrgId, session);
@@ -80,10 +86,10 @@ public class ClaimCreateController {
     }
 
     ClaimWizardFormDto form = getOrCreateWizardForm(session);
-    model.addAttribute("wizardForm", form);
-    model.addAttribute("agreement", agreement);
+    model.addAttribute(MODEL_WIZARD_FORM, form);
+    model.addAttribute(MODEL_AGREEMENT, agreement);
     addWizardModelAttributes(model, 1, session);
-    return "claims/create/step-debtor";
+    return VIEW_STEP_DEBTOR;
   }
 
   /** POST /fordring/opret/step/1 — validates debtor and advances to step 2. */
@@ -99,7 +105,7 @@ public class ClaimCreateController {
 
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     CreditorAgreementDto agreement = loadAgreement(creditorOrgId, session);
@@ -117,19 +123,19 @@ public class ClaimCreateController {
     if (debtorType == null || debtorType.isBlank()) {
       model.addAttribute(
           "debtorTypeError", resolveMessage("wizard.validation.debtorType.required"));
-      model.addAttribute("wizardForm", form);
-      model.addAttribute("agreement", agreement);
+      model.addAttribute(MODEL_WIZARD_FORM, form);
+      model.addAttribute(MODEL_AGREEMENT, agreement);
       addWizardModelAttributes(model, 1, session);
-      return "claims/create/step-debtor";
+      return VIEW_STEP_DEBTOR;
     }
 
     if (debtorIdentifier == null || debtorIdentifier.isBlank()) {
       model.addAttribute(
           "debtorIdentifierError", resolveMessage("wizard.validation.debtorIdentifier.required"));
-      model.addAttribute("wizardForm", form);
-      model.addAttribute("agreement", agreement);
+      model.addAttribute(MODEL_WIZARD_FORM, form);
+      model.addAttribute(MODEL_AGREEMENT, agreement);
       addWizardModelAttributes(model, 1, session);
-      return "claims/create/step-debtor";
+      return VIEW_STEP_DEBTOR;
     }
 
     // Verify debtor against person-registry
@@ -137,10 +143,10 @@ public class ClaimCreateController {
 
     if (!verificationResult.isVerified()) {
       model.addAttribute("verificationError", verificationResult.getErrorMessage());
-      model.addAttribute("wizardForm", form);
-      model.addAttribute("agreement", agreement);
+      model.addAttribute(MODEL_WIZARD_FORM, form);
+      model.addAttribute(MODEL_AGREEMENT, agreement);
       addWizardModelAttributes(model, 1, session);
-      return "claims/create/step-debtor";
+      return VIEW_STEP_DEBTOR;
     }
 
     form.setDebtorVerified(true);
@@ -160,17 +166,17 @@ public class ClaimCreateController {
   public String showDetailsStep(Model model, HttpSession session) {
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimWizardFormDto form = (ClaimWizardFormDto) session.getAttribute(SESSION_WIZARD_FORM);
     if (form == null || !form.isDebtorVerified()) {
-      return "redirect:/fordring/opret/step/1";
+      return REDIRECT_STEP_1;
     }
 
     CreditorAgreementDto agreement = loadAgreement(creditorOrgId, session);
-    model.addAttribute("wizardForm", form);
-    model.addAttribute("agreement", agreement);
+    model.addAttribute(MODEL_WIZARD_FORM, form);
+    model.addAttribute(MODEL_AGREEMENT, agreement);
     addWizardModelAttributes(model, 2, session);
     return "claims/create/step-details";
   }
@@ -202,12 +208,12 @@ public class ClaimCreateController {
 
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimWizardFormDto form = (ClaimWizardFormDto) session.getAttribute(SESSION_WIZARD_FORM);
     if (form == null || !form.isDebtorVerified()) {
-      return "redirect:/fordring/opret/step/1";
+      return REDIRECT_STEP_1;
     }
 
     CreditorAgreementDto agreement = loadAgreement(creditorOrgId, session);
@@ -285,8 +291,8 @@ public class ClaimCreateController {
     }
 
     if (hasErrors) {
-      model.addAttribute("wizardForm", form);
-      model.addAttribute("agreement", agreement);
+      model.addAttribute(MODEL_WIZARD_FORM, form);
+      model.addAttribute(MODEL_AGREEMENT, agreement);
       addWizardModelAttributes(model, 2, session);
       return "claims/create/step-details";
     }
@@ -304,18 +310,18 @@ public class ClaimCreateController {
   public String showReviewStep(Model model, HttpSession session) {
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimWizardFormDto form = (ClaimWizardFormDto) session.getAttribute(SESSION_WIZARD_FORM);
     if (form == null || !form.isDebtorVerified()) {
-      return "redirect:/fordring/opret/step/1";
+      return REDIRECT_STEP_1;
     }
     if (form.getClaimType() == null || form.getClaimType().isBlank()) {
       return "redirect:/fordring/opret/step/2";
     }
 
-    model.addAttribute("wizardForm", form);
+    model.addAttribute(MODEL_WIZARD_FORM, form);
     addWizardModelAttributes(model, 3, session);
     return "claims/create/step-review";
   }
@@ -325,12 +331,12 @@ public class ClaimCreateController {
   public String processSubmission(Model model, HttpSession session) {
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimWizardFormDto form = (ClaimWizardFormDto) session.getAttribute(SESSION_WIZARD_FORM);
     if (form == null || !form.isDebtorVerified() || form.getClaimType() == null) {
-      return "redirect:/fordring/opret/step/1";
+      return REDIRECT_STEP_1;
     }
 
     try {
@@ -348,7 +354,7 @@ public class ClaimCreateController {
     } catch (Exception ex) {
       log.error("Error submitting claim via wizard: {}", ex.getMessage(), ex);
       model.addAttribute("submissionError", resolveMessage("wizard.submit.error"));
-      model.addAttribute("wizardForm", form);
+      model.addAttribute(MODEL_WIZARD_FORM, form);
       addWizardModelAttributes(model, 3, session);
       return "claims/create/step-review";
     }
@@ -363,7 +369,7 @@ public class ClaimCreateController {
   public String showResultStep(Model model, HttpSession session) {
     UUID creditorOrgId = portalSessionService.resolveActingCreditor(null, session);
     if (creditorOrgId == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ClaimSubmissionResultDto result =
@@ -371,11 +377,11 @@ public class ClaimCreateController {
     ClaimWizardFormDto form = (ClaimWizardFormDto) session.getAttribute(SESSION_WIZARD_FORM);
 
     if (result == null) {
-      return "redirect:/fordring/opret/step/1";
+      return REDIRECT_STEP_1;
     }
 
     model.addAttribute("result", result);
-    model.addAttribute("wizardForm", form);
+    model.addAttribute(MODEL_WIZARD_FORM, form);
     addWizardModelAttributes(model, 4, session);
 
     // Clean up session
@@ -505,7 +511,7 @@ public class ClaimCreateController {
 
   private Boolean parseBoolean(String value) {
     if (value == null || value.isBlank()) {
-      return null;
+      return Boolean.FALSE;
     }
     return "true".equalsIgnoreCase(value)
         || "yes".equalsIgnoreCase(value)

@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.CurrentTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.generator.EventType;
 
 import lombok.*;
 
@@ -34,7 +36,7 @@ public class CaseDebtEntity {
   @Column(name = "debt_id", nullable = false)
   private UUID debtId;
 
-  @CreationTimestamp
+  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "added_at", nullable = false, updatable = false)
   private LocalDateTime addedAt;
 

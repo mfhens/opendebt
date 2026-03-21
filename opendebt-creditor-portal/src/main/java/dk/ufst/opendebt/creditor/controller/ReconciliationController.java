@@ -44,6 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ReconciliationController {
 
+  private static final String VIEW_DETAIL = "reconciliation/detail";
+  private static final String MODEL_RECONCILIATION = "reconciliation";
+  private static final String MODEL_BACKEND_ERROR = "backendError";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
+  private static final String MODEL_RESPONSE_FORM = "responseForm";
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String PAGE_RECONCILIATION = "reconciliation";
+  private static final String STATUS_ACTIVE = "ACTIVE";
+
   private final ReconciliationServiceClient reconciliationServiceClient;
   private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
@@ -69,7 +78,7 @@ public class ReconciliationController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     List<ReconciliationListItemDto> reconciliations;
@@ -94,7 +103,7 @@ public class ReconciliationController {
     }
 
     model.addAttribute("reconciliations", reconciliations);
-    model.addAttribute("currentPage", "reconciliation");
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
     model.addAttribute("filterStatus", status);
     model.addAttribute("filterPeriodEndFrom", periodEndFrom);
     model.addAttribute("filterPeriodEndTo", periodEndTo);
@@ -112,7 +121,7 @@ public class ReconciliationController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     ReconciliationDetailDto detail;
@@ -128,13 +137,13 @@ public class ReconciliationController {
           "backendError",
           messageSource.getMessage(
               "reconciliation.error.notfound", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("currentPage", "reconciliation");
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
       addActingCreditorToModel(model, session);
-      return "reconciliation/detail";
+      return VIEW_DETAIL;
     }
 
     // For ACTIVE reconciliations, also load basis data
-    if ("ACTIVE".equalsIgnoreCase(detail.getStatus())) {
+    if (STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())) {
       ReconciliationBasisDto basis;
       try {
         basis = reconciliationServiceClient.getReconciliationBasis(id);
@@ -146,13 +155,13 @@ public class ReconciliationController {
       model.addAttribute("basisChecksum", computeBasisChecksum(basis));
     }
 
-    model.addAttribute("reconciliation", detail);
-    model.addAttribute("currentPage", "reconciliation");
+    model.addAttribute(MODEL_RECONCILIATION, detail);
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
     if (!model.containsAttribute("responseForm")) {
-      model.addAttribute("responseForm", new ReconciliationResponseFormDto());
+      model.addAttribute(MODEL_RESPONSE_FORM, new ReconciliationResponseFormDto());
     }
     addActingCreditorToModel(model, session);
-    return "reconciliation/detail";
+    return VIEW_DETAIL;
   }
 
   /** POST /afstemning/{id}/confirm — shows confirmation step before final submission. */
@@ -166,7 +175,7 @@ public class ReconciliationController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     // Custom validation: explained + unexplained == total
@@ -178,14 +187,14 @@ public class ReconciliationController {
 
     // Load the reconciliation for display in confirmation step
     ReconciliationDetailDto detail = reconciliationServiceClient.getReconciliationDetail(id);
-    if (detail == null || !"ACTIVE".equalsIgnoreCase(detail.getStatus())) {
+    if (detail == null || !STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())) {
       model.addAttribute(
           "backendError",
           messageSource.getMessage(
               "reconciliation.error.notactive", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("currentPage", "reconciliation");
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
       addActingCreditorToModel(model, session);
-      return "reconciliation/detail";
+      return VIEW_DETAIL;
     }
 
     ReconciliationBasisDto basis = reconciliationServiceClient.getReconciliationBasis(id);
@@ -199,18 +208,18 @@ public class ReconciliationController {
           "backendError",
           messageSource.getMessage(
               "reconciliation.error.tamper", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("reconciliation", detail);
-      model.addAttribute("currentPage", "reconciliation");
+      model.addAttribute(MODEL_RECONCILIATION, detail);
+      model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
       addActingCreditorToModel(model, session);
-      return "reconciliation/detail";
+      return VIEW_DETAIL;
     }
 
-    model.addAttribute("reconciliation", detail);
-    model.addAttribute("responseForm", form);
-    model.addAttribute("currentPage", "reconciliation");
+    model.addAttribute(MODEL_RECONCILIATION, detail);
+    model.addAttribute(MODEL_RESPONSE_FORM, form);
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
     model.addAttribute("showConfirmation", true);
     addActingCreditorToModel(model, session);
-    return "reconciliation/detail";
+    return VIEW_DETAIL;
   }
 
   /** POST /afstemning/{id}/response — submits the confirmed reconciliation response. */
@@ -225,7 +234,7 @@ public class ReconciliationController {
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     if (actingCreditor == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     // Re-validate
@@ -325,15 +334,15 @@ public class ReconciliationController {
   /** Reloads the detail page after validation errors. */
   private String reloadDetailWithErrors(UUID id, Model model, HttpSession session) {
     ReconciliationDetailDto detail = reconciliationServiceClient.getReconciliationDetail(id);
-    if (detail != null && "ACTIVE".equalsIgnoreCase(detail.getStatus())) {
+    if (detail != null && STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())) {
       ReconciliationBasisDto basis = reconciliationServiceClient.getReconciliationBasis(id);
       detail.setBasis(basis);
       model.addAttribute("basisChecksum", computeBasisChecksum(basis));
     }
-    model.addAttribute("reconciliation", detail);
-    model.addAttribute("currentPage", "reconciliation");
+    model.addAttribute(MODEL_RECONCILIATION, detail);
+    model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
     addActingCreditorToModel(model, session);
-    return "reconciliation/detail";
+    return VIEW_DETAIL;
   }
 
   private void addActingCreditorToModel(Model model, HttpSession session) {

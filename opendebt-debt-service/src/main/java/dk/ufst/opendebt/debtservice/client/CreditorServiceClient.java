@@ -10,6 +10,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -27,6 +29,8 @@ public class CreditorServiceClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
+  @CircuitBreaker(name = "creditor-service", fallbackMethod = "validateActionFallback")
+  @Retry(name = "creditor-service")
   public ValidateActionResponse validateAction(UUID creditorOrgId, ValidateActionRequest request) {
     log.debug("Validating action {} for creditor {}", request.getRequestedAction(), creditorOrgId);
 
@@ -64,6 +68,20 @@ public class CreditorServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(ValidateActionResponse.class)
         .block();
+  }
+
+  private ValidateActionResponse validateActionFallback(
+      UUID creditorOrgId, ValidateActionRequest request, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    throw new OpenDebtException(
+        "Creditor service unavailable",
+        "CREDITOR_SERVICE_UNAVAILABLE",
+        OpenDebtException.ErrorSeverity.CRITICAL);
   }
 
   public boolean isCreditorAllowedToCreateClaim(UUID creditorOrgId) {

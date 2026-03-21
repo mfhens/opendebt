@@ -66,20 +66,24 @@ public class CsvExportController {
           paymentServiceClient.getLedgerByDebt(debtId, category, fromDate, toDate, 0, 10000);
 
       for (PortalLedgerEntryDto entry : ledger.getContent()) {
-        writer.printf(
-            "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s%n",
-            entry.getEffectiveDate() != null ? entry.getEffectiveDate() : "",
-            entry.getPostingDate() != null ? entry.getPostingDate() : "",
-            entry.getAccountCode() != null ? entry.getAccountCode() : "",
-            csvEscape(entry.getAccountName()),
-            entry.getEntryType() != null ? entry.getEntryType() : "",
-            entry.getAmount() != null ? entry.getAmount().toPlainString() : "",
-            entry.getEntryCategory() != null ? entry.getEntryCategory() : "",
-            csvEscape(entry.getReference()),
-            csvEscape(entry.getDescription()),
-            entry.getDebtId() != null ? entry.getDebtId() : "");
+        writer.println(formatCsvRow(entry));
       }
     }
+  }
+
+  private String formatCsvRow(PortalLedgerEntryDto entry) {
+    return String.format(
+        "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+        entry.getEffectiveDate() != null ? entry.getEffectiveDate() : "",
+        entry.getPostingDate() != null ? entry.getPostingDate() : "",
+        entry.getAccountCode() != null ? entry.getAccountCode() : "",
+        csvEscape(entry.getAccountName()),
+        entry.getEntryType() != null ? entry.getEntryType() : "",
+        entry.getAmount() != null ? entry.getAmount().toPlainString() : "",
+        entry.getEntryCategory() != null ? entry.getEntryCategory() : "",
+        csvEscape(entry.getReference()),
+        csvEscape(entry.getDescription()),
+        entry.getDebtId() != null ? entry.getDebtId() : "");
   }
 
   private String csvEscape(String value) {
