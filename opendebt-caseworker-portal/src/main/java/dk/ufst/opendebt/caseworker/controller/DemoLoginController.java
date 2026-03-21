@@ -43,6 +43,12 @@ public class DemoLoginController {
               .description("Teamleder")
               .build(),
           CaseworkerIdentity.builder()
+              .id("bro-karsten")
+              .name("Bro Karsten")
+              .role("CONFIGURATION_MANAGER")
+              .description("Konfigurationsoperatør")
+              .build(),
+          CaseworkerIdentity.builder()
               .id("lars-nielsen")
               .name("Lars Nielsen")
               .role("CONFIGURATION_MANAGER")
