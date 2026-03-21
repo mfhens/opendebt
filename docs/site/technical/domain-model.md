@@ -31,8 +31,17 @@ OpenDebt follows the UFST begrebsmodel (concept model) for Danish public debt co
 | Tilbagekald | Withdrawal | `TILBAGEKALDT` state |
 | Høring | Hearing | `HOERING` state |
 | Sag | Case | `CaseEntity` |
+| Rentesats | Interest Rate | `interestRate`, `RATE_NB_UDLAAN` |
+| Konfiguration | Business Configuration | `BusinessConfigEntity`, `/api/v1/config` |
+| Konfigurationspost | Config Entry | `BusinessConfigEntity` instance |
+| Gyldighedsperiode | Validity Period | `validFrom` / `validTo` on config entries |
+| Godkendelse | Approval | `ReviewStatus.APPROVED` |
+| Afventer godkendelse | Pending Review | `ReviewStatus.PENDING_REVIEW` |
+| Afledt sats | Derived Rate | auto-computed from `RATE_NB_UDLAAN` |
+| Rentejournal | Interest Journal | `InterestJournalEntry` |
+| Rentegrænse | Rate Boundary | year-boundary split in interest recalculation |
 | Dækning | Recovery / Payment applied | payment matching |
-| Dækningsrækkefølge | Coverage Priority | interest before principal |
+| Dækningsrækkefølge | Coverage Priority | interest before fees before principal |
 
 ## Entity relationships
 

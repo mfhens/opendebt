@@ -108,6 +108,34 @@ sequenceDiagram
     IG-->>C: Gateway response
 ```
 
+## Business configuration (petition 046/047)
+
+Time-versioned business values (interest rates, fees, thresholds) are stored in the `business_config` table in **debt-service** and accessed via `BusinessConfigService`. No configuration lives in `application.yml` for business values.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING_REVIEW : createEntry()
+    PENDING_REVIEW --> APPROVED : approveEntry()
+    PENDING_REVIEW --> REJECTED : rejectEntry()
+    APPROVED --> [*] : entry expires (valid_to reached)
+    REJECTED --> [*]
+
+    note right of PENDING_REVIEW
+        4-øjne-princip:
+        opretteren ≠ godkenderen
+    end note
+```
+
+When `RATE_NB_UDLAAN` is created or updated, three derived rate entries are automatically computed and created as `PENDING_REVIEW`:
+
+| Config key | Derivation |
+|------------|------------|
+| `RATE_INDR_STD` | NB + 4 pp |
+| `RATE_INDR_TOLD` | NB + 2 pp |
+| `RATE_INDR_TOLD_AFD` | NB + 1 pp |
+
+The `InterestAccrualJob` and `InterestRecalculationService` resolve the effective rate per day, splitting interest periods at rate-change boundaries (see petition 045/046 implementation).
+
 ## Key architectural decisions
 
 See the [ADR Index](adr-index.md) for all decisions. The most impactful are:

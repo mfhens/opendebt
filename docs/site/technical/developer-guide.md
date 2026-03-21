@@ -115,6 +115,37 @@ All code uses **English**. Danish domain terms are mapped to English equivalents
 3. **Injected WebClient.Builder** (ADR-0024): Never use `WebClient.create()`. Always inject `WebClient.Builder` for distributed trace propagation.
 4. **Security annotations**: Every endpoint must have `@PreAuthorize` with appropriate role checks.
 
+### Time-versioned entities pattern (petition 046)
+
+Business values that change over time (interest rates, fees, thresholds) are stored as immutable versioned rows in `business_config`, **not** in `application.yml`. Each entry has a `valid_from` / `valid_to` validity window.
+
+```java
+// Resolve the effective rate on a specific date
+BigDecimal rate = businessConfigService.getDecimalValue("RATE_INDR_STD", LocalDate.now());
+```
+
+New entries are created with `ReviewStatus.PENDING_REVIEW` and require approval before they become effective. `BusinessConfigService` caches the resolved values and exposes `clearCache()` for batch job use.
+
+When an NB-rate entry (`RATE_NB_UDLAAN`) is approved, the three derived standard rates are auto-computed and created as new `PENDING_REVIEW` entries.
+
+See [API Reference](api-reference.md) for the `/api/v1/config` endpoints and the [Konfiguration](../sagsbehandler/konfiguration.md) user guide.
+
+### Config approval workflow
+
+```mermaid
+sequenceDiagram
+    participant CM as Configuration Manager A
+    participant SYS as BusinessConfigService
+    participant CM2 as Configuration Manager B
+
+    CM->>SYS: createEntry(key, value, validFrom)
+    SYS-->>CM: ConfigCreationResult (PENDING_REVIEW)
+    Note over SYS: auto-computes derived rates if key = RATE_NB_UDLAAN
+    CM2->>SYS: approveEntry(id)
+    SYS-->>CM2: Updated entry (APPROVED)
+    Note over SYS: entry becomes active on validFrom date
+```
+
 See [AGENTS.md](https://github.com/ufst/opendebt/blob/main/AGENTS.md) for the complete coding guidelines.
 
 ## Testing
