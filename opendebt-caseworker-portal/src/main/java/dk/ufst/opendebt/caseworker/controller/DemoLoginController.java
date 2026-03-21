@@ -41,6 +41,18 @@ public class DemoLoginController {
               .name("Mette Larsen")
               .role("TEAM_LEAD")
               .description("Teamleder")
+              .build(),
+          CaseworkerIdentity.builder()
+              .id("lars-nielsen")
+              .name("Lars Nielsen")
+              .role("CONFIGURATION_MANAGER")
+              .description("Konfigurationsansvarlig")
+              .build(),
+          CaseworkerIdentity.builder()
+              .id("system-admin")
+              .name("System Administrator")
+              .role("ADMIN")
+              .description("Systemadministrator")
               .build());
 
   private final CaseworkerSessionService sessionService;

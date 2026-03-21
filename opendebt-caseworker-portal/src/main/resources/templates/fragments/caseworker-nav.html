@@ -16,6 +16,15 @@
            class="skat-portal-nav__link">Sager</a>
       </li>
 
+      <!-- Konfiguration (visible to all; editing restricted by role in controller) -->
+      <li class="skat-portal-nav__item">
+        <a th:href="@{/konfiguration}"
+           th:text="#{nav.config}"
+           th:classappend="${currentPage == 'konfiguration'} ? 'skat-portal-nav__link--active' : ''"
+           th:attr="aria-current=${currentPage == 'konfiguration'} ? 'page' : ''"
+           class="skat-portal-nav__link">Konfiguration</a>
+      </li>
+
       <!-- Separator -->
       <li class="skat-portal-nav__separator" role="separator" aria-hidden="true"></li>
 
