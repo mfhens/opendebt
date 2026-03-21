@@ -50,8 +50,8 @@
           </tr>
         </thead>
         <tbody>
-          <th:block th:each="entry : ${#maps.values(grouped)}">
-            <th:block th:each="e : ${entry}"
+          <th:block th:each="mapEntry : ${grouped}">
+            <th:block th:each="e : ${mapEntry.value}"
                       th:if="${e.configKey != null and (e.configKey.startsWith('RATE_') or e.configKey.startsWith('TOLD_'))}">
               <tr>
                 <td><a th:href="@{/konfiguration/{key}(key=${e.configKey})}" th:text="${e.configKey}">RATE_INDR_STD</a></td>
@@ -104,8 +104,8 @@
           </tr>
         </thead>
         <tbody>
-          <th:block th:each="entry : ${#maps.values(grouped)}">
-            <th:block th:each="e : ${entry}"
+          <th:block th:each="mapEntry : ${grouped}">
+            <th:block th:each="e : ${mapEntry.value}"
                       th:if="${e.configKey != null and e.configKey.startsWith('FEE_')}">
               <tr>
                 <td><a th:href="@{/konfiguration/{key}(key=${e.configKey})}" th:text="${e.configKey}">FEE_GEBYR</a></td>
