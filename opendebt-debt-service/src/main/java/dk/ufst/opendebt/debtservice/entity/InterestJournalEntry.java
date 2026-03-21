@@ -7,6 +7,7 @@ import java.util.UUID;
 import jakarta.persistence.*;
 
 import dk.ufst.opendebt.common.audit.AuditableEntity;
+import dk.ufst.opendebt.common.dto.AccountingTarget;
 
 import lombok.*;
 
@@ -50,4 +51,8 @@ public class InterestJournalEntry extends AuditableEntity {
 
   @Column(name = "interest_amount", nullable = false, precision = 15, scale = 2)
   private BigDecimal interestAmount;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "accounting_target", length = 20)
+  private AccountingTarget accountingTarget;
 }

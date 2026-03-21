@@ -13,17 +13,20 @@ import dk.ufst.opendebt.payment.bookkeeping.model.CoverageAllocation;
 public interface CoveragePriorityService {
 
   /**
-   * Allocates a payment between interest and principal according to dækningsrækkefølge.
+   * Allocates a payment between interest, fees, and principal according to dækningsrækkefølge:
+   * inddrivelsesrente first, then gebyrer, then hovedstol.
    *
    * @param debtId the debt being paid
    * @param paymentAmount the total payment amount
    * @param accruedInterest outstanding accrued interest at the payment effective date
+   * @param outstandingFees outstanding fees (gebyrer) at the payment effective date
    * @param principalBalance outstanding principal at the payment effective date
-   * @return allocation showing interest and principal portions
+   * @return allocation showing interest, fees, and principal portions
    */
   CoverageAllocation allocatePayment(
       UUID debtId,
       BigDecimal paymentAmount,
       BigDecimal accruedInterest,
+      BigDecimal outstandingFees,
       BigDecimal principalBalance);
 }

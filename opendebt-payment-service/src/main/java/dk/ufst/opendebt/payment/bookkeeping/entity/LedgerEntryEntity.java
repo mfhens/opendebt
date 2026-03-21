@@ -11,6 +11,8 @@ import org.hibernate.annotations.CurrentTimestamp;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.generator.EventType;
 
+import dk.ufst.opendebt.common.dto.AccountingTarget;
+
 import lombok.*;
 
 /**
@@ -93,6 +95,11 @@ public class LedgerEntryEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "entry_category", nullable = false, length = 20)
   private EntryCategory entryCategory;
+
+  /** Who receives the money: fordringshaver (interest on principal) or staten (fees). */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "accounting_target", length = 20)
+  private AccountingTarget accountingTarget;
 
   @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
   @Column(name = "created_at", nullable = false, updatable = false)

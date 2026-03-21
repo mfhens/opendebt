@@ -89,7 +89,7 @@ class TimelineReplayServiceImplTest {
             .accruedInterestAtDate(BigDecimal.ZERO)
             .principalBalanceAtDate(new BigDecimal("50000"))
             .build();
-    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any()))
+    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
         .thenReturn(allocation);
 
     TimelineReplayResult result =
@@ -125,7 +125,7 @@ class TimelineReplayServiceImplTest {
             .accruedInterestAtDate(interestBeforePayment)
             .principalBalanceAtDate(new BigDecimal("100000"))
             .build();
-    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any()))
+    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
         .thenReturn(allocation);
 
     TimelineReplayResult result = service.replayTimeline(DEBT_ID, regDate, RATE, "CROSSING-002");

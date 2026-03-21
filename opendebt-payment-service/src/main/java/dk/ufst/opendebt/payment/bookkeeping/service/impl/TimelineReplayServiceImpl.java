@@ -106,7 +106,11 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
       if (isRecoveryEvent(event)) {
         CoverageAllocation allocation =
             coveragePriorityService.allocatePayment(
-                debtId, event.getAmount(), state.accruedInterest, state.principalBalance);
+                debtId,
+                event.getAmount(),
+                state.accruedInterest,
+                BigDecimal.ZERO,
+                state.principalBalance);
         allocation.setEffectiveDate(eventDate);
         allocation.setSourceEventId(event.getId());
         allocations.add(allocation);

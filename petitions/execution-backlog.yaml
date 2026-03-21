@@ -1891,6 +1891,63 @@ backlog:
       petitions:
         - petition007
       modules:
+
+    # --- Wave 8: Interest regime compliance and versioned configuration ---
+
+    W8-CFG-01:
+      status: pending
+      sprint: sprint-15
+      petitions:
+        - petition046
+      modules:
+        - opendebt-debt-service
+      summary: Versioned business configuration with validity periods
+      description: >
+        Introduce a business_config table with time-versioned entries for interest rates,
+        fee amounts, and regulatory parameters. Replace hardcoded application.yml rates
+        with date-resolved lookups. Seed historical rate data for retroactive calculations.
+      deliverables:
+        - BusinessConfigEntity, BusinessConfigRepository, BusinessConfigService
+        - Flyway migration with business_config table and seed data
+        - REST API for config CRUD with ROLE_ADMIN authorization
+        - Cache layer with configurable TTL for batch processing
+        - Historical NB rate data (2023-2026) seeded
+        - Unit tests for date-resolved config lookups
+      depends_on: []
+      owner_role: Backend engineer
+      parallelization: Can start independently, no prerequisites.
+      psrm_source: docs/psrm-reference/Gældsstyrelsen is responsible for debt collection.md
+
+    W8-INT-01:
+      status: pending
+      sprint: sprint-15
+      petitions:
+        - petition045
+      modules:
+        - opendebt-debt-service
+        - opendebt-payment-service
+        - opendebt-rules-engine
+      summary: Multi-regime interest and fee compliance per PSRM debt type rules
+      description: >
+        Implement per-debt-type interest rate resolution, straffebøder exemption,
+        told-specific rates, contractual rate override, fee entity model, interest
+        on fees, and separate accounting (renter→fordringshaver, gebyrer→staten).
+      deliverables:
+        - InterestAccrualJob refactored for per-debt rate resolution via BusinessConfigService
+        - FeeEntity with fee types (RYKKER, UDLAEG, LOENINDEHOLDELSE)
+        - Straffebøder interest exemption using DebtTypeEntity.interestApplicable
+        - Told-specific interest rules (NB+2%, NB+1%)
+        - Contractual rate override via InterestSelectionEmbeddable.additional_interest_rate
+        - CoveragePriorityService extended for 3-way split (interest → fees → principal)
+        - LedgerEntryEntity accounting_target field (FORDRINGSHAVER, STATEN)
+        - Drools rules for per-type interest calculation
+        - Debt type seed data with correct interestApplicable flags
+        - Unit tests for each interest regime and fee scenario
+      depends_on:
+        - W8-CFG-01
+      owner_role: Domain architect plus backend engineer
+      parallelization: Starts after W8-CFG-01 provides rate resolution infrastructure.
+      psrm_source: docs/psrm-reference/Gældsstyrelsen is responsible for debt collection.md
         - opendebt-case-service
       objective: Implement betalingspåkrav 100K threshold and dækningsrækkefølge rules.
       entry_criteria:

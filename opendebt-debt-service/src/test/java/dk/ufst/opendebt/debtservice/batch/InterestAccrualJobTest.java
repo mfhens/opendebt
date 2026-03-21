@@ -23,22 +23,21 @@ import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity.BatchStatus;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
 
 @ExtendWith(MockitoExtension.class)
 class InterestAccrualJobTest {
 
   @Mock private DebtRepository debtRepository;
   @Mock private InterestAccrualJobHelper helper;
+  @Mock private BusinessConfigService configService;
 
   private InterestAccrualJob job;
 
-  private static final BigDecimal ANNUAL_RATE = new BigDecimal("0.0575");
-
   @BeforeEach
   void setUp() {
-    job = new InterestAccrualJob(debtRepository, helper);
+    job = new InterestAccrualJob(debtRepository, helper, configService);
     ReflectionTestUtils.setField(job, "pageSize", 1000);
-    ReflectionTestUtils.setField(job, "annualRate", ANNUAL_RATE);
   }
 
   @Test
@@ -50,11 +49,11 @@ class InterestAccrualJobTest {
 
     when(helper.alreadyExecuted(InterestAccrualJob.JOB_NAME, accrualDate)).thenReturn(false);
     when(helper.createExecution(InterestAccrualJob.JOB_NAME, accrualDate)).thenReturn(execution);
-    when(helper.processPage(any(), eq(accrualDate), eq(ANNUAL_RATE))).thenReturn(new int[] {1, 0});
+    when(helper.processPage(any(), eq(accrualDate))).thenReturn(new int[] {1, 0});
     when(helper.finalizeExecution(execution, 1, 0)).thenReturn(completed);
 
     DebtEntity debt = testDebt(ClaimLifecycleState.OVERDRAGET, new BigDecimal("100000.00"));
-    when(debtRepository.findByLifecycleStateAndPositiveBalance(
+    when(debtRepository.findInterestEligibleDebts(
             eq(ClaimLifecycleState.OVERDRAGET), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(debt)));
 
@@ -62,7 +61,9 @@ class InterestAccrualJobTest {
 
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
     assertThat(result.getRecordsProcessed()).isEqualTo(1);
-    verify(helper).processPage(List.of(debt), accrualDate, ANNUAL_RATE);
+    verify(helper).processPage(List.of(debt), accrualDate);
+    verify(configService).preloadRatesForDate(eq(accrualDate), anyList());
+    verify(configService).clearCache();
   }
 
   @Test
@@ -74,7 +75,7 @@ class InterestAccrualJobTest {
 
     assertThat(result).isNull();
     verify(helper, never()).createExecution(any(), any());
-    verify(debtRepository, never()).findByLifecycleStateAndPositiveBalance(any(), any());
+    verify(debtRepository, never()).findInterestEligibleDebts(any(), any());
   }
 
   @Test
@@ -85,16 +86,33 @@ class InterestAccrualJobTest {
 
     when(helper.alreadyExecuted(InterestAccrualJob.JOB_NAME, accrualDate)).thenReturn(false);
     when(helper.createExecution(InterestAccrualJob.JOB_NAME, accrualDate)).thenReturn(execution);
-    when(helper.processPage(any(), eq(accrualDate), eq(ANNUAL_RATE))).thenReturn(new int[] {0, 0});
+    when(helper.processPage(any(), eq(accrualDate))).thenReturn(new int[] {0, 0});
     when(helper.finalizeExecution(execution, 0, 0)).thenReturn(completed);
-    when(debtRepository.findByLifecycleStateAndPositiveBalance(
+    when(debtRepository.findInterestEligibleDebts(
             eq(ClaimLifecycleState.OVERDRAGET), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of()));
 
     BatchJobExecutionEntity result = job.execute(accrualDate);
 
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-    verify(helper).processPage(List.of(), accrualDate, ANNUAL_RATE);
+    verify(helper).processPage(List.of(), accrualDate);
+  }
+
+  @Test
+  void execute_clearsConfigCacheEvenOnFailure() {
+    LocalDate accrualDate = LocalDate.of(2026, 3, 19);
+
+    when(helper.alreadyExecuted(InterestAccrualJob.JOB_NAME, accrualDate)).thenReturn(false);
+    when(helper.createExecution(InterestAccrualJob.JOB_NAME, accrualDate))
+        .thenReturn(executionEntity(BatchStatus.RUNNING));
+    when(debtRepository.findInterestEligibleDebts(any(), any()))
+        .thenThrow(new RuntimeException("DB down"));
+    when(helper.finalizeExecution(any(), anyInt(), anyInt()))
+        .thenReturn(executionEntity(BatchStatus.FAILED));
+
+    job.execute(accrualDate);
+
+    verify(configService).clearCache();
   }
 
   private BatchJobExecutionEntity executionEntity(BatchStatus status) {

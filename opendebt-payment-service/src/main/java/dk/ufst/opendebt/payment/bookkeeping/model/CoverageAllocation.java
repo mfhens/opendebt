@@ -22,7 +22,9 @@ public class CoverageAllocation {
   private LocalDate effectiveDate;
   private BigDecimal totalAmount;
   private BigDecimal interestPortion;
+  private BigDecimal feesPortion;
   private BigDecimal principalPortion;
   private BigDecimal accruedInterestAtDate;
+  private BigDecimal outstandingFeesAtDate;
   private BigDecimal principalBalanceAtDate;
 }

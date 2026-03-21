@@ -15,11 +15,15 @@ import dk.ufst.opendebt.debtservice.batch.DeadlineMonitoringJob;
 import dk.ufst.opendebt.debtservice.batch.InterestAccrualJob;
 import dk.ufst.opendebt.debtservice.batch.RestanceTransitionJob;
 import dk.ufst.opendebt.debtservice.entity.BatchJobExecutionEntity;
+import dk.ufst.opendebt.debtservice.entity.BusinessConfigEntity;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
+import dk.ufst.opendebt.debtservice.entity.DebtTypeEntity;
 import dk.ufst.opendebt.debtservice.entity.InterestJournalEntry;
 import dk.ufst.opendebt.debtservice.repository.BatchJobExecutionRepository;
+import dk.ufst.opendebt.debtservice.repository.BusinessConfigRepository;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.repository.DebtTypeRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 
 import io.cucumber.java.Before;
@@ -34,8 +38,10 @@ public class Petition043Steps {
   @Autowired private InterestAccrualJob interestAccrualJob;
   @Autowired private DeadlineMonitoringJob deadlineMonitoringJob;
   @Autowired private DebtRepository debtRepository;
+  @Autowired private DebtTypeRepository debtTypeRepository;
   @Autowired private InterestJournalEntryRepository interestRepository;
   @Autowired private BatchJobExecutionRepository batchRepository;
+  @Autowired private BusinessConfigRepository configRepository;
 
   private final List<UUID> createdDebtIds = new ArrayList<>();
   private BatchJobExecutionEntity lastExecution;
@@ -48,6 +54,29 @@ public class Petition043Steps {
     interestRepository.deleteAll();
     batchRepository.deleteAll();
     debtRepository.deleteAll();
+
+    // Seed debt type "600" with interest applicable for BDD tests
+    if (debtTypeRepository.findByCode("600").isEmpty()) {
+      debtTypeRepository.save(
+          DebtTypeEntity.builder()
+              .code("600")
+              .name("Test debt type")
+              .interestApplicable(true)
+              .active(true)
+              .build());
+    }
+
+    // Seed business config rate for test date range
+    if (configRepository.findEffective("RATE_INDR_STD", executionDate).isEmpty()) {
+      configRepository.save(
+          BusinessConfigEntity.builder()
+              .configKey("RATE_INDR_STD")
+              .configValue("0.0575")
+              .valueType("DECIMAL")
+              .validFrom(LocalDate.of(2020, 1, 1))
+              .createdBy("test")
+              .build());
+    }
   }
 
   @Given("{int} claims in state REGISTERED with expired payment deadline and positive balance")

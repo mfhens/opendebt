@@ -70,6 +70,18 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
   Page<DebtEntity> findByLifecycleStateAndPositiveBalance(
       @Param("state") ClaimLifecycleState state, Pageable pageable);
 
+  /**
+   * Finds debts eligible for interest accrual: OVERDRAGET, positive balance, and the debt type is
+   * interest-applicable. Uses a subquery against debt_types to filter out straffebøder and other
+   * interest-exempt types at the DB level.
+   */
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.lifecycleState = :state "
+          + "AND d.outstandingBalance > 0 "
+          + "AND EXISTS (SELECT 1 FROM DebtTypeEntity dt WHERE dt.code = d.debtTypeCode AND dt.interestApplicable = true)")
+  Page<DebtEntity> findInterestEligibleDebts(
+      @Param("state") ClaimLifecycleState state, Pageable pageable);
+
   @Query(
       "SELECT d FROM DebtEntity d WHERE d.limitationDate IS NOT NULL "
           + "AND d.limitationDate <= :warningDate "
