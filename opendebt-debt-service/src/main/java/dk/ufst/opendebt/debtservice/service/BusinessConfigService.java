@@ -209,6 +209,10 @@ public class BusinessConfigService {
             .description(req.getDescription())
             .legalBasis(req.getLegalBasis())
             .createdBy(createdBy)
+            .reviewStatus(
+                isAdmin && req.isSeedMigration()
+                    ? BusinessConfigEntity.ReviewStatus.APPROVED
+                    : BusinessConfigEntity.ReviewStatus.PENDING_REVIEW)
             .build();
     entity = repository.save(entity);
     audit(
