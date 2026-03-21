@@ -287,14 +287,14 @@ The task description includes enough context for a droid to implement without re
 | 5 | P047-T4 — BusinessConfigController REST API | 45 min | ✅ Done |
 | 6 | P047-T5 — Unit tests for config API + service | 45 min | ✅ Done |
 
-### Sprint H: Config operator UI
+### Sprint H: Config operator UI ✅ COMPLETED 2026-03-21
 
-| # | Task | Est. |
-|---|------|------|
-| 7 | P047-T6 — ConfigServiceClient + ConfigurationController | 60 min |
-| 8 | P047-T7 — Thymeleaf templates + i18n | 60 min |
-| 9 | P047-T8 — BDD scenarios + integration tests | 45 min |
-| 10 | P046-T5 — Timeline replay rate splitting | 60 min |
+| # | Task | Est. | Status |
+|---|------|------|--------|
+| 7 | P047-T6 — ConfigServiceClient + ConfigurationController | 60 min | ✅ Done |
+| 8 | P047-T7 — Thymeleaf templates + i18n | 60 min | ✅ Done |
+| 9 | P047-T8 — BDD scenarios + integration tests | 45 min | ✅ Done |
+| 10 | P046-T5 — Timeline replay rate splitting | 60 min | ✅ Done |
 
 ---
 
