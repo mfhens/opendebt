@@ -80,7 +80,7 @@ opendebt:
       cron: "0 0 3 * * *"
     limitation-warning-days: 90
   interest:
-    annual-rate: 0.0575
+    annual-rate: 0.0575  # DEPRECATED (petition046): superseded by business_config table. Remove once petition046 is fully wired.
   debt:
     supported-debt-types: 600
     readiness-validation:

@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import jakarta.annotation.PostConstruct;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,18 @@ public class BusinessConfigService {
    * runs (not a long-lived cache).
    */
   private final Map<String, BigDecimal> batchCache = new ConcurrentHashMap<>();
+
+  /** Warns at startup if the business_config table is empty (no rates configured). */
+  @PostConstruct
+  public void validateRequiredConfigs() {
+    long count = repository.count();
+    if (count == 0) {
+      log.warn(
+          "business_config table is empty — no rates or configuration values are loaded."
+              + " Interest calculations will fall back to hardcoded defaults until the table is"
+              + " seeded.");
+    }
+  }
 
   /**
    * Returns the decimal config value effective on the given date.

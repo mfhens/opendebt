@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import jakarta.persistence.EntityNotFoundException;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +17,7 @@ import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.InterestJournalEntry;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
+import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
 import dk.ufst.opendebt.debtservice.service.InterestRecalculationService;
 
 import lombok.RequiredArgsConstructor;
@@ -43,12 +43,11 @@ import lombok.extern.slf4j.Slf4j;
 public class InterestRecalculationServiceImpl implements InterestRecalculationService {
 
   private static final BigDecimal DAYS_IN_YEAR = new BigDecimal("365");
+  private static final BigDecimal FALLBACK_ANNUAL_RATE = new BigDecimal("0.0575");
 
   private final DebtRepository debtRepository;
   private final InterestJournalEntryRepository interestRepository;
-
-  @Value("${opendebt.interest.annual-rate:0.0575}")
-  private BigDecimal annualRate;
+  private final BusinessConfigService configService;
 
   @Override
   @Transactional
@@ -76,6 +75,17 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
           .balanceUsed(debt.getOutstandingBalance())
           .totalInterestRecalculated(BigDecimal.ZERO)
           .build();
+    }
+
+    BigDecimal annualRate;
+    try {
+      annualRate = configService.getDecimalValue("RATE_INDR_STD", from);
+    } catch (BusinessConfigService.ConfigurationNotFoundException e) {
+      log.warn(
+          "No business config found for RATE_INDR_STD on {}, falling back to {}",
+          from,
+          FALLBACK_ANNUAL_RATE);
+      annualRate = FALLBACK_ANNUAL_RATE;
     }
 
     // Step 1: delete all journal entries in the disrupted window [from, today)
