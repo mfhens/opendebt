@@ -29,4 +29,23 @@ public interface BusinessConfigRepository extends JpaRepository<BusinessConfigEn
 
   /** Returns the full version history for a config key, ordered by valid_from descending. */
   List<BusinessConfigEntity> findByConfigKeyOrderByValidFromDesc(String configKey);
+
+  /** Checks for any existing entry for the same key that overlaps the given period. */
+  @Query(
+      "SELECT c FROM BusinessConfigEntity c WHERE c.configKey = :key "
+          + "AND c.validFrom < :newValidTo "
+          + "AND (c.validTo IS NULL OR c.validTo > :newValidFrom)")
+  List<BusinessConfigEntity> findOverlapping(
+      @Param("key") String configKey,
+      @Param("newValidFrom") LocalDate newValidFrom,
+      @Param("newValidTo") LocalDate newValidTo);
+
+  /** Finds the current open-ended entry for a key (validTo IS NULL). */
+  @Query(
+      "SELECT c FROM BusinessConfigEntity c WHERE c.configKey = :key AND c.validTo IS NULL ORDER BY c.validFrom DESC")
+  List<BusinessConfigEntity> findOpenEnded(@Param("key") String configKey);
+
+  /** Returns all distinct config keys. */
+  @Query("SELECT DISTINCT c.configKey FROM BusinessConfigEntity c ORDER BY c.configKey")
+  List<String> findAllDistinctKeys();
 }
