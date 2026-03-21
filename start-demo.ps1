@@ -194,6 +194,7 @@ if ($pgUp) {
 $step++
 Write-Status "[$step/$totalSteps] Ensuring databases exist..."
 $env:PGPASSWORD = $PgPass
+$env:PGCLIENTENCODING = 'UTF8'
 $psql = Join-Path $PgBin "psql"
 
 $roleExists = & $psql -h localhost -p $PgPort -U $PgUser -d postgres -tc "SELECT 1 FROM pg_roles WHERE rolname='$PgUser'" 2>$null

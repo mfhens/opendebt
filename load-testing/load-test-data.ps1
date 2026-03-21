@@ -211,6 +211,7 @@ Options:
 
     # Quick connectivity check
     $env:PGPASSWORD = $PgPassword
+    $env:PGCLIENTENCODING = 'UTF8'
     $ping = & $psqlPath -h $PgHost -p $PgPort -U $PgUser -d $DebtDb -c "SELECT 1" -t --no-align 2>&1
     Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
     if ($LASTEXITCODE -ne 0) {
