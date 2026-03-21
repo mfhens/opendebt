@@ -2,6 +2,1628 @@ openapi: 3.1.0
 info:
   title: OpenDebt - Debt Service API
   description: |
+    API for managing debts, readiness validation, collection measures, liabilities,
+    objections, notifications, citizen debt views, and versioned business configuration.
+
+    This API is exposed via UFST DUPLA and follows the Fællesoffentlige Arkitekturprincipper.
+
+    Identifier semantics frozen by W1-SPEC-02:
+    - `creditorId` serializes the technical `creditor_org_id` UUID reference.
+    - External CVR-based creditor resolution happens upstream in `person-registry`, `creditor-service`, or `integration-gateway`.
+  version: 1.5.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.opendebt.dk/debt-service
+    description: Production
+  - url: https://api-staging.opendebt.dk/debt-service
+    description: Staging
+
+security:
+  - bearerAuth: []
+  - oces3Certificate: []
+
+tags:
+  - name: Debts
+    description: Debt management operations
+  - name: Readiness
+    description: Debt readiness validation (indrivelsesparathed)
+  - name: Debt Types
+    description: Debt type reference data
+  - name: Collection Measures
+    description: Collection measure management (lønindeholdelse, udlæg etc.)
+  - name: Liabilities
+    description: Debtor liability management (hæftelsesformer)
+  - name: Objections
+    description: Objection (indsigelse) management
+  - name: Notifications
+    description: Demand for payment and reminder notifications
+  - name: Citizen
+    description: Citizen-facing debt summary (secured with CITIZEN role)
+  - name: Business Configuration
+    description: |
+      Versioned business configuration values (interest rates, fees, thresholds).
+      Requires ADMIN or CONFIGURATION_MANAGER role for write operations.
+      Implements petition 046/047.
+
+paths:
+  # ── Debts ──────────────────────────────────────────────────────────────────
+
+  /api/v1/debts:
+    get:
+      tags: [Debts]
+      summary: List debts
+      description: Returns a paginated list of debts with optional filters
+      operationId: listDebts
+      parameters:
+        - name: creditorId
+          in: query
+          description: Filter by creditor organization reference (technical UUID)
+          schema:
+            type: string
+            format: uuid
+        - name: debtorId
+          in: query
+          description: Filter by debtor person UUID
+          schema:
+            type: string
+            format: uuid
+        - name: ids
+          in: query
+          description: Comma-separated list of debt UUIDs (batch lookup)
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DebtStatus'
+        - name: readinessStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReadinessStatus'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Debts]
+      summary: Register a new debt
+      description: |
+        Registers a new debt for collection. The debt will be validated for
+        readiness (indrivelsesparathed) before being accepted for collection.
+      operationId: createDebt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtCreateRequest'
+      responses:
+        '201':
+          description: Debt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /api/v1/debts/submit:
+    post:
+      tags: [Debts]
+      summary: Submit debts in batch (fordringshaver bulk submission)
+      operationId: submitDebts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtSubmitRequest'
+      responses:
+        '200':
+          description: Batch submission result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtSubmitResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/debts/by-ocr:
+    get:
+      tags: [Debts]
+      summary: Look up a debt by OCR/payment ID
+      operationId: getDebtByOcr
+      parameters:
+        - name: ocr
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Debt found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/debts/debtor/{debtorId}:
+    get:
+      tags: [Debts]
+      summary: List debts for a debtor (by person UUID)
+      operationId: listDebtsByDebtor
+      parameters:
+        - name: debtorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtPage'
+
+  /api/v1/debts/{id}:
+    get:
+      tags: [Debts]
+      summary: Get debt by ID
+      operationId: getDebt
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Debts]
+      summary: Update a debt
+      operationId: updateDebt
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtUpdateRequest'
+      responses:
+        '200':
+          description: Debt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+    delete:
+      tags: [Debts]
+      summary: Delete a debt (creditor retraction before collection)
+      operationId: deleteDebt
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '204':
+          description: Debt deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/debts/{id}/validate-readiness:
+    post:
+      tags: [Readiness]
+      summary: Validate debt readiness for collection
+      description: |
+        Validates if a debt meets the requirements for collection (indrivelsesparat).
+        Requirements include valid debtor identification, correct debt type,
+        proper documentation, passed due date, and no active disputes.
+      operationId: validateReadiness
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '200':
+          description: Validation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/approve-readiness:
+    post:
+      tags: [Readiness]
+      summary: Manually approve a debt for collection
+      operationId: approveReadiness
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '200':
+          description: Readiness approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/reject-readiness:
+    post:
+      tags: [Readiness]
+      summary: Manually reject a debt from collection
+      operationId: rejectReadiness
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Readiness rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/evaluate-state:
+    post:
+      tags: [Debts]
+      summary: Trigger lifecycle state evaluation for a debt
+      operationId: evaluateState
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '200':
+          description: State evaluated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/transfer-for-collection:
+    post:
+      tags: [Debts]
+      summary: Transfer a debt to PSRM for active collection
+      operationId: transferForCollection
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      responses:
+        '200':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/write-down:
+    post:
+      tags: [Debts]
+      summary: Write down a debt (partial or full balance reduction after crossing)
+      operationId: writeDown
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteDownRequest'
+      responses:
+        '200':
+          description: Write-down applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debt'
+
+  /api/v1/debts/{id}/interest/recalculate:
+    post:
+      tags: [Debts]
+      summary: Recalculate interest from a given date (after crossing transaction)
+      description: |
+        Deletes and re-creates interest journal entries from `from` to today.
+        Uses per-day rate boundary splitting (petition 046 §FR-5).
+      operationId: recalculateInterest
+      parameters:
+        - $ref: '#/components/parameters/DebtId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from:
+                  type: string
+                  format: date
+                  description: First day of the disrupted window (inclusive)
+      responses:
+        '200':
+          description: Recalculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestRecalculationResult'
+
+  # ── Debt Types ─────────────────────────────────────────────────────────────
+
+  /api/v1/debt-types:
+    get:
+      tags: [Debt Types]
+      summary: List all debt types
+      description: Returns the list of ~600 supported debt types
+      operationId: listDebtTypes
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DebtType'
+
+  # ── Collection Measures ────────────────────────────────────────────────────
+
+  /api/v1/debts/{debtId}/collection-measures:
+    get:
+      tags: [Collection Measures]
+      summary: List collection measures for a debt
+      operationId: listCollectionMeasures
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionMeasure'
+    post:
+      tags: [Collection Measures]
+      summary: Register a new collection measure
+      operationId: createCollectionMeasure
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionMeasureRequest'
+      responses:
+        '201':
+          description: Collection measure created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionMeasure'
+
+  /api/v1/debts/{debtId}/collection-measures/{measureId}/complete:
+    post:
+      tags: [Collection Measures]
+      summary: Mark a collection measure as completed
+      operationId: completeCollectionMeasure
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+        - name: measureId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Measure completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionMeasure'
+
+  /api/v1/debts/{debtId}/collection-measures/{measureId}/cancel:
+    post:
+      tags: [Collection Measures]
+      summary: Cancel a collection measure
+      operationId: cancelCollectionMeasure
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+        - name: measureId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Measure cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionMeasure'
+
+  # ── Liabilities ────────────────────────────────────────────────────────────
+
+  /api/v1/debts/{debtId}/liabilities:
+    get:
+      tags: [Liabilities]
+      summary: List liabilities for a debt
+      operationId: listLiabilities
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Liability'
+    post:
+      tags: [Liabilities]
+      summary: Add a debtor liability to a debt
+      operationId: createLiability
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiabilityRequest'
+      responses:
+        '201':
+          description: Liability created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+
+  /api/v1/debts/{debtId}/liabilities/{liabilityId}:
+    delete:
+      tags: [Liabilities]
+      summary: Remove (deactivate) a liability
+      operationId: deleteLiability
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+        - name: liabilityId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Liability deactivated
+
+  # ── Objections ─────────────────────────────────────────────────────────────
+
+  /api/v1/debts/{debtId}/objections:
+    get:
+      tags: [Objections]
+      summary: List objections for a debt
+      operationId: listObjections
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Objection'
+    post:
+      tags: [Objections]
+      summary: Register an objection (indsigelse) against a debt
+      operationId: createObjection
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObjectionRequest'
+      responses:
+        '201':
+          description: Objection registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Objection'
+
+  /api/v1/debts/{debtId}/objections/{objectionId}/resolve:
+    put:
+      tags: [Objections]
+      summary: Resolve an objection (upheld or rejected)
+      operationId: resolveObjection
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+        - name: objectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObjectionResolveRequest'
+      responses:
+        '200':
+          description: Objection resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Objection'
+
+  # ── Notifications ──────────────────────────────────────────────────────────
+
+  /api/v1/debts/{debtId}/demand-for-payment:
+    post:
+      tags: [Notifications]
+      summary: Issue a demand for payment (påkrav)
+      operationId: issueDemandForPayment
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '201':
+          description: Demand for payment issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
+  /api/v1/debts/{debtId}/reminder:
+    post:
+      tags: [Notifications]
+      summary: Issue a payment reminder (rykker)
+      operationId: issueReminder
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '201':
+          description: Reminder issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
+  /api/v1/debts/{debtId}/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for a debt
+      operationId: listNotifications
+      parameters:
+        - $ref: '#/components/parameters/DebtIdPath'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  # ── Citizen ────────────────────────────────────────────────────────────────
+
+  /api/v1/citizen/debts:
+    get:
+      tags: [Citizen]
+      summary: Get debts for the authenticated citizen
+      description: |
+        Returns debts belonging to the authenticated citizen (identified via JWT `person_id` claim).
+        Does NOT expose PII, creditor internals, or readiness status.
+        Requires CITIZEN role.
+      operationId: getCitizenDebts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DebtStatus'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Citizen debt summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenDebtSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Business Configuration ─────────────────────────────────────────────────
+
+  /api/v1/config:
+    get:
+      tags: [Business Configuration]
+      summary: List all config entries grouped by key
+      description: |
+        Returns all versioned business configuration values grouped by config key.
+        Each group is ordered by `validFrom` descending (newest first).
+        Requires ADMIN, CONFIGURATION_MANAGER, CASEWORKER, or SERVICE role.
+      operationId: listConfigEntries
+      responses:
+        '200':
+          description: Config entries grouped by key
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ConfigEntry'
+    post:
+      tags: [Business Configuration]
+      summary: Create a new versioned config entry
+      description: |
+        Creates a new time-versioned config entry. The new entry is set to PENDING_REVIEW
+        status and requires approval before taking effect.
+        When `configKey` is `RATE_NB_UDLAAN`, derived rates (RATE_INDR_STD,
+        RATE_INDR_TOLD, RATE_INDR_TOLD_AFD) are auto-computed and returned.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: createConfigEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '201':
+          description: Config entry created (pending review)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigCreationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/config/{key}:
+    get:
+      tags: [Business Configuration]
+      summary: Get effective config value for a key on a given date
+      operationId: getEffectiveConfig
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          example: RATE_INDR_STD
+        - name: date
+          in: query
+          description: Effective date (defaults to today)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Effective config entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/config/{key}/history:
+    get:
+      tags: [Business Configuration]
+      summary: Get version history for a config key
+      operationId: getConfigHistory
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version history (newest first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigEntry'
+
+  /api/v1/config/{key}/audit:
+    get:
+      tags: [Business Configuration]
+      summary: Get audit trail for a config key
+      description: Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: getConfigAudit
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit trail entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigAuditEntry'
+
+  /api/v1/config/{key}/preview:
+    get:
+      tags: [Business Configuration]
+      summary: Preview derived rates for an NB lending rate value
+      description: |
+        Calculates what RATE_INDR_STD, RATE_INDR_TOLD, and RATE_INDR_TOLD_AFD would be
+        for a given NB lending rate (`RATE_NB_UDLAAN`), without persisting anything.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: previewDerivedRates
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: nbRate
+          in: query
+          required: true
+          schema:
+            type: number
+            format: decimal
+        - name: validFrom
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Preview of derived rate entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigEntry'
+
+  /api/v1/config/{id}:
+    put:
+      tags: [Business Configuration]
+      summary: Update a pending or future config entry
+      description: |
+        Only PENDING_REVIEW or FUTURE entries can be updated.
+        Active or expired entries are immutable.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: updateConfigEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+      responses:
+        '200':
+          description: Updated config entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Business Configuration]
+      summary: Delete a future (not yet effective) config entry
+      description: |
+        Only FUTURE entries can be deleted. Active or expired entries are immutable.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: deleteConfigEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Entry deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/config/{id}/approve:
+    put:
+      tags: [Business Configuration]
+      summary: Approve a PENDING_REVIEW config entry
+      description: |
+        Transitions the entry from PENDING_REVIEW to APPROVED.
+        The entry will become ACTIVE on its `validFrom` date.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: approveConfigEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Entry approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/config/{id}/reject:
+    put:
+      tags: [Business Configuration]
+      summary: Reject (delete) a PENDING_REVIEW config entry
+      description: |
+        Permanently removes the entry. Use when the proposed value is incorrect.
+        Requires ADMIN or CONFIGURATION_MANAGER role.
+      operationId: rejectConfigEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Entry rejected and deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Keycloak
+    oces3Certificate:
+      type: mutualTLS
+      description: OCES3 certificate for system-to-system communication
+
+  parameters:
+    PageNumber:
+      name: page
+      in: query
+      description: Page number (0-based)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    PageSize:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    DebtId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DebtIdPath:
+      name: debtId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+
+    # ── Debt ─────────────────────────────────────────────────────────────────
+
+    Debt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtorPersonId:
+          type: string
+          format: uuid
+          description: Technical UUID reference to the debtor (never CPR)
+        creditorId:
+          type: string
+          format: uuid
+          description: Technical UUID reference to the creditor organization (`creditor_org_id`)
+        debtTypeCode:
+          type: string
+          description: Code identifying the type of debt (~600 types)
+        principalAmount:
+          type: number
+          format: decimal
+          description: Original debt amount in DKK
+        outstandingBalance:
+          type: number
+          format: decimal
+          description: Current outstanding balance (principal + interest + fees)
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+        dueDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/DebtStatus'
+        claimLifecycleState:
+          $ref: '#/components/schemas/ClaimLifecycleState'
+        readinessStatus:
+          $ref: '#/components/schemas/ReadinessStatus'
+        readinessRejectionReason:
+          type: string
+        externalReference:
+          type: string
+          description: Creditor's external reference
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DebtStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - IN_COLLECTION
+        - PARTIALLY_PAID
+        - PAID
+        - WRITTEN_OFF
+        - DISPUTED
+        - CANCELLED
+
+    ClaimLifecycleState:
+      type: string
+      description: PSRM-aligned claim lifecycle state
+      enum:
+        - REGISTERED
+        - RESTANCE
+        - OVERDRAGET
+        - CLOSED
+
+    ReadinessStatus:
+      type: string
+      enum:
+        - PENDING_REVIEW
+        - READY_FOR_COLLECTION
+        - NOT_READY
+        - UNDER_APPEAL
+
+    DebtCreateRequest:
+      type: object
+      required:
+        - debtorPersonId
+        - creditorId
+        - debtTypeCode
+        - principalAmount
+        - dueDate
+      properties:
+        debtorPersonId:
+          type: string
+          format: uuid
+          description: Resolved via person-registry; never pass raw CPR
+        creditorId:
+          type: string
+          format: uuid
+        debtTypeCode:
+          type: string
+        principalAmount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+        dueDate:
+          type: string
+          format: date
+        externalReference:
+          type: string
+          maxLength: 100
+
+    DebtUpdateRequest:
+      type: object
+      properties:
+        principalAmount:
+          type: number
+          format: decimal
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+
+    DebtSubmitRequest:
+      type: object
+      required: [debts]
+      properties:
+        creditorId:
+          type: string
+          format: uuid
+        debts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtCreateRequest'
+
+    DebtSubmitResult:
+      type: object
+      properties:
+        accepted:
+          type: integer
+        rejected:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    WriteDownRequest:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount:
+          type: number
+          format: decimal
+        reason:
+          type: string
+
+    InterestRecalculationResult:
+      type: object
+      properties:
+        debtId:
+          type: string
+          format: uuid
+        recalculatedFrom:
+          type: string
+          format: date
+        recalculatedTo:
+          type: string
+          format: date
+        entriesDeleted:
+          type: integer
+        entriesWritten:
+          type: integer
+        balanceUsed:
+          type: number
+          format: decimal
+        totalInterestRecalculated:
+          type: number
+          format: decimal
+
+    DebtPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Debt'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
+
+    DebtType:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        legalBasis:
+          type: string
+        interestApplicable:
+          type: boolean
+
+    # ── Collection Measures ───────────────────────────────────────────────────
+
+    CollectionMeasure:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtId:
+          type: string
+          format: uuid
+        measureType:
+          $ref: '#/components/schemas/CollectionMeasureType'
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED, CANCELLED]
+        amount:
+          type: number
+          format: decimal
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+
+    CollectionMeasureType:
+      type: string
+      enum:
+        - WAGE_GARNISHMENT
+        - ATTACHMENT
+        - PAYMENT_PLAN
+        - VOLUNTARY_PAYMENT
+        - OFFSETTING
+
+    CollectionMeasureRequest:
+      type: object
+      required: [measureType, startDate]
+      properties:
+        measureType:
+          $ref: '#/components/schemas/CollectionMeasureType'
+        amount:
+          type: number
+          format: decimal
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    # ── Liabilities ───────────────────────────────────────────────────────────
+
+    Liability:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtId:
+          type: string
+          format: uuid
+        debtorPersonId:
+          type: string
+          format: uuid
+        liabilityType:
+          $ref: '#/components/schemas/LiabilityType'
+        share:
+          type: number
+          format: decimal
+          description: Share percentage (for PROPORTIONAL type)
+        activeFrom:
+          type: string
+          format: date
+        activeTo:
+          type: string
+          format: date
+        active:
+          type: boolean
+
+    LiabilityType:
+      type: string
+      enum:
+        - SOLE
+        - JOINT_AND_SEVERAL
+        - PROPORTIONAL
+
+    LiabilityRequest:
+      type: object
+      required: [debtorPersonId, liabilityType]
+      properties:
+        debtorPersonId:
+          type: string
+          format: uuid
+        liabilityType:
+          $ref: '#/components/schemas/LiabilityType'
+        share:
+          type: number
+          format: decimal
+
+    # ── Objections ────────────────────────────────────────────────────────────
+
+    Objection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtId:
+          type: string
+          format: uuid
+        debtorPersonId:
+          type: string
+          format: uuid
+        objectionType:
+          $ref: '#/components/schemas/ObjectionType'
+        description:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, UPHELD, REJECTED]
+        receivedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+
+    ObjectionType:
+      type: string
+      enum:
+        - EXISTENCE
+        - AMOUNT
+        - BASIS
+        - TREATMENT
+        - LIMITATION
+
+    ObjectionRequest:
+      type: object
+      required: [debtorPersonId, objectionType]
+      properties:
+        debtorPersonId:
+          type: string
+          format: uuid
+        objectionType:
+          $ref: '#/components/schemas/ObjectionType'
+        description:
+          type: string
+
+    ObjectionResolveRequest:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [UPHELD, REJECTED]
+        notes:
+          type: string
+
+    # ── Notifications ─────────────────────────────────────────────────────────
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtId:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+          enum: [DEMAND_FOR_PAYMENT, REMINDER]
+        ocrReference:
+          type: string
+          description: Payment ID / OCR reference for the notification
+        issuedAt:
+          type: string
+          format: date-time
+
+    # ── Citizen ───────────────────────────────────────────────────────────────
+
+    CitizenDebtSummaryResponse:
+      type: object
+      properties:
+        debts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CitizenDebtItem'
+        totalOutstandingAmount:
+          type: number
+          format: decimal
+        totalDebtCount:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    CitizenDebtItem:
+      type: object
+      description: Debt summary for citizen view — no PII, no readiness internals
+      properties:
+        debtId:
+          type: string
+          format: uuid
+        debtTypeName:
+          type: string
+        debtTypeCode:
+          type: string
+        principalAmount:
+          type: number
+          format: decimal
+        outstandingAmount:
+          type: number
+          format: decimal
+        interestAmount:
+          type: number
+          format: decimal
+        feesAmount:
+          type: number
+          format: decimal
+        dueDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/DebtStatus'
+
+    # ── Business Configuration ────────────────────────────────────────────────
+
+    ConfigEntry:
+      type: object
+      description: A single versioned business configuration value
+      properties:
+        id:
+          type: string
+          format: uuid
+        configKey:
+          type: string
+          example: RATE_INDR_STD
+          description: |
+            Known keys: RATE_NB_UDLAAN, RATE_INDR_STD, RATE_INDR_TOLD,
+            RATE_INDR_TOLD_AFD, FEE_STANDARDGEBYR, THRESHOLD_MIN_INTEREST
+        configValue:
+          type: string
+          example: "0.0575"
+        valueType:
+          type: string
+          enum: [DECIMAL, INTEGER, STRING, BOOLEAN]
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+          nullable: true
+          description: Null means open-ended (no expiry)
+        description:
+          type: string
+        legalBasis:
+          type: string
+          example: "§ 5, stk. 1, i renteloven"
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        reviewStatus:
+          type: string
+          enum: [PENDING_REVIEW, APPROVED]
+          nullable: true
+        computedStatus:
+          type: string
+          enum: [ACTIVE, FUTURE, EXPIRED, PENDING_REVIEW]
+          description: Derived from validFrom/validTo/reviewStatus as of today
+
+    CreateConfigRequest:
+      type: object
+      required: [configKey, configValue, valueType, validFrom, description, legalBasis]
+      properties:
+        configKey:
+          type: string
+        configValue:
+          type: string
+        valueType:
+          type: string
+          enum: [DECIMAL, INTEGER, STRING, BOOLEAN]
+        validFrom:
+          type: string
+          format: date
+          description: Must be today or in the future (unless seedMigration=true with ADMIN role)
+        validTo:
+          type: string
+          format: date
+          nullable: true
+        description:
+          type: string
+          maxLength: 500
+        legalBasis:
+          type: string
+          maxLength: 255
+        seedMigration:
+          type: boolean
+          default: false
+          description: If true and caller has ADMIN role, allows past validFrom (for data migration)
+
+    UpdateConfigRequest:
+      type: object
+      properties:
+        configValue:
+          type: string
+        validTo:
+          type: string
+          format: date
+        description:
+          type: string
+        legalBasis:
+          type: string
+        reviewStatus:
+          type: string
+          enum: [APPROVED]
+
+    ConfigCreationResult:
+      type: object
+      properties:
+        created:
+          $ref: '#/components/schemas/ConfigEntry'
+        derivedEntries:
+          type: array
+          description: Auto-computed derived rate entries (non-empty only when configKey=RATE_NB_UDLAAN)
+          items:
+            $ref: '#/components/schemas/ConfigEntry'
+
+    ConfigAuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        configEntryId:
+          type: string
+          format: uuid
+        configKey:
+          type: string
+        action:
+          type: string
+          enum: [CREATE, UPDATE, APPROVE, REJECT, DELETE]
+        oldValue:
+          type: string
+          nullable: true
+        newValue:
+          type: string
+          nullable: true
+        performedBy:
+          type: string
+        performedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+
+    # ── Common ────────────────────────────────────────────────────────────────
+
+    ValidationError:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        errorCode:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  description: |
     API for managing debts and validating readiness for collection (indrivelsesparathed).
     
     This API is exposed via UFST DUPLA and follows the Fællesoffentlige Arkitekturprincipper.
