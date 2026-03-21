@@ -205,6 +205,22 @@ The task description includes enough context for a droid to implement without re
 34. P019-T4 -- OCES3 auth + CLS logging
 35. P019-T5 -- SOAP tests + BDD
 
+### Sprint G (config API, after P046 foundation -- already done)
+
+36. P046-T4 -- Deprecate application.yml rate fallback
+37. P047-T1 -- BusinessConfigEntity status + audit migration
+38. P047-T2 -- BusinessConfigService CRUD extension
+39. P047-T3 -- Derived rate auto-computation
+40. P047-T4 -- BusinessConfigController REST API
+41. P047-T5 -- Config API unit tests
+
+### Sprint H (config operator UI, after Sprint G)
+
+42. P047-T6 -- ConfigServiceClient + ConfigurationController
+43. P047-T7 -- Thymeleaf templates + i18n
+44. P047-T8 -- BDD scenarios + integration tests
+45. P046-T5 -- Timeline replay rate splitting
+
 ---
 
 ## Petition 044: Comprehensive documentation (7 tasks)
@@ -224,6 +240,64 @@ The task description includes enough context for a droid to implement without re
 
 ---
 
+## Petition 046: Versioned business configuration (5 tasks)
+
+**Dependencies:** P043 (batch processing, implemented)
+**Services:** opendebt-debt-service (primary), opendebt-common (shared enum)
+**Status:** Foundation implemented (entity, service, repository, migration, seed data). Remaining: deprecate application.yml fallback, REST API for timeline replay, full config key coverage.
+
+| Task ID | Description | Depends on |
+|---------|-------------|------------|
+| P046-T1 | ✅ **BusinessConfigEntity + BusinessConfigService + migration** *(DONE)*: Created `BusinessConfigEntity` (UUID PK, configKey, configValue, valueType, validFrom, validTo, description, legalBasis, createdBy, createdAt, version). Created `BusinessConfigRepository` with `findEffective(key, date)` query. Created `BusinessConfigService` with `getDecimalValue()`, `preloadRatesForDate()`, `clearCache()`, `getHistory()`. Flyway V8 migration creates `business_config` table with unique constraint on (config_key, valid_from), seeds 18 config entries (NB rates, INDR_STD/TOLD/TOLD_AFD across 3 periods, fee amounts, thresholds). | -- |
+| P046-T2 | ✅ **InterestRuleCode enum + per-debt rate resolution** *(DONE)*: Created `InterestRuleCode` enum (INDR_STD, INDR_TOLD, INDR_TOLD_AFD, INDR_EXEMPT, INDR_CONTRACT, OPK_STD) mapping each rule to a `RATE_*` config key. InterestAccrualJobHelper resolves rate per debt via `resolveRate()` / `resolveRuleCode()`. INDR_EXEMPT returns ZERO, INDR_CONTRACT uses embeddable's `additionalInterestRate`. Batch cache preloads all needed rates in single pass. | P046-T1 |
+| P046-T3 | ✅ **FeeEntity + fee-inclusive interest** *(DONE)*: Created `FeeEntity` (RYKKER, UDLAEG, LOENINDEHOLDELSE, OTHER), `FeeRepository`, fees table in V8 migration. InterestAccrualJobHelper includes `feesAmount` in interest base per gældsinddrivelsesloven. | P046-T1 |
+| P046-T4 | **Deprecate application.yml rate fallback**: Remove the `opendebt.interest.annual-rate` property from `application.yml` and all `@Value` injections that read it. Update any remaining code that falls back to this property. Ensure the `BusinessConfigService` is the sole source of rate values. Add a startup check that logs a warning if the `business_config` table has no entries for required keys. Update `application-test.yml` and test fixtures. | P046-T1, P046-T2 |
+| P046-T5 | **Timeline replay rate splitting (petition 039 integration)**: Update `TimelineReplayServiceImpl` to use `BusinessConfigService.getDecimalValue()` for each accrual date instead of a single rate. When a rate changes mid-replay period (e.g., rate changed July 7 during June 1 – August 31 replay), the replay must split at the boundary: apply old rate before the change date, new rate on and after. Add unit tests for rate boundary splitting. | P046-T4 |
+
+---
+
+## Petition 047: Configuration administration UI (8 tasks)
+
+**Dependencies:** P046 (versioned business config), P041 (caseworker portal)
+**Services:** opendebt-debt-service (REST API), opendebt-caseworker-portal (UI)
+
+| Task ID | Description | Depends on |
+|---------|-------------|------------|
+| P047-T1 | **BusinessConfigEntity status extension + audit table migration**: Extend `BusinessConfigEntity` with `review_status` column (VARCHAR(20), values `PENDING_REVIEW` or `APPROVED`, nullable — NULL means manually created/active). Add a computed `getStatus()` method that derives ACTIVE/FUTURE/EXPIRED from `validFrom`/`validTo` dates and combines with `reviewStatus`. Create `BusinessConfigAuditEntity` with fields: id, configEntryId, configKey, action (CREATE/UPDATE/APPROVE/REJECT/DELETE), oldValue, newValue, performedBy, performedAt, details. Create `BusinessConfigAuditRepository`. Create Flyway V9 migration adding `review_status` column to `business_config` and creating `business_config_audit` table. | P046-T1 |
+| P047-T2 | **BusinessConfigService CRUD extension**: Extend `BusinessConfigService` with write methods: `createEntry(CreateConfigRequest)` — validates `validFrom` not in past, no overlap, type-parseable value, required fields; auto-closes previous open-ended entry's `validTo`. `updateEntry(UUID id, UpdateConfigRequest)` — only allows modification of PENDING_REVIEW or future entries. `deleteEntry(UUID id)` — only future entries. `approveEntry(UUID id, String operatorName)` — sets `reviewStatus = APPROVED`, closes previous entry. `rejectEntry(UUID id, String operatorName)` — deletes PENDING_REVIEW entry. All write operations create `BusinessConfigAuditEntity` records. Add overlap detection query to `BusinessConfigRepository`. Create `CreateConfigRequest`, `UpdateConfigRequest`, `ConfigEntryDto` DTOs. | P047-T1 |
+| P047-T3 | **Derived rate auto-computation**: When a new `RATE_NB_UDLAAN` entry is created, auto-generate entries for `RATE_INDR_STD` (NB+0.04), `RATE_INDR_TOLD` (NB+0.02), `RATE_INDR_TOLD_AFD` (NB+0.01) with same `validFrom`, `reviewStatus = PENDING_REVIEW`, `createdBy = "SYSTEM (auto-computed from RATE_NB_UDLAAN)"`. Return the list of generated entries in the creation response so the UI can display them. Add unit tests for derivation logic and edge cases (NB rate already has derived entries). | P047-T2 |
+| P047-T4 | **BusinessConfigController REST API**: Create `BusinessConfigController` in opendebt-debt-service at `/api/v1/config`. Implement 6 endpoints: `GET /` (list all grouped by key with derived status), `GET /{key}?date=` (effective value), `GET /{key}/history`, `POST /` (create + auto-derive for NB), `PUT /{id}` (update pending/future), `DELETE /{id}` (delete future). Role-based access: GET endpoints allow ADMIN, CONFIGURATION_MANAGER, CASEWORKER, SERVICE; write endpoints require ADMIN or CONFIGURATION_MANAGER. Return Danish error messages for validation failures. Add `@PreAuthorize` annotations. | P047-T2 |
+| P047-T5 | **Unit tests for config API + service**: Create `BusinessConfigControllerTest` (mock service, test all 6 endpoints, role-based access, validation error responses). Create `BusinessConfigServiceCrudTest` (create with overlap rejection, create with auto-close, update restrictions, delete restrictions, approve flow, reject flow, audit record creation). Create `DerivedRateComputationTest` (NB → 3 derived rates, edge cases). Target: ≥80% line coverage on new classes. | P047-T4 |
+| P047-T6 | **ConfigServiceClient + ConfigurationController in caseworker portal**: Create `ConfigServiceClient` in opendebt-caseworker-portal (same pattern as `DebtServiceClient`) calling debt-service `/api/v1/config` endpoints. Add `@CircuitBreaker` and `@Retry` per ADR-0026. Create `ConfigurationController` with routes: `GET /konfiguration` (list page), `GET /konfiguration/{key}` (detail/history page), `POST /konfiguration` (create form submit), `PUT /konfiguration/{id}/approve`, `DELETE /konfiguration/{id}`. All routes check session identity; read-only view for CASEWORKER role, full CRUD for ADMIN/CONFIGURATION_MANAGER. Add "Konfiguration" menu item to `caseworker-nav.html` fragment (visible to ADMIN/CONFIGURATION_MANAGER). | P047-T4 |
+| P047-T7 | **Thymeleaf templates + i18n**: Create `config/list.html` — table grouped by category (Renter, Gebyrer, Tærskler) with status badges (green=active, yellow=pending, grey=expired), formatted values (% for rates, kr for fees, dage for thresholds). Create `config/detail.html` — version history timeline (newest first), collapsible audit trail section, "Opret ny version" form (date picker, value input, description, legal basis). For `RATE_NB_UDLAAN`, add derived-rate preview panel. Create `config/fragments/` for HTMX partials (history refresh, approve/reject actions). Add confirmation dialog (`Er du sikker?`). Add all `config.*` message keys to `messages_da.properties`. SKAT standardlayout, WCAG 2.1 AA compliant. | P047-T6 |
+| P047-T8 | **BDD scenarios + integration tests**: Create `petition047.feature` with key scenarios: list config entries grouped by category, view version history, create new rate version, create NB rate with auto-derived preview, approve pending entry, reject pending entry, delete future entry, prevent past-date creation, prevent overlap, CASEWORKER read-only access, audit trail display. Create `Petition047Steps.java` step definitions. Create `ConfigurationControllerTest` for caseworker-portal (mock client, test role-based rendering, HTMX fragments). | P047-T7 |
+
+---
+
+## Petition 046 + 047 sprint schedule
+
+### Sprint G: Config API foundation (builds on implemented foundation)
+
+| # | Task | Est. |
+|---|------|------|
+| 1 | P046-T4 — Deprecate application.yml fallback | 30 min |
+| 2 | P047-T1 — Status extension + audit table migration | 45 min |
+| 3 | P047-T2 — BusinessConfigService CRUD extension | 60 min |
+| 4 | P047-T3 — Derived rate auto-computation | 45 min |
+| 5 | P047-T4 — BusinessConfigController REST API | 45 min |
+| 6 | P047-T5 — Unit tests for config API + service | 45 min |
+
+### Sprint H: Config operator UI
+
+| # | Task | Est. |
+|---|------|------|
+| 7 | P047-T6 — ConfigServiceClient + ConfigurationController | 60 min |
+| 8 | P047-T7 — Thymeleaf templates + i18n | 60 min |
+| 9 | P047-T8 — BDD scenarios + integration tests | 45 min |
+| 10 | P046-T5 — Timeline replay rate splitting | 60 min |
+
+---
+
 ## Task count summary
 
 | Petition | Tasks | Status |
@@ -238,6 +312,8 @@ The task description includes enough context for a droid to implement without re
 | P019 | 5 | Ready |
 | P043 | 5 | Ready |
 | P044 | 7 | Ready |
+| P046 | 5 | Partially done (foundation implemented) |
+| P047 | 8 | Blocked by P046 |
 | TB-008 | 1 | Ready |
 | TB-001 | 1 | Ready |
-| **Total** | **45** | |
+| **Total** | **58** | |
