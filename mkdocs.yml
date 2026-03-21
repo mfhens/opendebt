@@ -2,9 +2,11 @@ docs_dir: docs/site
 site_dir: site
 site_name: OpenDebt Documentation
 site_description: Comprehensive documentation for the OpenDebt debt collection system
-site_url: https://opendebt.dk/docs/
+site_url: ""
 repo_url: https://github.com/ufst/opendebt
 repo_name: ufst/opendebt
+
+use_directory_urls: false
 
 theme:
   name: material
