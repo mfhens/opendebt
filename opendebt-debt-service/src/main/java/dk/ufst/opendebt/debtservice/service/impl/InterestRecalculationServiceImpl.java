@@ -12,9 +12,12 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dk.ufst.opendebt.common.dto.AccountingTarget;
 import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.InterestJournalEntry;
+import dk.ufst.opendebt.debtservice.entity.InterestRuleCode;
+import dk.ufst.opendebt.debtservice.entity.InterestSelectionEmbeddable;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
@@ -30,9 +33,14 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Design notes:
  *
  * <ul>
- *   <li>Uses the debt's current {@code outstanding_balance} (already reduced by the write-down that
- *       payment-service called before this endpoint) as the corrected balance for the entire
- *       disrupted period.
+ *   <li>Uses the debt's current {@code outstanding_balance + fees_amount} (already reduced by the
+ *       write-down that payment-service called before this endpoint) as the corrected base,
+ *       matching the fee-inclusive balance used by the daily {@link
+ *       dk.ufst.opendebt.debtservice.batch.InterestAccrualJobHelper}.
+ *   <li>Resolves the per-debt rate key (RATE_INDR_STD, RATE_INDR_TOLD, etc.) from the debt's {@code
+ *       interest_rule} field, matching the batch resolution order exactly.
+ *   <li>Re-checks the rate at every month boundary (1st of each month) within the recalculation
+ *       window, ensuring that mid-year NB-rate changes are captured correctly for long windows.
  *   <li>Runs in a single {@code @Transactional} — the delete and the re-inserts are atomic.
  *   <li>Idempotent: a second call with the same {@code from} date produces the same entries.
  * </ul>
@@ -44,6 +52,7 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
 
   private static final BigDecimal DAYS_IN_YEAR = new BigDecimal("365");
   private static final BigDecimal FALLBACK_ANNUAL_RATE = new BigDecimal("0.0575");
+  private static final InterestRuleCode DEFAULT_RULE = InterestRuleCode.INDR_STD;
 
   private final DebtRepository debtRepository;
   private final InterestJournalEntryRepository interestRepository;
@@ -77,16 +86,16 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
           .build();
     }
 
-    BigDecimal annualRate;
-    try {
-      annualRate = configService.getDecimalValue("RATE_INDR_STD", from);
-    } catch (BusinessConfigService.ConfigurationNotFoundException e) {
-      log.warn(
-          "No business config found for RATE_INDR_STD on {}, falling back to {}",
-          from,
-          FALLBACK_ANNUAL_RATE);
-      annualRate = FALLBACK_ANNUAL_RATE;
+    // Fee-inclusive base balance, matching the daily batch calculation in InterestAccrualJobHelper.
+    BigDecimal balance = debt.getOutstandingBalance();
+    BigDecimal fees = debt.getFeesAmount();
+    if (fees != null && fees.signum() > 0) {
+      balance = balance.add(fees);
     }
+
+    // Resolve per-debt rate key using the same order as the batch job.
+    String configKey = resolveConfigKey(debt);
+    BigDecimal initialRate = resolveInitialRate(configKey, from, debtId);
 
     // Step 1: delete all journal entries in the disrupted window [from, today)
     int deleted = interestRepository.deleteByDebtIdFromDate(debtId, from);
@@ -96,37 +105,41 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
         deleted,
         from);
 
-    // Step 2: recalculate each day in [from, today) resolving the correct rate per day.
-    // When the business config rate changes mid-period, each day uses the rate effective on
-    // that exact date (petition 046 §FR-5 timeline replay with rate boundary splitting).
+    // Step 2: recalculate each day in [from, today).
+    // Re-check the rate at the first day of each month so that mid-year NB-rate changes (e.g. a
+    // Nationalbanken rate announcement on 2025-07-07) are applied on the correct day within a
+    // multi-month or multi-year recalculation window.
     // today is excluded — it will be picked up by the next scheduled batch run.
-    BigDecimal balance = debt.getOutstandingBalance();
-    BigDecimal currentRate = annualRate;
+    BigDecimal currentRate = initialRate;
     LocalDate currentRateDate = from;
 
     List<InterestJournalEntry> entries = new ArrayList<>();
     LocalDate cursor = from;
     while (cursor.isBefore(today)) {
-      // Re-resolve rate only when needed (on first day or if rate may have changed)
-      if (cursor.equals(from) || cursor.getMonthValue() == 1 && cursor.getDayOfMonth() == 1) {
-        try {
-          BigDecimal resolvedRate = configService.getDecimalValue("RATE_INDR_STD", cursor);
-          if (!resolvedRate.equals(currentRate)) {
-            log.debug(
-                "Rate boundary crossed at {}: {} → {} for debtId={}",
+      // Re-resolve at start of window and at every month boundary (1st of month).
+      boolean isMonthBoundary = cursor.getDayOfMonth() == 1;
+      if (cursor.equals(from) || isMonthBoundary) {
+        if (configKey != null) {
+          try {
+            BigDecimal resolvedRate = configService.getDecimalValue(configKey, cursor);
+            if (!resolvedRate.equals(currentRate)) {
+              log.debug(
+                  "Rate boundary crossed at {}: {} → {} for debtId={}",
+                  cursor,
+                  currentRate,
+                  resolvedRate,
+                  debtId);
+              currentRate = resolvedRate;
+              currentRateDate = cursor;
+            }
+          } catch (BusinessConfigService.ConfigurationNotFoundException e) {
+            log.warn(
+                "No rate found for key={} on {}, continuing with rate {} from {}",
+                configKey,
                 cursor,
                 currentRate,
-                resolvedRate,
-                debtId);
-            currentRate = resolvedRate;
-            currentRateDate = cursor;
+                currentRateDate);
           }
-        } catch (BusinessConfigService.ConfigurationNotFoundException e) {
-          log.warn(
-              "No rate found for RATE_INDR_STD on {}, continuing with rate {} from {}",
-              cursor,
-              currentRate,
-              currentRateDate);
         }
       }
 
@@ -141,6 +154,7 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
               .balanceSnapshot(balance)
               .rate(currentRate)
               .interestAmount(dailyInterest)
+              .accountingTarget(AccountingTarget.FORDRINGSHAVER)
               .build());
       cursor = cursor.plusDays(1);
     }
@@ -170,5 +184,53 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
         .balanceUsed(balance)
         .totalInterestRecalculated(total)
         .build();
+  }
+
+  /**
+   * Resolves the {@code business_config} key for this debt's interest rule, using the same
+   * resolution order as {@link dk.ufst.opendebt.debtservice.batch.InterestAccrualJobHelper}.
+   * Returns {@code null} for exempt debts (zero interest).
+   */
+  private String resolveConfigKey(DebtEntity debt) {
+    InterestSelectionEmbeddable sel = debt.getInterestSelection();
+    InterestRuleCode ruleCode = DEFAULT_RULE;
+
+    if (sel != null && sel.getInterestRule() != null && !sel.getInterestRule().isBlank()) {
+      try {
+        ruleCode = InterestRuleCode.valueOf(sel.getInterestRule());
+      } catch (IllegalArgumentException e) {
+        log.warn(
+            "Unknown interest rule '{}' for debt={}, using default",
+            sel.getInterestRule(),
+            debt.getId());
+      }
+    }
+
+    if (ruleCode.isExempt()) {
+      return null;
+    }
+    if (ruleCode.usesContractualRate()) {
+      // Contractual rates are fixed — no config key needed; caller handles ZERO.
+      return null;
+    }
+    return ruleCode.getConfigKey();
+  }
+
+  /** Looks up the rate effective on {@code from} for the given key; falls back if not found. */
+  private BigDecimal resolveInitialRate(String configKey, LocalDate from, UUID debtId) {
+    if (configKey == null) {
+      return BigDecimal.ZERO;
+    }
+    try {
+      return configService.getDecimalValue(configKey, from);
+    } catch (BusinessConfigService.ConfigurationNotFoundException e) {
+      log.warn(
+          "No business config found for key={} on {}, falling back to {} for debtId={}",
+          configKey,
+          from,
+          FALLBACK_ANNUAL_RATE,
+          debtId);
+      return FALLBACK_ANNUAL_RATE;
+    }
   }
 }
