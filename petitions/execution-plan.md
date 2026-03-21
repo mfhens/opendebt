@@ -32,7 +32,7 @@
 | Phase 9 | Creditor portal features (petition029-038) | All implemented |
 | Phase 10 | Batch processing / scale (petition043) | **Implemented** |
 | Phase 11 | Documentation (petition044) | **Implemented** |
-| Phase 12 | Interest regime compliance (petition045-046) | **Foundation implemented** |
+| Phase 12 | Interest regime compliance (petition045-046) | **API implemented** |
 
 ### Recent work (2026-03-17 to 2026-03-21)
 
@@ -48,6 +48,14 @@
   - **Composite index**: `idx_debt_lifecycle_balance` partial index on (lifecycle_state, outstanding_balance) WHERE outstanding_balance > 0.
   - **Tests**: BusinessConfigServiceTest (8 tests), InterestRuleCodeTest (7 tests), BusinessConfigEntityTest (2 tests), FeeEntityTest (3 tests), updated Petition043Steps BDD with debt type + config seeding, updated CoveragePriorityServiceImplTest (10 tests incl. 3-way split). All 258+ tests pass.
   - **JaCoCo coverage thresholds** adjusted for pre-existing gaps in creditor-portal, payment-service, integration-gateway modules (AIDEV-TODO markers for improvement).
+
+- **Sprint G completed** (2026-03-21): Full config administration API implemented:
+  - P046-T4: `InterestRecalculationServiceImpl` migrated from `@Value` to `BusinessConfigService`; startup validation added
+  - P047-T1: `review_status` column on `business_config`, `business_config_audit` table (V9 migration), `BusinessConfigAuditEntity/Repository`
+  - P047-T2: Full CRUD in `BusinessConfigService` — `createEntry` (validate, auto-close previous, audit), `updateEntry`, `approveEntry`, `rejectEntry`, `deleteEntry`, `listAllGrouped`, `getEffectiveEntry`, `getAuditTrail`; `findOverlapping`, `findOpenEnded`, `findAllDistinctKeys` queries
+  - P047-T3: Auto-computation of RATE_INDR_STD/TOLD/TOLD_AFD from RATE_NB_UDLAAN on create; `previewDerivedRates()` for side-effect-free preview
+  - P047-T4: `BusinessConfigController` at `/api/v1/config` with 8 endpoints (list, get, history, audit, preview, create, update, approve/reject, delete); role guards; Danish error responses
+  - P047-T5: 30 unit tests (BusinessConfigControllerTest 11, BusinessConfigServiceCrudTest 13, DerivedRateComputationTest 6); full build SUCCESS
 
 - **Gap analysis**: Compared current interest implementation against PSRM reference document (`docs/psrm-reference/Gældsstyrelsen is responsible for debt collection.md`). Identified 8 compliance gaps (G1-G8).
 - **Petition 045** created: Multi-regime interest and fee compliance — per-debt-type rate resolution, straffebøder exemption, told rates, contractual override, fee entity, interest on fees, separate accounting
@@ -256,6 +264,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | TB-017 | Per-debt rate resolution via BusinessConfigService | High | **Done** (2026-03-21) |
 | TB-018 | Fee-inclusive interest calculation | High | **Done** (2026-03-21) |
 | TB-019 | JaCoCo coverage gaps (creditor-portal 54%, payment-service 73%, gateway 74%) | Medium | Thresholds adjusted, tests needed |
+| TB-020 | Deprecate `opendebt.interest.annual-rate` application.yml property | Low | **Done** (2026-03-21) — InterestRecalculationServiceImpl migrated |
 
 ---
 
