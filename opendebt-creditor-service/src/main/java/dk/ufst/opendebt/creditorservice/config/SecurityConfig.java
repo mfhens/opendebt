@@ -18,14 +18,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-  /** Enable method-level @PreAuthorize in non-local profiles only. */
+  /** Enable method-level @PreAuthorize in non-local/non-dev profiles only. */
   @Configuration
-  @Profile("!local")
+  @Profile("!local & !dev")
   @EnableMethodSecurity(prePostEnabled = true)
   static class ProductionMethodSecurity {}
 
   @Bean
-  @Profile("!local")
+  @Profile("!local & !dev")
   @SuppressWarnings(
       "java:S4502") // CSRF disabled intentionally - stateless JWT API, no session cookies
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -46,7 +46,7 @@ public class SecurityConfig {
 
   /** Permit all requests in the local profile for development and demo purposes. */
   @Bean
-  @Profile("local")
+  @Profile("local | dev")
   @SuppressWarnings("java:S4502")
   public SecurityFilterChain localFilterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
