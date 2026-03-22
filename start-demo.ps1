@@ -1,15 +1,18 @@
 # start-demo.ps1 — Start the full OpenDebt demo (creditor portal + caseworker portal + all backend services)
-# Requires: Java 21, Maven, PostgreSQL (installed locally or via winget/choco/scoop)
+# Requires: Java 21, Maven, Docker (postgres/keycloak/observability via compose)
 #
-# Usage:  .\start-demo.ps1                        # start everything
-#         .\start-demo.ps1 -Stop                   # stop all Java services (leaves PostgreSQL running)
+# Usage:  .\start-demo.ps1                         # start everything (fast dev mode, no auth)
+#         .\start-demo.ps1 -SecurityDemo           # start with Keycloak auth enabled
+#         .\start-demo.ps1 -Stop                    # stop all Java services (leaves Docker infra running)
 #         .\start-demo.ps1 -Only caseworker         # start only caseworker portal + its backends
 #         .\start-demo.ps1 -Only creditor           # start only creditor portal + its backends
+#         .\start-demo.ps1 -SecurityDemo -Only creditor
 
 param(
     [switch]$Stop,
     [ValidateSet("all", "caseworker", "creditor")]
-    [string]$Only = "all"
+    [string]$Only = "all",
+    [switch]$SecurityDemo
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,39 +26,14 @@ $PgPort = 5432
 $PgUser = "opendebt"
 $PgPass = "opendebt"
 
-# All databases needed for the full demo
-$AllDatabases = @("opendebt_case", "opendebt_debt", "opendebt_payment", "opendebt_creditor", "opendebt_person")
+$DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "prometheus", "grafana")
+$KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
+$CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
+$CreditorPortalClientSecret = "creditor-portal-dev-secret"
 
 function Write-Status($msg) { Write-Host $msg -ForegroundColor Yellow }
 function Write-Ok($msg)     { Write-Host $msg -ForegroundColor Green }
 function Write-Err($msg)    { Write-Host $msg -ForegroundColor Red }
-
-# ---------------------------------------------------------------------------
-# Locate PostgreSQL binaries
-# ---------------------------------------------------------------------------
-function Find-PgBin {
-    $psqlPath = Get-Command psql -ErrorAction SilentlyContinue
-    if ($psqlPath) { return Split-Path $psqlPath.Source }
-
-    $candidates = @(
-        "$env:ProgramFiles\PostgreSQL\*\bin",
-        "$env:ProgramFiles(x86)\PostgreSQL\*\bin",
-        "C:\PostgreSQL\*\bin",
-        "$env:LOCALAPPDATA\Programs\PostgreSQL\*\bin",
-        "$env:USERPROFILE\scoop\apps\postgresql\current\bin",
-        "C:\tools\postgresql-*\bin",
-        "$env:ProgramFiles\PostgreSQL\16\bin",
-        "$env:ProgramFiles\PostgreSQL\15\bin",
-        "$env:ProgramFiles\PostgreSQL\14\bin"
-    )
-    foreach ($pattern in $candidates) {
-        $resolved = Resolve-Path $pattern -ErrorAction SilentlyContinue | Sort-Object -Descending | Select-Object -First 1
-        if ($resolved -and (Test-Path (Join-Path $resolved.Path "psql.exe"))) {
-            return $resolved.Path
-        }
-    }
-    return $null
-}
 
 function Wait-ForUrl {
     param([string]$Url, [int]$TimeoutSec = 60)
@@ -70,17 +48,74 @@ function Wait-ForUrl {
     return $false
 }
 
-function Wait-ForPg {
-    param([string]$PgBin, [int]$TimeoutSec = 30)
-    $pgIsReady = Join-Path $PgBin "pg_isready.exe"
-    if (-not (Test-Path $pgIsReady)) { $pgIsReady = Join-Path $PgBin "pg_isready" }
-    $deadline = (Get-Date).AddSeconds($TimeoutSec)
-    while ((Get-Date) -lt $deadline) {
-        $result = & $pgIsReady -p $PgPort 2>$null
-        if ($LASTEXITCODE -eq 0) { return $true }
-        Start-Sleep -Seconds 1
+function Get-RunningInfraServices {
+    $appCompose = Join-Path $ScriptDir "docker-compose.yml"
+    $obsCompose = Join-Path $ScriptDir "docker-compose.observability.yml"
+
+    $running = & docker compose -f $appCompose -f $obsCompose ps --status running --services 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $running) {
+        return @()
     }
-    return $false
+
+    return @($running)
+}
+
+function Ensure-DockerInfra {
+    Write-Status "Ensuring Docker infra is running (postgres, keycloak, observability)..."
+
+    $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+    if (-not $dockerCmd) {
+        Write-Err "  Docker CLI not found. Install/start Docker Desktop first."
+        exit 1
+    }
+
+    $runningServices = Get-RunningInfraServices
+    $missingServices = @($DockerInfraServices | Where-Object { $_ -notin $runningServices })
+
+    if ($missingServices.Count -eq 0) {
+        Write-Ok "  Docker infra already running."
+        return
+    }
+
+    Write-Host "  Missing infra services: $($missingServices -join ', ')"
+    $composeScript = Join-Path $ScriptDir "compose-stack.ps1"
+    if (-not (Test-Path $composeScript)) {
+        Write-Err "  Missing compose helper: .\compose-stack.ps1"
+        exit 1
+    }
+
+    & $composeScript -Action up -Stack infra
+    if ($LASTEXITCODE -ne 0) {
+        Write-Err "  Failed to start Docker infra services."
+        exit 1
+    }
+
+    $pgOk = Wait-ForUrl "http://localhost:5432" 5
+    if (-not $pgOk) {
+        # Port check via HTTP is expected to fail for postgres; use tcp probe below.
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $async = $tcp.BeginConnect("localhost", $PgPort, $null, $null)
+            $connected = $async.AsyncWaitHandle.WaitOne(15000, $false)
+            if (-not $connected) {
+                Write-Err "  PostgreSQL container did not open port $PgPort in time."
+                exit 1
+            }
+            $tcp.EndConnect($async)
+            $tcp.Close()
+        } catch {
+            Write-Err "  PostgreSQL container is not reachable on port $PgPort."
+            exit 1
+        }
+    }
+
+    $keycloakOk = Wait-ForUrl "http://localhost:8080" 90
+    if (-not $keycloakOk) {
+        Write-Err "  Keycloak did not become ready in time."
+        exit 1
+    }
+
+    Write-Ok "  Docker infra ready."
 }
 
 # ---------------------------------------------------------------------------
@@ -116,32 +151,33 @@ if ($Stop) {
 $startCaseworker = ($Only -eq "all" -or $Only -eq "caseworker")
 $startCreditor  = ($Only -eq "all" -or $Only -eq "creditor")
 
+$backendProfile = if ($SecurityDemo) { "demo-auth" } else { "dev" }
+$portalProfile = if ($SecurityDemo) { "local" } else { "dev" }
+
+if ($SecurityDemo) {
+    Write-Status "Security demo mode enabled: Keycloak/OIDC login required for portal and backend access."
+}
+
 # Build the list of Maven modules to compile
 $modules = [System.Collections.ArrayList]::new()
-$databases = [System.Collections.ArrayList]::new()
 
 # Shared backend services
 [void]$modules.Add("opendebt-debt-service")
-[void]$databases.Add("opendebt_debt")
 
 if ($startCaseworker) {
     [void]$modules.Add("opendebt-case-service")
     [void]$modules.Add("opendebt-payment-service")
     [void]$modules.Add("opendebt-caseworker-portal")
-    [void]$databases.Add("opendebt_case")
-    [void]$databases.Add("opendebt_payment")
 }
 if ($startCreditor) {
     [void]$modules.Add("opendebt-creditor-service")
     [void]$modules.Add("opendebt-creditor-portal")
-    [void]$databases.Add("opendebt_creditor")
 }
 
 # AIDEV-TODO: Add person-registry once PersonServiceImpl exists (currently skeleton only)
 # [void]$modules.Add("opendebt-person-registry")
-# [void]$databases.Add("opendebt_person")
 
-$totalSteps = 7
+$totalSteps = 5
 $step = 0
 
 # =========================================================================
@@ -153,72 +189,10 @@ try { Stop-JavaServices } catch {}
 New-Item -ItemType Directory -Path $PidDir -Force | Out-Null
 New-Item -ItemType Directory -Path $LogDir  -Force | Out-Null
 
-# --- Step 1: Find PostgreSQL ---
+# --- Step 1: Ensure Docker infra is running ---
 $step++
-Write-Status "[$step/$totalSteps] Locating PostgreSQL..."
-$PgBin = Find-PgBin
-if (-not $PgBin) {
-    Write-Err "  PostgreSQL not found!"
-    Write-Host ""
-    Write-Host "  Install PostgreSQL 14+ using one of:"
-    Write-Host "    winget install PostgreSQL.PostgreSQL.16"
-    Write-Host "    choco install postgresql16"
-    Write-Host "    scoop install postgresql"
-    Write-Host ""
-    exit 1
-}
-Write-Ok "  Found PostgreSQL in: $PgBin"
-
-# --- Step 2: Ensure PostgreSQL is running ---
-$step++
-Write-Status "[$step/$totalSteps] Ensuring PostgreSQL is running on port $PgPort..."
-
-$pgIsReady = Join-Path $PgBin "pg_isready"
-$pgRunning = & $pgIsReady -p $PgPort 2>$null; $pgUp = ($LASTEXITCODE -eq 0)
-
-if ($pgUp) {
-    Write-Ok "  PostgreSQL already running on port $PgPort."
-} else {
-    Write-Host "  PostgreSQL not running. Starting with pg_ctl..."
-    $pgCtl = Join-Path $PgBin "pg_ctl"
-    & $pgCtl start -l (Join-Path $LogDir "postgresql.log") 2>&1 | Out-Null
-    $ok = Wait-ForPg $PgBin 30
-    if (-not $ok) {
-        Write-Err "  PostgreSQL failed to start. Check .demo-logs\postgresql.log"
-        exit 1
-    }
-    Write-Ok "  PostgreSQL started."
-}
-
-# --- Step 3: Create databases and role ---
-$step++
-Write-Status "[$step/$totalSteps] Ensuring databases exist..."
-$env:PGPASSWORD = $PgPass
-$env:PGCLIENTENCODING = 'UTF8'
-$psql = Join-Path $PgBin "psql"
-
-$roleExists = & $psql -h localhost -p $PgPort -U $PgUser -d postgres -tc "SELECT 1 FROM pg_roles WHERE rolname='$PgUser'" 2>$null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  Cannot connect as '$PgUser'. Trying 'postgres' superuser..."
-    $env:PGPASSWORD = ""
-    $roleCheck = & $psql -h localhost -p $PgPort -U postgres -d postgres -tc "SELECT 1 FROM pg_roles WHERE rolname='$PgUser'" 2>$null
-    if ($roleCheck -notmatch "1") {
-        Write-Host "  Creating role '$PgUser'..."
-        & $psql -h localhost -p $PgPort -U postgres -d postgres -c "CREATE ROLE $PgUser WITH LOGIN PASSWORD '$PgPass' CREATEDB;" 2>$null
-    }
-    $env:PGPASSWORD = $PgPass
-}
-
-foreach ($db in $databases) {
-    $exists = & $psql -h localhost -p $PgPort -U $PgUser -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='$db'" 2>$null
-    if ($exists -notmatch "1") {
-        Write-Host "  Creating database: $db"
-        & $psql -h localhost -p $PgPort -U $PgUser -d postgres -c "CREATE DATABASE $db OWNER $PgUser;" 2>$null
-    } else {
-        Write-Host "  Database exists: $db"
-    }
-}
-Write-Ok "  Databases ready."
+Write-Status "[$step/$totalSteps] Checking/starting Docker infra..."
+Ensure-DockerInfra
 
 # --- Activate mise environment (if available) for Java + Maven ---
 $miseCmd = Get-Command mise -ErrorAction SilentlyContinue
@@ -228,7 +202,7 @@ if ($miseCmd) {
     if ($miseEnv) { $miseEnv | Invoke-Expression }
 }
 
-# --- Step 4: Build JARs ---
+# --- Step 2: Build JARs ---
 $step++
 $moduleList = $modules -join ","
 Write-Status "[$step/$totalSteps] Building service JARs ($moduleList)..."
@@ -236,7 +210,7 @@ mvn package -pl $moduleList -am -B -DskipTests -q
 if ($LASTEXITCODE -ne 0) { Write-Err "Build failed!"; exit 1 }
 Write-Ok "  Build complete."
 
-# --- Step 5: Start backend services ---
+# --- Step 3: Start backend services ---
 $step++
 Write-Status "[$step/$totalSteps] Starting backend services..."
 
@@ -277,7 +251,11 @@ function Start-Service {
 # -- debt-service (shared by both portals) --
 Start-Service -Name "debt-service" `
     -JarPattern "opendebt-debt-service\target\opendebt-debt-service-*.jar" `
-    -Profile "local" -DbName "opendebt_debt"
+    -Profile $backendProfile -DbName "opendebt_debt" `
+    -ExtraArgs @{
+        "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+        "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+    }
 
 # AIDEV-TODO: Start person-registry here once PersonServiceImpl exists
 # Start-Service -Name "person-registry" ...
@@ -286,20 +264,32 @@ Start-Service -Name "debt-service" `
 if ($startCaseworker) {
     Start-Service -Name "case-service" `
         -JarPattern "opendebt-case-service\target\opendebt-case-service-*.jar" `
-        -Profile "local" -DbName "opendebt_case"
+        -Profile $backendProfile -DbName "opendebt_case" `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        }
 
     Start-Service -Name "payment-service" `
         -JarPattern "opendebt-payment-service\target\opendebt-payment-service-*.jar" `
-        -Profile "dev" -DbName "opendebt_payment"
+        -Profile $backendProfile -DbName "opendebt_payment" `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        }
 }
 
 if ($startCreditor) {
     Start-Service -Name "creditor-service" `
         -JarPattern "opendebt-creditor-service\target\opendebt-creditor-service-*.jar" `
-        -Profile "local" -DbName "opendebt_creditor"
+        -Profile $backendProfile -DbName "opendebt_creditor" `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        }
 }
 
-# --- Step 6: Wait for backend services ---
+# --- Step 4: Wait for backend services ---
 $step++
 Write-Status "[$step/$totalSteps] Waiting for backend services..."
 
@@ -323,14 +313,18 @@ if ($startCreditor) {
     Write-Ok "  creditor-service ready."
 }
 
-# --- Step 7: Start portal(s) ---
+# --- Step 5: Start portal(s) ---
 $step++
 Write-Status "[$step/$totalSteps] Starting portal(s)..."
 
 if ($startCaseworker) {
     Start-Service -Name "caseworker-portal" `
         -JarPattern "opendebt-caseworker-portal\target\opendebt-caseworker-portal-*.jar" `
-        -Profile "dev" -DbName $null
+        -Profile $portalProfile -DbName $null `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "KEYCLOAK_CLIENT_SECRET" = $CaseworkerPortalClientSecret
+        }
 
     $ok = Wait-ForUrl "http://localhost:8087/caseworker-portal/actuator/health" 30
     if (-not $ok) { Write-Err "  caseworker-portal failed! Check .demo-logs\caseworker-portal-err.log"; exit 1 }
@@ -340,7 +334,11 @@ if ($startCaseworker) {
 if ($startCreditor) {
     Start-Service -Name "creditor-portal" `
         -JarPattern "opendebt-creditor-portal\target\opendebt-creditor-portal-*.jar" `
-        -Profile "dev" -DbName $null
+        -Profile $portalProfile -DbName $null `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "KEYCLOAK_CLIENT_SECRET" = $CreditorPortalClientSecret
+        }
 
     $ok = Wait-ForUrl "http://localhost:8085/creditor-portal/" 30
     if (-not $ok) { Write-Err "  creditor-portal failed! Check .demo-logs\creditor-portal-err.log"; exit 1 }
@@ -357,7 +355,11 @@ Write-Ok "============================================="
 Write-Host ""
 
 if ($startCaseworker) {
-    Write-Host "  Caseworker Portal:  http://localhost:8087/caseworker-portal/demo-login"
+    if ($SecurityDemo) {
+        Write-Host "  Caseworker Portal:  http://localhost:8087/caseworker-portal/"
+    } else {
+        Write-Host "  Caseworker Portal:  http://localhost:8087/caseworker-portal/demo-login"
+    }
 }
 if ($startCreditor) {
     Write-Host "  Creditor Portal:    http://localhost:8085/creditor-portal/"
@@ -378,7 +380,16 @@ if ($startCreditor) {
 }
 
 Write-Host ""
+if ($SecurityDemo) {
+    Write-Host "  Keycloak demo users:"
+    Write-Host "    caseworker / caseworker123   (role: CASEWORKER)"
+    Write-Host "    creditor   / creditor123     (role: CREDITOR)"
+    Write-Host "    admin      / admin123        (role: ADMIN)"
+    Write-Host "  Keycloak admin:"
+    Write-Host "    admin / admin  -> http://localhost:8080/admin/"
+    Write-Host ""
+}
 Write-Host "  Stop with:          .\start-demo.ps1 -Stop"
 Write-Host "  Logs in:            .demo-logs\"
 Write-Host ""
-Write-Host "  Note: PostgreSQL keeps running after -Stop."
+Write-Host "  Note: Docker infra keeps running after -Stop."

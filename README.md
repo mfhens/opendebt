@@ -116,6 +116,54 @@ mvn spring-boot:run
 docker-compose up -d
 ```
 
+### Unified Compose Script (App + Observability)
+
+Use the PowerShell helper to run one stack (app or observability) or both with one command.
+
+```powershell
+# Start app + observability
+.\compose-stack.ps1
+
+# Start app only
+.\compose-stack.ps1 -Stack app
+
+# Start observability only
+.\compose-stack.ps1 -Stack obs
+
+# Start infra only (postgres + keycloak + observability)
+.\compose-stack.ps1 -Stack infra
+
+# Stop both stacks
+.\compose-stack.ps1 -Action down
+
+# Stop infra-only containers (keeps app containers untouched)
+.\compose-stack.ps1 -Action down -Stack infra
+
+# Follow logs for one service
+.\compose-stack.ps1 -Action logs -Service postgres
+```
+
+### Demo Startup (With and Without Security)
+
+```powershell
+# Fast demo mode (no auth on portals/backends)
+.\start-demo.ps1
+
+# Security demo mode (Keycloak login + role-based access)
+.\start-demo.ps1 -SecurityDemo
+
+# Only creditor flow with Keycloak security
+.\start-demo.ps1 -SecurityDemo -Only creditor
+```
+
+In security demo mode, use these seeded users:
+
+- `caseworker` / `caseworker123` (role: `CASEWORKER`)
+- `creditor` / `creditor123` (role: `CREDITOR`)
+- `admin` / `admin123` (role: `ADMIN`)
+
+Keycloak admin console: `http://localhost:8080/admin/` with `admin` / `admin`.
+
 ## API Documentation
 
 Each service exposes OpenAPI documentation:
