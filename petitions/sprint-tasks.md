@@ -15,6 +15,20 @@ The task description includes enough context for a droid to implement without re
 
 ---
 
+## Petition 048: Role-based data access control hardening (4 tasks)
+
+**Dependencies:** petition048 outcome contract, existing OAuth2 role wiring
+**Services:** opendebt-case-service, opendebt-debt-service, opendebt-creditor-service
+
+| Task ID | Description | Depends on |
+|---------|-------------|------------|
+| P048-T1 | **Role-scoped filtering in case/debt/claim queries**: Implement role-aware filtering in service layer and repositories. CASEWORKER only sees assigned cases; SUPERVISOR/ADMIN can see all cases; CREDITOR only sees organization-owned claims; CITIZEN only sees person_id-owned debts. Enforce with access-checker services plus query predicates (not in-memory filtering). Add negative-path 403 handling for direct ID access. | -- |
+| P048-T2 | **Sensitivity controls (VIP/PEP/CONFIDENTIAL)**: Add case sensitivity classification and capability checks. Block assignment of VIP/PEP cases to unqualified caseworkers, enforce supervisor-only visibility for CONFIDENTIAL cases, and add capability-aware filtering for case lists/details. Wire capability claims from JWT/Keycloak into access checker logic. | P048-T1 |
+| P048-T3 | **Audit + acceptance convergence**: Add audit events for assignment/reassignment and authorization denials. Create BDD scenarios from petition048 outcome contract for all role combinations and cross-service revalidation (ADR-0007). Update execution status artifacts after tests pass. | P048-T1, P048-T2 |
+| P048-T4 | **Grafana dashboard for authorization metrics**: Create pre-built dashboard JSON template with panels for: authorization denial rate (by role/resource), authorization check latency (p50/p95/p99), circuit breaker state (person-registry), unauthorized query attempts. Add alert rule templates for high denial rate and circuit breaker open states. Document import and configuration process. | P048-T1 |
+
+---
+
 ## Petition 023: Person Registry CPR lookup API (3 tasks)
 
 **Dependencies:** None (foundational)

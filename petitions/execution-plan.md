@@ -1,6 +1,6 @@
 # OpenDebt Consolidated Execution Plan
 
-**Last updated:** 2026-03-21
+**Last updated:** 2026-03-22
 **Supersedes:** execution-plan-2026-03-14.md, execution-plan-2026-03-15.md, execution-plan-2026-03-16.md, execution-plan-wave7-psrm-collection.md, execution-plan-skyldnerportal.md
 
 ---
@@ -9,12 +9,12 @@
 
 | Metric | Count |
 |--------|-------|
-| Total petitions | 46 |
+| Total petitions | 47 |
 | Validated | 6 |
 | Implemented | 31 |
 | In progress | 1 |
 | Ready for implementation | 1 |
-| Not started | 7 |
+| Not started | 8 |
 
 ### By phase
 
@@ -33,6 +33,7 @@
 | Phase 10 | Batch processing / scale (petition043) | **Implemented** |
 | Phase 11 | Documentation (petition044) | **Implemented** |
 | Phase 12 | Interest regime compliance (petition045-046) | **API implemented** |
+| Phase 13 | RBAC hardening (petition048) | Planned (Sprint 16) |
 
 ### Recent work (2026-03-17 to 2026-03-21)
 
@@ -61,6 +62,7 @@
 - **Petition 045** created: Multi-regime interest and fee compliance — per-debt-type rate resolution, straffebøder exemption, told rates, contractual override, fee entity, interest on fees, separate accounting
 - **Petition 046** created: Versioned business configuration with validity periods — replaces hardcoded `application.yml` rates with time-versioned database config, historical rate seeding, REST API for config management
 - Execution backlog updated with Wave 8 tickets (W8-CFG-01, W8-INT-01)
+- **Petition 048** created: Role-based data access control hardening — caseworker/supervisor visibility rules, creditor/citizen scoping, and VIP/PEP sensitivity controls
 
 - Implemented ADR-0026 inter-service resilience: Resilience4j circuit breakers and retries on all 20 client classes across 6 services
 
@@ -96,6 +98,10 @@
 ### Priority 2: Phase 8 -- Citizen self-service (petitions 026-028)
 
 **Why:** All dependencies are now met: petition022 (landing page), petition024 (debt summary), petition025 (MitID auth) are all implemented. Phase 8 is fully unblocked.
+
+### Priority 3: petition048 -- RBAC data access hardening
+
+**Why:** Security requirements and outcome contract are now defined. Planning tickets are added for Sprint 16 (W9-RBAC-01 through W9-RBAC-03).
 
 ### Also unblocked (lower priority)
 
@@ -231,13 +237,14 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 |----------|-------|-----------|
 | 019 | Legacy SOAP endpoints | petition015-018 implemented |
 
-### Not started (3) -- all unblocked
+### Not started (4) -- all unblocked
 
 | Petition | Title | Blocked by |
 |----------|-------|------------|
 | 026 | Mit gaeldsoverblik page | -- (all deps implemented) |
 | 027 | Citizen payment initiation | petition026 |
 | 028 | Digital Post integration | petition026 |
+| 048 | Role-based data access control hardening | -- (contract defined, sprint-planned) |
 
 ---
 

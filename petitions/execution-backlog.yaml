@@ -2,8 +2,8 @@ schema_version: 1
 
 backlog:
   name: OpenDebt execution backlog
-  updated_at: 2026-03-17
-  updated_by: factory-droid (status sync -- W2/W4/W5 tickets marked done to match implemented petitions)
+  updated_at: 2026-03-22
+  updated_by: factory-droid (added Wave 9 RBAC petition planning for petition048)
   psrm_reference: docs/psrm-reference/
   ticket_status_values:
     - pending
@@ -72,6 +72,20 @@ backlog:
         - sprint-13
         - sprint-14
 
+    - id: wave-8
+      phase: phase-12
+      name: Interest regime compliance and versioned configuration
+      objective: Implement petition045 and petition046 for rate governance and multi-regime interest compliance.
+      sprints:
+        - sprint-15
+
+    - id: wave-9
+      phase: phase-13
+      name: Role-based data access control hardening
+      objective: Implement petition048 with strict RBAC data filtering for caseworker, supervisor, creditor, citizen, and VIP/PEP sensitivity handling.
+      sprints:
+        - sprint-16
+
   sprints:
     - id: sprint-1
       wave: wave-1
@@ -139,6 +153,14 @@ backlog:
         Implement inddrivelsesskridt domain model for modregning, lønindeholdelse, and udlæg with
         civilretlige fordringer constraints, 100K betalingspåkrav threshold, dækningsrækkefølge
         (rente before hovedstol), and afskrivning reason codes.
+    - id: sprint-15
+      wave: wave-8
+      name: Interest and config governance implementation
+      objective: Implement petition045 and petition046, including versioned business configuration and compliance-focused interest calculation.
+    - id: sprint-16
+      wave: wave-9
+      name: RBAC access control and sensitivity enforcement
+      objective: Implement petition048 authorization rules with role-scoped data access, VIP/PEP restrictions, and cross-service enforcement tests.
 
   tickets:
     W1-SPEC-01:
@@ -1948,6 +1970,110 @@ backlog:
       owner_role: Domain architect plus backend engineer
       parallelization: Starts after W8-CFG-01 provides rate resolution infrastructure.
       psrm_source: docs/psrm-reference/Gældsstyrelsen is responsible for debt collection.md
+
+    # --- Wave 9: RBAC data access hardening ---
+
+    W9-RBAC-01:
+      status: pending
+      sprint: sprint-16
+      petitions:
+        - petition048
+      modules:
+        - opendebt-case-service
+        - opendebt-debt-service
+        - opendebt-creditor-service
+      objective: Implement role-scoped data filtering for caseworker, supervisor, creditor, and citizen data access paths.
+      entry_criteria:
+        - petition048 and petition048 outcome contract are accepted.
+      deliverables:
+        - case-service filtering enforcing assigned-case visibility for CASEWORKER role
+        - supervisor full-visibility override for case listing and case detail queries
+        - creditor organization-scoped claim access filtering
+        - citizen person_id-scoped debt query enforcement
+        - unit tests for positive and negative access scenarios
+      depends_on: []
+      owner_role: Security-aware backend engineer
+      parallelization: Can start in parallel with other sprint-16 tickets once contract is accepted.
+
+    W9-RBAC-02:
+      status: pending
+      sprint: sprint-16
+      petitions:
+        - petition048
+      modules:
+        - opendebt-case-service
+        - opendebt-caseworker-portal
+        - config/keycloak
+      objective: Implement VIP/PEP/CONFIDENTIAL sensitivity controls and assignment restrictions.
+      entry_criteria:
+        - W9-RBAC-01 core role filtering is in progress.
+      deliverables:
+        - case sensitivity classification enum and persistence updates
+        - assignment guard for HANDLE_VIP_CASES and HANDLE_PEP_CASES capabilities
+        - supervisor-only visibility for CONFIDENTIAL cases
+        - role and capability mapping updates in Keycloak seed configuration
+        - integration tests for sensitivity-based authorization
+      depends_on:
+        - W9-RBAC-01
+      owner_role: Domain architect plus backend engineer
+      parallelization: Starts once the shared access checker pattern is in place.
+
+    W9-RBAC-03:
+      status: pending
+      sprint: sprint-16
+      petitions:
+        - petition048
+      modules:
+        - opendebt-case-service
+        - opendebt-debt-service
+        - opendebt-creditor-service
+        - petitions
+      objective: Converge RBAC rollout with audit logging, cross-service checks, and acceptance tests.
+      entry_criteria:
+        - W9-RBAC-01 and W9-RBAC-02 are complete.
+      deliverables:
+        - BDD acceptance coverage for petition048 outcome criteria
+        - authorization denial and assignment audit events verified
+        - cross-service authorization re-validation tests (ADR-0007 compliance)
+        - updates to execution-plan and program-status for petition048 state
+      depends_on:
+        - W9-RBAC-01
+        - W9-RBAC-02
+      owner_role: QA automation plus backend engineer
+      parallelization: Final convergence ticket for Wave 9.
+
+    W9-RBAC-04:
+      status: pending
+      sprint: sprint-16
+      petitions:
+        - petition048
+      modules:
+        - config/grafana
+      objective: Pre-build Grafana dashboard for RBAC authorization metrics and monitoring.
+      entry_criteria:
+        - W9-RBAC-01 authorization metrics are being emitted.
+      deliverables:
+        - Grafana dashboard JSON template for authorization metrics
+        - Authorization denial rate panel (by role, by resource type)
+        - Authorization check latency panel (p50, p95, p99)
+        - Circuit breaker state panel (person-registry lookups)
+        - Unauthorized query attempts panel (potential attack detection)
+        - Alert rule templates for high denial rate and circuit breaker open states
+        - Documentation for importing and configuring the dashboard
+      depends_on:
+        - W9-RBAC-01
+      owner_role: DevOps engineer with Grafana expertise
+      parallelization: Can run in parallel with W9-RBAC-02 and W9-RBAC-03 once metrics are instrumented.
+      estimated_effort: 8 hours
+      benefit: Faster production monitoring setup, proactive security incident detection
+
+    # --- Wave 7: Inddrivelse (continued) ---
+
+    W7-PSRM-01:
+      status: pending
+      sprint: sprint-14
+      petitions: []
+      modules:
         - opendebt-case-service
       objective: Implement betalingspåkrav 100K threshold and dækningsrækkefølge rules.
       entry_criteria:
