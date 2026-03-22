@@ -18,6 +18,8 @@ import dk.ufst.opendebt.common.dto.*;
 import dk.ufst.opendebt.common.dto.AssignDebtToCaseRequest;
 import dk.ufst.opendebt.common.dto.AssignDebtToCaseResponse;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.common.security.AuthContext;
+import dk.ufst.opendebt.common.security.CaseAccessChecker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class CaseServiceImpl implements CaseService {
   private static final String SYSTEM_USER = "system";
 
   private final CaseRepository caseRepository;
+  private final CaseAccessChecker caseAccessChecker;
   private final CasePartyRepository casePartyRepository;
   private final CaseDebtRepository caseDebtRepository;
   private final CaseEventRepository caseEventRepository;
@@ -47,7 +50,25 @@ public class CaseServiceImpl implements CaseService {
   public Page<CaseDto> listCases(
       CaseDto.CaseState caseState, String caseworkerId, Pageable pageable) {
     CaseState entityState = caseState != null ? mapCaseState(caseState) : null;
-    return caseRepository.findByFilters(entityState, caseworkerId, pageable).map(this::toDto);
+
+    // Extract authentication context and apply role-based filtering
+    AuthContext authContext = AuthContext.fromSecurityContext();
+    String effectiveCaseworkerId = caseworkerId;
+
+    // Rule 1.1: Caseworkers can only see their assigned cases (unless supervisor or admin)
+    if (authContext.hasRole("CASEWORKER") && !authContext.isSupervisorOrAdmin()) {
+      effectiveCaseworkerId = authContext.getUserId();
+      if (caseworkerId != null && !caseworkerId.equals(effectiveCaseworkerId)) {
+        log.warn(
+            "Caseworker {} attempted to filter by another caseworker: {}",
+            effectiveCaseworkerId,
+            caseworkerId);
+      }
+    }
+
+    return caseRepository
+        .findByFilters(entityState, effectiveCaseworkerId, pageable)
+        .map(this::toDto);
   }
 
   @Override
@@ -58,6 +79,15 @@ public class CaseServiceImpl implements CaseService {
             .findById(id)
             .orElseThrow(
                 () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
+
+    // Extract authentication context and verify access
+    AuthContext authContext = AuthContext.fromSecurityContext();
+    if (!caseAccessChecker.canAccessCase(id, authContext)) {
+      log.warn("Access denied to case {} for user {}", id, authContext.getUserId());
+      throw new org.springframework.security.access.AccessDeniedException(
+          "You do not have permission to access case: " + id);
+    }
+
     return toDto(entity);
   }
 
