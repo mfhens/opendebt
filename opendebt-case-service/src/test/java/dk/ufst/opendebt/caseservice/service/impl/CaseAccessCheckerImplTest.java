@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dk.ufst.opendebt.caseservice.entity.CaseEntity;
+import dk.ufst.opendebt.caseservice.entity.CaseSensitivity;
 import dk.ufst.opendebt.caseservice.repository.CaseRepository;
 import dk.ufst.opendebt.common.security.AuthContext;
 
@@ -183,5 +184,149 @@ class CaseAccessCheckerImplTest {
     // Then
     assertThat(hasAccess).isFalse();
     verify(caseRepository, never()).findById(any());
+  }
+
+  // ── Sensitivity Filtering Tests (W9-RBAC-02) ────────────────────────
+
+  @Test
+  @DisplayName("Rule 5.3: Caseworker should NOT access CONFIDENTIAL case")
+  void caseworkerShouldNotAccessConfidentialCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.CONFIDENTIAL);
+    AuthContext caseworkerContext =
+        AuthContext.builder()
+            .userId("caseworker123")
+            .roles(Set.of("CASEWORKER"))
+            .capabilities(Set.of("HANDLE_VIP_CASES", "HANDLE_PEP_CASES"))
+            .build();
+
+    when(caseRepository.findById(caseId)).thenReturn(Optional.of(caseEntity));
+
+    // When
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, caseworkerContext);
+
+    // Then
+    assertThat(hasAccess).isFalse();
+    verify(caseRepository).findById(caseId);
+  }
+
+  @Test
+  @DisplayName("Rule 5.2: Caseworker WITH HANDLE_VIP_CASES should access VIP case")
+  void caseworkerWithVipCapabilityShouldAccessVipCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.VIP);
+    AuthContext caseworkerContext =
+        AuthContext.builder()
+            .userId("caseworker123")
+            .roles(Set.of("CASEWORKER"))
+            .capabilities(Set.of("HANDLE_VIP_CASES"))
+            .build();
+
+    when(caseRepository.findById(caseId)).thenReturn(Optional.of(caseEntity));
+
+    // When
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, caseworkerContext);
+
+    // Then
+    assertThat(hasAccess).isTrue();
+    verify(caseRepository).findById(caseId);
+  }
+
+  @Test
+  @DisplayName("Rule 5.2: Caseworker WITHOUT HANDLE_VIP_CASES should NOT access VIP case")
+  void caseworkerWithoutVipCapabilityShouldNotAccessVipCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.VIP);
+    AuthContext caseworkerContext =
+        AuthContext.builder()
+            .userId("caseworker123")
+            .roles(Set.of("CASEWORKER"))
+            .capabilities(Set.of()) // No VIP capability
+            .build();
+
+    when(caseRepository.findById(caseId)).thenReturn(Optional.of(caseEntity));
+
+    // When
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, caseworkerContext);
+
+    // Then
+    assertThat(hasAccess).isFalse();
+    verify(caseRepository).findById(caseId);
+  }
+
+  @Test
+  @DisplayName("Rule 5.2: Caseworker WITH HANDLE_PEP_CASES should access PEP case")
+  void caseworkerWithPepCapabilityShouldAccessPepCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.PEP);
+    AuthContext caseworkerContext =
+        AuthContext.builder()
+            .userId("caseworker123")
+            .roles(Set.of("CASEWORKER"))
+            .capabilities(Set.of("HANDLE_PEP_CASES"))
+            .build();
+
+    when(caseRepository.findById(caseId)).thenReturn(Optional.of(caseEntity));
+
+    // When
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, caseworkerContext);
+
+    // Then
+    assertThat(hasAccess).isTrue();
+    verify(caseRepository).findById(caseId);
+  }
+
+  @Test
+  @DisplayName("Rule 5.2: Caseworker WITHOUT HANDLE_PEP_CASES should NOT access PEP case")
+  void caseworkerWithoutPepCapabilityShouldNotAccessPepCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.PEP);
+    AuthContext caseworkerContext =
+        AuthContext.builder()
+            .userId("caseworker123")
+            .roles(Set.of("CASEWORKER"))
+            .capabilities(Set.of()) // No PEP capability
+            .build();
+
+    when(caseRepository.findById(caseId)).thenReturn(Optional.of(caseEntity));
+
+    // When
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, caseworkerContext);
+
+    // Then
+    assertThat(hasAccess).isFalse();
+    verify(caseRepository).findById(caseId);
+  }
+
+  @Test
+  @DisplayName("Supervisor should access CONFIDENTIAL case")
+  void supervisorShouldAccessConfidentialCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.CONFIDENTIAL);
+    AuthContext supervisorContext =
+        AuthContext.builder().userId("supervisor1").roles(Set.of("SUPERVISOR")).build();
+
+    // When - supervisor bypass doesn't query repository
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, supervisorContext);
+
+    // Then
+    assertThat(hasAccess).isTrue();
+    verify(caseRepository, never()).findById(any()); // Supervisor bypass
+  }
+
+  @Test
+  @DisplayName("Admin should access CONFIDENTIAL case")
+  void adminShouldAccessConfidentialCase() {
+    // Given
+    caseEntity.setSensitivity(CaseSensitivity.CONFIDENTIAL);
+    AuthContext adminContext =
+        AuthContext.builder().userId("admin1").roles(Set.of("ADMIN")).build();
+
+    // When - admin bypass doesn't query repository
+    boolean hasAccess = caseAccessChecker.canAccessCase(caseId, adminContext);
+
+    // Then
+    assertThat(hasAccess).isTrue();
+    verify(caseRepository, never()).findById(any()); // Admin bypass
   }
 }

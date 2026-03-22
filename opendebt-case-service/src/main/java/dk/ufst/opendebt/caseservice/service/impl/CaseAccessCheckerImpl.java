@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import dk.ufst.opendebt.caseservice.entity.CaseEntity;
+import dk.ufst.opendebt.caseservice.entity.CaseSensitivity;
 import dk.ufst.opendebt.caseservice.repository.CaseRepository;
 import dk.ufst.opendebt.common.security.AuthContext;
 import dk.ufst.opendebt.common.security.CaseAccessChecker;
@@ -39,7 +40,7 @@ public class CaseAccessCheckerImpl implements CaseAccessChecker {
       return true;
     }
 
-    // Caseworker filtering (Rule 1.1, 1.2)
+    // Caseworker filtering (Rule 1.1, 1.2, 5.2, 5.3)
     if (authContext.hasRole("CASEWORKER")) {
       CaseEntity caseEntity = caseRepository.findById(caseId).orElse(null);
       if (caseEntity == null) {
@@ -55,8 +56,36 @@ public class CaseAccessCheckerImpl implements CaseAccessChecker {
         return false;
       }
 
-      // For now, sensitivity checks are deferred to W9-RBAC-02
-      // TODO: Add sensitivity filtering in W9-RBAC-02
+      // Sensitivity filtering (W9-RBAC-02)
+      CaseSensitivity sensitivity =
+          caseEntity.getSensitivity() != null
+              ? caseEntity.getSensitivity()
+              : CaseSensitivity.NORMAL;
+
+      // Rule 5.3: CONFIDENTIAL cases are restricted to supervisors and admins only
+      if (sensitivity == CaseSensitivity.CONFIDENTIAL) {
+        log.warn(
+            "Caseworker {} denied access to CONFIDENTIAL case {}", authContext.getUserId(), caseId);
+        return false;
+      }
+
+      // Rule 5.2: VIP cases require HANDLE_VIP_CASES capability
+      if (sensitivity == CaseSensitivity.VIP && !authContext.hasCapability("HANDLE_VIP_CASES")) {
+        log.warn(
+            "Caseworker {} lacks HANDLE_VIP_CASES capability for VIP case {}",
+            authContext.getUserId(),
+            caseId);
+        return false;
+      }
+
+      // Rule 5.2: PEP cases require HANDLE_PEP_CASES capability
+      if (sensitivity == CaseSensitivity.PEP && !authContext.hasCapability("HANDLE_PEP_CASES")) {
+        log.warn(
+            "Caseworker {} lacks HANDLE_PEP_CASES capability for PEP case {}",
+            authContext.getUserId(),
+            caseId);
+        return false;
+      }
 
       log.trace("Caseworker access granted for case {}", caseId);
       return true;

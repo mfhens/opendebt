@@ -27,7 +27,8 @@ import lombok.*;
       @Index(name = "idx_case_case_state", columnList = "case_state"),
       @Index(name = "idx_case_case_type", columnList = "case_type"),
       @Index(name = "idx_case_primary_caseworker", columnList = "primary_caseworker_id"),
-      @Index(name = "idx_case_parent_case_id", columnList = "parent_case_id")
+      @Index(name = "idx_case_parent_case_id", columnList = "parent_case_id"),
+      @Index(name = "idx_cases_sensitivity", columnList = "sensitivity")
     })
 @Getter
 @Setter
@@ -88,6 +89,25 @@ public class CaseEntity {
 
   @Column(name = "primary_caseworker_id", length = 100)
   private String primaryCaseworkerId;
+
+  // ── Access Control ───────────────────────────────────────────────────
+
+  /**
+   * Case sensitivity classification for access control (Petition048 W9-RBAC-02).
+   *
+   * <p>Determines which caseworkers can access the case based on their capabilities:
+   *
+   * <ul>
+   *   <li>NORMAL: Any assigned caseworker can access
+   *   <li>VIP: Requires HANDLE_VIP_CASES capability
+   *   <li>PEP: Requires HANDLE_PEP_CASES capability
+   *   <li>CONFIDENTIAL: Supervisors and admins only
+   * </ul>
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "sensitivity", nullable = false, length = 20)
+  @Builder.Default
+  private CaseSensitivity sensitivity = CaseSensitivity.NORMAL;
 
   // ── Hierarchy / workflow ─────────────────────────────────────────────
 
