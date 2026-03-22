@@ -35,6 +35,10 @@ buildNumber.properties
 # Logs
 *.log
 logs/
+sonar-feedback.json
+sonar-duplications.json
+sonar-scanner-report.json
+sonar-measures.json
 
 # OS
 .DS_Store

@@ -48,6 +48,21 @@
       "bearerOnly": true
     },
     {
+      "clientId": "opendebt-caseworker-portal",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "caseworker-portal-dev-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8087/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8087"
+      ]
+    },
+    {
       "clientId": "opendebt-creditor-portal",
       "enabled": true,
       "protocol": "openid-connect",
