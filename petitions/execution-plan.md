@@ -37,6 +37,12 @@
 
 ### Recent work (2026-03-17 to 2026-03-21)
 
+- **W9-RBAC-04 observability dashboard implemented** (2026-03-23):
+  - Added provisioned Grafana dashboard `opendebt-rbac-authorization.json` with denial-rate, authorization-latency, unauthorized-attempt, and person-registry circuit-breaker panels.
+  - Added provisioned Grafana alert templates for `HighAuthorizationDenialRate` and `PersonRegistryCircuitBreakerOpen`.
+  - Fixed the Grafana Prometheus datasource configuration to use an explicit `prometheus` UID so dashboards and alert rules bind to the same datasource deterministically.
+  - Added petition048 Cucumber coverage and targeted debt-service tests that verify the RBAC dashboard and alert template assets are present and reference the required metrics.
+
 - **W9-RBAC-03 convergence implementation started** (2026-03-23):
   - Assignment audit events now persisted in case-service for both approved assignments (`CASEWORKER_ASSIGNED`) and denied assignments (`ASSIGNMENT_DENIED`) with reason metadata.
   - Debt-service access checkers now ship CLS audit events for authorization decisions on claim and debt access (granted and denied paths).

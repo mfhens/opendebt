@@ -2043,7 +2043,7 @@ backlog:
       parallelization: Final convergence ticket for Wave 9.
 
     W9-RBAC-04:
-      status: pending
+      status: implemented
       sprint: sprint-16
       petitions:
         - petition048

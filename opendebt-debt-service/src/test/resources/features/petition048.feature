@@ -32,3 +32,11 @@ Feature: Petition048 RBAC authorization convergence
     Then debt-service should grant debt access
     When the admin requests access to a claim owned by organization B
     Then debt-service should grant claim access
+
+  Scenario: RBAC observability assets are provisioned for operators
+    When operators inspect the RBAC Grafana dashboard template
+    Then the RBAC dashboard should expose denial rate panels by role and resource type
+    And the RBAC dashboard should expose authorization latency panels for p50, p95, and p99
+    And the RBAC dashboard should expose person-registry circuit breaker state
+    And the RBAC dashboard should expose unauthorized query attempts
+    And RBAC alert templates should cover denial spikes and circuit breaker open state

@@ -143,6 +143,8 @@ Use the PowerShell helper to run one stack (app or observability) or both with o
 .\compose-stack.ps1 -Action logs -Service postgres
 ```
 
+When the observability stack is running, Grafana provisions both the baseline overview dashboard and the RBAC authorization dashboard from `config/grafana/provisioning/dashboards/`. RBAC alert templates are provisioned from `config/grafana/provisioning/alerting/`.
+
 ### Demo Startup (With and Without Security)
 
 ```powershell

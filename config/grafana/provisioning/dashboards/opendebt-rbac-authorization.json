@@ -1,0 +1,149 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Authorization Denial Rate by Role",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Requires W9-RBAC-01 emitters to publish authorization_denied_total with role and resource_type labels.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (job, role) (rate(authorization_denied_total{job=~\"$job\"}[5m]))",
+          "legendFormat": "{{job}} {{role}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Authorization Denial Rate by Resource Type",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Shows denied authorization rates grouped by the protected resource type.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (job, resource_type) (rate(authorization_denied_total{job=~\"$job\"}[5m]))",
+          "legendFormat": "{{job}} {{resource_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Authorization Check Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "p50, p95, and p99 authorization latency derived from authorization_check_seconds_bucket.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, job, role, resource_type) (rate(authorization_check_seconds_bucket{job=~\"$job\"}[5m])))",
+          "legendFormat": "{{job}} {{role}} {{resource_type}} p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, job, role, resource_type) (rate(authorization_check_seconds_bucket{job=~\"$job\"}[5m])))",
+          "legendFormat": "{{job}} {{role}} {{resource_type}} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, job, role, resource_type) (rate(authorization_check_seconds_bucket{job=~\"$job\"}[5m])))",
+          "legendFormat": "{{job}} {{role}} {{resource_type}} p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Unauthorized Query Attempts",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Short-window increase in denied authorizations, useful for detecting attack-like bursts.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (job, role, resource_type) (increase(authorization_denied_total{job=~\"$job\"}[15m]))",
+          "legendFormat": "{{job}} {{role}} {{resource_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Person Registry Circuit Breaker State",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Resilience4j circuit breaker state for person-registry lookups across the portals.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "max by (job, state) (resilience4j_circuitbreaker_state{name=\"person-registry\", job=~\"$job\"})",
+          "legendFormat": "{{job}} {{state}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["opendebt", "observability", "rbac", "authorization"],
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "label": "Service",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(up, job)",
+        "query": {
+          "query": "label_values(up, job)",
+          "refId": "Prometheus-job-Variable-Query"
+        },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "refresh": 1,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OpenDebt RBAC Authorization",
+  "uid": "opendebt-rbac-authorization",
+  "version": 1
+}

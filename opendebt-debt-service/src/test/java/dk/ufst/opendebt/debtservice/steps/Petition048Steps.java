@@ -2,12 +2,19 @@ package dk.ufst.opendebt.debtservice.steps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dk.ufst.opendebt.common.security.AuthContext;
 import dk.ufst.opendebt.common.security.CreditorAccessChecker;
@@ -21,6 +28,8 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 public class Petition048Steps {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   @Autowired private DebtRepository debtRepository;
   @Autowired private DebtorAccessChecker debtorAccessChecker;
@@ -38,6 +47,8 @@ public class Petition048Steps {
   private AuthContext authContext;
   private String upstreamClaimedPerson;
   private Boolean lastAccessDecision;
+  private JsonNode rbacDashboard;
+  private String rbacAlertRules;
 
   @Before
   public void resetScenarioState() {
@@ -49,6 +60,8 @@ public class Petition048Steps {
     upstreamClaimedPerson = null;
     authContext = null;
     lastAccessDecision = null;
+    rbacDashboard = null;
+    rbacAlertRules = null;
   }
 
   @Given("RBAC test debts are seeded for multiple debtors and creditor organizations")
@@ -138,6 +151,16 @@ public class Petition048Steps {
     lastAccessDecision = creditorAccessChecker.canAccessClaim(claimOwnedByOrgB, authContext);
   }
 
+  @When("operators inspect the RBAC Grafana dashboard template")
+  public void operatorsInspectTheRbacGrafanaDashboardTemplate() throws IOException {
+    rbacDashboard =
+        OBJECT_MAPPER.readTree(
+            Files.readString(
+                resolveRepoRoot().resolve(rbcaDashboardPath()), StandardCharsets.UTF_8));
+    rbacAlertRules =
+        Files.readString(resolveRepoRoot().resolve(rbacAlertPath()), StandardCharsets.UTF_8);
+  }
+
   @Then("debt-service should grant debt access")
   public void shouldGrantDebtAccess() {
     assertThat(lastAccessDecision).isTrue();
@@ -158,6 +181,56 @@ public class Petition048Steps {
     assertThat(lastAccessDecision).isFalse();
   }
 
+  @Then("the RBAC dashboard should expose denial rate panels by role and resource type")
+  public void dashboardShouldExposeDenialRatePanels() {
+    assertThat(findPanel("Authorization Denial Rate by Role")).isNotNull();
+    assertThat(findPanel("Authorization Denial Rate by Resource Type")).isNotNull();
+    assertThat(findPanel("Authorization Denial Rate by Role").toString())
+        .contains("authorization_denied_total")
+        .contains("role");
+    assertThat(findPanel("Authorization Denial Rate by Resource Type").toString())
+        .contains("authorization_denied_total")
+        .contains("resource_type");
+  }
+
+  @Then("the RBAC dashboard should expose authorization latency panels for p50, p95, and p99")
+  public void dashboardShouldExposeAuthorizationLatencyPanels() {
+    JsonNode latencyPanel = findPanel("Authorization Check Latency");
+    assertThat(latencyPanel).isNotNull();
+    assertThat(latencyPanel.toString())
+        .contains("histogram_quantile(0.50")
+        .contains("histogram_quantile(0.95")
+        .contains("histogram_quantile(0.99")
+        .contains("authorization_check_seconds_bucket");
+  }
+
+  @Then("the RBAC dashboard should expose person-registry circuit breaker state")
+  public void dashboardShouldExposeCircuitBreakerState() {
+    JsonNode circuitBreakerPanel = findPanel("Person Registry Circuit Breaker State");
+    assertThat(circuitBreakerPanel).isNotNull();
+    assertThat(circuitBreakerPanel.toString())
+        .contains("resilience4j_circuitbreaker_state")
+        .contains("person-registry");
+  }
+
+  @Then("the RBAC dashboard should expose unauthorized query attempts")
+  public void dashboardShouldExposeUnauthorizedQueryAttempts() {
+    JsonNode unauthorizedPanel = findPanel("Unauthorized Query Attempts");
+    assertThat(unauthorizedPanel).isNotNull();
+    assertThat(unauthorizedPanel.toString())
+        .contains("increase(authorization_denied_total")
+        .contains("resource_type");
+  }
+
+  @Then("RBAC alert templates should cover denial spikes and circuit breaker open state")
+  public void alertTemplatesShouldCoverRequiredSignals() {
+    assertThat(rbacAlertRules)
+        .contains("HighAuthorizationDenialRate")
+        .contains("sum(rate(authorization_denied_total[5m]))")
+        .contains("PersonRegistryCircuitBreakerOpen")
+        .contains("resilience4j_circuitbreaker_state{name=\"person-registry\",state=\"open\"}");
+  }
+
   private UUID createDebt(UUID debtorPersonId, UUID creditorOrgId, String reference) {
     DebtEntity debt =
         DebtEntity.builder()
@@ -174,5 +247,33 @@ public class Petition048Steps {
             .readinessStatus(DebtEntity.ReadinessStatus.READY_FOR_COLLECTION)
             .build();
     return debtRepository.save(debt).getId();
+  }
+
+  private JsonNode findPanel(String title) {
+    assertThat(rbacDashboard).as("RBAC dashboard must be loaded").isNotNull();
+    for (JsonNode panel : rbacDashboard.path("panels")) {
+      if (title.equals(panel.path("title").asText())) {
+        return panel;
+      }
+    }
+    return null;
+  }
+
+  private Path resolveRepoRoot() {
+    Path current = Path.of("").toAbsolutePath().normalize();
+    if (current.getFileName() != null && current.getFileName().toString().startsWith("opendebt-")) {
+      return current.getParent();
+    }
+    return current;
+  }
+
+  private Path rbcaDashboardPath() {
+    return Path.of(
+        "config", "grafana", "provisioning", "dashboards", "opendebt-rbac-authorization.json");
+  }
+
+  private Path rbacAlertPath() {
+    return Path.of(
+        "config", "grafana", "provisioning", "alerting", "opendebt-rbac-authorization-alerts.yaml");
   }
 }

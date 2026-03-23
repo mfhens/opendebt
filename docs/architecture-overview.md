@@ -969,6 +969,8 @@ See the Communication Pattern diagram above.
 
 - **Local:** Docker Compose with all services, PostgreSQL 16, Keycloak 24
 - **Observability stack (ADR-0024):** Separate `docker-compose.observability.yml` (merged with `-f`), containing OTel Collector, Grafana Tempo, Grafana Loki, Prometheus, and Grafana OSS. All 12 services are instrumented with Micrometer Tracing + OpenTelemetry OTLP export, structured JSON logging (logback-spring.xml with traceId/spanId), and Prometheus metrics. Prometheus scrapes all 12 service `/actuator/prometheus` endpoints. Config files under `config/otel/`, `config/tempo/`, `config/loki/`, `config/prometheus/`, `config/grafana/`.
+    - Provisioned dashboards now include `opendebt-overview.json` and `opendebt-rbac-authorization.json`.
+    - Provisioned alert templates under `config/grafana/provisioning/alerting/` cover high RBAC denial rate and `person-registry` circuit breaker open state.
 - **Kubernetes:** Kustomize-based with base + staging/production overlays
   - Namespace: `opendebt`
   - Service discovery via internal DNS

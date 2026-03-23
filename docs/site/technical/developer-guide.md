@@ -65,6 +65,14 @@ This starts:
 - **PostgreSQL 16** on port 5432 (user: `opendebt`, password: `opendebt`, 8 databases auto-created)
 - **Keycloak 24** on port 8080 (admin: `admin`/`admin`, realm `opendebt` auto-imported)
 
+To include the observability stack with the provisioned RBAC dashboard and alerts:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+```
+
+Grafana loads dashboard JSON files from `config/grafana/provisioning/dashboards/` and alert-rule templates from `config/grafana/provisioning/alerting/` on startup.
+
 ### 2. Run a service
 
 ```bash
