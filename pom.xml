@@ -60,7 +60,7 @@
         <bookkeeping.version>4.3.0</bookkeeping.version>
         <cucumber.version>7.18.0</cucumber.version>
         <junit-platform.version>1.10.2</junit-platform.version>
-        <scala.version>2.12.19</scala.version>
+        <scala.version>2.13.18</scala.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <resilience4j.version>2.2.0</resilience4j.version>
 
