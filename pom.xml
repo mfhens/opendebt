@@ -49,7 +49,7 @@
         <testcontainers.version>1.19.8</testcontainers.version>
         <archunit.version>1.3.0</archunit.version>
         <spotless.version>2.43.0</spotless.version>
-        <jacoco.version>0.8.12</jacoco.version>
+        <jacoco.version>0.8.14</jacoco.version>
         <sonar.version>3.11.0.3922</sonar.version>
         <owasp.version>9.2.0</owasp.version>
         <postgresql.version>42.7.3</postgresql.version>
