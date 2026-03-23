@@ -16,6 +16,7 @@ import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentRequestDto;
 import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.ClaimDetailDto;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
+import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
 import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.HearingApproveRequestDto;
 import dk.ufst.opendebt.creditor.dto.HearingClaimDetailDto;
@@ -137,16 +138,9 @@ public class DebtServiceClient {
   @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "listClaimsInRecoveryFallback")
   @Retry(name = CIRCUIT_BREAKER_READ)
   public RestPage<ClaimListItemDto> listClaimsInRecovery(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
-    log.debug("Listing claims in recovery for creditor: {}, page: {}", creditorOrgId, page);
+      UUID creditorOrgId, ClaimSearchParams params) {
+    log.debug(
+        "Listing claims in recovery for creditor: {}, page: {}", creditorOrgId, params.getPage());
 
     return webClient
         .get()
@@ -156,26 +150,8 @@ public class DebtServiceClient {
                   .path(CLAIMS_PATH)
                   .queryParam(PARAM_CREDITOR_ID, creditorOrgId)
                   .queryParam(PARAM_STATUS, "IN_RECOVERY")
-                  .queryParam("excludeZeroBalance", true)
-                  .queryParam("page", page)
-                  .queryParam("size", size);
-              if (sortBy != null && !sortBy.isBlank()) {
-                uriBuilder.queryParam(PARAM_SORT_BY, sortBy);
-                uriBuilder.queryParam(
-                    PARAM_SORT_DIRECTION, sortDirection != null ? sortDirection : "asc");
-              }
-              if (searchQuery != null && !searchQuery.isBlank()) {
-                uriBuilder.queryParam(PARAM_SEARCH_QUERY, searchQuery);
-                if (searchType != null && !searchType.isBlank()) {
-                  uriBuilder.queryParam(PARAM_SEARCH_TYPE, searchType);
-                }
-              }
-              if (dateFrom != null) {
-                uriBuilder.queryParam(PARAM_DATE_FROM, dateFrom.toString());
-              }
-              if (dateTo != null) {
-                uriBuilder.queryParam(PARAM_DATE_TO, dateTo.toString());
-              }
+                  .queryParam("excludeZeroBalance", true);
+              applySearchFilters(uriBuilder, params);
               return uriBuilder.build();
             })
         .retrieve()
@@ -207,16 +183,9 @@ public class DebtServiceClient {
   @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "listZeroBalanceClaimsFallback")
   @Retry(name = CIRCUIT_BREAKER_READ)
   public RestPage<ClaimListItemDto> listZeroBalanceClaims(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
-    log.debug("Listing zero-balance claims for creditor: {}, page: {}", creditorOrgId, page);
+      UUID creditorOrgId, ClaimSearchParams params) {
+    log.debug(
+        "Listing zero-balance claims for creditor: {}, page: {}", creditorOrgId, params.getPage());
 
     return webClient
         .get()
@@ -225,26 +194,8 @@ public class DebtServiceClient {
               uriBuilder
                   .path(CLAIMS_PATH)
                   .queryParam(PARAM_CREDITOR_ID, creditorOrgId)
-                  .queryParam(PARAM_STATUS, "ZERO_BALANCE")
-                  .queryParam("page", page)
-                  .queryParam("size", size);
-              if (sortBy != null && !sortBy.isBlank()) {
-                uriBuilder.queryParam(PARAM_SORT_BY, sortBy);
-                uriBuilder.queryParam(
-                    PARAM_SORT_DIRECTION, sortDirection != null ? sortDirection : "asc");
-              }
-              if (searchQuery != null && !searchQuery.isBlank()) {
-                uriBuilder.queryParam(PARAM_SEARCH_QUERY, searchQuery);
-                if (searchType != null && !searchType.isBlank()) {
-                  uriBuilder.queryParam(PARAM_SEARCH_TYPE, searchType);
-                }
-              }
-              if (dateFrom != null) {
-                uriBuilder.queryParam(PARAM_DATE_FROM, dateFrom.toString());
-              }
-              if (dateTo != null) {
-                uriBuilder.queryParam(PARAM_DATE_TO, dateTo.toString());
-              }
+                  .queryParam(PARAM_STATUS, "ZERO_BALANCE");
+              applySearchFilters(uriBuilder, params);
               return uriBuilder.build();
             })
         .retrieve()
@@ -392,16 +343,8 @@ public class DebtServiceClient {
   @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "listHearingClaimsFallback")
   @Retry(name = CIRCUIT_BREAKER_READ)
   public RestPage<HearingClaimListItemDto> listHearingClaims(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
-    log.debug("Listing hearing claims for creditor: {}, page: {}", creditorOrgId, page);
+      UUID creditorOrgId, ClaimSearchParams params) {
+    log.debug("Listing hearing claims for creditor: {}, page: {}", creditorOrgId, params.getPage());
 
     return webClient
         .get()
@@ -410,26 +353,8 @@ public class DebtServiceClient {
               uriBuilder
                   .path(CLAIMS_PATH)
                   .queryParam(PARAM_CREDITOR_ID, creditorOrgId)
-                  .queryParam(PARAM_STATUS, "HEARING")
-                  .queryParam("page", page)
-                  .queryParam("size", size);
-              if (sortBy != null && !sortBy.isBlank()) {
-                uriBuilder.queryParam(PARAM_SORT_BY, sortBy);
-                uriBuilder.queryParam(
-                    PARAM_SORT_DIRECTION, sortDirection != null ? sortDirection : "asc");
-              }
-              if (searchQuery != null && !searchQuery.isBlank()) {
-                uriBuilder.queryParam(PARAM_SEARCH_QUERY, searchQuery);
-                if (searchType != null && !searchType.isBlank()) {
-                  uriBuilder.queryParam(PARAM_SEARCH_TYPE, searchType);
-                }
-              }
-              if (dateFrom != null) {
-                uriBuilder.queryParam(PARAM_DATE_FROM, dateFrom.toString());
-              }
-              if (dateTo != null) {
-                uriBuilder.queryParam(PARAM_DATE_TO, dateTo.toString());
-              }
+                  .queryParam(PARAM_STATUS, "HEARING");
+              applySearchFilters(uriBuilder, params);
               return uriBuilder.build();
             })
         .retrieve()
@@ -559,16 +484,9 @@ public class DebtServiceClient {
   @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "listRejectedClaimsFallback")
   @Retry(name = CIRCUIT_BREAKER_READ)
   public RestPage<ClaimListItemDto> listRejectedClaims(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
-    log.debug("Listing rejected claims for creditor: {}, page: {}", creditorOrgId, page);
+      UUID creditorOrgId, ClaimSearchParams params) {
+    log.debug(
+        "Listing rejected claims for creditor: {}, page: {}", creditorOrgId, params.getPage());
 
     return webClient
         .get()
@@ -577,26 +495,8 @@ public class DebtServiceClient {
               uriBuilder
                   .path(CLAIMS_PATH)
                   .queryParam(PARAM_CREDITOR_ID, creditorOrgId)
-                  .queryParam(PARAM_STATUS, STATUS_REJECTED)
-                  .queryParam("page", page)
-                  .queryParam("size", size);
-              if (sortBy != null && !sortBy.isBlank()) {
-                uriBuilder.queryParam(PARAM_SORT_BY, sortBy);
-                uriBuilder.queryParam(
-                    PARAM_SORT_DIRECTION, sortDirection != null ? sortDirection : "asc");
-              }
-              if (searchQuery != null && !searchQuery.isBlank()) {
-                uriBuilder.queryParam(PARAM_SEARCH_QUERY, searchQuery);
-                if (searchType != null && !searchType.isBlank()) {
-                  uriBuilder.queryParam(PARAM_SEARCH_TYPE, searchType);
-                }
-              }
-              if (dateFrom != null) {
-                uriBuilder.queryParam(PARAM_DATE_FROM, dateFrom.toString());
-              }
-              if (dateTo != null) {
-                uriBuilder.queryParam(PARAM_DATE_TO, dateTo.toString());
-              }
+                  .queryParam(PARAM_STATUS, STATUS_REJECTED);
+              applySearchFilters(uriBuilder, params);
               return uriBuilder.build();
             })
         .retrieve()
@@ -839,6 +739,29 @@ public class DebtServiceClient {
         .block();
   }
 
+  private void applySearchFilters(
+      org.springframework.web.util.UriBuilder uriBuilder, ClaimSearchParams params) {
+    uriBuilder.queryParam("page", params.getPage()).queryParam("size", params.getSize());
+    if (params.getSortBy() != null && !params.getSortBy().isBlank()) {
+      uriBuilder.queryParam(PARAM_SORT_BY, params.getSortBy());
+      uriBuilder.queryParam(
+          PARAM_SORT_DIRECTION,
+          params.getSortDirection() != null ? params.getSortDirection() : "asc");
+    }
+    if (params.getSearchQuery() != null && !params.getSearchQuery().isBlank()) {
+      uriBuilder.queryParam(PARAM_SEARCH_QUERY, params.getSearchQuery());
+      if (params.getSearchType() != null && !params.getSearchType().isBlank()) {
+        uriBuilder.queryParam(PARAM_SEARCH_TYPE, params.getSearchType());
+      }
+    }
+    if (params.getDateFrom() != null) {
+      uriBuilder.queryParam(PARAM_DATE_FROM, params.getDateFrom().toString());
+    }
+    if (params.getDateTo() != null) {
+      uriBuilder.queryParam(PARAM_DATE_TO, params.getDateTo().toString());
+    }
+  }
+
   private RestPage<PortalDebtDto> listDebtsFallback(UUID creditorOrgId, Throwable t) {
     if (t
             instanceof
@@ -862,16 +785,7 @@ public class DebtServiceClient {
   }
 
   private RestPage<ClaimListItemDto> listClaimsInRecoveryFallback(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo,
-      Throwable t) {
+      UUID creditorOrgId, ClaimSearchParams params, Throwable t) {
     if (t
             instanceof
             org.springframework.web.reactive.function.client.WebClientResponseException wcre
@@ -879,20 +793,11 @@ public class DebtServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for listClaimsInRecovery: {}", t.getMessage());
-    return new RestPage<>(java.util.List.of(), page, size, 0, 0);
+    return new RestPage<>(java.util.List.of(), params.getPage(), params.getSize(), 0, 0);
   }
 
   private RestPage<ClaimListItemDto> listZeroBalanceClaimsFallback(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo,
-      Throwable t) {
+      UUID creditorOrgId, ClaimSearchParams params, Throwable t) {
     if (t
             instanceof
             org.springframework.web.reactive.function.client.WebClientResponseException wcre
@@ -900,7 +805,7 @@ public class DebtServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for listZeroBalanceClaims: {}", t.getMessage());
-    return new RestPage<>(java.util.List.of(), page, size, 0, 0);
+    return new RestPage<>(java.util.List.of(), params.getPage(), params.getSize(), 0, 0);
   }
 
   private ClaimCountsDto getClaimCountsForDateRangeFallback(
@@ -939,16 +844,7 @@ public class DebtServiceClient {
   }
 
   private RestPage<HearingClaimListItemDto> listHearingClaimsFallback(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo,
-      Throwable t) {
+      UUID creditorOrgId, ClaimSearchParams params, Throwable t) {
     if (t
             instanceof
             org.springframework.web.reactive.function.client.WebClientResponseException wcre
@@ -956,7 +852,7 @@ public class DebtServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for listHearingClaims: {}", t.getMessage());
-    return new RestPage<>(java.util.List.of(), page, size, 0, 0);
+    return new RestPage<>(java.util.List.of(), params.getPage(), params.getSize(), 0, 0);
   }
 
   private HearingClaimDetailDto getHearingClaimDetailFallback(UUID claimId, Throwable t) {
@@ -993,16 +889,7 @@ public class DebtServiceClient {
   }
 
   private RestPage<ClaimListItemDto> listRejectedClaimsFallback(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo,
-      Throwable t) {
+      UUID creditorOrgId, ClaimSearchParams params, Throwable t) {
     if (t
             instanceof
             org.springframework.web.reactive.function.client.WebClientResponseException wcre
@@ -1010,7 +897,7 @@ public class DebtServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for listRejectedClaims: {}", t.getMessage());
-    return new RestPage<>(java.util.List.of(), page, size, 0, 0);
+    return new RestPage<>(java.util.List.of(), params.getPage(), params.getSize(), 0, 0);
   }
 
   private RejectedClaimDetailDto getRejectedClaimDetailFallback(UUID claimId, Throwable t) {

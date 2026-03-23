@@ -1,6 +1,5 @@
 package dk.ufst.opendebt.creditor.client;
 
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -10,10 +9,12 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.ReconciliationBasisDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationDetailDto;
+import dk.ufst.opendebt.creditor.dto.ReconciliationFilterParams;
 import dk.ufst.opendebt.creditor.dto.ReconciliationListItemDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationResponseDto;
 
@@ -46,26 +47,13 @@ public class ReconciliationServiceClient {
    * Lists reconciliation periods for the given creditor with optional filters.
    *
    * @param creditorOrgId the acting creditor org ID
-   * @param status optional status filter (e.g. ACTIVE, CLOSED)
-   * @param periodEndFrom optional period end date range start
-   * @param periodEndTo optional period end date range end
-   * @param reconciliationStartFrom optional reconciliation start date range start
-   * @param reconciliationStartTo optional reconciliation start date range end
-   * @param reconciliationEndFrom optional reconciliation end date range start
-   * @param reconciliationEndTo optional reconciliation end date range end
+   * @param filters optional filter parameters for status and date ranges
    * @return list of reconciliation periods, or empty list on failure
    */
   @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "listReconciliationsFallback")
   @Retry(name = CIRCUIT_BREAKER_NAME)
   public List<ReconciliationListItemDto> listReconciliations(
-      UUID creditorOrgId,
-      String status,
-      LocalDate periodEndFrom,
-      LocalDate periodEndTo,
-      LocalDate reconciliationStartFrom,
-      LocalDate reconciliationStartTo,
-      LocalDate reconciliationEndFrom,
-      LocalDate reconciliationEndTo) {
+      UUID creditorOrgId, ReconciliationFilterParams filters) {
     log.debug("Listing reconciliations for creditor: {}", creditorOrgId);
 
     try {
@@ -77,30 +65,7 @@ public class ReconciliationServiceClient {
                     uriBuilder
                         .path("/debt-service/api/v1/reconciliations")
                         .queryParam("creditorId", creditorOrgId);
-                    if (status != null && !status.isBlank()) {
-                      uriBuilder.queryParam("status", status);
-                    }
-                    if (periodEndFrom != null) {
-                      uriBuilder.queryParam("periodEndFrom", periodEndFrom.toString());
-                    }
-                    if (periodEndTo != null) {
-                      uriBuilder.queryParam("periodEndTo", periodEndTo.toString());
-                    }
-                    if (reconciliationStartFrom != null) {
-                      uriBuilder.queryParam(
-                          "reconciliationStartFrom", reconciliationStartFrom.toString());
-                    }
-                    if (reconciliationStartTo != null) {
-                      uriBuilder.queryParam(
-                          "reconciliationStartTo", reconciliationStartTo.toString());
-                    }
-                    if (reconciliationEndFrom != null) {
-                      uriBuilder.queryParam(
-                          "reconciliationEndFrom", reconciliationEndFrom.toString());
-                    }
-                    if (reconciliationEndTo != null) {
-                      uriBuilder.queryParam("reconciliationEndTo", reconciliationEndTo.toString());
-                    }
+                    applyReconciliationFilters(uriBuilder, filters);
                     return uriBuilder.build();
                   })
               .retrieve()
@@ -274,15 +239,7 @@ public class ReconciliationServiceClient {
   }
 
   private List<ReconciliationListItemDto> listReconciliationsFallback(
-      UUID creditorOrgId,
-      String status,
-      LocalDate periodEndFrom,
-      LocalDate periodEndTo,
-      LocalDate reconciliationStartFrom,
-      LocalDate reconciliationStartTo,
-      LocalDate reconciliationEndFrom,
-      LocalDate reconciliationEndTo,
-      Throwable t) {
+      UUID creditorOrgId, ReconciliationFilterParams filters, Throwable t) {
     if (t
             instanceof
             org.springframework.web.reactive.function.client.WebClientResponseException wcre
@@ -291,6 +248,32 @@ public class ReconciliationServiceClient {
     }
     log.warn("Circuit breaker fallback triggered for listReconciliations: {}", t.getMessage());
     return Collections.emptyList();
+  }
+
+  private void applyReconciliationFilters(
+      UriBuilder uriBuilder, ReconciliationFilterParams filters) {
+    if (filters.getStatus() != null && !filters.getStatus().isBlank()) {
+      uriBuilder.queryParam("status", filters.getStatus());
+    }
+    if (filters.getPeriodEndFrom() != null) {
+      uriBuilder.queryParam("periodEndFrom", filters.getPeriodEndFrom().toString());
+    }
+    if (filters.getPeriodEndTo() != null) {
+      uriBuilder.queryParam("periodEndTo", filters.getPeriodEndTo().toString());
+    }
+    if (filters.getReconciliationStartFrom() != null) {
+      uriBuilder.queryParam(
+          "reconciliationStartFrom", filters.getReconciliationStartFrom().toString());
+    }
+    if (filters.getReconciliationStartTo() != null) {
+      uriBuilder.queryParam("reconciliationStartTo", filters.getReconciliationStartTo().toString());
+    }
+    if (filters.getReconciliationEndFrom() != null) {
+      uriBuilder.queryParam("reconciliationEndFrom", filters.getReconciliationEndFrom().toString());
+    }
+    if (filters.getReconciliationEndTo() != null) {
+      uriBuilder.queryParam("reconciliationEndTo", filters.getReconciliationEndTo().toString());
+    }
   }
 
   private ReconciliationDetailDto getReconciliationDetailFallback(

@@ -73,9 +73,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -93,8 +91,7 @@ class ClaimsListControllerTest {
   void recoveryTableFragment_returnsEmptyList_whenServiceUnavailable() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.listClaimsInRecovery(
-            any(), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
+    when(debtServiceClient.listClaimsInRecovery(any(), any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     Model model = new ConcurrentModel();
@@ -115,9 +112,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CPR", "0101901234"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.recoveryTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -135,9 +130,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.recoveryTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -176,9 +169,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "87654321"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listZeroBalanceClaims(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listZeroBalanceClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =

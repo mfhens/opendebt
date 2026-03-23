@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
+import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
 import dk.ufst.opendebt.creditor.dto.RejectedClaimDebtorDto;
 import dk.ufst.opendebt.creditor.dto.RejectedClaimDetailDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
@@ -74,14 +75,16 @@ public class RejectedClaimsController {
     RestPage<ClaimListItemDto> claims =
         loadRejectedClaims(
             actingCreditor,
-            page,
-            size,
-            sortBy,
-            sortDirection,
-            searchQuery,
-            searchType,
-            dateFrom,
-            dateTo);
+            ClaimSearchParams.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .searchQuery(searchQuery)
+                .searchType(searchType)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .build());
 
     censorCprNumbers(claims);
     addClaimsModelAttributes(
@@ -118,27 +121,21 @@ public class RejectedClaimsController {
   }
 
   private RestPage<ClaimListItemDto> loadRejectedClaims(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
+      UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<ClaimListItemDto> result =
           debtServiceClient.listRejectedClaims(
               creditorOrgId,
-              page,
-              clampSize(size),
-              sortBy,
-              sortDirection,
-              searchQuery,
-              searchType,
-              dateFrom,
-              dateTo);
+              ClaimSearchParams.builder()
+                  .page(params.getPage())
+                  .size(clampSize(params.getSize()))
+                  .sortBy(params.getSortBy())
+                  .sortDirection(params.getSortDirection())
+                  .searchQuery(params.getSearchQuery())
+                  .searchType(params.getSearchType())
+                  .dateFrom(params.getDateFrom())
+                  .dateTo(params.getDateTo())
+                  .build());
       return result != null ? result : emptyPage();
     } catch (Exception ex) {
       log.warn("Failed to load rejected claims: {}", ex.getMessage());

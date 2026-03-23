@@ -85,9 +85,7 @@ class HearingClaimsControllerTest {
 
     List<HearingClaimListItemDto> claimList = List.of(buildHearingClaimListItem("CVR", "12345678"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -105,8 +103,7 @@ class HearingClaimsControllerTest {
   void hearingTableFragment_returnsEmptyList_whenServiceUnavailable() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.listHearingClaims(
-            any(), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
+    when(debtServiceClient.listHearingClaims(any(), any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     Model model = new ConcurrentModel();
@@ -128,9 +125,7 @@ class HearingClaimsControllerTest {
     List<HearingClaimListItemDto> claimList =
         List.of(buildHearingClaimListItem("CPR", "0101901234"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.hearingTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -149,9 +144,7 @@ class HearingClaimsControllerTest {
 
     List<HearingClaimListItemDto> claimList = List.of(buildHearingClaimListItem("CVR", "12345678"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(
-            eq(TEST_CREDITOR_ORG_ID), anyInt(), anyInt(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(page);
+    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.hearingTableFragment(0, 20, null, "asc", null, null, null, null, model, session);

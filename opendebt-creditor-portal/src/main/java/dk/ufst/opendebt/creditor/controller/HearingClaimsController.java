@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
+import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
 import dk.ufst.opendebt.creditor.dto.HearingApproveRequestDto;
 import dk.ufst.opendebt.creditor.dto.HearingClaimDetailDto;
 import dk.ufst.opendebt.creditor.dto.HearingClaimListItemDto;
@@ -97,14 +98,16 @@ public class HearingClaimsController {
     RestPage<HearingClaimListItemDto> claims =
         loadHearingClaims(
             actingCreditor,
-            page,
-            size,
-            sortBy,
-            sortDirection,
-            searchQuery,
-            searchType,
-            dateFrom,
-            dateTo);
+            ClaimSearchParams.builder()
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .searchQuery(searchQuery)
+                .searchType(searchType)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .build());
 
     censorCprNumbers(claims);
     addClaimsModelAttributes(
@@ -241,27 +244,21 @@ public class HearingClaimsController {
   }
 
   private RestPage<HearingClaimListItemDto> loadHearingClaims(
-      UUID creditorOrgId,
-      int page,
-      int size,
-      String sortBy,
-      String sortDirection,
-      String searchQuery,
-      String searchType,
-      LocalDate dateFrom,
-      LocalDate dateTo) {
+      UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<HearingClaimListItemDto> result =
           debtServiceClient.listHearingClaims(
               creditorOrgId,
-              page,
-              clampSize(size),
-              sortBy,
-              sortDirection,
-              searchQuery,
-              searchType,
-              dateFrom,
-              dateTo);
+              ClaimSearchParams.builder()
+                  .page(params.getPage())
+                  .size(clampSize(params.getSize()))
+                  .sortBy(params.getSortBy())
+                  .sortDirection(params.getSortDirection())
+                  .searchQuery(params.getSearchQuery())
+                  .searchType(params.getSearchType())
+                  .dateFrom(params.getDateFrom())
+                  .dateTo(params.getDateTo())
+                  .build());
       return result != null ? result : emptyPage();
     } catch (Exception ex) {
       log.warn("Failed to load hearing claims: {}", ex.getMessage());

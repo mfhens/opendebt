@@ -27,6 +27,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import dk.ufst.opendebt.creditor.client.ReconciliationServiceClient;
 import dk.ufst.opendebt.creditor.dto.ReconciliationBasisDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationDetailDto;
+import dk.ufst.opendebt.creditor.dto.ReconciliationFilterParams;
 import dk.ufst.opendebt.creditor.dto.ReconciliationListItemDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationResponseFormDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
@@ -79,7 +80,7 @@ class ReconciliationControllerTest {
                 .responseSubmitted(false)
                 .build());
     when(reconciliationServiceClient.listReconciliations(
-            eq(TEST_CREDITOR_ORG_ID), any(), any(), any(), any(), any(), any(), any()))
+            eq(TEST_CREDITOR_ORG_ID), any(ReconciliationFilterParams.class)))
         .thenReturn(items);
 
     Model model = new ConcurrentModel();
@@ -95,7 +96,7 @@ class ReconciliationControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     when(reconciliationServiceClient.listReconciliations(
-            eq(TEST_CREDITOR_ORG_ID), any(), any(), any(), any(), any(), any(), any()))
+            eq(TEST_CREDITOR_ORG_ID), any(ReconciliationFilterParams.class)))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("reconciliation.error.service"), any(), any()))
         .thenReturn("Service error.");
@@ -116,7 +117,7 @@ class ReconciliationControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     when(reconciliationServiceClient.listReconciliations(
-            any(), any(), any(), any(), any(), any(), any(), any()))
+            any(), any(ReconciliationFilterParams.class)))
         .thenReturn(List.of());
 
     Model model = new ConcurrentModel();

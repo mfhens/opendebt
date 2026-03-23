@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import dk.ufst.opendebt.creditor.client.ReconciliationServiceClient;
 import dk.ufst.opendebt.creditor.dto.ReconciliationBasisDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationDetailDto;
+import dk.ufst.opendebt.creditor.dto.ReconciliationFilterParams;
 import dk.ufst.opendebt.creditor.dto.ReconciliationListItemDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationResponseDto;
 import dk.ufst.opendebt.creditor.dto.ReconciliationResponseFormDto;
@@ -83,16 +84,17 @@ public class ReconciliationController {
 
     List<ReconciliationListItemDto> reconciliations;
     try {
-      reconciliations =
-          reconciliationServiceClient.listReconciliations(
-              actingCreditor,
-              status,
-              periodEndFrom,
-              periodEndTo,
-              reconciliationStartFrom,
-              reconciliationStartTo,
-              reconciliationEndFrom,
-              reconciliationEndTo);
+      ReconciliationFilterParams filters =
+          ReconciliationFilterParams.builder()
+              .status(status)
+              .periodEndFrom(periodEndFrom)
+              .periodEndTo(periodEndTo)
+              .reconciliationStartFrom(reconciliationStartFrom)
+              .reconciliationStartTo(reconciliationStartTo)
+              .reconciliationEndFrom(reconciliationEndFrom)
+              .reconciliationEndTo(reconciliationEndTo)
+              .build();
+      reconciliations = reconciliationServiceClient.listReconciliations(actingCreditor, filters);
     } catch (Exception ex) {
       log.error("Failed to load reconciliations: {}", ex.getMessage());
       reconciliations = List.of();
