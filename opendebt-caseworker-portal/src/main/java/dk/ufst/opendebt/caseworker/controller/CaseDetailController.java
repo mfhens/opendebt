@@ -19,7 +19,6 @@ import dk.ufst.opendebt.caseworker.client.RestPage;
 import dk.ufst.opendebt.caseworker.dto.CaseworkerIdentity;
 import dk.ufst.opendebt.caseworker.service.CaseworkerSessionService;
 import dk.ufst.opendebt.common.dto.CaseDto;
-import dk.ufst.opendebt.common.dto.CaseEventDto;
 import dk.ufst.opendebt.common.dto.CaseJournalEntryDto;
 import dk.ufst.opendebt.common.dto.CaseJournalNoteDto;
 import dk.ufst.opendebt.common.dto.CasePartyDto;
@@ -83,9 +82,6 @@ public class CaseDetailController {
       // Load case parties
       loadParties(caseId, model);
 
-      // Load case events
-      loadEvents(caseId, model);
-
       // Load collection measures
       loadMeasures(caseId, model);
 
@@ -116,16 +112,6 @@ public class CaseDetailController {
     } catch (Exception ex) {
       log.warn("Failed to load parties for case {}: {}", caseId, ex.getMessage());
       model.addAttribute("parties", List.of());
-    }
-  }
-
-  private void loadEvents(UUID caseId, Model model) {
-    try {
-      List<CaseEventDto> events = caseServiceClient.getEvents(caseId);
-      model.addAttribute("events", events);
-    } catch (Exception ex) {
-      log.warn("Failed to load events for case {}: {}", caseId, ex.getMessage());
-      model.addAttribute("events", List.of());
     }
   }
 

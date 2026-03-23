@@ -8,6 +8,7 @@ Fordringshaverportalen er den digitale selvbetjeningsløsning, hvor fordringshav
 
 - **Oprette og indsende fordringer** til inddrivelse
 - **Følge fordringens livscyklus** fra registrering til indfrielse eller afskrivning
+- **Se fordringens tidslinje** — en samlet kronologisk visning af alle hændelser på fordringen (betalingsposteringer, statusændringer, inddrivelsesskridt og meddelelser)
 - **Regulere fordringer** (opskrivning, nedskrivning, tilbagekald)
 - **Modtage underretninger** om dækninger, renter og statusændringer
 - **Afstemme** dine fordringer mod afregninger og udligninger

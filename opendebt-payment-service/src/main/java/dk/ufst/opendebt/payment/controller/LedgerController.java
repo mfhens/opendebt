@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import dk.ufst.opendebt.common.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
-import dk.ufst.opendebt.payment.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.dto.LedgerEntryDto;
 import dk.ufst.opendebt.payment.dto.LedgerSummaryDto;
 import dk.ufst.opendebt.payment.service.LedgerQueryService;
@@ -89,7 +89,7 @@ public class LedgerController {
       summary = "Get debt events for a case",
       description =
           "Returns all debt events for all debts in the specified case, ordered by effective date.")
-  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN')")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('SERVICE')")
   public ResponseEntity<List<DebtEventDto>> getEventsByCase(@PathVariable UUID caseId) {
     List<DebtEventDto> events = ledgerQueryService.getEventsByCaseId(caseId);
     return ResponseEntity.ok(events);

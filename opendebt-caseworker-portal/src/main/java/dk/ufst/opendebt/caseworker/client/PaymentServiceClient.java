@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import dk.ufst.opendebt.caseworker.dto.PortalDebtEventDto;
 import dk.ufst.opendebt.caseworker.dto.PortalLedgerEntryDto;
 import dk.ufst.opendebt.caseworker.dto.PortalLedgerSummaryDto;
+import dk.ufst.opendebt.common.dto.DebtEventDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -179,6 +180,56 @@ public class PaymentServiceClient {
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<List<PortalDebtEventDto>>() {})
         .block();
+  }
+
+  /**
+   * Retrieves all debt events for all debts linked to a case.
+   *
+   * <p>Used exclusively by the timeline BFF aggregation. Returns {@link DebtEventDto} from
+   * opendebt-common (not the portal-specific PortalDebtEventDto).
+   *
+   * <p>Ref: specs §3.3 — OI-2 (DebtEventDto promoted to common).
+   */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getDebtEventsByCaseFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
+  public List<DebtEventDto> getDebtEventsByCase(UUID caseId) {
+    log.debug("Getting debt events for case (timeline): {}", caseId);
+
+    return webClient
+        .get()
+        .uri("/payment-service/api/v1/events/case/{caseId}", caseId)
+        .retrieve()
+        .onStatus(
+            HttpStatusCode::is4xxClientError,
+            response ->
+                response
+                    .bodyToMono(String.class)
+                    .flatMap(
+                        body ->
+                            Mono.error(
+                                new OpenDebtException(
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
+        .onStatus(
+            HttpStatusCode::is5xxServerError,
+            response ->
+                Mono.error(
+                    new OpenDebtException(
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
+                        OpenDebtException.ErrorSeverity.CRITICAL)))
+        .bodyToMono(new ParameterizedTypeReference<List<DebtEventDto>>() {})
+        .block();
+  }
+
+  private List<DebtEventDto> getDebtEventsByCaseFallback(UUID caseId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getDebtEventsByCase: {}", t.getMessage());
+    return List.of();
   }
 
   /** Retrieves the ledger summary (balances) for a specific debt. */

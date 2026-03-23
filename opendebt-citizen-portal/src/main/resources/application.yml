@@ -92,6 +92,10 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     payment-service:
       url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+  timeline:
+    visibility:
+      role-categories:
+        CITIZEN: FINANCIAL,DEBT_LIFECYCLE,CORRESPONDENCE,COLLECTION
 
 resilience4j:
   circuitbreaker:
@@ -109,6 +113,10 @@ resilience4j:
     instances:
       person-registry:
         baseConfig: default
+      case-service:
+        baseConfig: default
+      payment-service:
+        baseConfig: default
   retry:
     configs:
       default:
@@ -120,4 +128,8 @@ resilience4j:
           - org.springframework.web.reactive.function.client.WebClientResponseException
     instances:
       person-registry:
+        baseConfig: default
+      case-service:
+        baseConfig: default
+      payment-service:
         baseConfig: default

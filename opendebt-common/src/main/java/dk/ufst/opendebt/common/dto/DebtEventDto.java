@@ -1,4 +1,4 @@
-package dk.ufst.opendebt.payment.dto;
+package dk.ufst.opendebt.common.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,7 +10,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** DTO representing a debt event for API responses. */
+/**
+ * DTO representing a debt event. Promoted from payment-service to opendebt-common for timeline
+ * aggregation.
+ */
 @Data
 @Builder
 @NoArgsConstructor

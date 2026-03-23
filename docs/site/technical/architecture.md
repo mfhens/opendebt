@@ -43,9 +43,13 @@ graph TB
 
     CP --> DS
     CP --> CRS
+    CP --> PS
     BP --> DS
+    BP --> CS
+    BP --> PS
     CW --> DS
     CW --> CS
+    CW --> PS
 
     DS --> RE
     DS --> CRS
@@ -58,17 +62,18 @@ graph TB
 |---------|------|----------------|
 | debt-service | 8082 | Claim registration, lifecycle management, validation |
 | case-service | 8081 | Case management with Flowable BPMN workflows |
-| payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry) |
+| payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry), debt event log |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
 | person-registry | 8090 | GDPR vault for personal data (CPR/CVR encryption) |
 | rules-engine | 8091 | Drools-based validation rules |
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, M2M creditor ingress |
-| creditor-portal | 8085 | Fordringshaver web portal (Thymeleaf + HTMX) |
-| citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX) |
-| caseworker-portal | 8093 | Sagsbehandler web portal |
+| creditor-portal | 8085 | Fordringshaver web portal (Thymeleaf + HTMX); timeline at `/fordring/{id}/tidslinje` |
+| citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX); case detail + timeline at `/cases/{id}/tidslinje` |
+| caseworker-portal | 8093 | Sagsbehandler web portal; unified timeline at `/cases/{id}/tidslinje` |
 | letter-service | 8084 | Digital Post integration |
 | offsetting-service | 8087 | Modregning (set-off) |
 | wage-garnishment-service | 8088 | Loenindeholdelse (wage garnishment) |
+| opendebt-common | JAR | Shared library: audit infrastructure, DTOs, timeline components (petition050) |
 
 ## Technology stack
 

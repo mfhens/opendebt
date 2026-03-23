@@ -1,11 +1,17 @@
 package dk.ufst.opendebt.creditor.client;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import dk.ufst.opendebt.common.dto.CaseDto;
+import dk.ufst.opendebt.common.dto.CaseEventDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.PortalCaseDto;
 
@@ -57,11 +63,76 @@ public class CaseServiceClient {
         .block();
   }
 
+  /**
+   * Retrieves events (hændelseslog) for a case. Used by timeline BFF aggregation. Fallback returns
+   * empty list. Ref: petition050 specs §5.2.
+   */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getEventsFallback")
+  @Retry(name = "case-service")
+  public List<CaseEventDto> getEvents(UUID caseId) {
+    log.debug("Getting events for case: {}", caseId);
+
+    return webClient
+        .get()
+        .uri("/case-service/api/v1/cases/{id}/events", caseId)
+        .retrieve()
+        .onStatus(
+            HttpStatusCode::isError,
+            response ->
+                Mono.error(
+                    new OpenDebtException(
+                        "Failed to load events for case: " + caseId, "CASE_RESOURCE_ERROR")))
+        .bodyToMono(new ParameterizedTypeReference<List<CaseEventDto>>() {})
+        .block();
+  }
+
+  private List<CaseEventDto> getEventsFallback(UUID caseId, Throwable t) {
+    if (t instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getEvents: {}", t.getMessage());
+    return List.of();
+  }
+
+  /**
+   * Retrieves a single case by ID. Used for availableDebts dropdown. Fallback returns null. Ref:
+   * petition050 specs §5.2.
+   */
+  @CircuitBreaker(name = "case-service", fallbackMethod = "getCaseFallback")
+  @Retry(name = "case-service")
+  public CaseDto getCase(UUID caseId) {
+    log.debug("Getting case (for timeline): {}", caseId);
+
+    return webClient
+        .get()
+        .uri("/case-service/api/v1/cases/{id}", caseId)
+        .retrieve()
+        .onStatus(
+            HttpStatusCode::is4xxClientError,
+            response ->
+                Mono.error(new OpenDebtException("Case not found: " + caseId, "CASE_NOT_FOUND")))
+        .onStatus(
+            HttpStatusCode::is5xxServerError,
+            response ->
+                Mono.error(
+                    new OpenDebtException(
+                        "Case service unavailable",
+                        "CASE_SERVICE_UNAVAILABLE",
+                        OpenDebtException.ErrorSeverity.CRITICAL)))
+        .bodyToMono(CaseDto.class)
+        .block();
+  }
+
+  private CaseDto getCaseFallback(UUID caseId, Throwable t) {
+    if (t instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getCase: {}", t.getMessage());
+    return null;
+  }
+
   private RestPage<PortalCaseDto> listCasesFallback(Throwable t) {
-    if (t
-            instanceof
-            org.springframework.web.reactive.function.client.WebClientResponseException wcre
-        && wcre.getStatusCode().is4xxClientError()) {
+    if (t instanceof WebClientResponseException wcre && wcre.getStatusCode().is4xxClientError()) {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for listCases: {}", t.getMessage());

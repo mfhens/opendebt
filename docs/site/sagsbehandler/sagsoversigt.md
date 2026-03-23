@@ -26,8 +26,18 @@ For hver sag kan du se:
 - **Sagsdata**: Sagsnummer, oprettelsesdato, tildelt sagsbehandler
 - **Fordringer**: Alle fordringer knyttet til sagen
 - **Skyldneroplysninger**: Identifikation via person-ID (CPR vises ikke direkte)
-- **Hændelseslog**: Komplet historik over handlinger på sagen
+- **Tidslinje**: Kronologisk hændelsesstrøm med alle hændelsestyper — sagshændelser, betalingsposteringer, inddrivelsesskridt, korrespondance og indsigelser
 - **Inddrivelsesskridt**: Igangværende og afsluttede inddrivelsesskridt
+
+## Tidslinjen
+
+Tidslinjen (fanen **Tidslinje** på sagsdetailsiden) samler hændelser fra case-service og payment-service i én kronologisk visning. Du kan filtrere efter:
+
+- **Hændelseskategori**: CASE, GÆLD_LIVSCYKLUS, FINANSIEL, INDDRIVELSE, KORRESPONDANCE, INDSIGELSE, JOURNAL
+- **Datointerval**: fra/til-dato
+- **Fordring**: filtrer til en specifik fordring
+
+Hændelser indlæses progressivt via **Indlæs flere**-knappen (HTMX-drevet). Filtrering nulstiller til side 1.
 
 ## OIO-Sag datamodel
 

@@ -20,6 +20,7 @@ graph TB
     subgraph Portals["User Portals"]
         CP["creditor-portal<br/>:8085<br/>Fordringshavere"]
         BP["citizen-portal<br/>:8086<br/>Borgere"]
+        CW["caseworker-portal<br/>:8093<br/>Sagsbehandlere"]
     end
 
     subgraph Core["Core Services"]
@@ -52,9 +53,13 @@ graph TB
     CP --> DS
     CP --> CS
     CP --> CRS
+    CP --> PS
     BP --> DS
     BP --> CS
     BP --> PS
+    CW --> DS
+    CW --> CS
+    CW --> PS
 
     CS --> DS
     CS --> PS
@@ -652,9 +657,12 @@ flowchart LR
 | Flyway V3 (ocr_line, nullable case) | Done | OCR-linje column, nullable case_id/debtor fields |
 | **Unit tests** | **Done** | PaymentMatchingServiceImplTest (10 tests) |
 | ReconciliationService | Not started | Match CREMUL entries against ledger |
+| **Timeline endpoint (petition050)** | **Done** | |
+| LedgerController | Done | `GET /api/v1/events/case/{caseId}` — debt events for timeline aggregation; SERVICE role added to @PreAuthorize |
 
 **API endpoints:**
 - `POST /api/v1/payments/incoming` - Process incoming CREMUL payment (OCR-based matching)
+- `GET /api/v1/events/case/{caseId}` - Get debt events by case for BFF timeline aggregation (roles: CASEWORKER, CREDITOR, CITIZEN, SERVICE; petition050)
 
 ---
 
@@ -861,6 +869,17 @@ flowchart LR
 | Fordringer placeholder | Done | `templates/fordringer.html` — "Dine fordringer" with placeholder table, success flash alert |
 | Sager placeholder | Done | `templates/sager.html` — "Dine sager" with placeholder table |
 | Error page | Done | `templates/error.html` extending SKAT layout |
+| **Timeline (petition050)** | **Done** | |
+| CreditorTimelineController | Done | `GET /fordring/{id}/tidslinje` + `GET /fordring/{id}/poster` — creditor-filtered timeline aggregating case-service and payment-service events |
+| PaymentServiceClient (new) | Done | REST client for payment-service: `getDebtEventsByCase(caseId)` (ADR-0024 trace propagation, petition050) |
+| CaseServiceClient (extended) | Done | Added `getEventsByCase(caseId)` and `getDebtsByCaseId(caseId)` for timeline aggregation (petition050) |
+| TimelineVisibilityProperties | Done | @ConfigurationProperties for creditor-visible event category allow-list (petition050) |
+| bffFetchExecutor | Done | Fixed thread pool bean for parallel upstream fetches via CompletableFuture (petition050) |
+| claims/detail.html (skat-card) | Done | New skat-card section with HTMX-driven timeline tab on fordring detail page (petition050) |
+
+**Portal routes include:**
+- `GET /fordring/{id}/tidslinje` - Timeline tab fragment (HTMX, petition050)
+- `GET /fordring/{id}/poster` - Timeline entries, load-more (HTMX, petition050)
 
 ---
 
@@ -892,11 +911,45 @@ flowchart LR
 | WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
 | DashboardController | Done | `GET /dashboard` for authenticated citizens |
 | **Tests** | **Done** | LandingPageControllerTest, DashboardControllerTest, SecurityConfigTest, CitizenOidcUserServiceTest, PersonRegistryClientTest, ArchitectureTest |
+| **Case detail and timeline (petition050)** | **Done** | |
+| CaseDetailController | Done | `GET /cases/{caseId}` — case detail page with timeline tab |
+| CitizenTimelineController | Done | `GET /cases/{caseId}/tidslinje` + `GET /cases/{caseId}/tidslinje/entries` — citizen-filtered timeline (FINANCIAL, CASE, DEBT_LIFECYCLE categories) |
+| CaseServiceClient (new) | Done | REST client for case-service: `getEvents(caseId)` (WebClient.Builder, ADR-0024, petition050) |
+| PaymentServiceClient (new) | Done | REST client for payment-service: `getDebtEventsByCase(caseId)` (WebClient.Builder, ADR-0024, petition050) |
+| cases/detail.html | Done | Case detail page with timeline tab and HTMX-driven timeline fragment (petition050) |
+| TimelineVisibilityProperties | Done | @ConfigurationProperties for citizen-visible event category allow-list (petition050) |
 
 **Page routes:**
 - `GET /` - Landing page (public)
 - `GET /was` - Accessibility statement (public)
 - `GET /dashboard` - Authenticated citizen dashboard
+- `GET /cases/{caseId}` - Case detail page (petition050)
+- `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, petition050)
+- `GET /cases/{caseId}/tidslinje/entries` - Timeline entries, load-more (HTMX, petition050)
+
+---
+
+### caseworker-portal (Port 8093)
+
+**Purpose:** UI/BFF for sagsbehandlere (caseworkers) to manage cases, view detailed case timelines, and execute collection actions.
+
+**Accessibility requirement:** Must comply with ADR-0021 and EN 301 549 / WCAG 2.1 AA.
+
+**Implementation status:** PARTIALLY IMPLEMENTED
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| CaseworkerPortalApplication | Done | Spring Boot app |
+| cases/detail.html | Done | Case detail page; tab label renamed from Hændelseslog → Tidslinje (petition050) |
+| **Timeline (petition050)** | **Done** | |
+| CaseworkerTimelineController | Done | `GET /cases/{caseId}/tidslinje` + `GET /cases/{caseId}/tidslinje/entries` — all 7 EventCategory values visible to CASEWORKER, SUPERVISOR, ADMIN roles |
+| PaymentServiceClient (extended) | Done | `getDebtEventsByCase(caseId)` — REST client for payment-service (ADR-0024 trace propagation, petition050) |
+| bffFetchExecutor | Done | Fixed thread pool bean for parallel upstream fetches via CompletableFuture (petition050) |
+| TimelineVisibilityProperties | Done | @ConfigurationProperties (all categories enabled for caseworker role) (petition050) |
+
+**Page routes include:**
+- `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, all categories, petition050)
+- `GET /cases/{caseId}/tidslinje/entries` - Timeline entries, load-more (HTMX, petition050)
 
 ---
 
@@ -923,6 +976,20 @@ flowchart LR
 | ClsAuditEventMapper | Done | Maps audit records to CLS format with PII masking |
 | **Filebeat config** | Done | `config/filebeat/filebeat-audit.yml` - recommended CLS integration |
 | FordringValidationService | Done | 114 Drools rules for fordring validation |
+| **Timeline shared library (petition050)** | **Done** | |
+| EventCategory (enum) | Done | 7 values: CASE, DEBT_LIFECYCLE, FINANCIAL, COLLECTION, CORRESPONDENCE, OBJECTION, JOURNAL |
+| TimelineSource (enum) | Done | CASE, PAYMENT — origin of each timeline entry; not exposed in UI |
+| TimelineEntryDto | Done | Unified timeline DTO: id, timestamp, eventCategory, eventType, title, description, amount, debtId, performedBy, metadata, source, dedupeKey |
+| TimelineFilterDto | Done | Active filter state for timeline requests: eventCategories, fromDate, toDate, debtId |
+| EventCategoryMapper | Done | Static utility: eventType string → EventCategory; i18n title key resolution |
+| TimelineDeduplicator | Done | Static utility: composite-key deduplication within 60-second timestamp window |
+| TimelineEntryMapper | Done | Static utility: CaseEventDto / DebtEventDto → TimelineEntryDto mapping |
+| TimelineVisibilityProperties | Done | @ConfigurationProperties (opendebt.timeline.visibility): role → Set<EventCategory> allow-list |
+| DebtEventDto | Done | Promoted from payment-service; fields: id, eventType, debtId, amount, effectiveDate, createdAt, reference, correctsEventId |
+| templates/fragments/timeline.html | Done | Shared Thymeleaf fragment: timeline panel, filter bar, entry list, HTMX load-more button |
+| static/css/timeline.css | Done | WCAG 2.1 AA-compliant badge and icon styles for all 7 EventCategory values |
+| messages_da.properties (timeline keys) | Done | Danish i18n keys for timeline event titles and category labels |
+| messages_en_GB.properties (timeline keys) | Done | English i18n keys for timeline event titles and category labels |
 
 ## Database Architecture
 
@@ -1012,6 +1079,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0023 | Creditor Portal Frontend Technology (Thymeleaf + HTMX) |
 | 0024 | Observability Backend Stack (Grafana + Prometheus + Loki + Tempo) |
 | 0025 | Maven Build Tool |
+| 0026 | Inter-Service Resilience (Resilience4j Circuit Breaker + Retry) |
 
 ## Unit Tests
 
@@ -1069,17 +1137,18 @@ Pre-defined API specs (API-first, ADR-0004):
 
 | Service | Status | Java Files | Endpoints / Routes | DB Migrations |
 |---------|--------|-----------|-----------|---------------|
-| opendebt-common | Done | 32 | - | - |
+| opendebt-common | Done | ~41 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
 | debt-service | Done | 88 | 28 | V1-V7 |
 | case-service | Done | 10 | 8 | V1 |
 | rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
-| payment-service | Partial | 22 | 1 | V1, V2, V3 |
+| payment-service | Partial | 22 | 2 | V1, V2, V3 |
 | integration-gateway | Partial | 22 | 3 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | Scaffold | 1 | 0 | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
-| creditor-portal | Partial | 72 | 48 | - |
-| citizen-portal | Partial | 15 | 3 | - |
-| **Total** | | **321** | **105** | **16** |
+| creditor-portal | Partial | ~74 | ~50 | - |
+| citizen-portal | Partial | ~19 | 6 | - |
+| caseworker-portal | Partial | ~5 | 2 | - |
+| **Total** | | **~341** | **~113** | **16** |

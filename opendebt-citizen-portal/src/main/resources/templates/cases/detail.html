@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="da" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}">
+<head>
+  <title th:text="#{case.detail.page.title}">Sagsdetaljer</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/dashboard}" th:text="#{case.detail.breadcrumb.dashboard}">Overblik</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="${caseReference}">SAG-001</span>
+  </span>
+
+  <section layout:fragment="content">
+    <h1 th:text="#{case.detail.heading} + ' ' + ${caseReference}">Sagsdetaljer</h1>
+
+    <!-- Service error message -->
+    <div th:if="${serviceError}" class="skat-alert skat-alert--error" role="alert">
+      <p th:text="${serviceError}">Der opstod en fejl ved indlæsning af sagsoplysninger.</p>
+    </div>
+
+    <!-- Timeline tab panel — loaded lazily via HTMX on first click (spec §4.6) -->
+    <div class="skat-tabs" th:if="${serviceError == null}">
+      <ul class="skat-tabs__list" role="tablist">
+        <li role="presentation">
+          <button role="tab"
+                  id="tab-timeline"
+                  class="skat-tabs__tab skat-tabs__tab--active"
+                  aria-controls="panel-timeline"
+                  aria-selected="true"
+                  th:attr="hx-get=@{/cases/{id}/tidslinje(id=${caseId})},
+                           hx-target='#panel-timeline',
+                           hx-swap='innerHTML',
+                           hx-trigger='click once'"
+                  th:text="#{case.detail.tab.timeline}">Tidslinje</button>
+        </li>
+      </ul>
+
+      <div id="panel-timeline"
+           role="tabpanel"
+           aria-labelledby="tab-timeline"
+           class="skat-tabs__panel">
+        <p class="skat-loading" th:text="#{timeline.loading}">Indlæser tidslinje…</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

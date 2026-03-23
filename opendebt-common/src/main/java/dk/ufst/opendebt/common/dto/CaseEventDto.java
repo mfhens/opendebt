@@ -12,6 +12,7 @@ public class CaseEventDto {
 
   private UUID id;
   private UUID caseId;
+  private UUID debtId;
   private String eventType;
   private String description;
   private String metadata;

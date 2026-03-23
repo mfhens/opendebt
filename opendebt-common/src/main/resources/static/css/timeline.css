@@ -1,0 +1,108 @@
+/* Petition 050 — Unified Case Timeline CSS
+   One modifier class per EventCategory. Each uses text label AND color (WCAG 2.1 AA). */
+
+.skat-timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.skat-timeline-entry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.skat-timeline-timestamp {
+  font-size: 0.85rem;
+  color: #555;
+  min-width: 10rem;
+}
+
+/* Category badge modifiers — each uses a distinct background AND text (not colour alone) */
+.skat-badge--timeline-case {
+  background-color: #005b99;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-debt_lifecycle {
+  background-color: #6a1b9a;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-financial {
+  background-color: #1b5e20;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-collection {
+  background-color: #bf360c;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-correspondence {
+  background-color: #0277bd;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-objection {
+  background-color: #e65100;
+  color: #ffffff;
+}
+
+.skat-badge--timeline-journal {
+  background-color: #37474f;
+  color: #ffffff;
+}
+
+.skat-timeline-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.skat-timeline-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.skat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  background: #e3f2fd;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+}
+
+.skat-chip__remove {
+  text-decoration: none;
+  color: #555;
+}
+
+.skat-timeline-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #777;
+  font-style: italic;
+}
+
+.skat-timeline-amount {
+  font-weight: 600;
+  color: #1b5e20;
+}
+
+.skat-timeline-title {
+  font-weight: 500;
+}

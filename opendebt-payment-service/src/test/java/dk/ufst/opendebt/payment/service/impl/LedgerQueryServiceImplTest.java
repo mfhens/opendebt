@@ -20,12 +20,12 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import dk.ufst.opendebt.common.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
 import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
 import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
 import dk.ufst.opendebt.payment.client.CaseServiceClient;
-import dk.ufst.opendebt.payment.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.dto.LedgerEntryDto;
 import dk.ufst.opendebt.payment.dto.LedgerSummaryDto;
 

@@ -720,23 +720,50 @@ program:
         the navigation structure all other portal feature pages plug into.
       next_step: Implement FIRST in Phase 9. All other petition029-037 pages depend on this navigation structure.
 
+    petition050:
+      title: Unified Case Timeline UI
+      status: implemented
+      phase: phase-12
+      depends_on:
+        - petition048
+        - petition049
+        # TB-024 (ClaimLifecycleEvent REST endpoint) was originally listed as a hard dependency
+        # but petition050 is fully implemented using case-service events only. TB-024 remains
+        # open as a future enhancement to populate the DEBT_LIFECYCLE category.
+      last_reviewed: 2026-03-23
+      notes: >
+        Unified chronological timeline replacing the Hændelseslog tab across caseworker, citizen,
+        and creditor portals. Shared components in opendebt-common: EventCategory enum,
+        TimelineEntryDto, timeline.html Thymeleaf fragment, CSS, and i18n bundles.
+        Three portal BFF controllers (CaseworkerTimelineController, CitizenTimelineController,
+        CreditorTimelineController) plus new CaseworkerCaseDetailController. Tab renamed
+        Hændelseslog → Tidslinje in caseworker portal. OI-1 fixed (SERVICE role added to
+        payment-service). OI-2 resolved (DebtEventDto promoted to opendebt-common).
+        76 BDD test stubs written; 71 passing (all non-stub tests pass). Code review: 9 bugs
+        fixed and confirmed resolved. Architecture, agents, and site docs updated.
+        DEBT_LIFECYCLE event category will be fully populated once TB-024 is delivered.
+      next_step: Implemented. Monitor TB-024 (ClaimLifecycleEvent REST endpoint) to activate
+        DEBT_LIFECYCLE events in the timeline. TB-025/026/027 track housekeeping items
+        identified during code review.
+
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-19, post corrupted-session recovery)
+  # STATUS SUMMARY (2026-03-23, post petition050 implementation)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
   #               petition008, petition010, petition011, petition015, petition016, petition017,
   #               petition018, petition022, petition023, petition024, petition025,
   #               petition029, petition030, petition031, petition032, petition033, petition034,
-  #               petition035, petition036, petition037, petition038, petition043, petition044
+  #               petition035, petition036, petition037, petition038, petition043, petition044,
+  #               petition050
   # in_progress:  petition002
   # ready:        petition019
   # not_started:  petition026, petition027, petition028
   #
-  # Total: 40 petitions
-  #   6 validated, 29 implemented, 1 in_progress, 1 ready, 3 not_started
+  # Total: 41 petitions
+  #   6 validated, 30 implemented, 1 in_progress, 1 ready, 3 not_started
   #
-  # COMPLETED: Phases 1-7, Phase 9, Phase 10, Phase 11
+  # COMPLETED: Phases 1-7, Phase 9, Phase 10, Phase 11, Phase 12 (petition050)
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service, unblocked)
   #
@@ -960,3 +987,61 @@ program:
         assignment checks use the assignee's real capabilities.
       depends_on:
         - petition048
+
+    - id: TB-024
+      title: Expose debt-service ClaimLifecycleEvent via REST endpoint
+      status: not_started
+      priority: high
+      created: 2026-03-23
+      description: |
+        ClaimLifecycleEvent entity exists in debt-service (table claim_lifecycle_events)
+        tracking state transitions (previousState → newState) per debt, but has no REST
+        endpoint. Petition050 (Unified Case Timeline UI) was implemented without these events
+        (using case-service events only); DEBT_LIFECYCLE category will be fully populated once
+        this is delivered. Add GET /api/v1/debts/{debtId}/lifecycle-events and
+        GET /api/v1/lifecycle-events/case/{caseId} endpoints returning lifecycle events
+        sorted by occurredAt descending. Include in the opendebt-common DTO layer.
+      needed_by:
+        - petition050  # DEBT_LIFECYCLE timeline category; petition050 implemented without it
+
+    - id: TB-025
+      title: Remove dead EventCategoryMapper.PAYMENT_APPLIED entry from CASE_CATEGORIES
+      status: done
+      priority: low
+      created: 2026-03-23
+      resolved: 2026-03-23
+      description: |
+        EventCategoryMapper contained a PAYMENT_APPLIED entry in the CASE_CATEGORIES set that
+        was never used by any timeline query or BFF controller. The entry was a dead mapping
+        introduced during early timeline prototyping. Removed in the petition050 implementation
+        session during code-review fix pass. No further action required.
+
+    - id: TB-026
+      title: Cancel BFF timeline futures after 4-second timeout to free upstream threads
+      status: not_started
+      priority: medium
+      created: 2026-03-23
+      description: |
+        The three portal BFF timeline controllers (CaseworkerTimelineController,
+        CitizenTimelineController, CreditorTimelineController) use CompletableFuture.allOf
+        to fan out to case-service, payment-service, and debt-service. A 4-second timeout is
+        applied on the combined future, but the individual upstream WebClient requests are not
+        cancelled when the timeout fires. This means upstream threads remain occupied until
+        the WebClient connection/read timeout elapses. Fix by wiring cancellation: call
+        future.cancel(true) on each per-service future inside the timeout catch block, and
+        ensure the WebClient subscriptions are disposed accordingly.
+      depends_on:
+        - petition050
+
+    - id: TB-027
+      title: Confirm and clean up residual loadEvents() references in caseworker CaseDetailController
+      status: not_started
+      priority: low
+      created: 2026-03-23
+      description: |
+        The caseworker portal CaseDetailController was refactored as part of the Hændelseslog →
+        Tidslinje tab migration in petition050. Verify that no residual loadEvents() method
+        calls or dead event-loading code paths remain in the controller or its Thymeleaf
+        templates after the migration. If any are found, remove them and update affected tests.
+      depends_on:
+        - petition050

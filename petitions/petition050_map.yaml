@@ -1,0 +1,408 @@
+# petition050_map.yaml
+# Component Assignment Map for Petition 050: Unified Case Timeline UI
+#
+# ⚠️  NOTE: No /design/components/*.yaml definitions exist in this repository.
+#     Components are mapped to Maven module identifiers (as they appear in the
+#     project structure).  Downstream agents should treat these identifiers as
+#     module-level ownership boundaries.
+#
+# Component legend:
+#   opendebt-common              — shared DTOs, Thymeleaf fragments, CSS, utilities
+#   opendebt-caseworker-portal   — caseworker BFF controller, Spring MVC, Thymeleaf views
+#   opendebt-citizen-portal      — citizen    BFF controller, Spring MVC, Thymeleaf views
+#   opendebt-creditor-portal     — creditor   BFF controller, Spring MVC, Thymeleaf views
+#   opendebt-case-service        — upstream event data source (read-only in this petition)
+#   opendebt-payment-service     — upstream financial event data source (read-only)
+
+petition_id: petition050
+
+scenarios:
+
+  # ── Data Aggregation ──────────────────────────────────────────────────────
+
+  - id: "001"
+    title: "Timeline merges events from case-service and payment-service"
+    component: opendebt-caseworker-portal          # primary: BFF merge logic
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-2.1, FR-2.2]
+    rationale: >
+      The BFF controller in each portal fetches from GET /api/v1/cases/{id}/events
+      (case-service) and GET /api/v1/events/case/{caseId} (payment-service), then
+      merges and sorts the results.  All three portals own this logic for their
+      respective user base; opendebt-caseworker-portal is listed as primary because
+      it is the canonical first implementation surface.
+
+  - id: "002"
+    title: "Timeline normalises events into a common structure"
+    component: opendebt-common
+    secondary_components:
+      - opendebt-caseworker-portal
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-1.1, FR-1.2, FR-1.3]
+    rationale: >
+      TimelineEntryDto and the mapping logic from CaseEventDto / DebtEventDto live
+      in opendebt-common (FR-8.1).  Each portal's BFF controller calls that mapping
+      utility, making common the correct primary owner.
+
+  - id: "003"
+    title: "Duplicate events from overlapping sources are deduplicated"
+    component: opendebt-caseworker-portal          # primary: BFF merge algorithm
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-2.2]
+    rationale: >
+      Deduplication is part of the merge-and-sort step executed inside each portal's
+      BFF controller; it is not a shared utility in common because it may need
+      portal-specific tuning on which fields constitute a duplicate.
+
+  # ── Role-Based Visibility: Caseworker / Supervisor / Admin ───────────────
+
+  - id: "004"
+    title: "Caseworker sees all event categories"
+    component: opendebt-caseworker-portal
+    fr_refs: [FR-3.1, FR-3.4]
+    rationale: >
+      The caseworker portal BFF applies the CASEWORKER visibility matrix (all 7
+      categories) before rendering.  The mapping is driven by configuration
+      properties owned by this portal module.
+
+  - id: "005"
+    title: "Supervisor sees all event categories"
+    component: opendebt-caseworker-portal
+    fr_refs: [FR-3.1, FR-3.4]
+    rationale: >
+      SUPERVISOR is a caseworker-portal role; the same all-categories visibility
+      matrix applies.  Same portal, same configuration property namespace.
+
+  - id: "006"
+    title: "Admin sees all event categories"
+    component: opendebt-caseworker-portal
+    fr_refs: [FR-3.1, FR-3.4]
+    rationale: >
+      ADMIN is managed within the caseworker portal; visibility matrix identical
+      to CASEWORKER/SUPERVISOR.
+
+  # ── Role-Based Visibility: Citizen ───────────────────────────────────────
+
+  - id: "007"
+    title: "Citizen sees only citizen-appropriate events"
+    component: opendebt-citizen-portal
+    fr_refs: [FR-3.2, FR-3.4]
+    rationale: >
+      The citizen portal BFF filters to FINANCIAL, DEBT_LIFECYCLE, CORRESPONDENCE,
+      COLLECTION before rendering.  Visibility is configured in citizen portal
+      application properties; no template-level role-checking is permitted.
+
+  # ── Role-Based Visibility: Creditor ──────────────────────────────────────
+
+  - id: "008"
+    title: "Creditor sees only creditor-appropriate events"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-3.3, FR-3.4]
+    rationale: >
+      The creditor portal BFF filters to FINANCIAL, DEBT_LIFECYCLE, COLLECTION.
+      Same pattern as citizen portal; visibility matrix lives in creditor portal
+      application properties.
+
+  # ── Visibility Configuration ──────────────────────────────────────────────
+
+  - id: "009"
+    title: "Visibility rules are read from external configuration, not templates"
+    component: opendebt-caseworker-portal          # primary: first portal with full matrix
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-3.4]
+    rationale: >
+      Each portal externalises its role-to-category map into application.properties
+      (or a shared config service backed by Petition 047).  No Thymeleaf template
+      may contain role-checking logic for event filtering.  All three portals own
+      their slice of configuration; caseworker-portal is primary as the most
+      complete matrix.
+
+  # ── Timeline UI Rendering ─────────────────────────────────────────────────
+
+  - id: "010"
+    title: "Hændelseslog tab is replaced by Tidslinje tab"
+    component: opendebt-caseworker-portal          # primary (tab HTML lives here)
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-7.1, FR-7.2]
+    rationale: >
+      Each portal owns its own case-detail Thymeleaf page that hosts the tab strip.
+      The tab label change ("Hændelseslog" → "Tidslinje") and fragment wiring must
+      be done in all three portal modules' templates and messages.properties.
+
+  - id: "011"
+    title: "Financial entries display formatted amount"
+    component: opendebt-common
+    fr_refs: [FR-4.5]
+    rationale: >
+      Amount formatting (Danish locale, DKK) is a presentation concern implemented
+      once inside the shared fragments/timeline.html fragment and any associated
+      Thymeleaf utility in opendebt-common, ensuring all portals render identically.
+
+  - id: "012"
+    title: "Debt-linked entries link to debt detail"
+    component: opendebt-common
+    fr_refs: [FR-4.6]
+    rationale: >
+      The debt reference link is rendered in the shared timeline fragment.  URL
+      construction follows the per-portal debt detail route, passed as a fragment
+      parameter by each portal's BFF controller.
+
+  - id: "013"
+    title: "Entries are visually categorised with badges"
+    component: opendebt-common
+    fr_refs: [FR-4.4]
+    rationale: >
+      Colour-coded category badges are a visual concern implemented once in the
+      shared Thymeleaf fragment and accompanying CSS in opendebt-common, keeping
+      the SKAT design-system mapping consistent across portals.
+
+  - id: "014"
+    title: "Timeline UI renders required fields for a non-financial entry"
+    component: opendebt-common
+    fr_refs: [FR-4.2, FR-4.3]
+    rationale: >
+      Displaying timestamp, category badge, title, and description is the
+      responsibility of the shared fragments/timeline.html in opendebt-common.
+
+  - id: "015"
+    title: "Posteringslog tab is preserved unchanged"
+    component: opendebt-caseworker-portal          # primary (tab exists only here today)
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-7.3]
+    rationale: >
+      Ensuring the Posteringslog tab survives the migration is a negative-change
+      guard owned by whichever portal template wraps the tab strip.  The caseworker
+      portal currently exposes this tab; the other portals must confirm it is absent
+      (not introduced unexpectedly).
+
+  - id: "016"
+    title: "All portals render FINANCIAL entries with identical formatting"
+    component: opendebt-common
+    fr_refs: [FR-4.5, FR-8.1]
+    rationale: >
+      Because all three portals use the same shared Thymeleaf fragment, financial
+      formatting consistency is guaranteed by the single common implementation
+      rather than per-portal duplication.
+
+  # ── Filtering ─────────────────────────────────────────────────────────────
+
+  - id: "017"
+    title: "Filter by single event category"
+    component: opendebt-caseworker-portal          # primary: BFF filter parameter handling
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common                            # HTMX filter-bar fragment
+    fr_refs: [FR-5.1, FR-5.2, FR-2.5]
+    rationale: >
+      Category filtering spans two layers: the filter-bar UI in opendebt-common
+      (shared fragment) and the BFF controller query parameter handling in each
+      portal.  The portal BFF is primary as it enforces role-aware filter bounds.
+
+  - id: "018"
+    title: "Filter by multiple event categories"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common
+    fr_refs: [FR-5.1, FR-5.2, FR-2.5]
+    rationale: >
+      Multi-select category filtering follows the same two-layer split as single
+      category filtering; the BFF must handle a collection of categories.
+
+  - id: "019"
+    title: "Filter by date range"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common
+    fr_refs: [FR-5.1, FR-5.2, FR-2.5]
+    rationale: >
+      Date range parameters (fromDate, toDate) are accepted by each portal BFF
+      controller and applied during the merge-and-filter step.  The date picker UI
+      lives in the shared fragment in opendebt-common.
+
+  - id: "020"
+    title: "Filter by specific debt"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common
+    fr_refs: [FR-5.1, FR-5.2, FR-2.5]
+    rationale: >
+      Debt filtering (debtId query param) is handled by each portal BFF; the
+      debt selector dropdown population and HTMX wiring live in the shared fragment.
+
+  - id: "021"
+    title: "Active filters are displayed as chips"
+    component: opendebt-common
+    fr_refs: [FR-5.3]
+    rationale: >
+      Filter chip rendering is a UI concern fully contained in the shared
+      fragments/timeline.html (or a companion filter fragment).  No portal-specific
+      logic is required.
+
+  - id: "022"
+    title: "Removing a filter chip deactivates that filter"
+    component: opendebt-common
+    fr_refs: [FR-5.3]
+    rationale: >
+      Chip removal triggers an HTMX request that replaces the timeline fragment;
+      both the remove action and the HTMX attribute wiring live in the shared
+      fragment in opendebt-common.
+
+  - id: "023"
+    title: "Clear all filters resets the timeline"
+    component: opendebt-common
+    fr_refs: [FR-5.4]
+    rationale: >
+      The "Clear all filters" control is part of the shared filter-bar fragment;
+      its HTMX swap target resets the timeline to the unfiltered state.
+
+  # ── Lazy Loading / Pagination ─────────────────────────────────────────────
+
+  - id: "024"
+    title: "Initial load displays 25 entries with load-more button"
+    component: opendebt-caseworker-portal          # BFF default page size
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common                            # "Load more" button in fragment
+    fr_refs: [FR-6.1, FR-6.2, FR-2.4]
+    rationale: >
+      The BFF enforces page=1&size=25 defaults; the "Load more" button and its
+      HTMX hx-get attribute are rendered by the shared timeline fragment.
+
+  - id: "025"
+    title: "Load more appends next page of entries"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common
+    fr_refs: [FR-6.2, FR-6.3, FR-2.4]
+    rationale: >
+      The BFF controller serves the paginated endpoint; the HTMX hx-swap="beforeend"
+      pattern that appends entries is declared in the shared fragment.
+
+  - id: "026"
+    title: "Load more is hidden when all entries are loaded"
+    component: opendebt-common
+    fr_refs: [FR-6.4]
+    rationale: >
+      The visibility of the "Load more" button is controlled by a flag on the
+      timeline fragment model (hasMore); the fragment conditionally renders the
+      button, making this purely a shared-component concern.
+
+  - id: "027"
+    title: "Filters apply to paginated results"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-2.4, FR-2.5, FR-6.3]
+    rationale: >
+      The BFF controller propagates active filter parameters across pagination
+      requests; this is server-side query logic owned by each portal BFF.
+
+  # ── Cross-Portal Consistency ──────────────────────────────────────────────
+
+  - id: "028"
+    title: "Caseworker portal renders the timeline"
+    component: opendebt-caseworker-portal
+    fr_refs: [FR-8.2]
+    rationale: >
+      End-to-end rendering for the caseworker role — BFF controller + Thymeleaf
+      view wiring — is the responsibility of opendebt-caseworker-portal.
+
+  - id: "029"
+    title: "Citizen portal renders the timeline with restricted events"
+    component: opendebt-citizen-portal
+    fr_refs: [FR-8.2, FR-3.2]
+    rationale: >
+      End-to-end rendering for the citizen role including role-based filtering
+      is owned by opendebt-citizen-portal.
+
+  - id: "030"
+    title: "Creditor portal renders the timeline with restricted events"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-8.2, FR-3.3]
+    rationale: >
+      End-to-end rendering for the creditor role including role-based filtering
+      is owned by opendebt-creditor-portal.
+
+  # ── Graceful Degradation ──────────────────────────────────────────────────
+
+  - id: "031"
+    title: "Empty case shows no-events message"
+    component: opendebt-common
+    fr_refs: [FR-4.1]
+    rationale: >
+      The "Ingen hændelser registreret" empty-state message is a fragment-level
+      concern: when the BFF returns an empty list, the shared timeline fragment
+      renders the placeholder.  No portal-specific logic required.
+
+  - id: "032"
+    title: "Missing correspondence events handled gracefully"
+    component: opendebt-common
+    secondary_components:
+      - opendebt-caseworker-portal
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+    fr_refs: [FR-4.1]
+    rationale: >
+      The shared fragment must not render an empty CORRESPONDENCE section or error
+      when no entries arrive.  The BFF controllers must also not fail if the
+      letter-service emits nothing; both layers share this responsibility.
+
+  - id: "033"
+    title: "Partial data when one service is unavailable"
+    component: opendebt-caseworker-portal          # BFF partial-failure handling
+    secondary_components:
+      - opendebt-citizen-portal
+      - opendebt-creditor-portal
+      - opendebt-common                            # warning banner in fragment
+    fr_refs: [FR-2.1, FR-2.2]
+    rationale: >
+      Each portal BFF must handle service-call failures gracefully (try-catch /
+      CircuitBreaker), pass a partialFailure flag to the view, and the shared
+      fragment renders the "Nogle hændelser kunne ikke hentes" warning banner.
+
+---
+# Summary
+total_scenarios_mapped: 33
+components_missing: []                   # All scenarios map to known module identifiers
+new_component_definitions_required:
+  - id: opendebt-common/TimelineEntryDto
+    note: >
+      New class; does not yet exist.  Must be created under opendebt-common
+      as part of FR-1.1 implementation before any portal BFF can compile.
+  - id: opendebt-common/fragments/timeline.html
+    note: >
+      New Thymeleaf fragment.  Must be created in opendebt-common and declared
+      as a shared template path available to all portal Spring Boot contexts.
+  - id: per-portal visibility configuration
+    note: >
+      New @ConfigurationProperties bean per portal (e.g. TimelineVisibilityProperties)
+      reading timeline.visibility.roles.* from application.properties.
+      Not a new Maven module; a new Spring component within each portal module.
+changes_to_existing_maps: false          # No prior map file existed for petition050
+note: >
+  /design/components/*.yaml definitions do not exist in this repository.
+  Component identifiers above correspond directly to Maven module directory names
+  at the repository root.  Downstream agents should treat them as module-level
+  ownership boundaries when generating implementation tasks.

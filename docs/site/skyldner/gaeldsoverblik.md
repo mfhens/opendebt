@@ -36,5 +36,16 @@ For hver fordring kan du se:
 ## Hvad kan du gøre?
 
 - **Betale**: Se [Betaling](betaling.md) for betalingsmuligheder
+- **Se sagsdetaljer og tidslinje**: Klik på en fordring for at åbne sagsdetailsiden, der viser en kronologisk tidslinje over betalinger, statusændringer og meddelelser
 - **Gøre indsigelse**: Hvis du mener en fordring er forkert, se [Indsigelse](indsigelse.md)
 - **Kontakte Gældsstyrelsen**: Se [Kontakt](kontakt.md)
+
+## Sagsdetaljer og tidslinje
+
+Fra gældsoversigten kan du åbne en sagsdetailside for den enkelte fordring. Her finder du en **Tidslinje**-fane med en kronologisk oversigt over:
+
+- Betalinger modtaget
+- Statusændringer (f.eks. overdraget til inddrivelse)
+- Meddelelser sendt til dig
+
+Tidslinjen opdateres løbende og kan filtreres på kategori og datointerval. Brug **Indlæs flere** for at se ældre hændelser.

@@ -87,6 +87,12 @@ opendebt:
       url: ${PERSON_REGISTRY_URL:http://localhost:8083}
     reporting-service:
       url: ${REPORTING_SERVICE_URL:http://localhost:8094}
+    payment-service:
+      url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+  timeline:
+    visibility:
+      role-categories:
+        CREDITOR: FINANCIAL,DEBT_LIFECYCLE,COLLECTION
 
 resilience4j:
   circuitbreaker:
@@ -112,6 +118,8 @@ resilience4j:
         baseConfig: default
       notification-service:
         baseConfig: default
+      payment-service:
+        baseConfig: default
   retry:
     configs:
       default:
@@ -129,4 +137,6 @@ resilience4j:
       creditor-service:
         baseConfig: default
       person-registry:
+        baseConfig: default
+      payment-service:
         baseConfig: default

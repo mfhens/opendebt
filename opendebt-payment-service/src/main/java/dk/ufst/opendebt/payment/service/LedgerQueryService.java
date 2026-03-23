@@ -7,8 +7,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import dk.ufst.opendebt.common.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
-import dk.ufst.opendebt.payment.dto.DebtEventDto;
 import dk.ufst.opendebt.payment.dto.LedgerEntryDto;
 import dk.ufst.opendebt.payment.dto.LedgerSummaryDto;
 

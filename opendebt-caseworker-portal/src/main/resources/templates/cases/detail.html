@@ -70,7 +70,10 @@
                   th:text="#{case.detail.tab.posteringslog}">Posteringslog</button>
           <button role="tab" id="tab-events" aria-controls="panel-events" aria-selected="false"
                   class="skat-btn skat-btn--sm skat-btn--secondary"
-                  onclick="showTab('events')" th:text="#{case.detail.tab.events}">H&#230;ndelseslog</button>
+                  onclick="showTab('events')"
+                  th:attr="hx-get=@{/cases/{id}/tidslinje(id=${caseDto.id})}"
+                  hx-target="#panel-events" hx-swap="innerHTML" hx-trigger="click once"
+                  th:text="#{case.detail.tab.timeline}">Tidslinje</button>
           <button role="tab" id="tab-measures" aria-controls="panel-measures" aria-selected="false"
                   class="skat-btn skat-btn--sm skat-btn--secondary"
                   onclick="showTab('measures')" th:text="#{case.detail.tab.measures}">Inddrivelsesskridt</button>
@@ -183,29 +186,9 @@
           <p th:text="#{posteringslog.title}">Posteringslog</p>
         </div>
 
-        <!-- Events tab panel -->
+        <!-- Events/Timeline tab panel — content loaded lazily via HTMX on tab click -->
         <div role="tabpanel" id="panel-events" aria-labelledby="tab-events" style="display: none;">
-          <table class="skat-table">
-            <thead>
-              <tr>
-                <th scope="col" th:text="#{event.type}">H&#230;ndelsestype</th>
-                <th scope="col" th:text="#{event.description}">Beskrivelse</th>
-                <th scope="col" th:text="#{event.performedBy}">Udf&#248;rt af</th>
-                <th scope="col" th:text="#{event.performedAt}">Tidspunkt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:if="${events == null or events.isEmpty()}">
-                <td colspan="4" th:text="#{events.empty}">Ingen h&#230;ndelser fundet.</td>
-              </tr>
-              <tr th:each="e : ${events}">
-                <td th:text="${e.eventType ?: '—'}">—</td>
-                <td th:text="${e.description ?: '—'}">—</td>
-                <td th:text="${e.performedBy ?: '—'}">—</td>
-                <td th:text="${e.performedAt != null} ? ${#temporals.format(e.performedAt, 'dd-MM-yyyy HH:mm')} : '—'">—</td>
-              </tr>
-            </tbody>
-          </table>
+          <p th:text="#{timeline.loading}">Indl&#230;ser tidslinje&#x2026;</p>
         </div>
 
         <!-- Collection measures tab panel -->

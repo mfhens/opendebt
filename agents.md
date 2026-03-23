@@ -19,6 +19,14 @@ OpenDebt is an open-source debt collection system for Danish public institutions
 ### Diagrams
 Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagrams). Embed Mermaid blocks directly in Markdown files using ` ```mermaid ` fenced code blocks. Do NOT use ASCII art or draw.io.
 
+### External API and SDK Documentation
+When implementing against third-party libraries, SDKs, or external APIs, prefer the local Claude skill in `~/.claude/skills/get-api-docs/` and its `chub` workflow before relying on remembered API shapes.
+
+- Use `chub search "<library or API name>"` to find the correct documentation ID
+- Use `chub get <id> [--lang <lang>]` to fetch current documentation
+- Use the fetched documentation as the implementation reference
+- If useful, save concise local notes with `chub annotate <id> "..."`
+
 ### Documentation Maintenance (CRITICAL)
 **Every time source code is changed, check and update the following documentation if affected:**
 - `docs/architecture-overview.md` - Service inventory, implementation status, diagrams, endpoint lists
@@ -150,6 +158,19 @@ dk.ufst.opendebt.<service>/
 ├── dto/             # Data transfer objects
 ├── mapper/          # MapStruct mappers
 └── exception/       # Custom exceptions
+```
+
+Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
+
+```
+dk.ufst.opendebt.common/
+├── audit/           # AuditableEntity, ClsAuditClient, audit infrastructure
+├── dto/             # Cross-service shared DTOs (CaseDto, DebtDto, DebtEventDto, …)
+├── exception/       # OpenDebtException, ErrorResponse, GlobalExceptionHandler
+└── timeline/        # Petition050 unified timeline: EventCategory, TimelineSource,
+                     #   TimelineEntryDto, TimelineFilterDto, EventCategoryMapper,
+                     #   TimelineDeduplicator, TimelineEntryMapper,
+                     #   TimelineVisibilityProperties
 ```
 
 ### Naming Conventions
@@ -368,6 +389,7 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0023: Creditor Portal Frontend Technology (Thymeleaf + HTMX)
 - ADR-0024: Observability Backend Stack (Grafana + Prometheus + Loki + Tempo)
 - ADR-0025: Maven Build Tool
+- ADR-0026: Inter-Service Resilience (Resilience4j Circuit Breaker + Retry)
 
 ## Standard Components
 
