@@ -144,12 +144,16 @@ public class ClaimLifecycleServiceImpl implements ClaimLifecycleService {
   @Override
   @Transactional
   public DebtEntity transferForCollection(UUID debtId) {
-    return transferForCollection(debtId, null);
+    return doTransferForCollection(debtId, null);
   }
 
   @Override
   @Transactional
   public DebtEntity transferForCollection(UUID debtId, UUID recipientId) {
+    return doTransferForCollection(debtId, recipientId);
+  }
+
+  private DebtEntity doTransferForCollection(UUID debtId, UUID recipientId) {
     DebtEntity debt = findDebt(debtId);
 
     if (debt.getLifecycleState() != ClaimLifecycleState.RESTANCE) {

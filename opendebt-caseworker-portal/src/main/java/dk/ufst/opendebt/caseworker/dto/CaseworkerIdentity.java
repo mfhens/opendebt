@@ -1,5 +1,8 @@
 package dk.ufst.opendebt.caseworker.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +13,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CaseworkerIdentity {
+public class CaseworkerIdentity implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
 
   private String id;
   private String name;

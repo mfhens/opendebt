@@ -170,7 +170,23 @@ public class PersonServiceImpl implements PersonService {
 
     log.info("Person updated: personId={}", personId);
 
-    return getPersonById(updatedPerson.getId());
+    return PersonDto.builder()
+        .id(updatedPerson.getId())
+        .identifierType(updatedPerson.getIdentifierType().name())
+        .role(updatedPerson.getRole().name())
+        .name(encryptionService.decrypt(updatedPerson.getNameEncrypted()))
+        .addressStreet(encryptionService.decrypt(updatedPerson.getAddressStreetEncrypted()))
+        .addressCity(encryptionService.decrypt(updatedPerson.getAddressCityEncrypted()))
+        .addressPostalCode(encryptionService.decrypt(updatedPerson.getAddressPostalCodeEncrypted()))
+        .addressCountry(encryptionService.decrypt(updatedPerson.getAddressCountryEncrypted()))
+        .email(encryptionService.decrypt(updatedPerson.getEmailEncrypted()))
+        .phone(encryptionService.decrypt(updatedPerson.getPhoneEncrypted()))
+        .digitalPostEnabled(updatedPerson.getDigitalPostEnabled())
+        .eboksEnabled(updatedPerson.getEboksEnabled())
+        .createdAt(updatedPerson.getCreatedAt())
+        .updatedAt(updatedPerson.getUpdatedAt())
+        .deleted(updatedPerson.isDeleted())
+        .build();
   }
 
   @Override

@@ -1,5 +1,7 @@
 package dk.ufst.opendebt.creditor.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,7 +15,9 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClaimSubmissionResultDto {
+public class ClaimSubmissionResultDto implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
 
   /** Submission outcome: UDFOERT (accepted), AFVIST (rejected), HOERING (pending hearing). */
   private String outcome;

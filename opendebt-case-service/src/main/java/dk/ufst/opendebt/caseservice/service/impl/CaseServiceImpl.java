@@ -187,6 +187,10 @@ public class CaseServiceImpl implements CaseService {
   @Override
   @Transactional
   public void addDebtToCase(UUID caseId, UUID debtId) {
+    linkDebtToCase(caseId, debtId);
+  }
+
+  private void linkDebtToCase(UUID caseId, UUID debtId) {
     if (!caseRepository.existsById(caseId)) {
       throw new OpenDebtException(CASE_NOT_FOUND_PREFIX + caseId, CASE_NOT_FOUND_CODE);
     }
@@ -234,7 +238,7 @@ public class CaseServiceImpl implements CaseService {
     }
 
     if (existingCase != null) {
-      addDebtToCase(existingCase.getId(), debtId);
+      linkDebtToCase(existingCase.getId(), debtId);
       recordEvent(existingCase.getId(), CaseEventType.DEBT_ADDED, "Debt added to existing case");
       log.info("Assigned debt {} to existing case {}", debtId, existingCase.getCaseNumber());
       return AssignDebtToCaseResponse.builder()
@@ -271,7 +275,7 @@ public class CaseServiceImpl implements CaseService {
     casePartyRepository.save(partyEntity);
 
     // Link debt
-    addDebtToCase(savedCase.getId(), debtId);
+    linkDebtToCase(savedCase.getId(), debtId);
 
     // Record events
     recordEvent(savedCase.getId(), CaseEventType.CASE_CREATED, "Case created for incoming claim");

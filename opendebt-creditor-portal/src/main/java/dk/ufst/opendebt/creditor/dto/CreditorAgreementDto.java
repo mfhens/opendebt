@@ -1,5 +1,7 @@
 package dk.ufst.opendebt.creditor.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,7 +13,9 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreditorAgreementDto {
+public class CreditorAgreementDto implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
 
   private boolean portalActionsAllowed;
   private boolean allowCreateRecoveryClaims;
