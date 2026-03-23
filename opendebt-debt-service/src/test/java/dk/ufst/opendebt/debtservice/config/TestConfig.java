@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
@@ -25,6 +26,14 @@ public class TestConfig {
         .thenReturn(ValidateActionResponse.builder().allowed(true).build());
     when(mockClient.isCreditorAllowedToCreateClaim(any(UUID.class))).thenReturn(true);
     when(mockClient.isCreditorAllowedToUpdateClaim(any(UUID.class))).thenReturn(true);
+    return mockClient;
+  }
+
+  @Bean
+  @Primary
+  public ClsAuditClient clsAuditClient() {
+    ClsAuditClient mockClient = mock(ClsAuditClient.class);
+    when(mockClient.isEnabled()).thenReturn(false);
     return mockClient;
   }
 }

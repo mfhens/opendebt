@@ -1,6 +1,6 @@
 # OpenDebt Consolidated Execution Plan
 
-**Last updated:** 2026-03-22
+**Last updated:** 2026-03-23
 **Supersedes:** execution-plan-2026-03-14.md, execution-plan-2026-03-15.md, execution-plan-2026-03-16.md, execution-plan-wave7-psrm-collection.md, execution-plan-skyldnerportal.md
 
 ---
@@ -36,6 +36,13 @@
 | Phase 13 | RBAC hardening (petition048) | Planned (Sprint 16) |
 
 ### Recent work (2026-03-17 to 2026-03-21)
+
+- **W9-RBAC-03 convergence implementation started** (2026-03-23):
+  - Assignment audit events now persisted in case-service for both approved assignments (`CASEWORKER_ASSIGNED`) and denied assignments (`ASSIGNMENT_DENIED`) with reason metadata.
+  - Debt-service access checkers now ship CLS audit events for authorization decisions on claim and debt access (granted and denied paths).
+  - Targeted unit tests validate assignment audit persistence and denied authorization audit event emission in case-service and debt-service.
+  - Added petition048 Cucumber acceptance scenarios in debt-service for citizen/creditor/admin scope enforcement and downstream re-validation behavior.
+  - Added ADR-0007-focused Spring integration tests proving debt-service independently re-validates citizen and creditor access (spoof-resistant downstream checks).
 
 - **Petition 045/046 foundation implemented** (2026-03-21):
   - **Batch idempotency optimization** (TB-016): Replaced 1,000 per-debt `existsByDebtIdAndAccrualDate` queries per page with single `findAlreadyAccruedDebtIds` batch query returning `Set<UUID>`. Net effect: -999 queries per page.

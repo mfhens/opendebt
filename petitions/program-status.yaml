@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-19
-  updated_by: factory-droid (Petitions 003-007, 011, 022-025, 043, 044 implemented — 258 debt-service tests pass)
+  updated_at: 2026-03-23
+  updated_by: factory-droid (W9-RBAC-03 convergence in progress; assignment/debt authorization audit events implemented plus petition048 BDD and ADR-0007 re-validation integration tests)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]

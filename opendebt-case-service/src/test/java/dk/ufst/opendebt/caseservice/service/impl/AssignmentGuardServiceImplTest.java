@@ -1,6 +1,7 @@
 package dk.ufst.opendebt.caseservice.service.impl;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Set;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import dk.ufst.opendebt.caseservice.entity.CaseSensitivity;
+import dk.ufst.opendebt.caseservice.repository.CaseEventRepository;
 
 /**
  * Unit tests for {@link AssignmentGuardServiceImpl}.
@@ -34,6 +37,8 @@ import dk.ufst.opendebt.caseservice.entity.CaseSensitivity;
  */
 @ExtendWith(MockitoExtension.class)
 class AssignmentGuardServiceImplTest {
+
+  @Mock private CaseEventRepository caseEventRepository;
 
   @InjectMocks private AssignmentGuardServiceImpl assignmentGuardService;
 
@@ -57,6 +62,9 @@ class AssignmentGuardServiceImplTest {
                 assignmentGuardService.validateAssignment(
                     caseId, "caseworker123", CaseSensitivity.VIP))
         .doesNotThrowAnyException();
+
+    verify(caseEventRepository)
+        .save(argThat(event -> event.getEventType().name().equals("CASEWORKER_ASSIGNED")));
   }
 
   @Test
@@ -72,6 +80,9 @@ class AssignmentGuardServiceImplTest {
                     caseId, "caseworker123", CaseSensitivity.VIP))
         .isInstanceOf(AccessDeniedException.class)
         .hasMessageContaining("CASEWORKER_LACKS_VIP_PERMISSION");
+
+    verify(caseEventRepository)
+        .save(argThat(event -> event.getEventType().name().equals("ASSIGNMENT_DENIED")));
   }
 
   @Test

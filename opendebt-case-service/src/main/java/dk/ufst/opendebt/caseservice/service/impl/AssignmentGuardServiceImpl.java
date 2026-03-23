@@ -1,11 +1,15 @@
 package dk.ufst.opendebt.caseservice.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import dk.ufst.opendebt.caseservice.entity.CaseEventEntity;
+import dk.ufst.opendebt.caseservice.entity.CaseEventType;
 import dk.ufst.opendebt.caseservice.entity.CaseSensitivity;
+import dk.ufst.opendebt.caseservice.repository.CaseEventRepository;
 import dk.ufst.opendebt.caseservice.service.AssignmentGuardService;
 import dk.ufst.opendebt.common.security.AuthContext;
 
@@ -35,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class AssignmentGuardServiceImpl implements AssignmentGuardService {
+
+  private final CaseEventRepository caseEventRepository;
 
   /**
    * Validates case assignment based on sensitivity and caseworker capabilities.
@@ -73,6 +79,12 @@ public class AssignmentGuardServiceImpl implements AssignmentGuardService {
 
     // Rule 5.3: CONFIDENTIAL cases cannot be assigned to caseworkers
     if (sensitivity == CaseSensitivity.CONFIDENTIAL) {
+      recordAssignmentDeniedEvent(
+          caseId,
+          targetCaseworkerId,
+          sensitivity,
+          authContext.getUserId(),
+          "CONFIDENTIAL_CASE_RESTRICTED");
       log.warn(
           "Rejected CONFIDENTIAL case assignment: caseId={}, targetCaseworker={}",
           caseId,
@@ -82,25 +94,33 @@ public class AssignmentGuardServiceImpl implements AssignmentGuardService {
     }
 
     // Rule 5.2: VIP cases require HANDLE_VIP_CASES capability
-    if (sensitivity == CaseSensitivity.VIP) {
-      if (!authContext.hasCapability("HANDLE_VIP_CASES")) {
-        log.warn(
-            "Rejected VIP case assignment due to missing capability: caseId={}, targetCaseworker={}",
-            caseId,
-            targetCaseworkerId);
-        throw new AccessDeniedException("CASEWORKER_LACKS_VIP_PERMISSION");
-      }
+    if (sensitivity == CaseSensitivity.VIP && !authContext.hasCapability("HANDLE_VIP_CASES")) {
+      recordAssignmentDeniedEvent(
+          caseId,
+          targetCaseworkerId,
+          sensitivity,
+          authContext.getUserId(),
+          "CASEWORKER_LACKS_VIP_PERMISSION");
+      log.warn(
+          "Rejected VIP case assignment due to missing capability: caseId={}, targetCaseworker={}",
+          caseId,
+          targetCaseworkerId);
+      throw new AccessDeniedException("CASEWORKER_LACKS_VIP_PERMISSION");
     }
 
     // Rule 5.2: PEP cases require HANDLE_PEP_CASES capability
-    if (sensitivity == CaseSensitivity.PEP) {
-      if (!authContext.hasCapability("HANDLE_PEP_CASES")) {
-        log.warn(
-            "Rejected PEP case assignment due to missing capability: caseId={}, targetCaseworker={}",
-            caseId,
-            targetCaseworkerId);
-        throw new AccessDeniedException("CASEWORKER_LACKS_PEP_PERMISSION");
-      }
+    if (sensitivity == CaseSensitivity.PEP && !authContext.hasCapability("HANDLE_PEP_CASES")) {
+      recordAssignmentDeniedEvent(
+          caseId,
+          targetCaseworkerId,
+          sensitivity,
+          authContext.getUserId(),
+          "CASEWORKER_LACKS_PEP_PERMISSION");
+      log.warn(
+          "Rejected PEP case assignment due to missing capability: caseId={}, targetCaseworker={}",
+          caseId,
+          targetCaseworkerId);
+      throw new AccessDeniedException("CASEWORKER_LACKS_PEP_PERMISSION");
     }
 
     // NORMAL cases: no capability checks required
@@ -109,8 +129,45 @@ public class AssignmentGuardServiceImpl implements AssignmentGuardService {
         caseId,
         targetCaseworkerId,
         sensitivity);
+    recordAssignmentApprovedEvent(caseId, targetCaseworkerId, sensitivity, authContext.getUserId());
+  }
 
-    // TODO: Log audit event for assignment (deferred to W9-RBAC-03)
-    // auditService.logCaseAssignment(caseId, targetCaseworkerId, authContext.getUserId());
+  private void recordAssignmentApprovedEvent(
+      UUID caseId, String targetCaseworkerId, CaseSensitivity sensitivity, String performedBy) {
+    CaseEventEntity event =
+        CaseEventEntity.builder()
+            .caseId(caseId)
+            .eventType(CaseEventType.CASEWORKER_ASSIGNED)
+            .description("Case assigned to caseworker: " + targetCaseworkerId)
+            .metadata("{\"sensitivity\":\"" + sensitivity + "\"}")
+            .performedBy(performedBy)
+            .performedAt(LocalDateTime.now())
+            .build();
+    caseEventRepository.save(event);
+  }
+
+  private void recordAssignmentDeniedEvent(
+      UUID caseId,
+      String targetCaseworkerId,
+      CaseSensitivity sensitivity,
+      String performedBy,
+      String reason) {
+    CaseEventEntity event =
+        CaseEventEntity.builder()
+            .caseId(caseId)
+            .eventType(CaseEventType.ASSIGNMENT_DENIED)
+            .description("Case assignment denied for caseworker: " + targetCaseworkerId)
+            .metadata(
+                "{\"sensitivity\":\""
+                    + sensitivity
+                    + "\",\"targetCaseworkerId\":\""
+                    + targetCaseworkerId
+                    + "\",\"reason\":\""
+                    + reason
+                    + "\"}")
+            .performedBy(performedBy)
+            .performedAt(LocalDateTime.now())
+            .build();
+    caseEventRepository.save(event);
   }
 }

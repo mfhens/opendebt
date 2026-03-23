@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.security.AuthContext;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -37,6 +38,7 @@ import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 class CreditorAccessCheckerImplTest {
 
   @Mock private DebtRepository debtRepository;
+  @Mock private ClsAuditClient clsAuditClient;
 
   @InjectMocks private CreditorAccessCheckerImpl creditorAccessChecker;
 
@@ -148,6 +150,14 @@ class CreditorAccessCheckerImplTest {
     // Then
     assertThat(hasAccess).isFalse();
     verify(debtRepository).findById(claimId);
+    verify(clsAuditClient)
+        .shipEvent(
+            argThat(
+                event ->
+                    event.getResourceId().equals(claimId)
+                        && "DENY".equals(event.getOperation())
+                        && "claim".equals(event.getResourceType())
+                        && Boolean.FALSE.equals(event.getNewValues().get("granted"))));
   }
 
   @Test
