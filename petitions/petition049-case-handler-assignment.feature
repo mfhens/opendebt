@@ -140,6 +140,19 @@ Feature: Case handler assignment within the operational caseworker portal
     When PUT /api/v1/cases/bulk-assign is called
     Then the response is HTTP 403 Forbidden
 
+  # --- Demo Data Readiness ---
+
+  Scenario: Demo environment contains valid seeded data for assignment flows
+    Given the demo environment is started with seeded Keycloak users, caseworker-directory data, and case-service data
+    And a supervisor user exists
+    And at least 3 caseworkers exist with different assignment capabilities
+    And at least one unassigned NORMAL case exists
+    And at least one unassigned VIP or PEP case exists
+    When the supervisor opens the workload overview and unassigned cases queue
+    Then the workload overview shows different case counts per caseworker
+    And the picker lists assignable caseworkers from the caseworker-directory API
+    And the seeded data supports one successful assignment and one denied assignment without manual data changes
+
   # --- Concurrency ---
 
   Scenario: Concurrent assignment of the same case results in exactly one assignment

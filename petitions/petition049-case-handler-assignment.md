@@ -113,6 +113,29 @@ rules at the point of assignment.
     API. The response shall include user ID, display name, active status, and assignment-relevant
     capabilities.
 
+### FR-7: Demo Data for Valid Assignment Flows
+
+26. **FR-7.1** — The demo environment shall include seeded caseworker directory data
+    that builds on the existing case handler identities and roles already present in
+    the demo setup.
+27. **FR-7.2** — The seeded demo data shall include at least:
+    - one SUPERVISOR who can assign cases
+    - one CASEWORKER with NORMAL-only assignment capability
+    - one CASEWORKER with VIP assignment capability
+    - one CASEWORKER with PEP assignment capability
+28. **FR-7.3** — The seeded demo cases shall include a mix of:
+    - unassigned NORMAL cases that can be assigned successfully
+    - unassigned VIP or PEP cases that can be assigned successfully to a capable caseworker
+    - at least one case that produces a valid assignment denial because the chosen caseworker lacks the required capability
+29. **FR-7.4** — The demo data shall support end-to-end demonstration of:
+    - supervisor assignment
+    - caseworker self-assignment
+    - denied assignment due to sensitivity/capability mismatch
+    - workload overview with different case counts per caseworker
+30. **FR-7.5** — The demo data shall remain consistent across Keycloak, the internal
+    user-service / caseworker-directory API, and case-service seed data so that the
+    picker returns assignable caseworkers that can actually be used in the demo flow.
+
 ## Non-Functional Requirements
 
 | NFR | Specification |
@@ -121,6 +144,7 @@ rules at the point of assignment.
 | **Consistency** | Assignment must be atomic — a case cannot be simultaneously assigned to two caseworkers |
 | **Audit** | All assignment events must be queryable for 5 years (Rigsarkivet) |
 | **Accessibility** | All new UI pages must meet WCAG 2.1 AA (lang, title, labels, keyboard navigation) |
+| **Demoability** | Demo seed data must support successful and denied assignment flows without manual data repair |
 
 ## Constraints and Assumptions
 

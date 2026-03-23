@@ -175,6 +175,32 @@
 **When** `GET /api/v1/caseworkers/workload` is called
 **Then** the response is HTTP 403 Forbidden
 
+### Category G: Demo Data Readiness
+
+#### AC-G1: Demo seed supports successful assignment
+
+**Given** the demo environment is started with seeded Keycloak users, caseworker-directory data, and case-service data
+**And** at least one unassigned NORMAL case exists
+**And** at least one SUPERVISOR and one assignable CASEWORKER exist in the seed data
+**When** the supervisor performs an assignment in the demo environment
+**Then** the assignment succeeds without manual data changes
+
+#### AC-G2: Demo seed supports denied assignment
+
+**Given** the demo environment is started with seeded Keycloak users, caseworker-directory data, and case-service data
+**And** at least one unassigned VIP or PEP case exists
+**And** at least one CASEWORKER without the required capability exists in the seed data
+**When** a supervisor or caseworker attempts an invalid assignment in the demo environment
+**Then** the assignment is denied with the expected sensitivity/capability reason
+**And** the denial can be demonstrated without manual data changes
+
+#### AC-G3: Demo seed supports workload overview
+
+**Given** the demo environment is started with seeded Keycloak users, caseworker-directory data, and case-service data
+**And** at least 3 caseworkers exist with different open case counts
+**When** the supervisor opens the workload overview
+**Then** the dashboard shows different workload counts per caseworker based on the seeded data
+
 ## Non-Functional Acceptance Criteria
 
 | NFR | Acceptance Criterion |
@@ -183,6 +209,7 @@
 | Atomicity | Concurrent assignment of the same case by two supervisors results in exactly one assignment (optimistic locking) |
 | Audit retention | Assignment events are queryable for at least 5 years |
 | Accessibility | All new pages pass axe-core automated WCAG 2.1 AA checks |
+| Demoability | Demo environment starts with valid seeded data for successful and denied assignment flows |
 
 ## Implementation Dependencies
 
@@ -224,6 +251,7 @@
 - Supervisor assigns case from unassigned queue in browser
 - Caseworker self-assigns NORMAL case
 - Caseworker denied self-assignment of VIP case
+- Demo environment starts with seeded users and cases that make all three flows executable without manual setup
 
 ## Sign-Off
 
