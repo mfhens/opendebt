@@ -261,7 +261,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 
 ---
 
-## Technical backlog (19 items)
+## Technical backlog (23 items)
 
 | ID | Title | Priority | Status |
 |----|-------|----------|--------|
@@ -283,8 +283,11 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | TB-016 | Batch idempotency optimization (1000→1 query/page) | High | **Done** (2026-03-21) |
 | TB-017 | Per-debt rate resolution via BusinessConfigService | High | **Done** (2026-03-21) |
 | TB-018 | Fee-inclusive interest calculation | High | **Done** (2026-03-21) |
-| TB-019 | JaCoCo coverage gaps (creditor-portal 54%, payment-service 73%, gateway 74%) | Medium | Thresholds adjusted, tests needed |
+| TB-019 | JaCoCo coverage overrides across service and portal modules | Medium | Thresholds adjusted, tests needed |
 | TB-020 | Deprecate `opendebt.interest.annual-rate` application.yml property | Low | **Done** (2026-03-21) — InterestRecalculationServiceImpl migrated |
+| TB-021 | Replace portal PersonRegistryClient stubs with real person-registry integrations | High | Not started |
+| TB-022 | Wire case-service workflow delegates to real downstream services and persistence | Medium | Not started |
+| TB-023 | Add target-caseworker capability lookup to AssignmentGuardService | Medium | Not started |
 
 ---
 

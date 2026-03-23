@@ -789,6 +789,11 @@ program:
       status: blocked
       priority: high
       created: 2026-03-15
+      description: |
+        Complete the integration-gateway EDIFACT pipeline by wiring the Smooks
+        CREMUL/DEBMUL processing path and replacing the remaining placeholder
+        logic in SkbEdifactServiceImpl. This also includes moving hard-coded
+        sender/receiver identifiers into configuration.
       blockers:
         - Waiting for real CREMUL sample files from SKB/Bankdata
 
@@ -867,3 +872,91 @@ program:
       description: |
         Petition037 (portal monthly reports) requires a backend reporting storage module.
         No petition exists for this backend capability. Needs scoping and petitioning.
+        Creditor-portal still uses ReportingServiceClient graceful-fallback stubs until
+        the backend module exists.
+
+    - id: TB-016
+      title: Batch idempotency optimization (1000→1 query/page)
+      status: done
+      priority: high
+      created: 2026-03-21
+      description: |
+        Replaced per-debt accrual existence checks with a single batched query
+        returning already-accrued debt IDs for the page.
+
+    - id: TB-017
+      title: Resolve interest rates per debt via BusinessConfigService
+      status: done
+      priority: high
+      created: 2026-03-21
+      description: |
+        Interest recalculation now resolves annual rates per debt type through
+        BusinessConfigService instead of a single shared application property.
+
+    - id: TB-018
+      title: Include fees in interest calculation base amount
+      status: done
+      priority: high
+      created: 2026-03-21
+      description: |
+        Interest calculations now include applicable fees in the principal base
+        amount to match domain rules and expected accrual behavior.
+
+    - id: TB-019
+      title: Address JaCoCo coverage overrides across service and portal modules
+      status: not_started
+      priority: medium
+      created: 2026-03-21
+      description: |
+        Multiple modules still carry temporary JaCoCo threshold overrides with
+        AIDEV-TODO markers. Add the missing tests and remove the overrides from:
+        case-service, caseworker-portal, citizen-portal, creditor-portal,
+        creditor-service, debt-service, integration-gateway, letter-service,
+        offsetting-service, payment-service, and wage-garnishment-service.
+      notes: Thresholds were relaxed temporarily; tests are still required before cleanup.
+
+    - id: TB-020
+      title: Deprecate opendebt.interest.annual-rate application property
+      status: done
+      priority: low
+      created: 2026-03-21
+      description: |
+        The legacy single annual interest rate property is deprecated after the
+        move to per-debt-type rate resolution.
+
+    - id: TB-021
+      title: Replace portal PersonRegistryClient stubs with real person-registry integrations
+      status: not_started
+      priority: high
+      created: 2026-03-23
+      description: |
+        petition023 is implemented, but creditor-portal and caseworker-portal
+        still use stubbed PersonRegistryClient logic for CPR/CVR/SE verification
+        and display-name lookup. Replace the placeholder logic with real calls to
+        person-registry APIs and keep the existing resilience/fallback behavior.
+      depends_on:
+        - petition023
+
+    - id: TB-022
+      title: Wire case-service workflow delegates to real downstream services and persistence
+      status: not_started
+      priority: medium
+      created: 2026-03-23
+      description: |
+        CaseAssessmentDelegate, CheckPaymentDelegate, SendLetterDelegate, and
+        CloseCaseDelegate still contain TODO placeholders. Replace them with
+        rules-engine integration, payment-status lookup, letter-service dispatch,
+        and persisted closure status updates.
+
+    - id: TB-023
+      title: Add target-caseworker capability lookup to AssignmentGuardService
+      status: not_started
+      priority: medium
+      created: 2026-03-23
+      description: |
+        AssignmentGuardServiceImpl currently evaluates assignment capability from
+        the current authentication token instead of the target caseworker profile.
+        Integrate with Keycloak or a user service so supervisor-to-caseworker
+        assignment checks use the assignee's real capabilities.
+      depends_on:
+        - petition048
