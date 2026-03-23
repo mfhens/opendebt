@@ -53,7 +53,7 @@
         <sonar.version>3.11.0.3922</sonar.version>
         <owasp.version>9.2.0</owasp.version>
         <postgresql.version>42.7.3</postgresql.version>
-        <flyway.version>11.20.3</flyway.version>
+        <flyway.version>12.1.1</flyway.version>
         <drools.version>9.44.0.Final</drools.version>
         <flowable.version>7.0.1</flowable.version>
         <smooks.version>2.0.0</smooks.version>
