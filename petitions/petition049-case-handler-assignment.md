@@ -41,7 +41,7 @@ rules at the point of assignment.
 1. **FR-1.1** — The caseworker portal shall display a **workload overview page**
    accessible to users with the SUPERVISOR or ADMIN role.
 2. **FR-1.2** — The workload overview shall list all active caseworkers with:
-   - caseworker display name (resolved via person-registry or Keycloak)
+   - caseworker display name (resolved from the internal user-service / caseworker-directory API)
    - number of open cases (state not in CLOSED_*)
    - number of cases by sensitivity level (NORMAL, VIP, PEP)
    - number of cases received in the last 7 days
@@ -56,7 +56,8 @@ rules at the point of assignment.
 6. **FR-2.2** — The list shall show case number, title, case type, sensitivity,
    creditor name, creation date, and total outstanding balance.
 7. **FR-2.3** — A SUPERVISOR or ADMIN may assign any unassigned case to a caseworker
-   using an inline assignment control (caseworker picker).
+   using an inline assignment control (caseworker picker) populated only from the
+   internal user-service / caseworker-directory API.
 8. **FR-2.4** — A CASEWORKER may self-assign an unassigned case to themselves,
    provided the case sensitivity allows it per petition048 rules.
 9. **FR-2.5** — The list shall support pagination (default 20 per page) and filtering
@@ -107,6 +108,10 @@ rules at the point of assignment.
     pagination, sorting, and filtering. Respects RBAC rules (petition048).
 24. **FR-6.4** — `GET /api/v1/caseworkers/workload` — Return workload summary for
     all active caseworkers. Accessible to SUPERVISOR and ADMIN roles only.
+25. **FR-6.5** — `GET /api/v1/caseworkers/assignable` — Return the list of assignable
+    caseworkers for the picker, sourced from the internal user-service / caseworker-directory
+    API. The response shall include user ID, display name, active status, and assignment-relevant
+    capabilities.
 
 ## Non-Functional Requirements
 
@@ -123,8 +128,9 @@ rules at the point of assignment.
   (no schema migration required for the core assignment model).
 - The `AssignmentGuardService` and `CaseEvent` infrastructure from petition048 are
   available and tested.
-- Caseworker identity and display names are available via Keycloak user attributes or
-  the person-registry service.
+- Keycloak is the source of truth for workforce identity, roles, and capabilities.
+- A dedicated internal user-service / caseworker-directory API exposes assignable
+  caseworkers to the portal and case-service.
 - TB-023 (target-caseworker capability lookup) must be completed before FR-3.3 and
   FR-4.2 can enforce real capability checks on the target caseworker.
 
@@ -134,7 +140,8 @@ rules at the point of assignment.
 |------------|--------|--------|
 | Petition048 (RBAC) | **Done** | Foundation for sensitivity validation |
 | TB-023 (target-caseworker lookup) | Not started | Blocks real capability validation on reassignment |
-| Person-registry / Keycloak user attributes | Partial | Needed for caseworker display names on workload dashboard |
+| Keycloak (source of truth) | Available | Stores workforce identity, roles, active status, and capabilities |
+| User-service / caseworker-directory API | Needed | Operational API for caseworker picker and target capability lookup |
 
 ## Out of Scope
 
@@ -148,3 +155,5 @@ rules at the point of assignment.
   email or push. They see new cases on login. Notification is a separate concern.
 - **Data Warehouse retirement** — this petition adds operational assignment capability
   but does not mandate removing DW-based reports.
+- **Direct portal-to-Keycloak integration** — the portal shall not call Keycloak
+  directly for the picker; it uses the internal user-service / caseworker-directory API.

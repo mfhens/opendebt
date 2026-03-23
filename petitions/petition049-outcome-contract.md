@@ -190,13 +190,14 @@
 - Petition048 (RBAC sensitivity validation) — **Done**
 - CaseEntity with `primaryCaseworkerId` / `assignedCaseworkerIds` — **Done**
 - CaseEvent infrastructure (`CASEWORKER_ASSIGNED`, `ASSIGNMENT_DENIED`) — **Done**
-- TB-023 (target-caseworker capability lookup from Keycloak) — **Required for full capability enforcement**
+- TB-023 (target-caseworker capability lookup via internal user-service backed by Keycloak) — **Required for full capability enforcement**
 
 ### Integration Points
 1. **AssignmentGuardService** — Validate capability on every assignment
 2. **CaseEventRepository** — Persist audit trail events
-3. **Keycloak / person-registry** — Resolve caseworker display names and capabilities
-4. **Caseworker portal BFF** — New client methods for assignment endpoints
+3. **Keycloak** — Source of truth for workforce identity, roles, active status, and capabilities
+4. **User-service / caseworker-directory API** — Operational API for assignable caseworker lookup and target capability resolution
+5. **Caseworker portal BFF** — New client methods for assignment endpoints
 
 ## Risk and Mitigation
 
@@ -205,7 +206,7 @@
 | TB-023 not completed before implementation | Phase implementation: deploy UI and API first with self-assignment validation only; add target-caseworker validation when TB-023 lands |
 | Caseworker list grows large | Add search/filter to caseworker picker; paginate workload dashboard |
 | Concurrent assignment race conditions | Use optimistic locking (`@Version`) on CaseEntity |
-| Display name resolution latency | Cache person-registry responses with short TTL (5 min) |
+| Caseworker directory latency | Cache user-service responses with short TTL (5 min) |
 
 ## Verification and Testing Strategy
 
