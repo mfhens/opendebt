@@ -44,7 +44,7 @@
 
         <!-- Dependency versions -->
         <springdoc-openapi.version>2.5.0</springdoc-openapi.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.32</lombok.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <archunit.version>1.3.0</archunit.version>
