@@ -692,7 +692,6 @@ public class CaseServiceImpl implements CaseService {
         // Backward-compatible fields
         .debtorId(debtorId)
         .debtIds(debtIds)
-        .assignedCaseworkerId(entity.getPrimaryCaseworkerId())
         .createdAt(entity.getCreatedAt())
         .updatedAt(entity.getUpdatedAt())
         .build();

@@ -1,9 +1,6 @@
 package dk.ufst.opendebt.caseservice.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -132,116 +129,12 @@ public class CaseEntity {
 
   @Version private Long version;
 
-  // ── Deprecated columns(kept for V3 migration backward compat) ──────
-  // These columns still exist in the database but are no longer used by the
-  // application.  They will be dropped in a future migration.
+  // ── Deprecated column (kept for V3 migration backward compat) ────────
+  // Moved to CasePartyEntity with role PRIMARY_DEBTOR.
+  // Retained as a read-only fallback mapping while existing rows migrate.
+  // Will be dropped in a future migration.
 
-  /**
-   * @deprecated Moved to {@link CasePartyEntity} with role PRIMARY_DEBTOR.
-   */
   @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "debtor_person_id", insertable = false, updatable = false)
   private UUID debtorPersonId;
-
-  /**
-   * @deprecated Replaced by {@link #caseState}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "status", insertable = false, updatable = false, length = 30)
-  private String status;
-
-  /**
-   * @deprecated Computed on demand from debt-service.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "total_debt", insertable = false, updatable = false, precision = 15, scale = 2)
-  private BigDecimal totalDebt;
-
-  /**
-   * @deprecated Computed on demand from debt-service.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "total_paid", insertable = false, updatable = false, precision = 15, scale = 2)
-  private BigDecimal totalPaid;
-
-  /**
-   * @deprecated Computed on demand from debt-service.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(
-      name = "total_remaining",
-      insertable = false,
-      updatable = false,
-      precision = 15,
-      scale = 2)
-  private BigDecimal totalRemaining;
-
-  /**
-   * @deprecated Replaced by {@link CollectionMeasureEntity}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "active_strategy", insertable = false, updatable = false, length = 30)
-  private String activeStrategy;
-
-  /**
-   * @deprecated Replaced by {@link #primaryCaseworkerId}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "assigned_caseworker_id", insertable = false, updatable = false, length = 100)
-  private String assignedCaseworkerId;
-
-  /**
-   * @deprecated Replaced by {@link CaseJournalNoteEntity}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "notes", insertable = false, updatable = false, columnDefinition = "TEXT")
-  private String notes;
-
-  /**
-   * @deprecated Replaced by {@link CaseEventEntity}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @Column(name = "last_activity_at", insertable = false, updatable = false)
-  private LocalDateTime lastActivityAt;
-
-  /**
-   * @deprecated Replaced by {@link CaseDebtEntity}.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  @ElementCollection
-  @CollectionTable(name = "case_debt_ids", joinColumns = @JoinColumn(name = "case_id"))
-  @Column(name = "debt_id")
-  @Builder.Default
-  private List<UUID> debtIds = new ArrayList<>();
-
-  // ── Legacy enum types kept for reference (no longer used on entity) ──
-
-  /**
-   * @deprecated Use {@link CaseState} instead.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  public enum CaseStatus {
-    OPEN,
-    IN_PROGRESS,
-    AWAITING_PAYMENT,
-    PAYMENT_PLAN_ACTIVE,
-    WAGE_GARNISHMENT_ACTIVE,
-    OFFSETTING_PENDING,
-    UNDER_APPEAL,
-    CLOSED_PAID,
-    CLOSED_WRITTEN_OFF,
-    CLOSED_CANCELLED
-  }
-
-  /**
-   * @deprecated Use {@link MeasureType} instead.
-   */
-  @Deprecated(since = "v2", forRemoval = true)
-  public enum CollectionStrategy {
-    VOLUNTARY_PAYMENT,
-    PAYMENT_PLAN,
-    WAGE_GARNISHMENT,
-    OFFSETTING,
-    LEGAL_ACTION
-  }
 }
