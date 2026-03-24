@@ -1,0 +1,24 @@
+# docker-compose.demo.yml — Override for start-demo.ps1 (host-mode)
+#
+# Services run as Java processes on the host, not as Docker containers.
+# This file overrides prometheus and promtail so they reach host processes
+# instead of looking for Docker container hostnames.
+#
+# Usage (handled automatically by start-demo.ps1):
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml -f docker-compose.demo.yml up -d <infra-services>
+
+services:
+  prometheus:
+    volumes:
+      - ./config/prometheus/prometheus-host.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    # On Linux Docker, host.docker.internal is not automatic — add the host alias.
+    # Docker Desktop on Windows/Mac provides it without extra_hosts.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  promtail:
+    volumes:
+      - ./config/promtail/promtail-host.yml:/etc/promtail/promtail-config.yaml:ro
+      - ./.demo-logs:/demo-logs:ro
+    # No Docker socket needed in host mode — reads log files directly

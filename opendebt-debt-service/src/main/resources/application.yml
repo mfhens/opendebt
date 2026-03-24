@@ -89,6 +89,23 @@ opendebt:
     readiness-validation:
       auto-validate: true
       require-manual-approval-threshold: 100000
+  offsetting:
+    eligible-payment-types:
+      - TAX_REFUND
+      - OVERPAID_TAX
+      - GOVERNMENT_BENEFIT
+      - CHILD_BENEFIT
+    priority-rules:
+      - order: 1
+        debt-type: CHILD_SUPPORT
+      - order: 2
+        debt-type: TAX
+      - order: 3
+        debt-type: FINE
+      - order: 4
+        debt-type: OTHER
+    notification:
+      days-before: 14
   services:
     case-service:
       url: ${CASE_SERVICE_URL:http://localhost:8081}

@@ -32,7 +32,6 @@ graph TB
 
     subgraph Collection["Collection Services"]
         LS["letter-service<br/>:8084<br/>Digital Post"]
-        OS["offsetting-service<br/>:8087<br/>Modregning"]
         WG["wage-garnishment-service<br/>:8088<br/>Loenindeholdelse"]
     end
 
@@ -117,7 +116,7 @@ flowchart TD
     Assess --> Gateway{Collection Strategy?}
 
     Gateway -->|VOLUNTARY_PAYMENT| SendReminder[Send Payment Reminder]
-    Gateway -->|OFFSETTING| InitOffset[Initiate Offsetting]
+    Gateway -->|OFFSETTING| InitOffset[Initiate Offsetting<br/>(debt-service)]
     Gateway -->|WAGE_GARNISHMENT| InitGarnish[Initiate Wage Garnishment]
 
     SendReminder --> Wait30["Wait 30 days<br/>(Timer)"]
@@ -419,7 +418,6 @@ flowchart LR
     CS -->|REST| RE[rules-engine]
     CS -->|REST| PS[payment-service]
     CS -->|REST| LS[letter-service]
-    CS -->|REST| OS[offsetting-service]
     CS -->|REST| WG[wage-garnishment-service]
     CS -->|REST| IG[integration-gateway]
 
@@ -492,7 +490,7 @@ flowchart LR
 
 ### debt-service (Port 8082)
 
-**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, and batch processing.
+**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, and batch processing. Also owns the **offsetting (modregning)** domain (ADR-0027).
 
 **Implementation status:** IMPLEMENTED (88 Java files, 7 migrations)
 
@@ -800,20 +798,6 @@ flowchart LR
 | LetterController | Not started | |
 | LetterService | Not started | |
 | Digital Post integration | Not started | Via integration-gateway |
-
----
-
-### offsetting-service (Port 8087)
-
-**Purpose:** Modregning (offsetting) processing.
-
-**Implementation status:** SCAFFOLD ONLY
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| OffsettingServiceApplication | Done | Spring Boot app |
-| application.yml | Done | Priority rules config |
-| Controllers/Services | Not started | |
 
 ---
 
@@ -1146,7 +1130,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | integration-gateway | Partial | 22 | 3 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
-| offsetting-service | Scaffold | 1 | 0 | - |
+| offsetting-service | **Merged into debt-service** (ADR-0027) | - | - | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
 | creditor-portal | Partial | ~74 | ~50 | - |
 | citizen-portal | Partial | ~19 | 6 | - |

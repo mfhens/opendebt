@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import dk.ufst.opendebt.citizen.client.CaseServiceClient;
 import dk.ufst.opendebt.citizen.client.PaymentServiceClient;
@@ -62,7 +62,6 @@ public class CitizenTimelineController {
 
   /** GET /cases/{caseId}/tidslinje — renders the full timeline-panel fragment for citizens. */
   @GetMapping("/cases/{caseId}/tidslinje")
-  @PreAuthorize("hasRole('CITIZEN')")
   public String showTimeline(
       @PathVariable UUID caseId,
       @RequestParam(defaultValue = "1") int page,
@@ -83,7 +82,6 @@ public class CitizenTimelineController {
    * citizens.
    */
   @GetMapping("/cases/{caseId}/tidslinje/entries")
-  @PreAuthorize("hasRole('CITIZEN')")
   public String loadMoreEntries(
       @PathVariable UUID caseId,
       @RequestParam int page,
@@ -173,8 +171,8 @@ public class CitizenTimelineController {
     List<String> deduplicatedWarnings = warnings.stream().distinct().collect(Collectors.toList());
     List<CaseDebtDto> availableDebts = fetchAvailableDebts(caseId);
 
-    String timelineBaseUrl = "/cases/" + caseId + "/tidslinje";
-    String timelineEntriesUrl = "/cases/" + caseId + "/tidslinje/entries";
+    String timelineBaseUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje");
+    String timelineEntriesUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje/entries");
     String loadMoreUrl = buildLoadMoreUrl(filters, timelineEntriesUrl, page, size);
     Map<String, String> filterRemoveLinks = buildFilterRemoveLinks(filters, timelineBaseUrl);
 
@@ -193,6 +191,14 @@ public class CitizenTimelineController {
     model.addAttribute("filterRemoveLinks", filterRemoveLinks);
 
     return viewName;
+  }
+
+  private String buildPortalUrl(String portalPath) {
+    try {
+      return ServletUriComponentsBuilder.fromCurrentContextPath().path(portalPath).toUriString();
+    } catch (IllegalStateException ex) {
+      return portalPath;
+    }
   }
 
   private TimelineFilterDto buildFilter(
@@ -237,9 +243,7 @@ public class CitizenTimelineController {
         && entry.getTimestamp().toLocalDate().isAfter(filter.getToDate())) {
       return false;
     }
-    if (filter.getDebtId() != null
-        && entry.getDebtId() != null
-        && !filter.getDebtId().equals(entry.getDebtId())) {
+    if (filter.getDebtId() != null && !filter.getDebtId().equals(entry.getDebtId())) {
       return false;
     }
     return true;
@@ -319,6 +323,22 @@ public class CitizenTimelineController {
         sb.append(first ? "?" : "&").append("debtId=").append(filters.getDebtId());
       }
       links.put("toDate", sb.toString());
+    }
+    if (filters.getDebtId() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        first = false;
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+      }
+      links.put("debtId", sb.toString());
     }
     return links;
   }

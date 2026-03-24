@@ -43,9 +43,6 @@ exporters:
     tls:
       insecure: true
 
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-
   prometheusremotewrite:
     endpoint: http://prometheus:9090/api/v1/write
 
@@ -56,10 +53,8 @@ service:
       processors: [attributes/pii, resource, batch]
       exporters: [otlp/tempo]
 
-    logs:
-      receivers: [otlp]
-      processors: [attributes/pii, resource, batch]
-      exporters: [loki]
+    # Logs are shipped by Promtail (Docker socket → Loki) — no OTel logs pipeline needed.
+    # The loki exporter is not included in the contrib collector image.
 
     metrics:
       receivers: [otlp]

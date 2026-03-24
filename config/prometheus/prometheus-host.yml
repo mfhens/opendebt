@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Host-mode scrape config for start-demo.ps1.
+# Services run as Java processes on the host, not in Docker containers.
+# host.docker.internal resolves to the host from inside Docker Desktop (Windows/Mac).
+# On Linux add: extra_hosts: ["host.docker.internal:host-gateway"] to the prometheus service.
+
+scrape_configs:
+  - job_name: 'debt-service'
+    metrics_path: '/debt-service/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+
+  - job_name: 'case-service'
+    metrics_path: '/case-service/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+
+  - job_name: 'payment-service'
+    metrics_path: '/payment-service/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8083']
+
+  - job_name: 'creditor-service'
+    metrics_path: '/creditor-service/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8092']
+
+  - job_name: 'creditor-portal'
+    metrics_path: '/creditor-portal/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8085']
+
+  - job_name: 'caseworker-portal'
+    metrics_path: '/caseworker-portal/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8087']

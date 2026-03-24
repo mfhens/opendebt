@@ -53,11 +53,6 @@ scrape_configs:
     static_configs:
       - targets: ['citizen-portal:8086']
 
-  - job_name: 'offsetting-service'
-    metrics_path: '/offsetting-service/actuator/prometheus'
-    static_configs:
-      - targets: ['offsetting-service:8087']
-
   - job_name: 'wage-garnishment-service'
     metrics_path: '/wage-garnishment-service/actuator/prometheus'
     static_configs:

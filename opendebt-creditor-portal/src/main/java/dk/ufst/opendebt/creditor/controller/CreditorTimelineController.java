@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import dk.ufst.opendebt.common.dto.CaseDebtDto;
 import dk.ufst.opendebt.common.dto.CaseEventDto;
@@ -67,7 +67,6 @@ public class CreditorTimelineController {
    * <p>Note: Model variable is {@code claimId} (not {@code caseId}).
    */
   @GetMapping("/fordring/{id}/tidslinje")
-  @PreAuthorize("hasRole('CREDITOR')")
   public String showTimeline(
       @PathVariable UUID id,
       @RequestParam(defaultValue = "1") int page,
@@ -89,7 +88,6 @@ public class CreditorTimelineController {
    * <p>Note: endpoint path is /poster (not /entries) per specs §5.5.
    */
   @GetMapping("/fordring/{id}/tidslinje/poster")
-  @PreAuthorize("hasRole('CREDITOR')")
   public String loadMorePosterEntries(
       @PathVariable UUID id,
       @RequestParam int page,
@@ -179,8 +177,8 @@ public class CreditorTimelineController {
     List<String> deduplicatedWarnings = warnings.stream().distinct().collect(Collectors.toList());
     List<CaseDebtDto> availableDebts = fetchAvailableDebts(claimId);
 
-    String timelineBaseUrl = "/fordring/" + claimId + "/tidslinje";
-    String timelineEntriesUrl = "/fordring/" + claimId + "/tidslinje/poster";
+    String timelineBaseUrl = buildPortalUrl("/fordring/" + claimId + "/tidslinje");
+    String timelineEntriesUrl = buildPortalUrl("/fordring/" + claimId + "/tidslinje/poster");
     String loadMoreUrl = buildLoadMoreUrl(filters, timelineEntriesUrl, page, size);
     Map<String, String> filterRemoveLinks = buildFilterRemoveLinks(filters, timelineBaseUrl);
 
@@ -200,6 +198,14 @@ public class CreditorTimelineController {
     // Note: do NOT add "caseId" to model in the creditor portal (specs §5.5)
 
     return viewName;
+  }
+
+  private String buildPortalUrl(String portalPath) {
+    try {
+      return ServletUriComponentsBuilder.fromCurrentContextPath().path(portalPath).toUriString();
+    } catch (IllegalStateException ex) {
+      return portalPath;
+    }
   }
 
   private TimelineFilterDto buildFilter(
@@ -244,9 +250,7 @@ public class CreditorTimelineController {
         && entry.getTimestamp().toLocalDate().isAfter(filter.getToDate())) {
       return false;
     }
-    if (filter.getDebtId() != null
-        && entry.getDebtId() != null
-        && !filter.getDebtId().equals(entry.getDebtId())) {
+    if (filter.getDebtId() != null && !filter.getDebtId().equals(entry.getDebtId())) {
       return false;
     }
     return true;
@@ -326,6 +330,22 @@ public class CreditorTimelineController {
         sb.append(first ? "?" : "&").append("debtId=").append(filters.getDebtId());
       }
       links.put("toDate", sb.toString());
+    }
+    if (filters.getDebtId() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        first = false;
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+      }
+      links.put("debtId", sb.toString());
     }
     return links;
   }

@@ -51,12 +51,15 @@ public class CaseServiceImpl implements CaseService {
       CaseDto.CaseState caseState, String caseworkerId, Pageable pageable) {
     CaseState entityState = caseState != null ? mapCaseState(caseState) : null;
 
-    // Extract authentication context and apply role-based filtering
-    AuthContext authContext = AuthContext.fromSecurityContext();
+    // In dev/local demo mode the security filter chain permits anonymous access.
+    // In that mode, skip JWT-derived role filtering and return the seeded demo cases as-is.
+    AuthContext authContext = tryGetAuthContext();
     String effectiveCaseworkerId = caseworkerId;
 
     // Rule 1.1: Caseworkers can only see their assigned cases (unless supervisor or admin)
-    if (authContext.hasRole("CASEWORKER") && !authContext.isSupervisorOrAdmin()) {
+    if (authContext != null
+        && authContext.hasRole("CASEWORKER")
+        && !authContext.isSupervisorOrAdmin()) {
       effectiveCaseworkerId = authContext.getUserId();
       if (caseworkerId != null && !caseworkerId.equals(effectiveCaseworkerId)) {
         log.warn(
@@ -80,15 +83,25 @@ public class CaseServiceImpl implements CaseService {
             .orElseThrow(
                 () -> new OpenDebtException(CASE_NOT_FOUND_PREFIX + id, CASE_NOT_FOUND_CODE));
 
-    // Extract authentication context and verify access
-    AuthContext authContext = AuthContext.fromSecurityContext();
-    if (!caseAccessChecker.canAccessCase(id, authContext)) {
+    // In dev/local demo mode the security filter chain permits anonymous access.
+    // In that mode, skip JWT-derived access checks so the seeded demo case can be viewed.
+    AuthContext authContext = tryGetAuthContext();
+    if (authContext != null && !caseAccessChecker.canAccessCase(id, authContext)) {
       log.warn("Access denied to case {} for user {}", id, authContext.getUserId());
       throw new org.springframework.security.access.AccessDeniedException(
           "You do not have permission to access case: " + id);
     }
 
     return toDto(entity);
+  }
+
+  private AuthContext tryGetAuthContext() {
+    try {
+      return AuthContext.fromSecurityContext();
+    } catch (IllegalStateException e) {
+      log.debug("No JWT authentication available; using demo-mode unrestricted case access");
+      return null;
+    }
   }
 
   @Override

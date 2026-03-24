@@ -26,7 +26,7 @@ $PgPort = 5432
 $PgUser = "opendebt"
 $PgPass = "opendebt"
 
-$DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "prometheus", "grafana")
+$DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "promtail", "prometheus", "grafana")
 $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
 $CreditorPortalClientSecret = "creditor-portal-dev-secret"
@@ -51,8 +51,9 @@ function Wait-ForUrl {
 function Get-RunningInfraServices {
     $appCompose = Join-Path $ScriptDir "docker-compose.yml"
     $obsCompose = Join-Path $ScriptDir "docker-compose.observability.yml"
+    $demoCompose = Join-Path $ScriptDir "docker-compose.demo.yml"
 
-    $running = & docker compose -f $appCompose -f $obsCompose ps --status running --services 2>$null
+    $running = & docker compose -f $appCompose -f $obsCompose -f $demoCompose ps --status running --services 2>$null
     if ($LASTEXITCODE -ne 0 -or -not $running) {
         return @()
     }
@@ -78,13 +79,15 @@ function Ensure-DockerInfra {
     }
 
     Write-Host "  Missing infra services: $($missingServices -join ', ')"
-    $composeScript = Join-Path $ScriptDir "compose-stack.ps1"
-    if (-not (Test-Path $composeScript)) {
-        Write-Err "  Missing compose helper: .\compose-stack.ps1"
-        exit 1
-    }
 
-    & $composeScript -Action up -Stack infra
+    $appCompose  = Join-Path $ScriptDir "docker-compose.yml"
+    $obsCompose  = Join-Path $ScriptDir "docker-compose.observability.yml"
+    $demoCompose = Join-Path $ScriptDir "docker-compose.demo.yml"
+
+    # Start infra with the demo override: prometheus and promtail reach host services
+    # via host.docker.internal instead of Docker container hostnames.
+    $composeArgs = @("-f", $appCompose, "-f", $obsCompose, "-f", $demoCompose, "up", "-d") + $DockerInfraServices
+    & docker compose @composeArgs
     if ($LASTEXITCODE -ne 0) {
         Write-Err "  Failed to start Docker infra services."
         exit 1
@@ -391,5 +394,10 @@ if ($SecurityDemo) {
 }
 Write-Host "  Stop with:          .\start-demo.ps1 -Stop"
 Write-Host "  Logs in:            .demo-logs\"
+Write-Host ""
+Write-Host "  Observability:"
+Write-Host "    Grafana:          http://localhost:3000"
+Write-Host "    Prometheus:       http://localhost:9090"
+Write-Host "    (Traces via OTLP to localhost:4317/4318 -> Tempo)"
 Write-Host ""
 Write-Host "  Note: Docker infra keeps running after -Stop."

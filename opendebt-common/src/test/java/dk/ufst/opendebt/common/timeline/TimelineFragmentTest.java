@@ -203,7 +203,8 @@ class TimelineFragmentTest {
     context.setVariable("entries", List.of());
     String html = engine.process("fragments/timeline", Set.of("timeline-panel"), context);
     assertThat(html).contains("Ingen h");
-    // The full text is "Ingen hændelser registreret" from messages_da.properties
+    // The full text is "Ingen hændelser registreret" from the template-adjacent
+    // timeline_da.properties bundle
   }
 
   @Test

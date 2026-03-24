@@ -136,7 +136,8 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    String view = controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    String view =
+        controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     assertThat(view).isEqualTo("fragments/timeline :: timeline-panel");
     @SuppressWarnings("unchecked")
@@ -153,7 +154,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -194,7 +195,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -216,7 +217,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -236,7 +237,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     // Verifies visibilityProperties was called (visibility resolved server-side, not in template)
     org.mockito.Mockito.verify(visibilityProperties).getAllowedCategories(anyString());
@@ -256,7 +257,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<?> entries = (List<?>) model.getAttribute("entries");
@@ -278,7 +279,8 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    String view = controller.loadMoreEntries(CASE_UUID, 2, 25, null, null, null, null, auth, model);
+    String view =
+        controller.loadMoreEntries(CASE_UUID, 2, 25, null, null, null, null, auth, null, model);
 
     assertThat(view).isEqualTo("fragments/timeline :: timeline-entries");
     @SuppressWarnings("unchecked")
@@ -300,7 +302,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.loadMoreEntries(CASE_UUID, 2, 25, null, null, null, null, auth, model);
+    controller.loadMoreEntries(CASE_UUID, 2, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<?> entries = (List<?>) model.getAttribute("entries");
@@ -338,7 +340,7 @@ class CaseTimelineControllerTest {
 
     Model model = new ExtendedModelMap();
     controller.showTimeline(
-        CASE_UUID, 1, 25, new String[] {"FINANCIAL"}, null, null, null, auth, model);
+        CASE_UUID, 1, 25, new String[] {"FINANCIAL"}, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -369,7 +371,16 @@ class CaseTimelineControllerTest {
 
     Model model = new ExtendedModelMap();
     controller.showTimeline(
-        CASE_UUID, 1, 25, new String[] {"FINANCIAL", "COLLECTION"}, null, null, null, auth, model);
+        CASE_UUID,
+        1,
+        25,
+        new String[] {"FINANCIAL", "COLLECTION"},
+        null,
+        null,
+        null,
+        auth,
+        null,
+        model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -420,6 +431,7 @@ class CaseTimelineControllerTest {
         LocalDate.of(2026, 3, 1),
         null,
         auth,
+        null,
         model);
 
     @SuppressWarnings("unchecked")
@@ -432,20 +444,13 @@ class CaseTimelineControllerTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC-D3: Filter — by specific debt (case-level events always included)
+  // AC-D3: Filter — by specific debt
   // ---------------------------------------------------------------------------
 
   @Test
-  @DisplayName(
-      "AC-D3: showTimeline with debtId filter returns matched debt entries plus all case-level entries")
-  void showTimeline_debtIdFilter_returnsCaseLevelAndMatchedDebtEntries() {
+  @DisplayName("AC-D3: showTimeline with debtId filter returns only entries for the selected debt")
+  void showTimeline_debtIdFilter_returnsOnlyMatchedDebtEntries() {
     mockCaseworkerAuth();
-    CaseEventDto caseLevel =
-        CaseEventDto.builder()
-            .id(UUID.randomUUID())
-            .eventType("CASE_CREATED")
-            .performedAt(LocalDateTime.of(2026, 1, 1, 10, 0, 0))
-            .build();
     DebtEventDto debtA =
         DebtEventDto.builder()
             .id(UUID.randomUUID())
@@ -461,16 +466,17 @@ class CaseTimelineControllerTest {
             .createdAt(LocalDateTime.of(2026, 1, 3, 10, 0, 0))
             .build();
 
-    when(caseServiceClient.getEvents(CASE_UUID)).thenReturn(List.of(caseLevel));
+    when(caseServiceClient.getEvents(CASE_UUID)).thenReturn(List.of());
     when(paymentServiceClient.getDebtEventsByCase(CASE_UUID)).thenReturn(List.of(debtA, debtB));
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, DEBT_UUID_A, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, DEBT_UUID_A, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> entries = (List<TimelineEntryDto>) model.getAttribute("entries");
-    assertThat(entries).allMatch(e -> e.getDebtId() == null || e.getDebtId().equals(DEBT_UUID_A));
+    assertThat(entries).isNotEmpty();
+    assertThat(entries).allMatch(e -> DEBT_UUID_A.equals(e.getDebtId()));
     assertThat(entries).noneMatch(e -> DEBT_UUID_B.equals(e.getDebtId()));
   }
 
@@ -511,7 +517,7 @@ class CaseTimelineControllerTest {
 
     Model model = new ExtendedModelMap();
     controller.loadMoreEntries(
-        CASE_UUID, 2, 25, new String[] {"FINANCIAL"}, null, null, null, auth, model);
+        CASE_UUID, 2, 25, new String[] {"FINANCIAL"}, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<TimelineEntryDto> page2entries = (List<TimelineEntryDto>) model.getAttribute("entries");
@@ -541,6 +547,7 @@ class CaseTimelineControllerTest {
         null,
         null,
         auth,
+        null,
         model);
 
     TimelineFilterDto filters = (TimelineFilterDto) model.getAttribute("filters");
@@ -562,7 +569,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<?> entries = (List<?>) model.getAttribute("entries");
@@ -582,7 +589,8 @@ class CaseTimelineControllerTest {
 
     Model model = new ExtendedModelMap();
     // No exception should be thrown; timeline renders with available events
-    String view = controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    String view =
+        controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
     assertThat(view).isEqualTo("fragments/timeline :: timeline-panel");
   }
 
@@ -601,7 +609,7 @@ class CaseTimelineControllerTest {
     when(caseServiceClient.getCase(any())).thenReturn(null);
 
     Model model = new ExtendedModelMap();
-    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, model);
+    controller.showTimeline(CASE_UUID, 1, 25, null, null, null, null, auth, null, model);
 
     @SuppressWarnings("unchecked")
     List<?> entries = (List<?>) model.getAttribute("entries");

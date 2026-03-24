@@ -185,7 +185,7 @@ Annotations: `@Data @Builder @NoArgsConstructor @AllArgsConstructor`
 - `eventCategories` non-empty → include only entries whose `eventCategory` is in the set AND in the role's allowed categories.
 - `fromDate` non-null → `entry.timestamp.toLocalDate() >= fromDate` (inclusive).
 - `toDate` non-null → `entry.timestamp.toLocalDate() <= toDate` (inclusive).
-- `debtId` non-null → include entries where `entry.debtId.equals(debtId)` OR `entry.debtId == null` (case-level entries always included).
+- `debtId` non-null → include only entries where `entry.debtId.equals(debtId)`.
 - All active filter conditions are ANDed together.
 
 **Acceptance (AC-D1 through AC-D5):** Filter by single category, combined categories, date range, and debt all produce correctly bounded entry sets.
@@ -1037,7 +1037,7 @@ Run equivalent tests in each portal's test module against the portal's controlle
 | AC-E3: Load more hidden | 30 entries total, page 2 requested (size=25) | `GET /cases/{id}/tidslinje/entries?page=2` | `hasMore == false` |
 | AC-D1: Category filter | 10 FINANCIAL + 10 CASE entries | `GET /cases/{id}/tidslinje?eventCategory=FINANCIAL` | `entries` all FINANCIAL; `totalCount == 10` |
 | AC-D2: Date range | Entries from 2025-01-01 and 2026-03-01 | `GET /cases/{id}/tidslinje?fromDate=2026-01-01&toDate=2026-12-31` | Only entries in 2026 returned |
-| AC-D3: Filter by specific debt | Mixed entries with different `debtId` values | `GET /cases/{id}/tidslinje?debtId={D-2001}` with role CASEWORKER | Only entries where `debtId = D-2001` or `debtId` is null (case-level entries) returned |
+| AC-D3: Filter by specific debt | Mixed entries with different `debtId` values | `GET /cases/{id}/tidslinje?debtId={D-2001}` with role CASEWORKER | Only entries where `debtId = D-2001` returned |
 | AC-E4: Filters preserved across pages | 60 FINANCIAL entries, page 1 loaded | `GET /cases/{id}/tidslinje/poster?page=2&eventCategory=FINANCIAL` with role CASEWORKER | Only FINANCIAL category entries on page 2 |
 | AC-G1: Empty case | Both clients → `List.of()` | `GET /cases/{id}/tidslinje` | `entries.isEmpty()`; no warning |
 | AC-G3: Payment service down | `getDebtEventsByCase` throws | `GET /cases/{id}/tidslinje` | Case events returned; `warnings` contains `"timeline.warning.partial"` |

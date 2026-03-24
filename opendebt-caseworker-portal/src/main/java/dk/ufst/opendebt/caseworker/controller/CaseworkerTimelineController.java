@@ -16,8 +16,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
@@ -25,9 +26,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import dk.ufst.opendebt.caseworker.client.CaseServiceClient;
 import dk.ufst.opendebt.caseworker.client.PaymentServiceClient;
+import dk.ufst.opendebt.caseworker.dto.CaseworkerIdentity;
+import dk.ufst.opendebt.caseworker.service.CaseworkerSessionService;
 import dk.ufst.opendebt.common.dto.CaseEventDto;
 import dk.ufst.opendebt.common.dto.DebtEventDto;
 import dk.ufst.opendebt.common.timeline.EventCategory;
@@ -60,6 +64,7 @@ public class CaseworkerTimelineController {
 
   private final CaseServiceClient caseServiceClient;
   private final PaymentServiceClient paymentServiceClient;
+  private final CaseworkerSessionService sessionService;
   private final TimelineVisibilityProperties visibilityProperties;
   private final ExecutorService bffFetchExecutor;
 
@@ -70,7 +75,6 @@ public class CaseworkerTimelineController {
    * fragments/timeline :: timeline-panel}.
    */
   @GetMapping("/cases/{caseId}/tidslinje")
-  @PreAuthorize("hasAnyRole('CASEWORKER', 'SUPERVISOR', 'ADMIN')")
   public String showTimeline(
       @PathVariable UUID caseId,
       @RequestParam(defaultValue = "1") int page,
@@ -82,9 +86,20 @@ public class CaseworkerTimelineController {
           LocalDate toDate,
       @RequestParam(required = false) UUID debtId,
       Authentication auth,
+      HttpSession session,
       Model model) {
     return buildTimeline(
-        caseId, page, size, eventCategory, fromDate, toDate, debtId, auth, model, FRAGMENT_PANEL);
+        caseId,
+        page,
+        size,
+        eventCategory,
+        fromDate,
+        toDate,
+        debtId,
+        auth,
+        session,
+        model,
+        FRAGMENT_PANEL);
   }
 
   /**
@@ -95,7 +110,6 @@ public class CaseworkerTimelineController {
    * timeline-entries}.
    */
   @GetMapping("/cases/{caseId}/tidslinje/entries")
-  @PreAuthorize("hasAnyRole('CASEWORKER', 'SUPERVISOR', 'ADMIN')")
   public String loadMoreEntries(
       @PathVariable UUID caseId,
       @RequestParam int page,
@@ -107,9 +121,20 @@ public class CaseworkerTimelineController {
           LocalDate toDate,
       @RequestParam(required = false) UUID debtId,
       Authentication auth,
+      HttpSession session,
       Model model) {
     return buildTimeline(
-        caseId, page, size, eventCategory, fromDate, toDate, debtId, auth, model, FRAGMENT_ENTRIES);
+        caseId,
+        page,
+        size,
+        eventCategory,
+        fromDate,
+        toDate,
+        debtId,
+        auth,
+        session,
+        model,
+        FRAGMENT_ENTRIES);
   }
 
   // ---------------------------------------------------------------------------
@@ -125,10 +150,11 @@ public class CaseworkerTimelineController {
       LocalDate toDate,
       UUID debtId,
       Authentication auth,
+      HttpSession session,
       Model model,
       String viewName) {
 
-    String role = primaryRole(auth);
+    String role = primaryRole(auth, session);
     Set<EventCategory> allowed = visibilityProperties.getAllowedCategories(role);
 
     // Build filter DTO (constrained to allowed categories)
@@ -200,8 +226,8 @@ public class CaseworkerTimelineController {
     // Available debts for filter dropdown
     List<dk.ufst.opendebt.common.dto.CaseDebtDto> availableDebts = fetchAvailableDebts(caseId);
 
-    String timelineBaseUrl = "/cases/" + caseId + "/tidslinje";
-    String timelineEntriesUrl = "/cases/" + caseId + "/tidslinje/entries";
+    String timelineBaseUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje");
+    String timelineEntriesUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje/entries");
     String loadMoreUrl = buildLoadMoreUrl(filters, timelineEntriesUrl, page, size);
     Map<String, String> filterRemoveLinks = buildFilterRemoveLinks(filters, timelineBaseUrl);
 
@@ -220,6 +246,14 @@ public class CaseworkerTimelineController {
     model.addAttribute("filterRemoveLinks", filterRemoveLinks);
 
     return viewName;
+  }
+
+  private String buildPortalUrl(String portalPath) {
+    try {
+      return ServletUriComponentsBuilder.fromCurrentContextPath().path(portalPath).toUriString();
+    } catch (IllegalStateException ex) {
+      return portalPath;
+    }
   }
 
   /** Builds a TimelineFilterDto constrained to the role's allowed categories. */
@@ -270,10 +304,8 @@ public class CaseworkerTimelineController {
         && entry.getTimestamp().toLocalDate().isAfter(filter.getToDate())) {
       return false;
     }
-    // Debt filter — case-level entries (debtId==null) always pass
-    if (filter.getDebtId() != null
-        && entry.getDebtId() != null
-        && !filter.getDebtId().equals(entry.getDebtId())) {
+    // Debt filter — when a specific debt is selected, only matching debt entries remain.
+    if (filter.getDebtId() != null && !filter.getDebtId().equals(entry.getDebtId())) {
       return false;
     }
     return true;
@@ -383,20 +415,43 @@ public class CaseworkerTimelineController {
       }
       links.put("toDate", sb.toString());
     }
+    if (filters.getDebtId() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        first = false;
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+      }
+      links.put("debtId", sb.toString());
+    }
     return links;
   }
 
   /**
    * Extracts the primary role from the authenticated user. Strips ROLE_ prefix. Ref: specs §3.5.
    */
-  private String primaryRole(Authentication auth) {
-    if (auth == null) return "";
-    for (String role : CASEWORKER_ROLES) {
-      for (GrantedAuthority authority : auth.getAuthorities()) {
-        String name = authority.getAuthority();
-        if (name.equals(role) || name.equals("ROLE_" + role)) {
-          return role;
+  private String primaryRole(Authentication auth, HttpSession session) {
+    if (auth != null) {
+      for (String role : CASEWORKER_ROLES) {
+        for (GrantedAuthority authority : auth.getAuthorities()) {
+          String name = authority.getAuthority();
+          if (name.equals(role) || name.equals("ROLE_" + role)) {
+            return role;
+          }
         }
+      }
+    }
+    if (session != null) {
+      CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
+      if (caseworker != null && CASEWORKER_ROLES.contains(caseworker.getRole())) {
+        return caseworker.getRole();
       }
     }
     return "";

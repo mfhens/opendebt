@@ -52,6 +52,7 @@ function Get-InfraServices {
         "otel-collector",
         "tempo",
         "loki",
+        "promtail",
         "prometheus",
         "grafana"
     )

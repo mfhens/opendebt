@@ -23,7 +23,7 @@ public class I18nConfig implements WebMvcConfigurer {
   @Bean
   public MessageSource messageSource() {
     var source = new ReloadableResourceBundleMessageSource();
-    source.setBasename("classpath:messages");
+    source.setBasenames("classpath:messages", "classpath:timeline-messages");
     source.setDefaultEncoding("UTF-8");
     source.setFallbackToSystemLocale(false);
     source.setDefaultLocale(Locale.forLanguageTag("da"));

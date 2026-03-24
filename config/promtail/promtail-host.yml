@@ -1,0 +1,77 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+# Host-mode log scraping for start-demo.ps1.
+# start-demo.ps1 writes logs to .demo-logs/<service>.log in JSON format
+# (logstash-logback-encoder). The docker-compose.demo.yml mounts that
+# directory into the promtail container at /demo-logs.
+scrape_configs:
+  - job_name: demo-host-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: debt-service
+          __path__: /demo-logs/debt-service.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: case-service
+          __path__: /demo-logs/case-service.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: payment-service
+          __path__: /demo-logs/payment-service.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: creditor-service
+          __path__: /demo-logs/creditor-service.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: caseworker-portal
+          __path__: /demo-logs/caseworker-portal.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: creditor-portal
+          __path__: /demo-logs/creditor-portal.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: citizen-portal
+          __path__: /demo-logs/citizen-portal.log
+      - targets: [localhost]
+        labels:
+          job: demo-host-logs
+          environment: local
+          service: person-registry
+          __path__: /demo-logs/person-registry.log
+
+    pipeline_stages:
+      # Plain text format from dev profile:
+      # "2026-03-24 09:25:30 [thread] LEVEL  logger.name [traceId=x spanId=y] - message"
+      - regex:
+          expression: '^\S+ \S+ \[(?P<thread>[^\]]+)\] (?P<level>ERROR|WARN|INFO|DEBUG|TRACE)\s'
+      # Extract traceId and spanId from [traceId=xxx spanId=yyy]
+      - regex:
+          expression: '\[traceId=(?P<traceId>[0-9a-f]*) spanId=(?P<spanId>[0-9a-f]*)\]'
+      # Promote log level as a stream label (low cardinality)
+      - labels:
+          level:

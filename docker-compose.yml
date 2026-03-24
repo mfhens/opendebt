@@ -44,6 +44,7 @@ services:
       DATABASE_PASSWORD: opendebt
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy
@@ -65,6 +66,7 @@ services:
       DEBT_SERVICE_URL: http://debt-service:8082
       PAYMENT_SERVICE_URL: http://payment-service:8083
       LETTER_SERVICE_URL: http://letter-service:8084
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy
@@ -106,6 +108,7 @@ services:
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy
@@ -123,6 +126,7 @@ services:
       DATABASE_PASSWORD: opendebt
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
       CASE_SERVICE_URL: http://case-service:8081
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy
@@ -177,6 +181,7 @@ services:
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
       PAYMENT_SERVICE_URL: http://payment-service:8083
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy

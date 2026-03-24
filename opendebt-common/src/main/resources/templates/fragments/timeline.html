@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <link rel="stylesheet" th:href="@{/css/timeline.css}"/>
 </head>
 <body>
 
@@ -29,38 +28,47 @@
         class="skat-form skat-timeline-filter-bar">
 
     <!-- Category multi-select -->
-    <div class="skat-form__group">
-      <label for="eventCategory" th:text="#{timeline.filter.category}">Kategori</label>
-      <select id="eventCategory" name="eventCategory" multiple="multiple" class="skat-select">
-        <option value="" th:text="#{timeline.filter.all.categories}">Alle kategorier</option>
-        <option th:each="cat : ${T(dk.ufst.opendebt.common.timeline.EventCategory).values()}"
-                th:value="${cat.name()}"
-                th:text="#{__${'timeline.category.' + cat.name()}__}"
-                th:selected="${filters != null and filters.eventCategories != null and filters.eventCategories.contains(cat)}">
-        </option>
-      </select>
-    </div>
+    <fieldset class="skat-form__group skat-timeline-filter-group skat-timeline-filter-group--categories">
+      <legend class="skat-legend" th:text="#{timeline.filter.category}">Kategori</legend>
+      <div class="skat-timeline-checkbox-group">
+        <div class="skat-checkbox"
+             th:each="cat : ${T(dk.ufst.opendebt.common.timeline.EventCategory).values()}">
+          <input type="checkbox"
+                 class="skat-checkbox__input"
+                 name="eventCategory"
+                 th:id="${'eventCategory-' + cat.name()}"
+                 th:value="${cat.name()}"
+                 th:checked="${filters != null and filters.eventCategories != null and filters.eventCategories.contains(cat)}"/>
+          <label class="skat-checkbox__label"
+                 th:for="${'eventCategory-' + cat.name()}"
+                 th:text="#{__${'timeline.category.' + cat.name()}__}">
+            Kategori
+          </label>
+        </div>
+      </div>
+    </fieldset>
 
     <!-- From-date -->
-    <div class="skat-form__group">
-      <label for="fromDate" th:text="#{timeline.filter.fromDate}">Fra dato</label>
+    <div class="skat-form__group skat-timeline-filter-group">
+      <label class="skat-label" for="fromDate" th:text="#{timeline.filter.fromDate}">Fra dato</label>
       <input type="date" id="fromDate" name="fromDate"
              th:value="${filters != null ? filters.fromDate : ''}"
-             class="skat-input"/>
+             class="skat-input skat-timeline-filter-control"/>
     </div>
 
     <!-- To-date -->
-    <div class="skat-form__group">
-      <label for="toDate" th:text="#{timeline.filter.toDate}">Til dato</label>
+    <div class="skat-form__group skat-timeline-filter-group">
+      <label class="skat-label" for="toDate" th:text="#{timeline.filter.toDate}">Til dato</label>
       <input type="date" id="toDate" name="toDate"
              th:value="${filters != null ? filters.toDate : ''}"
-             class="skat-input"/>
+             class="skat-input skat-timeline-filter-control"/>
     </div>
 
     <!-- Debt selector -->
-    <div class="skat-form__group" th:if="${availableDebts != null and !availableDebts.isEmpty()}">
-      <label for="debtId" th:text="#{timeline.filter.debt}">Fordring</label>
-      <select id="debtId" name="debtId" class="skat-select">
+    <div class="skat-form__group skat-timeline-filter-group"
+         th:if="${availableDebts != null and !availableDebts.isEmpty()}">
+      <label class="skat-label" for="debtId" th:text="#{timeline.filter.debt}">Fordring</label>
+      <select id="debtId" name="debtId" class="skat-select skat-timeline-filter-control">
         <option value="">&#x2014;</option>
         <option th:each="debt : ${availableDebts}"
                 th:value="${debt.debtId}"
@@ -70,62 +78,94 @@
       </select>
     </div>
 
-    <button type="submit" class="skat-btn skat-btn--primary" th:text="#{timeline.filter.submit}">S&#xF8;g</button>
+    <button type="submit"
+            class="skat-btn skat-btn--primary skat-timeline-filter-submit"
+            th:text="#{timeline.filter.submit}">S&#xF8;g</button>
   </form>
 
   <!-- Active filter chips (only when filters are active) -->
   <div class="skat-timeline-chips" th:if="${filters != null and filters.hasActiveFilters()}">
     <span th:each="cat : ${filters.eventCategories}" class="skat-chip">
       <span th:text="#{__${'timeline.category.' + cat.name()}__}">Kategori</span>
-      <a th:href="${filterRemoveLinks[cat.name()]}" class="skat-chip__remove">&#xD7;</a>
+      <a th:href="${filterRemoveLinks[cat.name()]}"
+         th:attr="hx-get=${filterRemoveLinks[cat.name()]}"
+         hx-target="#timeline-panel"
+         hx-swap="outerHTML"
+         class="skat-chip__remove">&#xD7;</a>
     </span>
     <span class="skat-chip" th:if="${filters.fromDate != null}">
       <span th:text="${filters.fromDate}">Fra</span>
-      <a th:href="${filterRemoveLinks['fromDate']}" class="skat-chip__remove">&#xD7;</a>
+      <a th:href="${filterRemoveLinks['fromDate']}"
+         th:attr="hx-get=${filterRemoveLinks['fromDate']}"
+         hx-target="#timeline-panel"
+         hx-swap="outerHTML"
+         class="skat-chip__remove">&#xD7;</a>
     </span>
     <span class="skat-chip" th:if="${filters.toDate != null}">
       <span th:text="${filters.toDate}">Til</span>
-      <a th:href="${filterRemoveLinks['toDate']}" class="skat-chip__remove">&#xD7;</a>
+      <a th:href="${filterRemoveLinks['toDate']}"
+         th:attr="hx-get=${filterRemoveLinks['toDate']}"
+         hx-target="#timeline-panel"
+         hx-swap="outerHTML"
+         class="skat-chip__remove">&#xD7;</a>
+    </span>
+    <span class="skat-chip" th:if="${filters.debtId != null}">
+      <span th:text="${filters.debtId}">Fordring</span>
+      <a th:href="${filterRemoveLinks['debtId']}"
+         th:attr="hx-get=${filterRemoveLinks['debtId']}"
+         hx-target="#timeline-panel"
+         hx-swap="outerHTML"
+         class="skat-chip__remove">&#xD7;</a>
     </span>
     <a th:href="${timelineBaseUrl}"
+       th:attr="hx-get=${timelineBaseUrl}"
+       hx-target="#timeline-panel"
+       hx-swap="outerHTML"
        class="skat-link skat-timeline-clear-all"
        th:text="#{timeline.filter.clear}">Nulstil filtre</a>
   </div>
 
   <!-- Entry list — entries rendered inline in the panel -->
-  <ol id="timeline-entries" aria-live="polite" class="skat-timeline-list">
-    <!-- Empty state -->
-    <li th:if="${entries == null or entries.isEmpty()}" class="skat-timeline-empty">
-      <span th:text="#{timeline.empty}">Ingen h&#230;ndelser registreret</span>
-    </li>
-    <!-- Entries -->
-    <li th:each="entry : ${entries}"
-        role="article"
-        th:aria-label="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')} + ' - ' + ${#messages.msg(entry.title)}"
-        class="skat-timeline-entry">
-      <time th:datetime="${entry.timestamp}"
-            th:text="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')}"
-            class="skat-timeline-timestamp">
-      </time>
-      <span class="skat-badge"
-            th:classappend="'skat-badge--timeline-' + ${entry.eventCategory.name().toLowerCase()}"
-            th:text="#{__${'timeline.category.' + entry.eventCategory.name()}__}">
-        Kategori
-      </span>
-      <span class="skat-timeline-title" th:text="${#messages.msg(entry.title)}">Titel</span>
-      <p class="skat-timeline-description" th:if="${entry.description != null}" th:text="${entry.description}"></p>
-      <span class="skat-timeline-amount" th:if="${entry.amount != null}">
-        <span th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA') + ' DKK'}">0,00 DKK</span>
-      </span>
-      <span class="skat-timeline-debt" th:if="${entry.debtId != null}">
-        <a th:href="@{/cases/{cId}/debts/{dId}(cId=${caseId},dId=${entry.debtId})}"
-           th:text="${entry.debtId}">
-          Fordring
-        </a>
-      </span>
-      <span class="skat-timeline-performer" th:if="${entry.performedBy != null}" th:text="${entry.performedBy}"></span>
-    </li>
-  </ol>
+  <div class="skat-timeline-card">
+    <ol id="timeline-entries" aria-live="polite" class="skat-timeline-list">
+      <!-- Empty state -->
+      <li th:if="${entries == null or entries.isEmpty()}" class="skat-timeline-empty">
+        <span th:text="#{timeline.empty}">Ingen h&#230;ndelser registreret</span>
+      </li>
+      <!-- Entries -->
+      <li th:each="entry : ${entries}"
+          role="article"
+          th:aria-label="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')} + ' - ' + ${#messages.msg(entry.title)}"
+          class="skat-timeline-entry"
+          th:classappend="'skat-timeline-entry--' + ${entry.eventCategory.name().toLowerCase()}">
+        <div class="skat-timeline-entry__aside">
+          <time th:datetime="${entry.timestamp}"
+                th:text="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')}"
+                class="skat-timeline-timestamp">
+          </time>
+          <span class="skat-badge"
+                th:classappend="'skat-badge--timeline-' + ${entry.eventCategory.name().toLowerCase()}"
+                th:text="#{__${'timeline.category.' + entry.eventCategory.name()}__}">
+            Kategori
+          </span>
+        </div>
+        <div class="skat-timeline-entry__body">
+          <span class="skat-timeline-title" th:text="${#messages.msg(entry.title)}">Titel</span>
+          <p class="skat-timeline-description" th:if="${entry.description != null}" th:text="${entry.description}"></p>
+          <div class="skat-timeline-meta"
+               th:if="${entry.amount != null or entry.debtId != null or entry.performedBy != null}">
+            <span class="skat-timeline-amount" th:if="${entry.amount != null}"
+                  th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA') + ' DKK'}">0,00 DKK</span>
+            <span class="skat-timeline-debt" th:if="${entry.debtId != null}">
+              <a th:href="@{/cases/{cId}/debts/{dId}(cId=${caseId},dId=${entry.debtId})}"
+                 th:text="${entry.debtId}">Fordring</a>
+            </span>
+            <span class="skat-timeline-performer" th:if="${entry.performedBy != null}" th:text="${entry.performedBy}"></span>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </div>
 
   <!-- Load more button (within panel, NOT in OOB form) -->
   <div id="load-more-container">
@@ -158,28 +198,33 @@
   <li th:each="entry : ${entries}"
       role="article"
       th:aria-label="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')} + ' - ' + ${#messages.msg(entry.title)}"
-      class="skat-timeline-entry">
-    <time th:datetime="${entry.timestamp}"
-          th:text="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')}"
-          class="skat-timeline-timestamp">
-    </time>
-    <span class="skat-badge"
-          th:classappend="'skat-badge--timeline-' + ${entry.eventCategory.name().toLowerCase()}"
-          th:text="#{__${'timeline.category.' + entry.eventCategory.name()}__}">
-      Kategori
-    </span>
-    <span class="skat-timeline-title" th:text="${#messages.msg(entry.title)}">Titel</span>
-    <p class="skat-timeline-description" th:if="${entry.description != null}" th:text="${entry.description}"></p>
-    <span class="skat-timeline-amount" th:if="${entry.amount != null}">
-      <span th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA') + ' DKK'}">0,00 DKK</span>
-    </span>
-    <span class="skat-timeline-debt" th:if="${entry.debtId != null}">
-      <a th:href="@{/cases/{cId}/debts/{dId}(cId=${caseId},dId=${entry.debtId})}"
-         th:text="${entry.debtId}">
-        Fordring
-      </a>
-    </span>
-    <span class="skat-timeline-performer" th:if="${entry.performedBy != null}" th:text="${entry.performedBy}"></span>
+      class="skat-timeline-entry"
+      th:classappend="'skat-timeline-entry--' + ${entry.eventCategory.name().toLowerCase()}">
+    <div class="skat-timeline-entry__aside">
+      <time th:datetime="${entry.timestamp}"
+            th:text="${#temporals.format(entry.timestamp,'dd-MM-yyyy HH:mm')}"
+            class="skat-timeline-timestamp">
+      </time>
+      <span class="skat-badge"
+            th:classappend="'skat-badge--timeline-' + ${entry.eventCategory.name().toLowerCase()}"
+            th:text="#{__${'timeline.category.' + entry.eventCategory.name()}__}">
+        Kategori
+      </span>
+    </div>
+    <div class="skat-timeline-entry__body">
+      <span class="skat-timeline-title" th:text="${#messages.msg(entry.title)}">Titel</span>
+      <p class="skat-timeline-description" th:if="${entry.description != null}" th:text="${entry.description}"></p>
+      <div class="skat-timeline-meta"
+           th:if="${entry.amount != null or entry.debtId != null or entry.performedBy != null}">
+        <span class="skat-timeline-amount" th:if="${entry.amount != null}"
+              th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA') + ' DKK'}">0,00 DKK</span>
+        <span class="skat-timeline-debt" th:if="${entry.debtId != null}">
+          <a th:href="@{/cases/{cId}/debts/{dId}(cId=${caseId},dId=${entry.debtId})}"
+             th:text="${entry.debtId}">Fordring</a>
+        </span>
+        <span class="skat-timeline-performer" th:if="${entry.performedBy != null}" th:text="${entry.performedBy}"></span>
+      </div>
+    </div>
   </li>
   <!-- OOB update: replaces #load-more-container to hide/show the button -->
   <div id="load-more-container" hx-swap-oob="true">
