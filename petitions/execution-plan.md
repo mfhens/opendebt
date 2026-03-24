@@ -11,10 +11,10 @@
 |--------|-------|
 | Total petitions | 50 |
 | Validated | 6 |
-| Implemented | 38 |
+| Implemented | 39 |
 | In progress | 1 |
 | Ready for implementation | 1 |
-| Not started | 4 |
+| Not started | 3 |
 
 ### By phase
 
@@ -30,7 +30,7 @@
 | Phase 7 | Citizen auth / APIs (petition023-025) | **All implemented** |
 | Phase 8 | Citizen self-service (petition026-028) | Not started (unblocked) |
 | Phase 9 | Creditor portal features (petition029-038) | All implemented |
-| Phase 10 | Caseworker portal / batch (petition039-043) | petition040, 041, 043 implemented; petition039, 042 not started |
+| Phase 10 | Caseworker portal / batch (petition039-043) | All implemented except petition042 |
 | Phase 11 | Documentation (petition044) | **Implemented** |
 | Phase 12 | Interest regime / config (petition045-047) | **All implemented** |
 | Phase 13 | RBAC / case assignment (petition048-049) | petition048 implemented; petition049 not started |
@@ -234,7 +234,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 036 | Portal -- reconciliation |
 | 037 | Portal -- monthly reports |
 | 038 | Portal -- dashboard/navigation/settings |
-| 040 | Ledger query API and Sagsbehandlerportal accounting view |
+| 039 | Krydsende handlinger — crossing financial transactions (FR-7 multi-claim pending) |
 | 041 | Sagsbehandlerportal demo access |
 | 043 | Batch processing (daily lifecycle and interest) |
 | 044 | Comprehensive documentation |
@@ -256,14 +256,13 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 |----------|-------|-----------|
 | 019 | Legacy SOAP endpoints | petition015-018 implemented |
 
-### Not started (4) -- all unblocked unless noted
+### Not started (3) -- all unblocked unless noted
 
 | Petition | Title | Blocked by |
 |----------|-------|------------|
 | 026 | Mit gaeldsoverblik page | -- (all deps implemented) |
 | 027 | Citizen payment initiation | petition026 |
 | 028 | Digital Post integration | petition026 |
-| 039 | Krydsende handlinger (crossing transactions) | petition043 (done), complex backend |
 | 042 | OIO Sag v2.0 case data model | -- (major architectural migration) |
 | 049 | Case handler assignment (supervisor dashboard + queue) | petition048 (done) |
 

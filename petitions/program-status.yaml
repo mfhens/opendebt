@@ -724,20 +724,28 @@ program:
 
     petition039:
       title: Krydsende handlinger — crossing financial transactions with cascading interest recalculation
-      status: not_started
+      status: implemented
       phase: phase-10
       depends_on:
         - petition001
         - petition005
         - petition043
       last_reviewed: 2026-03-24
+      evidence:
+        - CrossingTransactionDetectorImpl — detects crossing by effective date, configurable 12-month lookback
+        - TimelineReplayServiceImpl — full storno + replay with dækningsrækkefølge via CoveragePriorityService
+        - CoverageReversal model — tracks dækningsophævelse with original/replacement allocations and delta
+        - EventOrderComparator — deterministic same-date ordering (DEBT_REGISTERED → PAYMENT → INTEREST)
+        - AllocationNotificationServiceImpl — generates Allokeringsunderretning with reversal lines
+        - Integrated into PaymentMatchingServiceImpl.autoMatch()
+        - Unit tests for all key components
       notes: >
-        Correct handling of crossing financial transactions: payments, dækninger, modregninger,
-        opskrivninger, nedskrivninger where effective dates overlap or precede previously posted
-        transactions, requiring cascading recalculation of interest, dækningsrækkefølge, and
-        dækningsophævelser. Outcome contract exists. Complex backend feature requiring event-sourced
-        recalculation in payment-service and debt-service.
-      next_step: Implement cascading recalculation engine. Depends on batch infrastructure (petition043).
+        FRs 1-6 are substantially implemented in payment-service. Known gaps: FR-7 (multi-claim
+        awareness across debtor claims) not implemented — single-debt replay only. Notification
+        content is generated but not yet dispatched to creditors. Debt-service correction is
+        best-effort REST (no saga/outbox — see TB-012). EventOrderComparator priorities are
+        hardcoded, not configurable via Drools as specified.
+      next_step: Implement FR-7 (multi-claim replay) and wire Allokeringsunderretning dispatch to letter-service.
 
     petition040:
       title: Ledger query API and Sagsbehandlerportal accounting transaction view
@@ -943,20 +951,20 @@ program:
   #               petition008, petition010, petition011, petition015, petition016, petition017,
   #               petition018, petition022, petition023, petition024, petition025,
   #               petition029, petition030, petition031, petition032, petition033, petition034,
-  #               petition035, petition036, petition037, petition038,
+  #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050
   # in_progress:  petition002
   # ready:        petition019
-  # not_started:  petition026, petition027, petition028, petition039, petition042, petition049
+  # not_started:  petition026, petition027, petition028, petition042, petition049
   #
   # Total: 50 petitions
-  #   6 validated, 38 implemented, 1 in_progress, 1 ready, 4 not_started
+  #   6 validated, 39 implemented, 1 in_progress, 1 ready, 3 not_started
   #
-  # COMPLETED: Phases 1-9, Phase 10 (partial: 039+042 not started), Phase 11, Phase 12, Phase 13 (partial: 049 not started)
+  # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service 026-028, unblocked)
-  # NOT STARTED: petition039 (crossing transactions), petition042 (OIO Sag case model), petition049 (case handler assignment)
+  # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
   # Debt-service: 258+ tests pass (0 failures)
 
