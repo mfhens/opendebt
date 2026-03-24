@@ -298,3 +298,13 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 3. **Wire Drools rules** into readiness validation (TB-008) -- low-hanging fruit since rules exist
 4. **Complete petition002** end-to-end demo validation
 5. **Wire shared access resolution** (W1-ACC-03/04) into integration-gateway, creditor-portal, debt-service
+
+---
+
+## Future ideas
+
+- Interactive "krydsende handlinger" timeline UI: time-travel through the full transaction history for a case
+- Daily progress report in Marp format for human management stakeholders
+- Batch administration UI (currently no operational interface for batch job monitoring)
+- Case handler assignment from the operational system (today handled via Data Warehouse; should be built into caseworker portal — see petition049)
+- Data Warehouse integration
