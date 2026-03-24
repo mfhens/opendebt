@@ -1,4 +1,4 @@
-# start-demo.ps1 — Start the full OpenDebt demo (creditor portal + caseworker portal + all backend services)
+# start-demo.ps1 — Start the full OpenDebt demo (citizen portal + creditor portal + caseworker portal + all backend services)
 # Requires: Java 21, Maven, Docker (postgres/keycloak/observability via compose)
 #
 # Usage:  .\start-demo.ps1                         # start everything (fast dev mode, no auth)
@@ -6,11 +6,12 @@
 #         .\start-demo.ps1 -Stop                    # stop all Java services (leaves Docker infra running)
 #         .\start-demo.ps1 -Only caseworker         # start only caseworker portal + its backends
 #         .\start-demo.ps1 -Only creditor           # start only creditor portal + its backends
+#         .\start-demo.ps1 -Only citizen            # start only citizen portal + its backends
 #         .\start-demo.ps1 -SecurityDemo -Only creditor
 
 param(
     [switch]$Stop,
-    [ValidateSet("all", "caseworker", "creditor")]
+    [ValidateSet("all", "caseworker", "creditor", "citizen")]
     [string]$Only = "all",
     [switch]$SecurityDemo
 )
@@ -30,6 +31,7 @@ $DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "lok
 $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
 $CreditorPortalClientSecret = "creditor-portal-dev-secret"
+$CitizenPortalClientSecret = "citizen-dev-secret"
 
 function Write-Status($msg) { Write-Host $msg -ForegroundColor Yellow }
 function Write-Ok($msg)     { Write-Host $msg -ForegroundColor Green }
@@ -152,7 +154,8 @@ if ($Stop) {
 # Determine which services to start based on -Only parameter
 # =========================================================================
 $startCaseworker = ($Only -eq "all" -or $Only -eq "caseworker")
-$startCreditor  = ($Only -eq "all" -or $Only -eq "creditor")
+$startCreditor   = ($Only -eq "all" -or $Only -eq "creditor")
+$startCitizen    = ($Only -eq "all" -or $Only -eq "citizen")
 
 $backendProfile = if ($SecurityDemo) { "demo-auth" } else { "dev" }
 $portalProfile = if ($SecurityDemo) { "local" } else { "dev" }
@@ -167,10 +170,15 @@ $modules = [System.Collections.ArrayList]::new()
 # Shared backend services
 [void]$modules.Add("opendebt-debt-service")
 
-if ($startCaseworker) {
+if ($startCaseworker -or $startCitizen) {
     [void]$modules.Add("opendebt-case-service")
     [void]$modules.Add("opendebt-payment-service")
+}
+if ($startCaseworker) {
     [void]$modules.Add("opendebt-caseworker-portal")
+}
+if ($startCitizen) {
+    [void]$modules.Add("opendebt-citizen-portal")
 }
 if ($startCreditor) {
     [void]$modules.Add("opendebt-creditor-service")
@@ -264,7 +272,7 @@ Start-Service -Name "debt-service" `
 # Start-Service -Name "person-registry" ...
 
 
-if ($startCaseworker) {
+if ($startCaseworker -or $startCitizen) {
     Start-Service -Name "case-service" `
         -JarPattern "opendebt-case-service\target\opendebt-case-service-*.jar" `
         -Profile $backendProfile -DbName "opendebt_case" `
@@ -300,7 +308,7 @@ $ok = Wait-ForUrl "http://localhost:8082/debt-service/actuator/health"
 if (-not $ok) { Write-Err "  debt-service failed! Check .demo-logs\debt-service-err.log"; exit 1 }
 Write-Ok "  debt-service ready."
 
-if ($startCaseworker) {
+if ($startCaseworker -or $startCitizen) {
     $ok = Wait-ForUrl "http://localhost:8081/case-service/actuator/health"
     if (-not $ok) { Write-Err "  case-service failed! Check .demo-logs\case-service-err.log"; exit 1 }
     Write-Ok "  case-service ready."
@@ -348,6 +356,20 @@ if ($startCreditor) {
     Write-Ok "  creditor-portal ready."
 }
 
+if ($startCitizen) {
+    Start-Service -Name "citizen-portal" `
+        -JarPattern "opendebt-citizen-portal\target\opendebt-citizen-portal-*.jar" `
+        -Profile $portalProfile -DbName $null `
+        -ExtraArgs @{
+            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
+            "TASTSELV_CLIENT_SECRET" = $CitizenPortalClientSecret
+        }
+
+    $ok = Wait-ForUrl "http://localhost:8086/borger/actuator/health" 30
+    if (-not $ok) { Write-Err "  citizen-portal failed! Check .demo-logs\citizen-portal-err.log"; exit 1 }
+    Write-Ok "  citizen-portal ready."
+}
+
 # =========================================================================
 # Summary
 # =========================================================================
@@ -369,12 +391,15 @@ if ($startCreditor) {
     Write-Host "    Fordringer:       http://localhost:8085/creditor-portal/fordringer"
     Write-Host "    Opret fordring:   http://localhost:8085/creditor-portal/fordring/ny"
 }
+if ($startCitizen) {
+    Write-Host "  Citizen Portal:     http://localhost:8086/borger/"
+}
 
 Write-Host ""
 Write-Host "  Backend APIs:"
 Write-Host "    Debt API:         http://localhost:8082/debt-service/swagger-ui.html"
 
-if ($startCaseworker) {
+if ($startCaseworker -or $startCitizen) {
     Write-Host "    Case API:         http://localhost:8081/case-service/swagger-ui.html"
     Write-Host "    Payment API:      http://localhost:8083/payment-service/swagger-ui.html"
 }
@@ -387,6 +412,7 @@ if ($SecurityDemo) {
     Write-Host "  Keycloak demo users:"
     Write-Host "    caseworker / caseworker123   (role: CASEWORKER)"
     Write-Host "    creditor   / creditor123     (role: CREDITOR)"
+    Write-Host "    citizen    / citizen123      (role: CITIZEN)"
     Write-Host "    admin      / admin123        (role: ADMIN)"
     Write-Host "  Keycloak admin:"
     Write-Host "    admin / admin  -> http://localhost:8080/admin/"
