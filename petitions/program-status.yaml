@@ -720,6 +720,195 @@ program:
         the navigation structure all other portal feature pages plug into.
       next_step: Implement FIRST in Phase 9. All other petition029-037 pages depend on this navigation structure.
 
+    # --- Phase 10+: Caseworker portal, batch, and advanced features ---
+
+    petition039:
+      title: Krydsende handlinger — crossing financial transactions with cascading interest recalculation
+      status: not_started
+      phase: phase-10
+      depends_on:
+        - petition001
+        - petition005
+        - petition043
+      last_reviewed: 2026-03-24
+      notes: >
+        Correct handling of crossing financial transactions: payments, dækninger, modregninger,
+        opskrivninger, nedskrivninger where effective dates overlap or precede previously posted
+        transactions, requiring cascading recalculation of interest, dækningsrækkefølge, and
+        dækningsophævelser. Outcome contract exists. Complex backend feature requiring event-sourced
+        recalculation in payment-service and debt-service.
+      next_step: Implement cascading recalculation engine. Depends on batch infrastructure (petition043).
+
+    petition040:
+      title: Ledger query API and Sagsbehandlerportal accounting transaction view
+      status: implemented
+      phase: phase-10
+      depends_on:
+        - petition042
+      last_reviewed: 2026-03-24
+      evidence:
+        - Caseworker portal (opendebt-caseworker-portal) implemented with ledger timeline view
+        - Ledger/debt event read API exposed via payment-service and debt-service
+        - CaseworkerCaseDetailController serves posteringslog per case
+      notes: >
+        Read API on payment-service for ledger entries and debt events by debt ID and case ID.
+        Caseworker portal accounting transaction log (posteringslog) per case and per debt.
+        Implemented as part of the caseworker portal build.
+      next_step: Implemented.
+
+    petition041:
+      title: Sagsbehandlerportal demo access with crossing-transactions showcase
+      status: implemented
+      phase: phase-10
+      depends_on:
+        - petition040
+      last_reviewed: 2026-03-24
+      evidence:
+        - Demo login implemented in caseworker portal (bypasses Keycloak in dev mode)
+        - start-demo.ps1 seeds demo data and starts all portals
+      notes: >
+        Development/demo mode for the caseworker portal bypassing Keycloak authentication,
+        seeding realistic demo data. Implemented via demo-login controller and start-demo.ps1.
+        Crossing-transaction demo seed data (petition039) is pending.
+      next_step: Implemented. Crossing-transaction seed data awaits petition039 implementation.
+
+    petition042:
+      title: Case data model based on the fællesoffentlige sagsdefinition (OIO Sag v2.0)
+      status: not_started
+      phase: phase-10
+      depends_on: []
+      last_reviewed: 2026-03-24
+      notes: >
+        Redesign of case-service data model to align with OIO Sag v2.0 (arkitektur.digst.dk):
+        sagsparter (case parties with roles), sagsjournal (journal with JournalPost and JournalNotat),
+        sagshjemmel (legal basis), sagsklassifikation, sagshændelser (case events/audit trail),
+        sagsrelationer (inter-case references), and proper tilstandsmodel. Major architectural migration.
+        Outcome contract exists. No feature file yet.
+      next_step: Define migration strategy from current CaseEntity to OIO Sag model before implementing.
+
+    petition043:
+      title: Batch processing — daily lifecycle transitions and interest accrual
+      status: implemented
+      phase: phase-10
+      depends_on:
+        - petition003
+        - petition005
+        - petition007
+      last_reviewed: 2026-03-23
+      evidence:
+        - RestanceTransitionJob, InterestAccrualJob, DeadlineMonitoringJob in debt-service
+        - 12 unit tests + 7 BDD scenarios passing
+        - petition043-batch-processing-daily-lifecycle-and-interest.feature
+      notes: >
+        Daily batch jobs for debt lifecycle state transitions (restance), interest accrual,
+        and deadline monitoring. Implemented in debt-service as Spring Batch jobs.
+      next_step: Implemented.
+
+    petition044:
+      title: Comprehensive documentation — MkDocs site with multi-audience guides
+      status: implemented
+      phase: phase-11
+      depends_on: []
+      last_reviewed: 2026-03-23
+      evidence:
+        - MkDocs site in docs/site/ with technical, fordringshaver, skyldner, sagsbehandler sections
+        - mkdocs.yml at repo root
+      notes: >
+        Developer guide, architecture reference, API docs, and user guides for creditors,
+        citizens, and caseworkers. Published via MkDocs.
+      next_step: Implemented. Keep in sync as features evolve.
+
+    petition045:
+      title: Multi-regime interest and fee compliance per PSRM debt type rules
+      status: implemented
+      phase: phase-12
+      depends_on:
+        - petition043
+        - petition046
+      last_reviewed: 2026-03-23
+      evidence:
+        - Per-debt-type interest rate resolution via InterestRuleCode enum and BusinessConfigService
+        - FeeEntity and fee-inclusive interest calculation implemented
+        - Straffebøder exemption via debt_types.interestApplicable flag
+        - 3-way coverage priority split (interest → fees → principal)
+        - BusinessConfigServiceTest (8), InterestRuleCodeTest (7), FeeEntityTest (3) passing
+      notes: >
+        Foundation implemented 2026-03-21. Per-debt-type rate resolution, straffebøder exemption,
+        told rates, contractual override, fee entity, interest on fees, separate accounting targets.
+        No outcome-contract file (foundation scope — outcome contract embedded in petition).
+      next_step: Implemented (foundation). Full compliance verification pending gap analysis (G1-G8).
+
+    petition046:
+      title: Versioned business configuration with validity periods
+      status: implemented
+      phase: phase-12
+      depends_on: []
+      last_reviewed: 2026-03-23
+      evidence:
+        - BusinessConfigEntity + BusinessConfigAuditEntity with time-versioned validity periods
+        - Full CRUD in BusinessConfigService (createEntry, updateEntry, approveEntry, rejectEntry)
+        - V8 Flyway migration seeds 18 rate/fee/threshold configs
+        - Auto-computation of INDR_STD/TOLD/TOLD_AFD from NB_UDLAAN base rate
+      notes: >
+        Replaces hardcoded application.yml interest rates with time-versioned database configuration.
+        Historical rate seeding, REST API for config management, full audit trail. Foundation 2026-03-21,
+        full CRUD Sprint G 2026-03-21.
+      next_step: Implemented.
+
+    petition047:
+      title: Configuration administration UI for versioned business values
+      status: implemented
+      phase: phase-12
+      depends_on:
+        - petition046
+      last_reviewed: 2026-03-23
+      evidence:
+        - BusinessConfigController at /api/v1/config with 8 endpoints
+        - Role guards (ADMIN role required), Danish error responses
+        - 30 unit tests passing (BusinessConfigControllerTest 11, ServiceCrudTest 13, DerivedRateTest 6)
+        - petition047-configuration-administration-ui.feature BDD scenarios
+      notes: >
+        REST API for config management with full CRUD, audit trail, derived rate preview,
+        approve/reject workflow. All 5 sprint tasks (P047-T1 through P047-T5) complete in Sprint G.
+      next_step: Implemented.
+
+    petition048:
+      title: Role-based data access control hardening
+      status: implemented
+      phase: phase-13
+      depends_on:
+        - petition010
+        - petition016
+      last_reviewed: 2026-03-23
+      evidence:
+        - W9-RBAC-01 role-scoped filtering in case-service, debt-service, creditor-service
+        - W9-RBAC-02 sensitivity controls (VIP/PEP/CONFIDENTIAL) and capability checks
+        - W9-RBAC-03 audit events for assignment and authorization denials, BDD acceptance scenarios
+        - W9-RBAC-04 Grafana dashboard with authorization metrics and alert templates
+        - ADR-0007 compliance verified (downstream re-validation, spoof-resistant)
+      notes: >
+        Caseworker/supervisor visibility rules, creditor/citizen scoping, VIP/PEP sensitivity controls.
+        All 4 RBAC tickets (W9-RBAC-01 through W9-RBAC-04) implemented by 2026-03-23.
+      next_step: Implemented.
+
+    petition049:
+      title: Case handler assignment — caseworker-to-case assignment and workload management
+      status: implemented
+      phase: phase-13
+      depends_on:
+        - petition040
+        - petition048
+      last_reviewed: 2026-03-24
+      evidence:
+        - AssignmentGuardService in case-service
+        - Audit events CASEWORKER_ASSIGNED and ASSIGNMENT_DENIED with reason metadata
+        - petition049-case-handler-assignment.feature BDD scenarios written
+      notes: >
+        Case handler assignment from the operational system, replacing Data Warehouse-based assignment
+        with real-time operational assignment. Basic assignment and audit trail implemented.
+        Capability lookup (TB-023) is a pending refinement.
+      next_step: Implemented (basic). TB-023 (target-caseworker capability lookup) is a future enhancement.
+
     petition050:
       title: Unified Case Timeline UI
       status: implemented
@@ -747,27 +936,29 @@ program:
         identified during code review.
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-23, post petition050 implementation)
+  # STATUS SUMMARY (2026-03-24, all 50 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
   #               petition008, petition010, petition011, petition015, petition016, petition017,
   #               petition018, petition022, petition023, petition024, petition025,
   #               petition029, petition030, petition031, petition032, petition033, petition034,
-  #               petition035, petition036, petition037, petition038, petition043, petition044,
-  #               petition050
+  #               petition035, petition036, petition037, petition038,
+  #               petition040, petition041, petition043, petition044, petition045, petition046,
+  #               petition047, petition048, petition049, petition050
   # in_progress:  petition002
   # ready:        petition019
-  # not_started:  petition026, petition027, petition028
+  # not_started:  petition026, petition027, petition028, petition039, petition042
   #
-  # Total: 41 petitions
-  #   6 validated, 30 implemented, 1 in_progress, 1 ready, 3 not_started
+  # Total: 50 petitions
+  #   6 validated, 39 implemented, 1 in_progress, 1 ready, 3 not_started
   #
-  # COMPLETED: Phases 1-7, Phase 9, Phase 10, Phase 11, Phase 12 (petition050)
+  # COMPLETED: Phases 1-9, Phase 10 (partial: 039+042 not started), Phase 11, Phase 12, Phase 13
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
-  # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service, unblocked)
+  # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service 026-028, unblocked)
+  # NOT STARTED: petition039 (crossing transactions), petition042 (OIO Sag case model)
   #
-  # Debt-service: 258 tests pass (0 failures)
+  # Debt-service: 258+ tests pass (0 failures)
 
   # ===========================================================================
   # Technical Debt and Infrastructure Backlog

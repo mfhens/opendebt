@@ -9,12 +9,12 @@
 
 | Metric | Count |
 |--------|-------|
-| Total petitions | 47 |
+| Total petitions | 50 |
 | Validated | 6 |
-| Implemented | 31 |
+| Implemented | 39 |
 | In progress | 1 |
 | Ready for implementation | 1 |
-| Not started | 8 |
+| Not started | 3 |
 
 ### By phase
 
@@ -30,10 +30,11 @@
 | Phase 7 | Citizen auth / APIs (petition023-025) | **All implemented** |
 | Phase 8 | Citizen self-service (petition026-028) | Not started (unblocked) |
 | Phase 9 | Creditor portal features (petition029-038) | All implemented |
-| Phase 10 | Batch processing / scale (petition043) | **Implemented** |
+| Phase 10 | Caseworker portal / batch (petition039-043) | petition040, 041, 043 implemented; petition039, 042 not started |
 | Phase 11 | Documentation (petition044) | **Implemented** |
-| Phase 12 | Interest regime compliance (petition045-046) | **API implemented** |
-| Phase 13 | RBAC hardening (petition048) | Planned (Sprint 16) |
+| Phase 12 | Interest regime / config (petition045-047) | **All implemented** |
+| Phase 13 | RBAC / case assignment (petition048-049) | **All implemented** |
+| Phase 14 | Unified timeline UI (petition050) | **Implemented** |
 
 ### Recent work (2026-03-17 to 2026-03-21)
 
@@ -202,7 +203,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 020 | OpenTelemetry-based observability |
 | 021 | Internationalization (i18n) |
 
-### Implemented (29)
+### Implemented (39)
 
 | Petition | Title |
 |----------|-------|
@@ -233,10 +234,16 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 036 | Portal -- reconciliation |
 | 037 | Portal -- monthly reports |
 | 038 | Portal -- dashboard/navigation/settings |
+| 040 | Ledger query API and Sagsbehandlerportal accounting view |
+| 041 | Sagsbehandlerportal demo access |
 | 043 | Batch processing (daily lifecycle and interest) |
 | 044 | Comprehensive documentation |
 | 045 | Multi-regime interest and fee compliance (foundation) |
-| 046 | Versioned business configuration (foundation) |
+| 046 | Versioned business configuration |
+| 047 | Configuration administration UI |
+| 048 | Role-based data access control hardening |
+| 049 | Case handler assignment |
+| 050 | Unified Case Timeline UI |
 
 ### In progress (1)
 
@@ -250,14 +257,15 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 |----------|-------|-----------|
 | 019 | Legacy SOAP endpoints | petition015-018 implemented |
 
-### Not started (4) -- all unblocked
+### Not started (5) -- all unblocked unless noted
 
 | Petition | Title | Blocked by |
 |----------|-------|------------|
 | 026 | Mit gaeldsoverblik page | -- (all deps implemented) |
 | 027 | Citizen payment initiation | petition026 |
 | 028 | Digital Post integration | petition026 |
-| 048 | Role-based data access control hardening | -- (contract defined, sprint-planned) |
+| 039 | Krydsende handlinger (crossing transactions) | petition043 (done), complex backend |
+| 042 | OIO Sag v2.0 case data model | -- (major architectural migration) |
 
 ---
 
