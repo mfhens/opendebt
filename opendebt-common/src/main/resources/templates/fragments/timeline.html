@@ -19,69 +19,74 @@
     </ul>
   </div>
 
-  <!-- Filter bar -->
-  <form th:action="${timelineBaseUrl}"
-        method="get"
-        th:attr="hx-get=${timelineBaseUrl}"
-        hx-target="#timeline-panel"
-        hx-swap="outerHTML"
-        class="skat-form skat-timeline-filter-bar">
+  <!-- Filter disclosure — collapsed by default, auto-opens when filters are active -->
+  <details class="skat-timeline-filter-disclosure"
+           th:attr="open=${filters != null and filters.hasActiveFilters() ? 'open' : null}">
+    <summary class="skat-timeline-filter-summary">
+      <span th:text="#{timeline.filter.toggle}">Filtrer</span>
+      <span class="skat-timeline-filter-summary__indicator" aria-hidden="true">&#x25BE;</span>
+    </summary>
 
-    <!-- Category multi-select -->
-    <fieldset class="skat-form__group skat-timeline-filter-group skat-timeline-filter-group--categories">
-      <legend class="skat-legend" th:text="#{timeline.filter.category}">Kategori</legend>
-      <div class="skat-timeline-checkbox-group">
-        <div class="skat-checkbox"
-             th:each="cat : ${T(dk.ufst.opendebt.common.timeline.EventCategory).values()}">
-          <input type="checkbox"
-                 class="skat-checkbox__input"
-                 name="eventCategory"
-                 th:id="${'eventCategory-' + cat.name()}"
-                 th:value="${cat.name()}"
-                 th:checked="${filters != null and filters.eventCategories != null and filters.eventCategories.contains(cat)}"/>
-          <label class="skat-checkbox__label"
-                 th:for="${'eventCategory-' + cat.name()}"
-                 th:text="#{__${'timeline.category.' + cat.name()}__}">
-            Kategori
-          </label>
+    <form th:action="${timelineBaseUrl}"
+          method="get"
+          th:attr="hx-get=${timelineBaseUrl}"
+          hx-target="#timeline-panel"
+          hx-swap="outerHTML"
+          class="skat-form skat-timeline-filter-bar">
+
+      <!-- Category checkboxes — horizontal wrap -->
+      <fieldset class="skat-form__group skat-timeline-filter-group skat-timeline-filter-group--categories">
+        <legend class="skat-legend" th:text="#{timeline.filter.category}">Kategori</legend>
+        <div class="skat-timeline-checkbox-group">
+          <div class="skat-checkbox"
+               th:each="cat : ${T(dk.ufst.opendebt.common.timeline.EventCategory).values()}">
+            <input type="checkbox"
+                   class="skat-checkbox__input"
+                   name="eventCategory"
+                   th:id="${'eventCategory-' + cat.name()}"
+                   th:value="${cat.name()}"
+                   th:checked="${filters != null and filters.eventCategories != null and filters.eventCategories.contains(cat)}"/>
+            <label class="skat-checkbox__label"
+                   th:for="${'eventCategory-' + cat.name()}"
+                   th:text="#{__${'timeline.category.' + cat.name()}__}">
+              Kategori
+            </label>
+          </div>
         </div>
+      </fieldset>
+
+      <!-- Date + debt + submit on one row -->
+      <div class="skat-timeline-filter-controls">
+        <div class="skat-form__group skat-timeline-filter-group">
+          <label class="skat-label" for="fromDate" th:text="#{timeline.filter.fromDate}">Fra dato</label>
+          <input type="date" id="fromDate" name="fromDate"
+                 th:value="${filters != null ? filters.fromDate : ''}"
+                 class="skat-input skat-timeline-filter-control"/>
+        </div>
+        <div class="skat-form__group skat-timeline-filter-group">
+          <label class="skat-label" for="toDate" th:text="#{timeline.filter.toDate}">Til dato</label>
+          <input type="date" id="toDate" name="toDate"
+                 th:value="${filters != null ? filters.toDate : ''}"
+                 class="skat-input skat-timeline-filter-control"/>
+        </div>
+        <div class="skat-form__group skat-timeline-filter-group"
+             th:if="${availableDebts != null and !availableDebts.isEmpty()}">
+          <label class="skat-label" for="debtId" th:text="#{timeline.filter.debt}">Fordring</label>
+          <select id="debtId" name="debtId" class="skat-select skat-timeline-filter-control">
+            <option value="">&#x2014;</option>
+            <option th:each="debt : ${availableDebts}"
+                    th:value="${debt.debtId}"
+                    th:text="${debt.transferReference != null ? debt.transferReference : debt.debtId}"
+                    th:selected="${filters != null and filters.debtId != null and filters.debtId.equals(debt.debtId)}">
+            </option>
+          </select>
+        </div>
+        <button type="submit"
+                class="skat-btn skat-btn--primary skat-timeline-filter-submit"
+                th:text="#{timeline.filter.submit}">S&#xF8;g</button>
       </div>
-    </fieldset>
-
-    <!-- From-date -->
-    <div class="skat-form__group skat-timeline-filter-group">
-      <label class="skat-label" for="fromDate" th:text="#{timeline.filter.fromDate}">Fra dato</label>
-      <input type="date" id="fromDate" name="fromDate"
-             th:value="${filters != null ? filters.fromDate : ''}"
-             class="skat-input skat-timeline-filter-control"/>
-    </div>
-
-    <!-- To-date -->
-    <div class="skat-form__group skat-timeline-filter-group">
-      <label class="skat-label" for="toDate" th:text="#{timeline.filter.toDate}">Til dato</label>
-      <input type="date" id="toDate" name="toDate"
-             th:value="${filters != null ? filters.toDate : ''}"
-             class="skat-input skat-timeline-filter-control"/>
-    </div>
-
-    <!-- Debt selector -->
-    <div class="skat-form__group skat-timeline-filter-group"
-         th:if="${availableDebts != null and !availableDebts.isEmpty()}">
-      <label class="skat-label" for="debtId" th:text="#{timeline.filter.debt}">Fordring</label>
-      <select id="debtId" name="debtId" class="skat-select skat-timeline-filter-control">
-        <option value="">&#x2014;</option>
-        <option th:each="debt : ${availableDebts}"
-                th:value="${debt.debtId}"
-                th:text="${debt.transferReference != null ? debt.transferReference : debt.debtId}"
-                th:selected="${filters != null and filters.debtId != null and filters.debtId.equals(debt.debtId)}">
-        </option>
-      </select>
-    </div>
-
-    <button type="submit"
-            class="skat-btn skat-btn--primary skat-timeline-filter-submit"
-            th:text="#{timeline.filter.submit}">S&#xF8;g</button>
-  </form>
+    </form>
+  </details>
 
   <!-- Active filter chips (only when filters are active) -->
   <div class="skat-timeline-chips" th:if="${filters != null and filters.hasActiveFilters()}">

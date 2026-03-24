@@ -111,16 +111,49 @@
 .skat-badge--timeline-journal        { background-color: #37474f; color: #ffffff; }
 
 /* ==========================================================================
-   FILTER BAR
+   FILTER DISCLOSURE
+   ========================================================================== */
+
+.skat-timeline-filter-disclosure {
+  margin-bottom: 0.75rem;
+}
+
+.skat-timeline-filter-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #005b99;
+  border: 1px solid #005b99;
+  border-radius: 4px;
+  list-style: none;
+  user-select: none;
+}
+
+.skat-timeline-filter-summary::-webkit-details-marker { display: none; }
+
+.skat-timeline-filter-summary__indicator {
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+
+.skat-timeline-filter-disclosure[open] .skat-timeline-filter-summary__indicator {
+  transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   FILTER BAR (inside disclosure)
    ========================================================================== */
 
 .skat-timeline-filter-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  margin-bottom: 1rem;
-  padding: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
   background: #f5f5f5;
   border-radius: 4px;
 }
@@ -135,36 +168,53 @@
 .skat-timeline-filter-group label,
 .skat-timeline-filter-group .skat-legend {
   display: block;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
   font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .skat-timeline-filter-group--categories {
-  min-width: 18rem;
-  max-width: 28rem;
   border: 0;
   padding: 0;
   margin: 0;
 }
 
+/* Horizontal wrap for category checkboxes */
 .skat-timeline-checkbox-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.5rem 1rem;
-  padding: 0.75rem;
-  background: #ffffff;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.skat-timeline-checkbox-group .skat-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.skat-timeline-checkbox-group .skat-checkbox__label {
+  font-size: 0.85rem;
+}
+
+/* Dates + debt + submit on one row */
+.skat-timeline-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
 }
 
 .skat-timeline-filter-control {
   display: block;
-  inline-size: 14rem;
+  inline-size: 11rem;
   max-inline-size: 100%;
 }
 
 .skat-timeline-filter-submit {
-  min-width: 7rem;
+  min-width: 6rem;
+  height: 2.25rem;
+  align-self: flex-end;
 }
 
 /* ==========================================================================
