@@ -433,7 +433,7 @@ workflowService.completeTask(taskId, variables);
 - Use Lombok for boilerplate reduction
 - Add proper validation annotations
 - Include security annotations on all endpoints
-- Write meaningful commit messages
+- Write conventional commits: `type(scope): description` (types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`; always include `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer)
 - Update ADRs for significant decisions
 - Use Mermaid for all diagrams in documentation
 - Store PII only in Person Registry
