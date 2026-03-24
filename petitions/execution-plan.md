@@ -11,10 +11,10 @@
 |--------|-------|
 | Total petitions | 50 |
 | Validated | 6 |
-| Implemented | 39 |
+| Implemented | 38 |
 | In progress | 1 |
 | Ready for implementation | 1 |
-| Not started | 3 |
+| Not started | 4 |
 
 ### By phase
 
@@ -33,7 +33,7 @@
 | Phase 10 | Caseworker portal / batch (petition039-043) | petition040, 041, 043 implemented; petition039, 042 not started |
 | Phase 11 | Documentation (petition044) | **Implemented** |
 | Phase 12 | Interest regime / config (petition045-047) | **All implemented** |
-| Phase 13 | RBAC / case assignment (petition048-049) | **All implemented** |
+| Phase 13 | RBAC / case assignment (petition048-049) | petition048 implemented; petition049 not started |
 | Phase 14 | Unified timeline UI (petition050) | **Implemented** |
 
 ### Recent work (2026-03-17 to 2026-03-21)
@@ -203,7 +203,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 020 | OpenTelemetry-based observability |
 | 021 | Internationalization (i18n) |
 
-### Implemented (39)
+### Implemented (38)
 
 | Petition | Title |
 |----------|-------|
@@ -242,7 +242,6 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 046 | Versioned business configuration |
 | 047 | Configuration administration UI |
 | 048 | Role-based data access control hardening |
-| 049 | Case handler assignment |
 | 050 | Unified Case Timeline UI |
 
 ### In progress (1)
@@ -257,7 +256,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 |----------|-------|-----------|
 | 019 | Legacy SOAP endpoints | petition015-018 implemented |
 
-### Not started (5) -- all unblocked unless noted
+### Not started (4) -- all unblocked unless noted
 
 | Petition | Title | Blocked by |
 |----------|-------|------------|
@@ -266,6 +265,7 @@ Once petition003 is done, Wave 7 executes in 3 sprints:
 | 028 | Digital Post integration | petition026 |
 | 039 | Krydsende handlinger (crossing transactions) | petition043 (done), complex backend |
 | 042 | OIO Sag v2.0 case data model | -- (major architectural migration) |
+| 049 | Case handler assignment (supervisor dashboard + queue) | petition048 (done) |
 
 ---
 

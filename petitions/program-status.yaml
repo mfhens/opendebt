@@ -893,21 +893,21 @@ program:
 
     petition049:
       title: Case handler assignment — caseworker-to-case assignment and workload management
-      status: implemented
+      status: not_started
       phase: phase-13
       depends_on:
         - petition040
         - petition048
       last_reviewed: 2026-03-24
       evidence:
-        - AssignmentGuardService in case-service
-        - Audit events CASEWORKER_ASSIGNED and ASSIGNMENT_DENIED with reason metadata
-        - petition049-case-handler-assignment.feature BDD scenarios written
+        - AssignmentGuardService exists in case-service (capability check logic from petition048)
+        - Audit events CASEWORKER_ASSIGNED and ASSIGNMENT_DENIED added as part of petition048 RBAC
       notes: >
-        Case handler assignment from the operational system, replacing Data Warehouse-based assignment
-        with real-time operational assignment. Basic assignment and audit trail implemented.
-        Capability lookup (TB-023) is a pending refinement.
-      next_step: Implemented (basic). TB-023 (target-caseworker capability lookup) is a future enhancement.
+        Supervisor workload dashboard, unassigned-cases queue, and self-assignment UI are NOT
+        implemented. The AssignmentGuardService and assignment audit events were delivered as
+        part of petition048 RBAC hardening, not this petition. Core deliverables (FR-1 workload
+        dashboard, FR-2 unassigned queue, FR-3 self-assignment) remain to be built.
+      next_step: Implement workload dashboard and unassigned-cases queue in caseworker portal.
 
     petition050:
       title: Unified Case Timeline UI
@@ -945,18 +945,18 @@ program:
   #               petition029, petition030, petition031, petition032, petition033, petition034,
   #               petition035, petition036, petition037, petition038,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
-  #               petition047, petition048, petition049, petition050
+  #               petition047, petition048, petition050
   # in_progress:  petition002
   # ready:        petition019
-  # not_started:  petition026, petition027, petition028, petition039, petition042
+  # not_started:  petition026, petition027, petition028, petition039, petition042, petition049
   #
   # Total: 50 petitions
-  #   6 validated, 39 implemented, 1 in_progress, 1 ready, 3 not_started
+  #   6 validated, 38 implemented, 1 in_progress, 1 ready, 4 not_started
   #
-  # COMPLETED: Phases 1-9, Phase 10 (partial: 039+042 not started), Phase 11, Phase 12, Phase 13
+  # COMPLETED: Phases 1-9, Phase 10 (partial: 039+042 not started), Phase 11, Phase 12, Phase 13 (partial: 049 not started)
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service 026-028, unblocked)
-  # NOT STARTED: petition039 (crossing transactions), petition042 (OIO Sag case model)
+  # NOT STARTED: petition039 (crossing transactions), petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
   # Debt-service: 258+ tests pass (0 failures)
 
