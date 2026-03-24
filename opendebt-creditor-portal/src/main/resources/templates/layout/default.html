@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title layout:title-pattern="$CONTENT_TITLE - #{layout.title.suffix}">OpenDebt Fordringshaverportal</title>
+  <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE" th:text="#{layout.title.suffix}">OpenDebt Fordringshaverportal</title>
   <link rel="stylesheet" th:href="@{/css/skat-tokens.css}" />
   <script th:src="@{/webjars/htmx.org/2.0.4/dist/htmx.min.js}" defer></script>
   <script th:src="@{/js/a11y.js}" defer></script>
