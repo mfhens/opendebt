@@ -43,8 +43,15 @@ public class DebtController {
 
   @GetMapping
   @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
-  @Operation(summary = "List debts", description = "Returns a paginated list of debts")
+  @Operation(
+      summary = "List debts",
+      description = "Returns a paginated list of debts, or a specific set by IDs")
   public ResponseEntity<Page<DebtDto>> listDebts(
+      @Parameter(
+              description =
+                  "Filter by specific debt IDs (comma-separated); ignores other filters when present")
+          @RequestParam(required = false)
+          List<UUID> ids,
       @Parameter(description = "Filter by creditor ID") @RequestParam(required = false)
           String creditorId,
       @Parameter(description = "Filter by debtor ID") @RequestParam(required = false)
@@ -54,6 +61,10 @@ public class DebtController {
       @Parameter(description = "Filter by readiness status") @RequestParam(required = false)
           DebtDto.ReadinessStatus readinessStatus,
       Pageable pageable) {
+    if (ids != null && !ids.isEmpty()) {
+      List<DebtDto> result = debtService.getDebtsByIds(ids);
+      return ResponseEntity.ok(new org.springframework.data.domain.PageImpl<>(result));
+    }
     return ResponseEntity.ok(
         debtService.listDebts(creditorId, debtorId, status, readinessStatus, pageable));
   }

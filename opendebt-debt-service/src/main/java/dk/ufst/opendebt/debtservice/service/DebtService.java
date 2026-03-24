@@ -17,6 +17,8 @@ public interface DebtService {
       DebtDto.ReadinessStatus readinessStatus,
       Pageable pageable);
 
+  List<DebtDto> getDebtsByIds(List<UUID> ids);
+
   DebtDto getDebtById(UUID id);
 
   List<DebtDto> getDebtsByDebtor(String debtorId);

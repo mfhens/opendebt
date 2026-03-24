@@ -58,7 +58,7 @@ class DebtControllerTest {
     Page<DebtDto> page = new PageImpl<>(List.of(debtDto()), PageRequest.of(0, 10), 1);
     when(debtService.listDebts(null, null, null, null, PageRequest.of(0, 10))).thenReturn(page);
 
-    var response = controller.listDebts(null, null, null, null, PageRequest.of(0, 10));
+    var response = controller.listDebts(null, null, null, null, null, PageRequest.of(0, 10));
 
     assertThat(response.getStatusCode().value()).isEqualTo(200);
     assertThat(response.getBody()).isSameAs(page);

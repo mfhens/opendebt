@@ -60,6 +60,14 @@ public class DebtServiceImpl implements DebtService {
   }
 
   @Override
+  public List<DebtDto> getDebtsByIds(List<UUID> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return List.of();
+    }
+    return debtRepository.findAllById(ids).stream().map(this::toDto).toList();
+  }
+
+  @Override
   public List<DebtDto> getDebtsByDebtor(String debtorId) {
     UUID debtorPersonId = UUID.fromString(debtorId);
     return debtRepository.findByDebtorPersonId(debtorPersonId).stream().map(this::toDto).toList();
