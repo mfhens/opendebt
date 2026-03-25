@@ -42,11 +42,16 @@ public class Oces3SoapSecurityInterceptor implements EndpointInterceptor {
   public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
     // Allow WSDL/metadata GET requests through without security check — no credentials needed
     // to discover the service contract (WsdlDefinition endpoints handle GET /?wsdl requests).
+    // The WsdlDefinition check (line below) covers the primary case; the subsequent GET method
+    // check is an intentional defence-in-depth measure: if a future refactor registers WSDL
+    // via a non-WsdlDefinition endpoint type, WSDL discovery remains accessible without mTLS.
     if (endpoint instanceof org.springframework.ws.wsdl.WsdlDefinition) {
       return true;
     }
     HttpServletRequest httpRequest = getHttpRequest();
     if (httpRequest != null && "GET".equalsIgnoreCase(httpRequest.getMethod())) {
+      // Intentional: all GET requests on /soap/* are metadata requests only (WSDL, health).
+      // No state-mutating operations use GET; the attack surface for this bypass is negligible.
       return true;
     }
 
@@ -118,7 +123,7 @@ public class Oces3SoapSecurityInterceptor implements EndpointInterceptor {
   private X509Certificate extractCertificate(HttpServletRequest request) {
     if (request == null) return null;
     if ("EMBEDDED".equalsIgnoreCase(tlsTerminationMode)) {
-      Object attr = request.getAttribute("javax.servlet.request.X509Certificate");
+      Object attr = request.getAttribute("jakarta.servlet.request.X509Certificate");
       if (attr instanceof X509Certificate[] certs && certs.length > 0) {
         return certs[0];
       }

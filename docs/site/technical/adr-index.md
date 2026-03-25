@@ -30,5 +30,7 @@
 | 0026 | Inter-service resilience | Resilience4j circuit breaker and retry for all inter-service REST clients |
 | 0027 | Offsetting merged into debt-service | Modregning domain consolidated into debt-service |
 | 0028 | Backup and disaster recovery | pgBackRest WAL archiving + streaming replication; RTO 4h / RPO 4h |
+| 0029 | ImmuDB for financial ledger integrity | ImmuDB for tamper-evident financial event log |
+| 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
 
 ADR source files are in `docs/adr/` in the repository.

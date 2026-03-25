@@ -83,7 +83,7 @@ public class SoapParseErrorFilter extends OncePerRequestFilter {
       }
       t = t.getCause();
     }
-    return true; // Any uncaught exception on /soap POST is treated as parse/client error
+    return false;
   }
 
   private void writeSoapFault(HttpServletResponse response) throws IOException {

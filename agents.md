@@ -181,6 +181,19 @@ dk.ufst.opendebt.<service>/
 └── exception/       # Custom exceptions
 ```
 
+`integration-gateway` additionally contains a `soap/` sub-package for all Spring-WS SOAP logic (petition019, ADR-0030):
+
+```
+dk.ufst.opendebt.integrationgateway.soap/
+├── config/          # SoapConfig (MessageDispatcherServlet, WSDL beans, SAAJ factory)
+│                    # SoapMessageReceiverHandlerAdapter
+├── fault/           # SoapFaultMappingResolver, domain SOAP exceptions
+├── filter/          # SoapHttpStatusFilter, SoapParseErrorFilter, WsdlServingFilter
+├── interceptor/     # Oces3SoapSecurityInterceptor, ClsSoapAuditInterceptor
+├── oio/             # OIO endpoints, OioClaimMapper, generated JAXB
+└── skat/            # SKAT endpoints, SkatClaimMapper, generated JAXB
+```
+
 Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
 
 ```

@@ -72,8 +72,11 @@ public class SoapConfig extends WsConfigurerAdapter {
           @Override
           public jakarta.xml.soap.SOAPMessage createMessage()
               throws jakarta.xml.soap.SOAPException {
-            // Respond in the same protocol as the current request (tracked via ThreadLocal)
+            // Respond in the same protocol as the current request (tracked via ThreadLocal).
+            // After creating the response, clear the ThreadLocal to prevent leaking the factory
+            // reference in Tomcat's thread pool across requests.
             jakarta.xml.soap.MessageFactory f = current.get();
+            current.remove();
             return (f != null ? f : soap11).createMessage();
           }
 

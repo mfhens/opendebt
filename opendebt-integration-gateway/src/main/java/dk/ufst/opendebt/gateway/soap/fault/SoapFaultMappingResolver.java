@@ -4,6 +4,8 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.ws.context.MessageContext;
@@ -20,6 +22,8 @@ import dk.ufst.opendebt.gateway.soap.filter.SoapHttpStatusFilter;
 
 @Component
 public class SoapFaultMappingResolver extends AbstractEndpointExceptionResolver {
+
+  private static final Logger log = LoggerFactory.getLogger(SoapFaultMappingResolver.class);
 
   public SoapFaultMappingResolver() {
     setOrder(Ordered.HIGHEST_PRECEDENCE);
@@ -60,9 +64,7 @@ public class SoapFaultMappingResolver extends AbstractEndpointExceptionResolver 
       }
       return true;
     } catch (Exception e) {
-      System.err.println(
-          "SOAP_FAULT_RESOLVER_CATCH: " + e.getClass().getName() + ": " + e.getMessage());
-      e.printStackTrace(System.err);
+      log.error("SOAP fault resolver failed to write fault response", e);
       return false;
     }
   }
@@ -105,7 +107,7 @@ public class SoapFaultMappingResolver extends AbstractEndpointExceptionResolver 
     } else if (ex instanceof Oces3AuthorizationException) {
       return 403;
     } else if (ex instanceof FordringValidationException) {
-      return 500;
+      return 400;
     } else if (ex instanceof OpenDebtException) {
       return 500;
     }

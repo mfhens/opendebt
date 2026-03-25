@@ -15,7 +15,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
  * Provides test-only beans: a no-op DataSource mock and a WireMock server for stubbing downstream
  * HTTP calls.
  *
- * <p>WireMock starts on port 9099 (matching {@code application-test.yml} service URLs) and is
+ * <p>WireMock starts on port 9098 (matching {@code application-test.yml} service URLs) and is
  * managed by the Spring context lifecycle, ensuring a single server across all Cucumber scenarios.
  */
 @TestConfiguration

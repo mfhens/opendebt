@@ -41,6 +41,13 @@ graph TB
     IG --> CRS
     IG --> PS
 
+    subgraph LegacySoap["Legacy SOAP"]
+        OIO["EFI/DMI systems<br/>(OIO protocol)"]
+        SKAT2["SKAT systems<br/>(SKAT protocol)"]
+    end
+    OIO --> IG
+    SKAT2 --> IG
+
     CP --> DS
     CP --> CRS
     CP --> PS
@@ -66,7 +73,7 @@ graph TB
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
 | person-registry | 8090 | GDPR vault for personal data (CPR/CVR encryption) |
 | rules-engine | 8091 | Drools-based validation rules |
-| integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, M2M creditor ingress |
+| integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, M2M creditor ingress, legacy SOAP (OIO/SKAT, petition019) |
 | creditor-portal | 8085 | Fordringshaver web portal (Thymeleaf + HTMX); timeline at `/fordring/{id}/tidslinje` |
 | citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX); case detail + timeline at `/cases/{id}/tidslinje` |
 | caseworker-portal | 8093 | Sagsbehandler web portal; unified timeline at `/cases/{id}/tidslinje` |
@@ -90,6 +97,29 @@ graph TB
 | Observability | Grafana + Prometheus + Loki + Tempo |
 | Deployment | Kubernetes |
 | Build | Maven |
+
+## Data flow: Legacy SOAP claim submission (petition019)
+
+```mermaid
+sequenceDiagram
+    participant L as Legacy System (OIO/SKAT)
+    participant IG as Integration Gateway (/soap/*)
+    participant SEC as Oces3SoapSecurityInterceptor
+    participant AUD as ClsSoapAuditInterceptor
+    participant EP as OIO/SkatFordringIndberetEndpoint
+    participant DS as Debt Service
+
+    L->>IG: POST /soap/oio (SOAP 1.1/1.2, OCES3 mTLS cert)
+    IG->>SEC: Validate OCES3 certificate → extract fordringshaverId
+    SEC-->>IG: Authorized
+    IG->>AUD: Record start time + correlationId
+    IG->>EP: Unmarshal OIO/SKAT XML → FordringSubmitRequest DTO
+    EP->>DS: POST /internal/fordringer (X-Fordringshaver-Id, X-Correlation-Id)
+    DS-->>EP: 201 Created (claimId)
+    EP-->>IG: Marshal result → SOAP response XML
+    IG->>AUD: PII-mask bodies → ship SoapAuditEvent to CLS
+    IG-->>L: HTTP 200 SOAP response
+```
 
 ## Data flow: Claim submission
 
@@ -150,3 +180,4 @@ See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
 - **ADR-0018**: Double-entry bookkeeping for payments
 - **ADR-0019**: Orchestration over event-driven architecture
 - **ADR-0024**: Observability with Grafana stack
+- **ADR-0030**: SOAP legacy gateway (OIO/SKAT protocols via `integration-gateway`)

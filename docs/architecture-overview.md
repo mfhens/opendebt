@@ -10,11 +10,11 @@ graph TB
         TastSelv["TastSelv<br/>(MitID)"]
         DigitalPost["Digital Post<br/>(e-Boks)"]
         SKB["Statens Koncernbetalinger<br/>(CREMUL/DEBMUL)"]
-        ES["Creditor systems<br/>(OCES3 / DUPLA)"]
+        ES["Creditor systems<br/>(OCES3 / DUPLA / SOAP)"]
     end
 
     subgraph Gateway["Integration Layer"]
-        IG["integration-gateway<br/>:8089<br/>DUPLA, CPR, CVR, SKB"]
+        IG["integration-gateway<br/>:8089<br/>DUPLA, CPR, CVR, SKB, SOAP/OIO, SOAP/SKAT"]
     end
 
     subgraph Portals["User Portals"]
@@ -745,9 +745,9 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 
 ### integration-gateway (Port 8089)
 
-**Purpose:** External system integration via DUPLA. Owns M2M ingress for creditor systems (petition011) and SKB CREMUL/DEBMUL processing.
+**Purpose:** External system integration hub. Owns M2M ingress for creditor systems (petition011), SKB CREMUL/DEBMUL processing, and legacy SOAP endpoints for OIO and SKAT protocols (petition019, ADR-0030).
 
-**Implementation status:** PARTIALLY IMPLEMENTED (22 Java files)
+**Implementation status:** PARTIALLY IMPLEMENTED (~44 Java files + generated JAXB)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -767,7 +767,31 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | SkbEdifactService / Impl | Done | Smooks-based CREMUL parsing, DEBMUL generation |
 | SkbController | Done | REST API for CREMUL upload + DEBMUL download |
 | cremul-config.xml (Smooks) | Done | Template (TODO: map to SKB directory version) |
-| **Unit tests** | **Done** | CreditorM2mControllerTest, CreditorIngressServiceImplTest, SkbEdifactServiceImplTest, 3 BDD scenarios |
+| **Unit tests (petition011 / SKB)** | **Done** | CreditorM2mControllerTest, CreditorIngressServiceImplTest, SkbEdifactServiceImplTest, 3 BDD scenarios |
+| **Legacy SOAP endpoints (petition019, ADR-0030)** | **Done** | |
+| SoapConfig | Done | MessageDispatcherServlet at `/soap/*`, WSDL beans, hybrid SAAJ MessageFactory (ThreadLocal SOAP 1.1/1.2), interceptor chain |
+| SoapMessageReceiverHandlerAdapter | Done | Custom handler adapter for Spring-WS |
+| SoapFaultMappingResolver | Done | Maps domain exceptions → SOAP faults with correct HTTP codes (401/403/422/500) |
+| FordringValidationException / Oces3AuthenticationException / Oces3AuthorizationException | Done | SOAP-specific domain exceptions |
+| SoapHttpStatusFilter | Done | Preserves custom HTTP status after Spring-WS resets to 500 |
+| SoapParseErrorFilter | Done | Catches SAAJ parse failures; returns SOAP fault instead of JSON error |
+| WsdlServingFilter | Done | Serves WSDL from classpath with `application/wsdl+xml` Content-Type |
+| Oces3SoapSecurityInterceptor | Done | OCES3 mTLS certificate auth (TEST/INGRESS/EMBEDDED modes); extracts `fordringshaverId` |
+| ClsSoapAuditInterceptor | Done | CLS audit logging with PII masking on every SOAP call |
+| OIOFordringIndberetEndpoint | Done | `POST /soap/oio` — FordringIndberet (OIO namespace) |
+| OIOKvitteringHentEndpoint | Done | `POST /soap/oio` — KvitteringHent (OIO namespace) |
+| OIOUnderretSamlingHentEndpoint | Done | `POST /soap/oio` — UnderretSamlingHent (OIO namespace) |
+| OioClaimMapper | Done | Maps OIO JAXB ↔ internal DTOs |
+| oio/generated/ | Done | JAXB classes from OIO XSD |
+| SkatFordringIndberetEndpoint | Done | `POST /soap/skat` — FordringIndberet (SKAT namespace) |
+| SkatKvitteringHentEndpoint | Done | `POST /soap/skat` — KvitteringHent (SKAT namespace) |
+| SkatUnderretSamlingHentEndpoint | Done | `POST /soap/skat` — UnderretSamlingHent (SKAT namespace) |
+| SkatClaimMapper | Done | Maps SKAT JAXB ↔ internal DTOs |
+| skat/generated/ | Done | JAXB classes from SKAT XSD |
+| DebtServiceSoapClient | Done | WebClient with `@CircuitBreaker("debtService")` for internal REST delegation |
+| wsdl/oio/oio-fordring.wsdl | Done | Dual SOAP 1.1/1.2 bindings; static (not generated) |
+| wsdl/skat/skat-fordring.wsdl | Done | Dual SOAP 1.1/1.2 bindings; static (not generated) |
+| **Unit / BDD tests (petition019)** | **Done** | OIOFordringIndberetEndpointTest, SkatFordringIndberetEndpointTest, Oces3SoapSecurityInterceptorTest, SoapFaultMappingResolverTest, RunCucumberTest (petition019) |
 | DUPLA client | Not started | OCES3 certificate integration |
 | CPR/CVR register client | Not started | External lookups |
 | Digital Post client | Not started | Letter delivery |
@@ -777,6 +801,18 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 - `POST /api/v1/creditor/m2m/claims/submit` - M2M claim submission (creditor access resolution + forwarding to debt-service)
 - `POST /api/v1/skb/cremul/parse` - Upload and parse CREMUL file
 - `POST /api/v1/skb/debmul/generate` - Generate DEBMUL file
+- `POST /soap/oio` - OIO legacy SOAP: FordringIndberet, KvitteringHent, UnderretSamlingHent (OCES3 mTLS auth)
+- `POST /soap/skat` - SKAT legacy SOAP: FordringIndberet, KvitteringHent, UnderretSamlingHent (OCES3 mTLS auth)
+- `GET /soap/oio?wsdl` - OIO WSDL (dual SOAP 1.1/1.2)
+- `GET /soap/skat?wsdl` - SKAT WSDL (dual SOAP 1.1/1.2)
+
+**SOAP technical notes (petition019):**
+- Dual SOAP 1.1/1.2 via ThreadLocal in `SaajSoapMessageFactory`; response protocol matches request
+- OCES3 mTLS certificate authentication; `fordringshaverId` extracted from cert subject
+- CLS audit logging with XPath-based PII masking on every SOAP call
+- SOAP faults map domain exceptions: `FordringValidationException` → `env:Client` (422), `Oces3AuthenticationException` → 401, `Oces3AuthorizationException` → 403, generic → `env:Server` (500)
+- Circuit breaker on all downstream `debt-service` calls via `DebtServiceSoapClient`
+- Servlet mapping: REST on `/api`, SOAP on `/soap` (separate `MessageDispatcherServlet`)
 
 ---
 
@@ -1029,7 +1065,7 @@ See the Communication Pattern diagram above.
 
 ## Security Model
 
-- **Authentication:** OAuth2/OIDC via Keycloak (ADR-0005)
+- **Authentication:** OAuth2/OIDC via Keycloak (ADR-0005) for REST endpoints; OCES3 mTLS client certificates for SOAP endpoints at `/soap/*` (ADR-0030)
 - **Authorization:** Role-based (`@PreAuthorize`) per endpoint
 - **Roles:** ADMIN, SUPERVISOR, CASEWORKER, CREDITOR, SERVICE, GDPR_OFFICER
 - **PII isolation:** All personal data encrypted in person-registry only (ADR-0014)
@@ -1090,6 +1126,10 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0024 | Observability Backend Stack (Grafana + Prometheus + Loki + Tempo) |
 | 0025 | Maven Build Tool |
 | 0026 | Inter-Service Resilience (Resilience4j Circuit Breaker + Retry) |
+| 0027 | Offsetting Merged into Debt-Service |
+| 0028 | Backup and Disaster Recovery (pgBackRest + Velero) |
+| 0029 | ImmuDB for Financial Ledger Integrity |
+| 0030 | SOAP Legacy Gateway (OIO/SKAT protocols via integration-gateway) |
 
 ## Unit Tests
 
@@ -1123,6 +1163,11 @@ Pre-defined API specs (API-first, ADR-0004):
 | CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |
 | CreditorIngressServiceImplTest | integration-gateway | 8 | Access resolution + claim forwarding orchestration |
 | RunCucumberTest (petition011) | integration-gateway | 3 | BDD: M2M claim submission, access denied, correlation propagation |
+| OIOFordringIndberetEndpointTest | integration-gateway | - | OIO SOAP endpoint routing, claim mapping, SOAP fault generation |
+| SkatFordringIndberetEndpointTest | integration-gateway | - | SKAT SOAP endpoint routing, claim mapping, SOAP fault generation |
+| Oces3SoapSecurityInterceptorTest | integration-gateway | - | Certificate validation, fordringshaver extraction, auth/authz faults |
+| SoapFaultMappingResolverTest | integration-gateway | - | Exception-to-SOAP-fault mapping, HTTP status preservation |
+| RunCucumberTest (petition019) | integration-gateway | - | BDD: OIO/SKAT SOAP submission, OCES3 auth, malformed SOAP fault, circuit breaker |
 | LandingPageControllerTest | citizen-portal | 3 | Landing page model attributes, FAQ |
 | DashboardControllerTest | citizen-portal | 3 | Authenticated dashboard |
 | SecurityConfigTest | citizen-portal | 3 | Public vs authenticated page access |
@@ -1153,7 +1198,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | case-service | Done | 10 | 8 | V1 |
 | rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
 | payment-service | Partial | 22 | 2 | V1, V2, V3 |
-| integration-gateway | Partial | 22 | 3 | - |
+| integration-gateway | Partial | ~44 (+generated) | 7 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | **Merged into debt-service** (ADR-0027) | - | - | - |

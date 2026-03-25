@@ -1,0 +1,721 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------< dk.ufst.opendebt:opendebt-integration-gateway >------------
+[INFO] Building OpenDebt - Integration Gateway 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- spotless:2.43.0:check (default) @ opendebt-integration-gateway ---
+[INFO] Spotless.Java is keeping 76 files clean - 0 needs changes to be clean, 3 were already clean, 73 were skipped because caching determined they were already clean
+[INFO] 
+[INFO] --- enforcer:3.4.1:enforce (enforce) @ opendebt-integration-gateway ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.DependencyConvergence passed
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (prepare-agent) @ opendebt-integration-gateway ---
+[INFO] argLine set to -javaagent:C:\\Users\\AJ849XF\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\Users\\AJ849XF\\Documents\\GitHub\\opendebt\\opendebt-integration-gateway\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ opendebt-integration-gateway ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 6 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ opendebt-integration-gateway ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 56 source files with javac [debug parameters release 21] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ opendebt-integration-gateway ---
+[INFO] Copying 8 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ opendebt-integration-gateway ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 20 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ opendebt-integration-gateway ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running dk.ufst.opendebt.gateway.RunCucumberTest
+21:50:50.167 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:50:50.517 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+{"@timestamp":"2026-03-25T21:50:52.4498426+01:00","message":"HV000001: Hibernate Validator 8.0.1.Final","logger_name":"org.hibernate.validator.internal.util.Version","thread_name":"background-preinit","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:52.5551735+01:00","message":"Starting CucumberSpringConfiguration using Java 21.0.10 with PID 40572 (started by AJ849XF in C:\\Users\\AJ849XF\\Documents\\GitHub\\opendebt\\opendebt-integration-gateway)","logger_name":"dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:52.5551735+01:00","message":"The following 1 profile is active: \"test\"","logger_name":"dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.7318881+01:00","message":"Bean 'testClsAuditCapture' of type [dk.ufst.opendebt.gateway.TestClsAuditCapture] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.7342533+01:00","message":"Bean 'soapPiiMaskingUtil' of type [dk.ufst.opendebt.common.soap.SoapPiiMaskingUtil] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.7372163+01:00","message":"Bean 'clsSoapAuditInterceptor' of type [dk.ufst.opendebt.gateway.soap.interceptor.ClsSoapAuditInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.7490086+01:00","message":"Bean 'oces3CertificateParser' of type [dk.ufst.opendebt.common.soap.Oces3CertificateParser] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.753039+01:00","message":"Bean 'oces3SoapSecurityInterceptor' of type [dk.ufst.opendebt.gateway.soap.interceptor.Oces3SoapSecurityInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.753039+01:00","message":"Bean 'soapConfig' of type [dk.ufst.opendebt.gateway.soap.config.SoapConfig$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected into a currently created BeanPostProcessor [annotationActionEndpointMapping]? Check the corresponding BeanPostProcessor declaration and its dependencies.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.753039+01:00","message":"Bean 'org.springframework.ws.config.annotation.DelegatingWsConfiguration' of type [org.springframework.ws.config.annotation.DelegatingWsConfiguration$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). The currently created BeanPostProcessor [annotationActionEndpointMapping] is declared through a non-static factory method on that class; consider declaring it as static instead.","logger_name":"org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.9026007+01:00","message":"http://javax.xml.XMLConstants/property/accessExternalDTD property not supported by org.smooks.engine.delivery.sax.ng.org.apache.xerces.jaxp.DocumentBuilderFactoryImpl","logger_name":"org.springframework.xml.DocumentBuilderFactoryUtils","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.9046114+01:00","message":"http://javax.xml.XMLConstants/property/accessExternalSchema property not supported by org.smooks.engine.delivery.sax.ng.org.apache.xerces.jaxp.DocumentBuilderFactoryImpl","logger_name":"org.springframework.xml.DocumentBuilderFactoryUtils","thread_name":"main","level":"WARN","level_value":30000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:56.9265721+01:00","message":"Supporting [WS-Addressing August 2004, WS-Addressing 1.0]","logger_name":"org.springframework.ws.soap.addressing.server.AnnotationActionEndpointMapping","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:58.9139654+01:00","message":"Tomcat initialized with port 0 (http)","logger_name":"org.springframework.boot.web.embedded.tomcat.TomcatWebServer","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:58.9616267+01:00","message":"Initializing ProtocolHandler [\"http-nio-auto-1\"]","logger_name":"org.apache.coyote.http11.Http11NioProtocol","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:58.9671656+01:00","message":"Starting service [Tomcat]","logger_name":"org.apache.catalina.core.StandardService","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:58.9699229+01:00","message":"Starting Servlet engine: [Apache Tomcat/10.1.24]","logger_name":"org.apache.catalina.core.StandardEngine","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:59.2581805+01:00","message":"Initializing Spring embedded WebApplicationContext","logger_name":"org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/]","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:50:59.2619442+01:00","message":"Root WebApplicationContext: initialization completed in 6672 ms","logger_name":"org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+WARNING: A Java agent has been loaded dynamically (C:\Users\AJ849XF\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.16\byte-buddy-agent-1.14.16.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+{"@timestamp":"2026-03-25T21:51:10.4895884+01:00","message":"Exposing 3 endpoints beneath base path '/actuator'","logger_name":"org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:10.7893682+01:00","message":"Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1fe0f9f7, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6faeffee, org.springframework.security.web.context.SecurityContextHolderFilter@322328c9, org.springframework.security.web.header.HeaderWriterFilter@7489f558, org.springframework.web.filter.CorsFilter@1dbbedc1, org.springframework.security.web.authentication.logout.LogoutFilter@4e51b8, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7b6dee80, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@7f208e7a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@340b31b6, org.springframework.security.web.session.SessionManagementFilter@a016166, org.springframework.security.web.access.ExceptionTranslationFilter@3ce4be08, org.springframework.security.web.access.intercept.AuthorizationFilter@54e04288]","logger_name":"org.springframework.security.web.DefaultSecurityFilterChain","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:14.3009997+01:00","message":"Starting ProtocolHandler [\"http-nio-auto-1\"]","logger_name":"org.apache.coyote.http11.Http11NioProtocol","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:14.3178076+01:00","message":"Tomcat started on port 64662 (http) with context path '/'","logger_name":"org.springframework.boot.web.embedded.tomcat.TomcatWebServer","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:14.3413428+01:00","message":"Started CucumberSpringConfiguration in 23.454 seconds (process running for 27.676)","logger_name":"dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: A creditor system submits a fordring through the gateway            # features/petition011.feature:3
+  Given creditor system "SYS1" is authorized for fordringshaver "K1"          # dk.ufst.opendebt.gateway.steps.Petition011Steps.creditorSystemIsAuthorized(java.lang.String,java.lang.String)
+{"@timestamp":"2026-03-25T21:51:15.1933246+01:00","message":"M2M access resolved: identity=SYS1 actingCreditor=a1bba970-4da7-3d22-874f-1c2b0acf4213","logger_name":"dk.ufst.opendebt.gateway.creditor.service.impl.CreditorIngressServiceImpl","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+  When system "SYS1" submits a fordring through DUPLA and integration-gateway # dk.ufst.opendebt.gateway.steps.Petition011Steps.systemSubmitsFordring(java.lang.String)
+  Then integration-gateway resolves acting fordringshaver "K1"                # dk.ufst.opendebt.gateway.steps.Petition011Steps.gatewayResolvesCreditor(java.lang.String)
+  And the request is routed to debt-service                                   # dk.ufst.opendebt.gateway.steps.Petition011Steps.requestIsRoutedToDebtService()
+{"@timestamp":"2026-03-25T21:51:15.6720635+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:15.6720635+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: An unauthorized creditor system is rejected before routing         # features/petition011.feature:9
+  Given creditor system "SYS2" is not authorized for the requested operation # dk.ufst.opendebt.gateway.steps.Petition011Steps.creditorSystemIsNotAuthorized(java.lang.String)
+  When system "SYS2" calls the creditor M2M API                              # dk.ufst.opendebt.gateway.steps.Petition011Steps.systemCallsM2mApi(java.lang.String)
+  Then integration-gateway rejects the request                               # dk.ufst.opendebt.gateway.steps.Petition011Steps.gatewayRejectsRequest()
+  And the request is not routed to debt-service                              # dk.ufst.opendebt.gateway.steps.Petition011Steps.requestIsNotRouted()
+{"@timestamp":"2026-03-25T21:51:15.7476403+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:15.7503046+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: Gateway propagates audit context to the owning service     # features/petition011.feature:15
+  Given creditor system "SYS3" is authorized for fordringshaver "K3" # dk.ufst.opendebt.gateway.steps.Petition011Steps.creditorSystemIsAuthorized(java.lang.String,java.lang.String)
+{"@timestamp":"2026-03-25T21:51:15.7793393+01:00","message":"M2M access resolved: identity=SYS3 actingCreditor=2c729497-d917-39de-abf1-ccd875cf28e5","logger_name":"dk.ufst.opendebt.gateway.creditor.service.impl.CreditorIngressServiceImpl","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+  When system "SYS3" submits a request through integration-gateway   # dk.ufst.opendebt.gateway.steps.Petition011Steps.systemSubmitsRequest(java.lang.String)
+  Then the routed request contains correlation and audit context     # dk.ufst.opendebt.gateway.steps.Petition011Steps.requestContainsCorrelationContext()
+{"@timestamp":"2026-03-25T21:51:15.7871186+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:15.7938549+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: OIOFordringIndberetService accepts valid OIO claim submission                             # features/petition019.feature:15
+  Given integration-gateway is running and listening for SOAP requests                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation                         # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in OIO namespace "urn:oio:skat:efi:ws:1.0.1"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInOioNamespace(java.lang.String)
+  And the SOAP request operation is "MFFordringIndberet_I"                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains a valid OIO-formatted claim                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsValidOioFormattedClaim()
+{"@timestamp":"2026-03-25T21:51:16.3999674+01:00","message":"Initializing Spring MessageDispatcherServlet 'messageDispatcherServlet'","logger_name":"org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/]","thread_name":"http-nio-auto-1-exec-1","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:16.4010713+01:00","message":"Initializing Servlet 'messageDispatcherServlet'","logger_name":"org.springframework.ws.transport.http.MessageDispatcherServlet","thread_name":"http-nio-auto-1-exec-1","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:16.4417657+01:00","message":"Completed initialization in 40 ms","logger_name":"org.springframework.ws.transport.http.MessageDispatcherServlet","thread_name":"http-nio-auto-1-exec-1","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+  When the SOAP request is processed                                                                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                                    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains an acknowledgement                                                     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsAnAcknowledgement()
+  And SOAP response contains claim ID "CLAIM-001"                                                   # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsClaimId(java.lang.String)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"                          # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+  And CLS logging records service "OIOFordringIndberetService" and operation "MFFordringIndberet_I" # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsServiceAndOperation(java.lang.String,java.lang.String)
+{"@timestamp":"2026-03-25T21:51:20.353243+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.3578264+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: OIOFordringIndberetService applies same validation rules as REST API          # features/petition019.feature:28
+  Given integration-gateway is running and listening for SOAP requests                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request operation is "MFFordringIndberet_I"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains an OIO-formatted claim with invalid amount (0 DKK) # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsOioFormattedClaimWithInvalidAmountZero()
+  When the SOAP request is processed                                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 500                                           # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+      org.opentest4j.AssertionFailedError: 
+expected: 500
+ but was: 400
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:34)
+
+  And SOAP fault contains error code corresponding to claim validation failure          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultContainsErrorCodeCorrespondingToClaimValidationFailure()
+  And SOAP fault detail contains field-level error information for the amount field     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultDetailContainsFieldLevelErrorForAmountField()
+{"@timestamp":"2026-03-25T21:51:20.5798779+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.5804692+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: OIOKvitteringHentService returns receipt for valid claim ID       # features/petition019.feature:38
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given claim "CLAIM-001" exists with status "SUBMITTED"                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimExistsWithStatus(java.lang.String,java.lang.String)
+  And claim "CLAIM-001" has receipt "RECEIPT-001"                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimHasReceipt(java.lang.String,java.lang.String)
+  And fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOKvitteringHentService             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in OIO namespace "urn:oio:skat:efi:ws:1.0.1"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInOioNamespace(java.lang.String)
+  And the SOAP request operation is "MFKvitteringHent_I"                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains claim ID "CLAIM-001"                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsClaimId(java.lang.String)
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                            # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains OIO-formatted receipt "RECEIPT-001"            # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsOioFormattedReceipt(java.lang.String)
+  And SOAP response includes claim status "SUBMITTED"                       # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIncludesClaimStatus(java.lang.String)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"  # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:20.6779172+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.6779172+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: OIOUnderretSamlingHentService returns notification collection for valid claim # features/petition019.feature:52
+  Given integration-gateway is running and listening for SOAP requests                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given claim "CLAIM-001" exists with debtor "DEBTOR-001"                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimExistsWithDebtor(java.lang.String,java.lang.String)
+  And claim "CLAIM-001" has 3 notifications                                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimHasNotifications(java.lang.String,int)
+  And fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOUnderretSamlingHentService                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in OIO namespace "urn:oio:skat:efi:ws:1.0.1"                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInOioNamespace(java.lang.String)
+  And the SOAP request operation is "MFUnderretSamlingHent_I"                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains claim ID "CLAIM-001"                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsClaimId(java.lang.String)
+  When the SOAP request is processed                                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains OIO-formatted notification collection                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsOioFormattedNotificationCollection()
+  And SOAP response includes 3 notifications                                            # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIncludesNotifications(int)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"              # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:20.8202317+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.8316603+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SkatFordringIndberetService accepts valid SKAT claim submission                            # features/petition019.feature:68
+  Given integration-gateway is running and listening for SOAP requests                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to SkatFordringIndberetService                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in SKAT namespace "http://skat.dk/begrebsmodel/2009/01/15/"                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInSkatNamespace(java.lang.String)
+  And the SOAP request operation is "MFFordringIndberet_I"                                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains a valid SKAT-formatted claim                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsValidSkatFormattedClaim()
+  When the SOAP request is processed                                                                 # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                                     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains an acknowledgement                                                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsAnAcknowledgement()
+  And SOAP response contains claim ID "CLAIM-002"                                                    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsClaimId(java.lang.String)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"                           # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+  And CLS logging records service "SkatFordringIndberetService" and operation "MFFordringIndberet_I" # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsServiceAndOperation(java.lang.String,java.lang.String)
+{"@timestamp":"2026-03-25T21:51:20.9149759+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.9149759+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SkatFordringIndberetService applies same validation rules as REST API         # features/petition019.feature:81
+  Given integration-gateway is running and listening for SOAP requests                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to SkatFordringIndberetService                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request operation is "MFFordringIndberet_I"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains a SKAT-formatted claim with missing required field # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsSkatFormattedClaimWithMissingRequiredField()
+  When the SOAP request is processed                                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 500                                           # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+      org.opentest4j.AssertionFailedError: 
+expected: 500
+ but was: 400
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:87)
+
+  And SOAP fault contains error code corresponding to claim validation failure          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultContainsErrorCodeCorrespondingToClaimValidationFailure()
+  And SOAP fault detail contains field-level error information for the missing field    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultDetailContainsFieldLevelErrorForMissingField()
+{"@timestamp":"2026-03-25T21:51:20.9781483+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:20.9781483+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SkatKvitteringHentService returns receipt for valid claim ID                # features/petition019.feature:91
+  Given integration-gateway is running and listening for SOAP requests                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given claim "CLAIM-002" exists with status "SUBMITTED"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimExistsWithStatus(java.lang.String,java.lang.String)
+  And claim "CLAIM-002" has receipt "RECEIPT-002"                                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimHasReceipt(java.lang.String,java.lang.String)
+  And fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to SkatKvitteringHentService                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in SKAT namespace "http://skat.dk/begrebsmodel/2009/01/15/" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInSkatNamespace(java.lang.String)
+  And the SOAP request operation is "MFKvitteringHent_I"                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains claim ID "CLAIM-002"                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsClaimId(java.lang.String)
+  When the SOAP request is processed                                                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains SKAT-formatted receipt "RECEIPT-002"                     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsSkatFormattedReceipt(java.lang.String)
+  And SOAP response includes claim status "SUBMITTED"                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIncludesClaimStatus(java.lang.String)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"            # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:21.054166+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.0569075+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SkatUnderretSamlingHentService returns notification collection for valid claim # features/petition019.feature:105
+  Given integration-gateway is running and listening for SOAP requests                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given claim "CLAIM-002" exists with debtor "DEBTOR-002"                                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimExistsWithDebtor(java.lang.String,java.lang.String)
+  And claim "CLAIM-002" has 2 notifications                                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.claimHasNotifications(java.lang.String,int)
+  And fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to SkatUnderretSamlingHentService                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request is in SKAT namespace "http://skat.dk/begrebsmodel/2009/01/15/"    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsInSkatNamespace(java.lang.String)
+  And the SOAP request operation is "MFUnderretSamlingHent_I"                            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestOperationIs(java.lang.String)
+  And the SOAP request body contains claim ID "CLAIM-002"                                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsClaimId(java.lang.String)
+  When the SOAP request is processed                                                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                         # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP response contains SKAT-formatted notification collection                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsSkatFormattedNotificationCollection()
+  And SOAP response includes 2 notifications                                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIncludesNotifications(int)
+  And CLS logging records the SOAP call with calling system "CREDITOR-001"               # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheSoapCallWithCallingSystem(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:21.1466336+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.1529464+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP request without certificate returns authentication fault     # features/petition019.feature:121
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given no OCES3 certificate is provided with the SOAP request              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.noOces3CertificateProvided()
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains a valid OIO-formatted claim                 # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 401                               # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+  And SOAP fault code indicates authentication failure                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultCodeIndicatesAuthenticationFailure()
+  And SOAP fault message (in Danish) describes certificate requirement      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultMessageInDanishDescribesCertificateRequirement()
+  And CLS logging records the failed SOAP call with authentication error    # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheFailedSoapCallWithAuthenticationError()
+{"@timestamp":"2026-03-25T21:51:21.2164362+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.2164362+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP request with expired certificate returns authentication fault       # features/petition019.feature:131
+  Given integration-gateway is running and listening for SOAP requests             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                 # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has expired OCES3 certificate "CERT-EXPIRED" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasExpiredOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains a valid OIO-formatted claim                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 403                                      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+  And SOAP fault code indicates authentication failure                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultCodeIndicatesAuthenticationFailure()
+  And SOAP fault message (in Danish) describes certificate expiration              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultMessageInDanishDescribesCertificateExpiration()
+  And CLS logging records the failed SOAP call with authentication error           # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheFailedSoapCallWithAuthenticationError()
+{"@timestamp":"2026-03-25T21:51:21.2677216+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.2806002+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP request from unauthorized system returns authorization fault           # features/petition019.feature:141
+  Given integration-gateway is running and listening for SOAP requests                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-UNAUTHORIZED" has valid OCES3 certificate "CERT-999" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidNamedOces3Certificate(java.lang.String,java.lang.String)
+  And fordringshaver "CREDITOR-UNAUTHORIZED" is not authorized to submit claims       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsNotAuthorizedToSubmitClaims(java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                     # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains a valid OIO-formatted claim                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 403                                         # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+  And SOAP fault code indicates authorization failure                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultCodeIndicatesAuthorizationFailure()
+  And SOAP fault message (in Danish) describes authorization requirement              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultMessageInDanishDescribesAuthorizationRequirement()
+  And CLS logging records the failed SOAP call with authorization error               # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingRecordsTheFailedSoapCallWithAuthorizationError()
+{"@timestamp":"2026-03-25T21:51:21.3439223+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.3439223+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: Certificate subject is mapped to fordringshaver identifier         # features/petition019.feature:152
+  Given integration-gateway is running and listening for SOAP requests       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given OCES3 certificate "CERT-001" has subject "CN=CREDITOR-001,O=UFST"    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.oces3CertificateHasSubject(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request body contains a valid OIO-formatted claim             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                         # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then the fordringshaver identifier is extracted from certificate subject   # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.theFordringsshaverIdentifierIsExtractedFromCertificateSubject()
+  And the fordringshaver identifier "CREDITOR-001" is used for authorization # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.theFordringsshaverIdentifierIsUsedForAuthorization(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:21.423702+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.4280096+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: Successful SOAP call is logged to CLS                             # features/petition019.feature:162
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains a valid OIO-formatted claim                 # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then CLS logging contains timestamp of the SOAP call                      # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsTimestampOfTheSoapCall()
+  And CLS logging contains calling system identifier "CREDITOR-001"         # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsCallingSystemIdentifier(java.lang.String)
+  And CLS logging contains service name "OIOFordringIndberetService"        # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsServiceName(java.lang.String)
+  And CLS logging contains operation name "MFFordringIndberet_I"            # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsOperationName(java.lang.String)
+  And CLS logging contains success status "SUCCESS"                         # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsSuccessStatus(java.lang.String)
+  And CLS logging contains correlation ID from SOAP headers                 # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsCorrelationIdFromSoapHeaders()
+  And CLS logging contains response time in milliseconds                    # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsResponseTimeInMilliseconds()
+{"@timestamp":"2026-03-25T21:51:21.4978821+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.4978821+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP fault is logged to CLS with error details                    # features/petition019.feature:175
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains an invalid OIO-formatted claim              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsInvalidOioFormattedClaim()
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then CLS logging contains timestamp of the SOAP call                      # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsTimestampOfTheSoapCall()
+  And CLS logging contains calling system identifier "CREDITOR-001"         # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsCallingSystemIdentifier(java.lang.String)
+  And CLS logging contains service name "OIOFordringIndberetService"        # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsServiceName(java.lang.String)
+  And CLS logging contains operation name "MFFordringIndberet_I"            # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsOperationName(java.lang.String)
+  And CLS logging contains failure status "FAULT"                           # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsFailureStatus(java.lang.String)
+  And CLS logging contains error code from SOAP fault                       # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsErrorCodeFromSoapFault()
+  And CLS logging contains error message from SOAP fault                    # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsErrorMessageFromSoapFault()
+  And CLS logging contains stack trace for troubleshooting                  # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsStackTraceForTroubleshooting()
+{"@timestamp":"2026-03-25T21:51:21.5725442+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.5732391+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP request and response bodies are logged excluding PII         # features/petition019.feature:189
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains a valid OIO-formatted claim with debtor CPR # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsValidOioFormattedClaimWithDebtorCpr()
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then CLS logging contains SOAP request body                               # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsSoapRequestBody()
+  And CLS logging does not contain debtor CPR number                        # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingDoesNotContainDebtorCprNumber()
+  And CLS logging does not contain debtor name                              # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingDoesNotContainDebtorName()
+  And CLS logging contains SOAP response body                               # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsSoapResponseBody()
+  And CLS logging contains debtor identifier as UUID reference only         # dk.ufst.opendebt.gateway.steps.Petition019ClsAuditSteps.clsLoggingContainsDebtorIdentifierAsUuidReferenceOnly()
+{"@timestamp":"2026-03-25T21:51:21.6306403+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.6306403+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP validation error includes field-level details                     # features/petition019.feature:202
+  Given integration-gateway is running and listening for SOAP requests           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request contains an OIO-formatted claim with amount -100 DKK      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestContainsOioFormattedClaimWithAmountMinusHundred()
+  When the SOAP request is processed                                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 500                                    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+      org.opentest4j.AssertionFailedError: 
+expected: 500
+ but was: 400
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:207)
+
+  And SOAP fault contains fault code                                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultContainsFaultCode()
+  And SOAP fault contains Danish human-readable message                          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultContainsDanishHumanReadableMessage()
+  And SOAP fault detail element contains field "amount"                          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultDetailElementContainsField(java.lang.String)
+  And SOAP fault detail element contains error message "Amount must be positive" # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultDetailElementContainsErrorMessage(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:21.6953784+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.6953784+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: Malformed SOAP message returns schema validation fault              # features/petition019.feature:213
+  Given integration-gateway is running and listening for SOAP requests        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request does not conform to SOAP 1.1 or SOAP 1.2 specification # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestDoesNotConformToSoapSpecification()
+{"@timestamp":"2026-03-25T21:51:21.7276794+01:00","message":"SAAJ0514: Unable to create envelope from given source because the root element is not named Envelope","logger_name":"com.sun.xml.messaging.saaj.soap","thread_name":"http-nio-auto-1-exec-7","level":"ERROR","level_value":40000,"traceId":"7b76eb0246763f59bbc8ca923685c78f","spanId":"6bf5f79b7f73e12a","service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.7276794+01:00","message":"SAAJ0511: Unable to create envelope from given source","logger_name":"com.sun.xml.messaging.saaj.soap","thread_name":"http-nio-auto-1-exec-7","level":"ERROR","level_value":40000,"traceId":"7b76eb0246763f59bbc8ca923685c78f","spanId":"6bf5f79b7f73e12a","service":"opendebt-integration-gateway"}
+  When the SOAP request is processed                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 400                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+  And SOAP fault code indicates client error                                  # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultCodeIndicatesClientError()
+  And SOAP fault message (in Danish) describes SOAP schema validation error   # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultMessageInDanishDescribesSoapSchemaValidationError()
+{"@timestamp":"2026-03-25T21:51:21.7471207+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.7471207+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP endpoint accepts requests using SOAP 1.1 protocol            # features/petition019.feature:224
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request uses SOAP 1.1 protocol                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestUsesSoap11Protocol()
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response uses SOAP 1.1 protocol                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseUsesSoap11Protocol()
+  And SOAP response is successful with HTTP 200                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+{"@timestamp":"2026-03-25T21:51:21.7889649+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.7889649+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP endpoint accepts requests using SOAP 1.2 protocol            # features/petition019.feature:232
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request uses SOAP 1.2 protocol                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestUsesSoap12Protocol()
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response uses SOAP 1.2 protocol                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseUsesSoap12Protocol()
+  And SOAP response is successful with HTTP 200                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+{"@timestamp":"2026-03-25T21:51:21.8712026+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.8800009+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: WSDL for OIO services is accessible                               # features/petition019.feature:242
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  When a GET request is made to "/soap/oio?wsdl"                            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.aGetRequestIsMadeTo(java.lang.String)
+  Then response is successful with HTTP 200                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.responseIsSuccessfulWithHttp(int)
+  And response content type is "application/wsdl+xml"                       # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.responseContentTypeIs(java.lang.String)
+  And WSDL contains service definitions for OIOFordringIndberetService      # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains service definitions for OIOKvitteringHentService        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains service definitions for OIOUnderretSamlingHentService   # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains port type for each service                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsPortTypeForEachService()
+  And WSDL contains operation "MFFordringIndberet_I"                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL contains operation "MFKvitteringHent_I"                          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL contains operation "MFUnderretSamlingHent_I"                     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL references XSD schema for OIO namespace                          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlReferencesXsdSchemaForOioNamespace()
+  And WSDL contains message structure definitions for all operations        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsMessageStructureDefinitionsForAllOperations()
+  And WSDL contains binding definitions for SOAP 1.1                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsBindingDefinitionsForSoap11()
+  And WSDL contains binding definitions for SOAP 1.2                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsBindingDefinitionsForSoap12()
+{"@timestamp":"2026-03-25T21:51:21.9155489+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.9230341+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: WSDL for SKAT services is accessible                              # features/petition019.feature:258
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  When a GET request is made to "/soap/skat?wsdl"                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.aGetRequestIsMadeTo(java.lang.String)
+  Then response is successful with HTTP 200                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.responseIsSuccessfulWithHttp(int)
+  And response content type is "application/wsdl+xml"                       # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.responseContentTypeIs(java.lang.String)
+  And WSDL contains service definitions for SkatFordringIndberetService     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains service definitions for SkatKvitteringHentService       # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains service definitions for SkatUnderretSamlingHentService  # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsServiceDefinitionsFor(java.lang.String)
+  And WSDL contains port type for each service                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsPortTypeForEachService()
+  And WSDL contains operation "MFFordringIndberet_I"                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL contains operation "MFKvitteringHent_I"                          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL contains operation "MFUnderretSamlingHent_I"                     # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsOperation(java.lang.String)
+  And WSDL references XSD schema for SKAT namespace                         # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlReferencesXsdSchemaForSkatNamespace()
+  And WSDL contains message structure definitions for all operations        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsMessageStructureDefinitionsForAllOperations()
+  And WSDL contains binding definitions for SOAP 1.1                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsBindingDefinitionsForSoap11()
+  And WSDL contains binding definitions for SOAP 1.2                        # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.wsdlContainsBindingDefinitionsForSoap12()
+{"@timestamp":"2026-03-25T21:51:21.9552922+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:21.9574629+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP services are stateless                                                   # features/petition019.feature:276
+  Given integration-gateway is running and listening for SOAP requests                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given a SOAP request to OIOFordringIndberetService contains correlation ID "CORR-001" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.aSoapRequestToServiceContainsCorrelationId(java.lang.String,java.lang.String)
+  When the SOAP request is processed                                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response contains correlation ID "CORR-001"                                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseContainsCorrelationId(java.lang.String)
+  And no session state is maintained between SOAP requests                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.noSessionStateIsMaintainedBetweenSoapRequests()
+  And SOAP service can handle requests from any connection                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapServiceCanHandleRequestsFromAnyConnection()
+{"@timestamp":"2026-03-25T21:51:22.0095635+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:22.0119539+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP 1.1 fault response uses correct SOAP 1.1 fault envelope structure # features/petition019.feature:286
+  Given integration-gateway is running and listening for SOAP requests           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request uses SOAP 1.1 protocol                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestUsesSoap11Protocol()
+  And the SOAP request body contains an OIO-formatted claim with invalid amount  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsOioFormattedClaimWithInvalidAmount()
+  When the SOAP request is processed                                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 500                                    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+      org.opentest4j.AssertionFailedError: 
+expected: 500
+ but was: 400
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:291)
+
+  And SOAP fault envelope contains element "faultcode"                           # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+  And SOAP fault envelope contains element "faultstring"                         # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+  And SOAP fault envelope contains element "detail"                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:22.0742381+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:22.0766675+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP 1.2 fault response uses correct SOAP 1.2 fault envelope structure # features/petition019.feature:296
+  Given integration-gateway is running and listening for SOAP requests           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request uses SOAP 1.2 protocol                                    # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestUsesSoap12Protocol()
+  And the SOAP request body contains an OIO-formatted claim with invalid amount  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsOioFormattedClaimWithInvalidAmount()
+  When the SOAP request is processed                                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is a fault with HTTP 500                                    # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(int)
+      org.opentest4j.AssertionFailedError: 
+expected: 500
+ but was: 400
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:301)
+
+  And SOAP fault envelope contains element "Code"                                # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+  And SOAP fault envelope contains element "Reason"                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+  And SOAP fault envelope contains element "Detail"                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapFaultEnvelopeContainsElement(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:22.1372985+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:22.1372985+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SOAP services return synchronous responses only                   # features/petition019.feature:308
+  Given integration-gateway is running and listening for SOAP requests      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                              # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"      # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request body contains a valid OIO-formatted claim            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyContainsValidOioFormattedClaim()
+  When the SOAP request is processed                                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is returned in the same HTTP connection                # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsReturnedInTheSameHttpConnection()
+  And SOAP response does not contain WS-Addressing ReplyTo headers          # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseDoesNotContainWsAddressingReplyToHeaders()
+  And SOAP response does not contain asynchronous callback references       # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseDoesNotContainAsynchronousCallbackReferences()
+{"@timestamp":"2026-03-25T21:51:22.1836901+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:22.1849609+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: OIO SOAP messages are validated against OIO XSD schema version 1.0.1                # features/petition019.feature:317
+  Given integration-gateway is running and listening for SOAP requests                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                                # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation                   # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                        # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to OIOFordringIndberetService                             # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request body is a valid instance of OIO XSD schema "urn:oio:skat:efi:ws:1.0.1" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyIsValidInstanceOfOioXsdSchema(java.lang.String)
+  When the SOAP request is processed                                                          # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                              # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP message validation used OIO XSD schema "urn:oio:skat:efi:ws:1.0.1"                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapMessageValidationUsedOioXsdSchema(java.lang.String)
+{"@timestamp":"2026-03-25T21:51:22.2306696+01:00","message":"Could not detect default configuration classes for test class [dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration]: CucumberSpringConfiguration does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+{"@timestamp":"2026-03-25T21:51:22.2306696+01:00","message":"Found @SpringBootConfiguration dk.ufst.opendebt.gateway.IntegrationGatewayApplication for test class dk.ufst.opendebt.gateway.steps.CucumberSpringConfiguration","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"main","level":"INFO","level_value":20000,"service":"opendebt-integration-gateway"}
+
+Scenario: SKAT SOAP messages are validated against SKAT XSD schema version 2009/01/15                        # features/petition019.feature:325
+  Given integration-gateway is running and listening for SOAP requests                                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.integrationGatewayIsRunning()
+  And CLS logging is configured and accessible                                                               # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.clsLoggingIsConfigured()
+  And SOAP endpoint security is configured for OCES3 certificate validation                                  # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.soapSecurityConfigured()
+  And fordringshaver "CREDITOR-001" has a valid OCES3 certificate                                            # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasValidOces3Certificate(java.lang.String)
+  And fordringshaver "CREDITOR-001" is authorized to submit claims                                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverIsAuthorizedToSubmitClaims(java.lang.String)
+  Given fordringshaver "CREDITOR-001" has OCES3 certificate "CERT-001"                                       # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.fordringsshaverHasOces3Certificate(java.lang.String,java.lang.String)
+  And the SOAP request is addressed to SkatFordringIndberetService                                           # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsAddressedTo(java.lang.String)
+  And the SOAP request body is a valid instance of SKAT XSD schema "http://skat.dk/begrebsmodel/2009/01/15/" # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestBodyIsValidInstanceOfSkatXsdSchema(java.lang.String)
+  When the SOAP request is processed                                                                         # dk.ufst.opendebt.gateway.steps.Petition019BackgroundAndRequestSteps.theSoapRequestIsProcessed()
+  Then SOAP response is successful with HTTP 200                                                             # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsSuccessfulWithHttp(int)
+  And SOAP message validation used SKAT XSD schema "http://skat.dk/begrebsmodel/2009/01/15/"                 # dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapMessageValidationUsedSkatXsdSchema(java.lang.String)
+[ERROR] Tests run: 30, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 33.07 s <<< FAILURE! -- in dk.ufst.opendebt.gateway.RunCucumberTest
+[ERROR] Legacy SOAP Endpoints for External Creditors.OIOFordringIndberetService applies same validation rules as REST API -- Time elapsed: 0.209 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 500
+ but was: 400
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:34)
+
+[ERROR] Legacy SOAP Endpoints for External Creditors.SkatFordringIndberetService applies same validation rules as REST API -- Time elapsed: 0.066 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 500
+ but was: 400
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:87)
+
+[ERROR] Legacy SOAP Endpoints for External Creditors.SOAP validation error includes field-level details -- Time elapsed: 0.065 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 500
+ but was: 400
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:207)
+
+[ERROR] Legacy SOAP Endpoints for External Creditors.SOAP 1.1 fault response uses correct SOAP 1.1 fault envelope structure -- Time elapsed: 0.063 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 500
+ but was: 400
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:291)
+
+[ERROR] Legacy SOAP Endpoints for External Creditors.SOAP 1.2 fault response uses correct SOAP 1.2 fault envelope structure -- Time elapsed: 0.063 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 500
+ but was: 400
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at dk.ufst.opendebt.gateway.steps.Petition019SoapResponseSteps.soapResponseIsAFaultWithHttp(Petition019SoapResponseSteps.java:83)
+	at ?.SOAP response is a fault with HTTP 500(classpath:features/petition019.feature:301)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   
+expected: 500
+ but was: 400
+[ERROR]   
+expected: 500
+ but was: 400
+[ERROR]   
+expected: 500
+ but was: 400
+[ERROR]   
+expected: 500
+ but was: 400
+[ERROR]   
+expected: 500
+ but was: 400
+[INFO] 
+[ERROR] Tests run: 30, Failures: 5, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  56.306 s
+[INFO] Finished at: 2026-03-25T21:51:26+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project opendebt-integration-gateway: There are test failures.
+[ERROR] 
+[ERROR] Please refer to C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-integration-gateway\target\surefire-reports for the individual test results.
+[ERROR] Please refer to dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

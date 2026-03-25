@@ -31,7 +31,7 @@ Feature: Legacy SOAP Endpoints for External Creditors
     And the SOAP request operation is "MFFordringIndberet_I"
     And the SOAP request body contains an OIO-formatted claim with invalid amount (0 DKK)
     When the SOAP request is processed
-    Then SOAP response is a fault with HTTP 500
+    Then SOAP response is a fault with HTTP 400
     And SOAP fault contains error code corresponding to claim validation failure
     And SOAP fault detail contains field-level error information for the amount field
 
@@ -84,7 +84,7 @@ Feature: Legacy SOAP Endpoints for External Creditors
     And the SOAP request operation is "MFFordringIndberet_I"
     And the SOAP request body contains a SKAT-formatted claim with missing required field
     When the SOAP request is processed
-    Then SOAP response is a fault with HTTP 500
+    Then SOAP response is a fault with HTTP 400
     And SOAP fault contains error code corresponding to claim validation failure
     And SOAP fault detail contains field-level error information for the missing field
 
@@ -204,7 +204,7 @@ Feature: Legacy SOAP Endpoints for External Creditors
     And the SOAP request is addressed to OIOFordringIndberetService
     And the SOAP request contains an OIO-formatted claim with amount -100 DKK
     When the SOAP request is processed
-    Then SOAP response is a fault with HTTP 500
+    Then SOAP response is a fault with HTTP 400
     And SOAP fault contains fault code
     And SOAP fault contains Danish human-readable message
     And SOAP fault detail element contains field "amount"
@@ -288,7 +288,7 @@ Feature: Legacy SOAP Endpoints for External Creditors
     And the SOAP request uses SOAP 1.1 protocol
     And the SOAP request body contains an OIO-formatted claim with invalid amount
     When the SOAP request is processed
-    Then SOAP response is a fault with HTTP 500
+    Then SOAP response is a fault with HTTP 400
     And SOAP fault envelope contains element "faultcode"
     And SOAP fault envelope contains element "faultstring"
     And SOAP fault envelope contains element "detail"
@@ -298,7 +298,7 @@ Feature: Legacy SOAP Endpoints for External Creditors
     And the SOAP request uses SOAP 1.2 protocol
     And the SOAP request body contains an OIO-formatted claim with invalid amount
     When the SOAP request is processed
-    Then SOAP response is a fault with HTTP 500
+    Then SOAP response is a fault with HTTP 400
     And SOAP fault envelope contains element "Code"
     And SOAP fault envelope contains element "Reason"
     And SOAP fault envelope contains element "Detail"
