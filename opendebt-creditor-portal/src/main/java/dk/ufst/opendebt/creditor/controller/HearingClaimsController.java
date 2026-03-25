@@ -54,15 +54,15 @@ public class HearingClaimsController {
   private static final String MODEL_WITHDRAW_FORM = "withdrawForm";
   private static final String PAGE_CLAIMS_HEARING = "claims-hearing";
 
+  private static final String FEJLAGTIG_HOVEDSTOL_CODE = "FEJLAGTIG_HOVEDSTOL_INDBERETNING";
+
   /** Action codes that indicate a write-up (opskrivning). */
   private static final Set<String> WRITE_UP_ACTION_CODES =
       Set.of(
           "OPSKRIVNING_REGULERING",
-          "FEJLAGTIG_HOVEDSTOL_INDBERETNING",
+          FEJLAGTIG_HOVEDSTOL_CODE,
           "OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING",
           "OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING");
-
-  private static final String FEJLAGTIG_HOVEDSTOL_CODE = "FEJLAGTIG_HOVEDSTOL_INDBERETNING";
 
   private final DebtServiceClient debtServiceClient;
   private final PortalSessionService portalSessionService;
@@ -326,7 +326,7 @@ public class HearingClaimsController {
       LocalDate dateFrom,
       LocalDate dateTo) {
     model.addAttribute("claims", claims.getContent());
-    model.addAttribute("currentPage", claims.getNumber());
+    model.addAttribute(MODEL_CURRENT_PAGE, claims.getNumber());
     model.addAttribute("totalPages", claims.getTotalPages());
     model.addAttribute("totalElements", claims.getTotalElements());
     model.addAttribute("pageSize", claims.getSize());

@@ -30,6 +30,10 @@ import reactor.core.publisher.Mono;
 @Component
 public class ConfigServiceClient {
 
+  private static final String ERR_MSG_CONFIG_UNAVAILABLE = "Config service unavailable";
+  private static final String ERR_CODE_CONFIG_UNAVAILABLE = "CONFIG_SERVICE_UNAVAILABLE";
+  private static final String PARAM_VALID_FROM = "validFrom";
+
   private final WebClient webClient;
 
   public ConfigServiceClient(
@@ -62,8 +66,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<Map<String, List<ConfigEntryPortalDto>>>() {})
         .block();
@@ -93,8 +97,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<List<ConfigEntryPortalDto>>() {})
         .block();
@@ -112,7 +116,7 @@ public class ConfigServiceClient {
             u ->
                 u.path("/debt-service/api/v1/config/{key}/preview")
                     .queryParam("nbRate", nbRate)
-                    .queryParam("validFrom", validFrom)
+                    .queryParam(PARAM_VALID_FROM, validFrom)
                     .build(key))
         .retrieve()
         .onStatus(
@@ -130,8 +134,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<List<ConfigEntryPortalDto>>() {})
         .block();
@@ -163,8 +167,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
         .map(
@@ -200,8 +204,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .bodyToMono(ConfigEntryPortalDto.class)
         .block();
@@ -231,8 +235,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .toBodilessEntity()
         .block();
@@ -262,8 +266,8 @@ public class ConfigServiceClient {
             response ->
                 Mono.error(
                     new OpenDebtException(
-                        "Config service unavailable",
-                        "CONFIG_SERVICE_UNAVAILABLE",
+                        ERR_MSG_CONFIG_UNAVAILABLE,
+                        ERR_CODE_CONFIG_UNAVAILABLE,
                         OpenDebtException.ErrorSeverity.CRITICAL)))
         .toBodilessEntity()
         .block();
@@ -329,7 +333,8 @@ public class ConfigServiceClient {
     dto.setReviewStatus((String) m.get("reviewStatus"));
     dto.setComputedStatus((String) m.get("computedStatus"));
     if (m.get("id") != null) dto.setId(UUID.fromString((String) m.get("id")));
-    if (m.get("validFrom") != null) dto.setValidFrom(LocalDate.parse((String) m.get("validFrom")));
+    if (m.get(PARAM_VALID_FROM) != null)
+      dto.setValidFrom(LocalDate.parse((String) m.get(PARAM_VALID_FROM)));
     if (m.get("validTo") != null) dto.setValidTo(LocalDate.parse((String) m.get("validTo")));
     return dto;
   }

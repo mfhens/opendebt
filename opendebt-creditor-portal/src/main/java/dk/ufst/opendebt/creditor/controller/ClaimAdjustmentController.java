@@ -74,7 +74,7 @@ public class ClaimAdjustmentController {
     CreditorAgreementDto agreement = creditorServiceClient.getCreditorAgreement(actingCreditor);
     if (!isAdjustmentAllowed(agreement)) {
       model.addAttribute(
-          "serviceError",
+          MODEL_SERVICE_ERROR,
           messageSource.getMessage(
               "adjustment.error.nopermission", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
@@ -88,7 +88,7 @@ public class ClaimAdjustmentController {
 
     if (allowedTypes.isEmpty()) {
       model.addAttribute(
-          "serviceError",
+          MODEL_SERVICE_ERROR,
           messageSource.getMessage(
               "adjustment.error.notypes", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
@@ -109,7 +109,7 @@ public class ClaimAdjustmentController {
     model.addAttribute("debtors", claimDetail.getDebtors());
     model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
 
-    if (!model.containsAttribute("adjustmentForm")) {
+    if (!model.containsAttribute(MODEL_ADJUSTMENT_FORM)) {
       model.addAttribute(MODEL_ADJUSTMENT_FORM, new ClaimAdjustmentRequestDto());
     }
 
@@ -135,7 +135,7 @@ public class ClaimAdjustmentController {
     CreditorAgreementDto agreement = creditorServiceClient.getCreditorAgreement(actingCreditor);
     if (!isAdjustmentAllowed(agreement)) {
       model.addAttribute(
-          "serviceError",
+          MODEL_SERVICE_ERROR,
           messageSource.getMessage(
               "adjustment.error.nopermission", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
@@ -198,7 +198,7 @@ public class ClaimAdjustmentController {
       }
 
       redirectAttributes.addFlashAttribute("receipt", receipt);
-      redirectAttributes.addFlashAttribute("claimId", id);
+      redirectAttributes.addFlashAttribute(MODEL_CLAIM_ID, id);
       return "redirect:/fordring/" + id + "/adjustment/receipt";
     } catch (Exception ex) {
       log.error("Failed to submit adjustment for claim {}: {}", id, ex.getMessage(), ex);
@@ -248,7 +248,7 @@ public class ClaimAdjustmentController {
       ClaimDetailDto detail = debtServiceClient.getClaimDetail(claimId);
       if (detail == null) {
         model.addAttribute(
-            "serviceError",
+            MODEL_SERVICE_ERROR,
             messageSource.getMessage(
                 "claim.detail.error.notfound", null, LocaleContextHolder.getLocale()));
       }
@@ -256,7 +256,7 @@ public class ClaimAdjustmentController {
     } catch (Exception ex) {
       log.warn("Failed to load claim detail for {}: {}", claimId, ex.getMessage());
       model.addAttribute(
-          "serviceError",
+          MODEL_SERVICE_ERROR,
           messageSource.getMessage(
               "claim.detail.error.service", null, LocaleContextHolder.getLocale()));
       return null;

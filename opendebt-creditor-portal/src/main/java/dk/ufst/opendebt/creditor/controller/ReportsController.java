@@ -37,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ReportsController {
 
+  private static final String MODEL_REPORTS = "reports";
+
   private final ReportingServiceClient reportingServiceClient;
   private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
@@ -58,7 +60,7 @@ public class ReportsController {
     int selectedYear = (year != null) ? year : now.getYear();
     int selectedMonth = (month != null) ? month : now.getMonthValue();
 
-    model.addAttribute("currentPage", "reports");
+    model.addAttribute("currentPage", MODEL_REPORTS);
     model.addAttribute("actingCreditorOrgId", actingCreditor);
     addRepresentedCreditorIfPresent(model, session);
 
@@ -84,13 +86,13 @@ public class ReportsController {
       List<ReportListItemDto> reports =
           allReports.stream().filter(r -> !r.isReconciliationSummary()).toList();
 
-      model.addAttribute("reports", reports);
+      model.addAttribute(MODEL_REPORTS, reports);
     } catch (Exception ex) {
       log.error("Failed to load reports: {}", ex.getMessage());
       model.addAttribute(
           "backendError",
           messageSource.getMessage("reports.error.service", null, LocaleContextHolder.getLocale()));
-      model.addAttribute("reports", List.of());
+      model.addAttribute(MODEL_REPORTS, List.of());
     }
 
     return "rapporter";
@@ -118,10 +120,10 @@ public class ReportsController {
           reportingServiceClient.listReports(actingCreditor, year, month);
       List<ReportListItemDto> reports =
           allReports.stream().filter(r -> !r.isReconciliationSummary()).toList();
-      model.addAttribute("reports", reports);
+      model.addAttribute(MODEL_REPORTS, reports);
     } catch (Exception ex) {
       log.warn("Failed to load reports fragment: {}", ex.getMessage());
-      model.addAttribute("reports", List.of());
+      model.addAttribute(MODEL_REPORTS, List.of());
       model.addAttribute(
           "backendError",
           messageSource.getMessage("reports.error.service", null, LocaleContextHolder.getLocale()));

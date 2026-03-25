@@ -99,7 +99,7 @@ public class ReconciliationController {
       log.error("Failed to load reconciliations: {}", ex.getMessage());
       reconciliations = List.of();
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.service", null, LocaleContextHolder.getLocale()));
     }
@@ -136,7 +136,7 @@ public class ReconciliationController {
 
     if (detail == null) {
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.notfound", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
@@ -159,7 +159,7 @@ public class ReconciliationController {
 
     model.addAttribute(MODEL_RECONCILIATION, detail);
     model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
-    if (!model.containsAttribute("responseForm")) {
+    if (!model.containsAttribute(MODEL_RESPONSE_FORM)) {
       model.addAttribute(MODEL_RESPONSE_FORM, new ReconciliationResponseFormDto());
     }
     addActingCreditorToModel(model, session);
@@ -191,7 +191,7 @@ public class ReconciliationController {
     ReconciliationDetailDto detail = reconciliationServiceClient.getReconciliationDetail(id);
     if (detail == null || !STATUS_ACTIVE.equalsIgnoreCase(detail.getStatus())) {
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.notactive", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_CURRENT_PAGE, PAGE_RECONCILIATION);
@@ -207,7 +207,7 @@ public class ReconciliationController {
     if (form.getBasisChecksum() != null && !form.getBasisChecksum().equals(expectedChecksum)) {
       log.warn("Basis data tamper detected for reconciliation: {}", id);
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.tamper", null, LocaleContextHolder.getLocale()));
       model.addAttribute(MODEL_RECONCILIATION, detail);
@@ -253,7 +253,7 @@ public class ReconciliationController {
     } catch (Exception ex) {
       log.error("Failed to verify basis data: {}", ex.getMessage());
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.service", null, LocaleContextHolder.getLocale()));
       return reloadDetailWithErrors(id, model, session);
@@ -263,7 +263,7 @@ public class ReconciliationController {
     if (form.getBasisChecksum() != null && !form.getBasisChecksum().equals(expectedChecksum)) {
       log.warn("Basis data tamper detected during submission for reconciliation: {}", id);
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.error.tamper", null, LocaleContextHolder.getLocale()));
       return reloadDetailWithErrors(id, model, session);
@@ -287,7 +287,7 @@ public class ReconciliationController {
     } catch (Exception ex) {
       log.error("Failed to submit reconciliation response: {}", ex.getMessage());
       model.addAttribute(
-          "backendError",
+          MODEL_BACKEND_ERROR,
           messageSource.getMessage(
               "reconciliation.submit.error", null, LocaleContextHolder.getLocale()));
       return reloadDetailWithErrors(id, model, session);

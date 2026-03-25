@@ -39,6 +39,10 @@ public class DemoDataSeeder implements ApplicationRunner {
   private static final UUID DEBT_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000A01");
   private static final UUID DEBT_B_ID = UUID.fromString("00000000-0000-0000-0000-000000000B01");
 
+  private static final String AMOUNT_375_00 = "375.00";
+  private static final String AMOUNT_453_75 = "453.75";
+  private static final String AMOUNT_5000_00 = "5000.00";
+
   // Debt A transaction IDs
   private static final UUID TXN_A01 = UUID.fromString("A0000000-0000-0000-0000-000000000001");
   private static final UUID TXN_A02 = UUID.fromString("A0000000-0000-0000-0000-000000000002");
@@ -95,7 +99,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         EventType.INTEREST_ACCRUED,
         LocalDate.of(2025, 3, 1),
-        new BigDecimal("375.00"),
+        new BigDecimal(AMOUNT_375_00),
         TXN_A02,
         "Monthly interest Feb");
     saveLedgerPair(
@@ -103,7 +107,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         AccountCode.INTEREST_RECEIVABLE,
         AccountCode.INTEREST_REVENUE,
-        new BigDecimal("375.00"),
+        new BigDecimal(AMOUNT_375_00),
         LocalDate.of(2025, 3, 1),
         LocalDate.of(2025, 3, 1),
         EntryCategory.INTEREST_ACCRUAL,
@@ -115,7 +119,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         EventType.INTEREST_ACCRUED,
         LocalDate.of(2025, 4, 1),
-        new BigDecimal("453.75"),
+        new BigDecimal(AMOUNT_453_75),
         TXN_A03,
         "Monthly interest Mar");
     saveLedgerPair(
@@ -123,7 +127,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         AccountCode.INTEREST_RECEIVABLE,
         AccountCode.INTEREST_REVENUE,
-        new BigDecimal("453.75"),
+        new BigDecimal(AMOUNT_453_75),
         LocalDate.of(2025, 4, 1),
         LocalDate.of(2025, 4, 1),
         EntryCategory.INTEREST_ACCRUAL,
@@ -157,7 +161,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         EventType.INTEREST_ACCRUED,
         LocalDate.of(2025, 3, 1),
-        new BigDecimal("375.00"),
+        new BigDecimal(AMOUNT_375_00),
         TXN_A04_CROSSING,
         "Reversal of Feb interest");
     saveLedgerPair(
@@ -165,7 +169,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         AccountCode.INTEREST_REVENUE,
         AccountCode.INTEREST_RECEIVABLE,
-        new BigDecimal("375.00"),
+        new BigDecimal(AMOUNT_375_00),
         LocalDate.of(2025, 3, 1),
         LocalDate.of(2025, 4, 10),
         EntryCategory.STORNO,
@@ -177,7 +181,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         EventType.INTEREST_ACCRUED,
         LocalDate.of(2025, 4, 1),
-        new BigDecimal("453.75"),
+        new BigDecimal(AMOUNT_453_75),
         TXN_A04_CROSSING,
         "Reversal of Mar interest");
     saveLedgerPair(
@@ -185,7 +189,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         AccountCode.INTEREST_REVENUE,
         AccountCode.INTEREST_RECEIVABLE,
-        new BigDecimal("453.75"),
+        new BigDecimal(AMOUNT_453_75),
         LocalDate.of(2025, 4, 1),
         LocalDate.of(2025, 4, 10),
         EntryCategory.STORNO,
@@ -255,7 +259,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         EventType.PAYMENT_RECEIVED,
         LocalDate.of(2025, 5, 1),
-        new BigDecimal("5000.00"),
+        new BigDecimal(AMOUNT_5000_00),
         TXN_A10,
         "Normal payment");
     saveLedgerPair(
@@ -263,7 +267,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_A_ID,
         AccountCode.SKB_BANK,
         AccountCode.RECEIVABLES,
-        new BigDecimal("5000.00"),
+        new BigDecimal(AMOUNT_5000_00),
         LocalDate.of(2025, 5, 1),
         LocalDate.of(2025, 5, 1),
         EntryCategory.PAYMENT,
@@ -320,7 +324,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_B_ID,
         EventType.PAYMENT_RECEIVED,
         LocalDate.of(2025, 4, 15),
-        new BigDecimal("5000.00"),
+        new BigDecimal(AMOUNT_5000_00),
         TXN_B02,
         "Payment received");
     saveLedgerPair(
@@ -328,7 +332,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         DEBT_B_ID,
         AccountCode.SKB_BANK,
         AccountCode.RECEIVABLES,
-        new BigDecimal("5000.00"),
+        new BigDecimal(AMOUNT_5000_00),
         LocalDate.of(2025, 4, 15),
         LocalDate.of(2025, 4, 15),
         EntryCategory.PAYMENT,

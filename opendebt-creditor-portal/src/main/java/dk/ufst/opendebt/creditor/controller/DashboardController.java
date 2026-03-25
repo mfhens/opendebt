@@ -27,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DashboardController {
 
+  private static final String VIEW_INDEX = "index";
+
   private final CreditorServiceClient creditorServiceClient;
   private final DebtServiceClient debtServiceClient;
   private final MessageSource messageSource;
@@ -58,7 +60,7 @@ public class DashboardController {
           "backendError",
           messageSource.getMessage(
               "controller.dashboard.backend.unavailable", null, LocaleContextHolder.getLocale()));
-      return "index";
+      return VIEW_INDEX;
     }
 
     if (creditor == null) {
@@ -69,7 +71,7 @@ public class DashboardController {
               "controller.dashboard.creditor.notfound",
               new Object[] {actingCreditor},
               LocaleContextHolder.getLocale()));
-      return "index";
+      return VIEW_INDEX;
     }
 
     model.addAttribute("creditor", creditor);
@@ -79,7 +81,7 @@ public class DashboardController {
       model.addAttribute("representedCreditorOrgId", representedCreditor);
     }
     model.addAttribute("showActingSelector", creditor.getParentCreditorId() != null);
-    return "index";
+    return VIEW_INDEX;
   }
 
   /** HTMX endpoint that returns the claim counts fragment for the acting creditor. */

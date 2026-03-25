@@ -26,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TransactionLogController {
 
+  private static final String MODEL_LEDGER_ENTRIES = "ledgerEntries";
+
   private final PaymentServiceClient paymentServiceClient;
   private final CaseworkerSessionService sessionService;
 
@@ -49,11 +51,11 @@ public class TransactionLogController {
     try {
       RestPage<PortalLedgerEntryDto> ledger =
           paymentServiceClient.getLedgerByCase(caseId, category, fromDate, toDate, page, size);
-      model.addAttribute("ledgerEntries", ledger.getContent());
+      model.addAttribute(MODEL_LEDGER_ENTRIES, ledger.getContent());
       model.addAttribute("ledgerPage", ledger);
     } catch (Exception ex) {
       log.error("Failed to load posteringslog for case {}: {}", caseId, ex.getMessage());
-      model.addAttribute("ledgerEntries", List.of());
+      model.addAttribute(MODEL_LEDGER_ENTRIES, List.of());
     }
 
     model.addAttribute("caseId", caseId);
@@ -85,7 +87,7 @@ public class TransactionLogController {
     try {
       RestPage<PortalLedgerEntryDto> ledger =
           paymentServiceClient.getLedgerByDebt(debtId, category, fromDate, toDate, page, size);
-      model.addAttribute("ledgerEntries", ledger.getContent());
+      model.addAttribute(MODEL_LEDGER_ENTRIES, ledger.getContent());
       model.addAttribute("ledgerPage", ledger);
     } catch (Exception ex) {
       log.error(
@@ -93,7 +95,7 @@ public class TransactionLogController {
           debtId,
           caseId,
           ex.getMessage());
-      model.addAttribute("ledgerEntries", List.of());
+      model.addAttribute(MODEL_LEDGER_ENTRIES, List.of());
     }
 
     model.addAttribute("caseId", caseId);

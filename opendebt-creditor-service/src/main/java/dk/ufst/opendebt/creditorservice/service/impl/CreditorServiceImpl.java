@@ -21,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CreditorServiceImpl implements CreditorService {
 
+  private static final String ERR_CREDITOR_NOT_FOUND_ORG =
+      "Creditor not found with organization ID: ";
+
   private final CreditorRepository creditorRepository;
   private final CreditorMapper creditorMapper;
 
@@ -30,9 +33,7 @@ public class CreditorServiceImpl implements CreditorService {
         creditorRepository
             .findByCreditorOrgId(creditorOrgId)
             .orElseThrow(
-                () ->
-                    new CreditorNotFoundException(
-                        "Creditor not found with organization ID: " + creditorOrgId));
+                () -> new CreditorNotFoundException(ERR_CREDITOR_NOT_FOUND_ORG + creditorOrgId));
     return creditorMapper.toDto(entity);
   }
 
@@ -60,9 +61,7 @@ public class CreditorServiceImpl implements CreditorService {
         creditorRepository
             .findByCreditorOrgId(creditorOrgId)
             .orElseThrow(
-                () ->
-                    new CreditorNotFoundException(
-                        "Creditor not found with organization ID: " + creditorOrgId));
+                () -> new CreditorNotFoundException(ERR_CREDITOR_NOT_FOUND_ORG + creditorOrgId));
 
     CreditorAction action = request.getRequestedAction();
 
@@ -98,9 +97,7 @@ public class CreditorServiceImpl implements CreditorService {
         creditorRepository
             .findByCreditorOrgId(creditorOrgId)
             .orElseThrow(
-                () ->
-                    new CreditorNotFoundException(
-                        "Creditor not found with organization ID: " + creditorOrgId));
+                () -> new CreditorNotFoundException(ERR_CREDITOR_NOT_FOUND_ORG + creditorOrgId));
     return CreditorAgreementDto.builder()
         .portalActionsAllowed(Boolean.TRUE.equals(entity.getAllowPortalActions()))
         .allowCreateRecoveryClaims(Boolean.TRUE.equals(entity.getAllowCreateRecoveryClaims()))

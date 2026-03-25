@@ -37,6 +37,7 @@ public class RejectedClaimsController {
   private static final String CPR_TYPE = "CPR";
   private static final int CPR_VISIBLE_DIGITS = 6;
   private static final String CPR_MASK = "****";
+  private static final String MODEL_CURRENT_PAGE = "currentPage";
 
   private final DebtServiceClient debtServiceClient;
   private final PortalSessionService portalSessionService;
@@ -52,7 +53,7 @@ public class RejectedClaimsController {
     if (actingCreditor == null) {
       return "redirect:/demo-login";
     }
-    model.addAttribute("currentPage", "claims-rejected");
+    model.addAttribute(MODEL_CURRENT_PAGE, "claims-rejected");
     model.addAttribute("listType", "rejected");
     return "claims/rejected-list";
   }
@@ -116,7 +117,7 @@ public class RejectedClaimsController {
     model.addAttribute("claim", detail);
     model.addAttribute("claimId", id);
     model.addAttribute("showDebtorDetails", showDebtorDetails);
-    model.addAttribute("currentPage", "claims-rejected");
+    model.addAttribute(MODEL_CURRENT_PAGE, "claims-rejected");
     return "claims/rejected-detail";
   }
 
@@ -203,7 +204,7 @@ public class RejectedClaimsController {
       LocalDate dateFrom,
       LocalDate dateTo) {
     model.addAttribute("claims", claims.getContent());
-    model.addAttribute("currentPage", claims.getNumber());
+    model.addAttribute(MODEL_CURRENT_PAGE, claims.getNumber());
     model.addAttribute("totalPages", claims.getTotalPages());
     model.addAttribute("totalElements", claims.getTotalElements());
     model.addAttribute("pageSize", claims.getSize());

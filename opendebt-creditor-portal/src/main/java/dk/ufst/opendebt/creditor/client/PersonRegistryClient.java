@@ -23,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class PersonRegistryClient {
 
+  private static final String ERR_PERSON_REGISTRY_UNAVAILABLE =
+      "Person registry is unavailable. Please try again later.";
+
   private final WebClient webClient;
 
   public PersonRegistryClient(
@@ -61,7 +64,7 @@ public class PersonRegistryClient {
       log.warn("Person registry unavailable for CPR verification: {}", ex.getMessage());
       return DebtorVerificationResultDto.builder()
           .verified(false)
-          .errorMessage("Person registry is unavailable. Please try again later.")
+          .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
           .build();
     }
   }
@@ -89,7 +92,7 @@ public class PersonRegistryClient {
       log.warn("Person registry unavailable for CVR verification: {}", ex.getMessage());
       return DebtorVerificationResultDto.builder()
           .verified(false)
-          .errorMessage("Person registry is unavailable. Please try again later.")
+          .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
           .build();
     }
   }
@@ -117,7 +120,7 @@ public class PersonRegistryClient {
       log.warn("Person registry unavailable for SE verification: {}", ex.getMessage());
       return DebtorVerificationResultDto.builder()
           .verified(false)
-          .errorMessage("Person registry is unavailable. Please try again later.")
+          .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
           .build();
     }
   }
@@ -141,7 +144,7 @@ public class PersonRegistryClient {
     log.warn("Circuit breaker fallback triggered for verifyCpr: {}", t.getMessage());
     return DebtorVerificationResultDto.builder()
         .verified(false)
-        .errorMessage("Person registry is unavailable. Please try again later.")
+        .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
         .build();
   }
 
@@ -155,7 +158,7 @@ public class PersonRegistryClient {
     log.warn("Circuit breaker fallback triggered for verifyCvr: {}", t.getMessage());
     return DebtorVerificationResultDto.builder()
         .verified(false)
-        .errorMessage("Person registry is unavailable. Please try again later.")
+        .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
         .build();
   }
 
@@ -169,7 +172,7 @@ public class PersonRegistryClient {
     log.warn("Circuit breaker fallback triggered for verifySe: {}", t.getMessage());
     return DebtorVerificationResultDto.builder()
         .verified(false)
-        .errorMessage("Person registry is unavailable. Please try again later.")
+        .errorMessage(ERR_PERSON_REGISTRY_UNAVAILABLE)
         .build();
   }
 }

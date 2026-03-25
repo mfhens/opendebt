@@ -26,6 +26,7 @@ public class ClaimValidationServiceImpl implements ClaimValidationService {
 
   private static final Set<String> VALID_ART_TYPES = Set.of("INDR", "MODR");
   private static final LocalDate EARLIEST_DATE = LocalDate.of(1900, 1, 1);
+  private static final String RULE_ID_568 = "Rule568";
 
   @Override
   public ClaimValidationResult validate(DebtDto claim) {
@@ -94,7 +95,7 @@ public class ClaimValidationServiceImpl implements ClaimValidationService {
     if (claim.getDueDate() != null && claim.getDueDate().isBefore(EARLIEST_DATE)) {
       errors.add(
           ValidationError.builder()
-              .ruleId("Rule568")
+              .ruleId(RULE_ID_568)
               .errorCode("TIDLIGST_MULIG_DATO")
               .description("Datoer kan ikke ligge foer aar 1900")
               .build());
@@ -104,7 +105,7 @@ public class ClaimValidationServiceImpl implements ClaimValidationService {
       if (claim.getLimitationDate().isBefore(EARLIEST_DATE)) {
         errors.add(
             ValidationError.builder()
-                .ruleId("Rule568")
+                .ruleId(RULE_ID_568)
                 .errorCode("TIDLIGST_MULIG_DATO")
                 .description("Foraeldelsesdato kan ikke ligge foer aar 1900")
                 .build());
@@ -112,7 +113,7 @@ public class ClaimValidationServiceImpl implements ClaimValidationService {
       if (claim.getLimitationDate().isBefore(today)) {
         errors.add(
             ValidationError.builder()
-                .ruleId("Rule568")
+                .ruleId(RULE_ID_568)
                 .errorCode("LIMITATION_DATE_EXPIRED")
                 .description("Foraeldelsesdato er overskredet")
                 .build());

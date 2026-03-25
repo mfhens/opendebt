@@ -48,6 +48,10 @@ public class BusinessConfigService {
    */
   private final Map<String, BigDecimal> batchCache = new ConcurrentHashMap<>();
 
+  private static final String ERR_ENTRY_NOT_FOUND = "Entry not found: ";
+  private static final String STATUS_PENDING_REVIEW = "PENDING_REVIEW";
+  private static final String VALUE_TYPE_DECIMAL = "DECIMAL";
+
   /** Warns at startup if the business_config table is empty (no rates configured). */
   @PostConstruct
   public void validateRequiredConfigs() {
@@ -244,9 +248,9 @@ public class BusinessConfigService {
     BusinessConfigEntity entity =
         repository
             .findById(id)
-            .orElseThrow(() -> new ConfigurationNotFoundException("Entry not found: " + id));
+            .orElseThrow(() -> new ConfigurationNotFoundException(ERR_ENTRY_NOT_FOUND + id));
     String computed = entity.getComputedStatus();
-    if (!"FUTURE".equals(computed) && !"PENDING_REVIEW".equals(computed)) {
+    if (!"FUTURE".equals(computed) && !STATUS_PENDING_REVIEW.equals(computed)) {
       throw new ConfigValidationException("Kun fremtidige eller afventende poster kan ændres");
     }
     if (req.getConfigValue() != null) {
@@ -278,7 +282,7 @@ public class BusinessConfigService {
     BusinessConfigEntity entity =
         repository
             .findById(id)
-            .orElseThrow(() -> new ConfigurationNotFoundException("Entry not found: " + id));
+            .orElseThrow(() -> new ConfigurationNotFoundException(ERR_ENTRY_NOT_FOUND + id));
     if (entity.getReviewStatus() != BusinessConfigEntity.ReviewStatus.PENDING_REVIEW) {
       throw new ConfigValidationException("Kun afventende poster kan godkendes");
     }
@@ -310,7 +314,7 @@ public class BusinessConfigService {
     BusinessConfigEntity entity =
         repository
             .findById(id)
-            .orElseThrow(() -> new ConfigurationNotFoundException("Entry not found: " + id));
+            .orElseThrow(() -> new ConfigurationNotFoundException(ERR_ENTRY_NOT_FOUND + id));
     if (entity.getReviewStatus() != BusinessConfigEntity.ReviewStatus.PENDING_REVIEW) {
       throw new ConfigValidationException("Kun afventende poster kan afvises");
     }
@@ -336,7 +340,7 @@ public class BusinessConfigService {
     BusinessConfigEntity entity =
         repository
             .findById(id)
-            .orElseThrow(() -> new ConfigurationNotFoundException("Entry not found: " + id));
+            .orElseThrow(() -> new ConfigurationNotFoundException(ERR_ENTRY_NOT_FOUND + id));
     if (!"FUTURE".equals(entity.getComputedStatus())) {
       throw new ConfigValidationException("Kun fremtidige poster kan slettes");
     }
@@ -390,7 +394,7 @@ public class BusinessConfigService {
           BusinessConfigEntity.builder()
               .configKey(key)
               .configValue(value)
-              .valueType("DECIMAL")
+              .valueType(VALUE_TYPE_DECIMAL)
               .validFrom(validFrom)
               .reviewStatus(BusinessConfigEntity.ReviewStatus.PENDING_REVIEW)
               .description("Auto-beregnet fra RATE_NB_UDLAAN = " + nbRate.toPlainString())
@@ -426,10 +430,10 @@ public class BusinessConfigService {
                 ConfigEntryDto.builder()
                     .configKey(e.getKey())
                     .configValue(e.getValue().setScale(4, RoundingMode.HALF_UP).toPlainString())
-                    .valueType("DECIMAL")
+                    .valueType(VALUE_TYPE_DECIMAL)
                     .validFrom(validFrom)
-                    .computedStatus("PENDING_REVIEW")
-                    .reviewStatus("PENDING_REVIEW")
+                    .computedStatus(STATUS_PENDING_REVIEW)
+                    .reviewStatus(STATUS_PENDING_REVIEW)
                     .build())
         .toList();
   }
@@ -441,7 +445,7 @@ public class BusinessConfigService {
   private void validateValueType(String value, String type) {
     try {
       switch (type) {
-        case "DECIMAL" -> new BigDecimal(value);
+        case VALUE_TYPE_DECIMAL -> new BigDecimal(value);
         case "INTEGER" -> Integer.parseInt(value);
         case "BOOLEAN" -> {
           if (!"true".equals(value) && !"false".equals(value))

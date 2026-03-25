@@ -25,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PersonServiceImpl implements PersonService {
 
+  private static final String ERR_PERSON_NOT_FOUND = "Person not found: ";
+
   private final PersonRepository personRepository;
   private final EncryptionService encryptionService;
 
@@ -96,7 +98,7 @@ public class PersonServiceImpl implements PersonService {
     PersonEntity person =
         personRepository
             .findById(personId)
-            .orElseThrow(() -> new PersonNotFoundException("Person not found: " + personId));
+            .orElseThrow(() -> new PersonNotFoundException(ERR_PERSON_NOT_FOUND + personId));
 
     if (person.isDeleted()) {
       throw new PersonNotFoundException("Person has been deleted: " + personId);
@@ -130,7 +132,7 @@ public class PersonServiceImpl implements PersonService {
     PersonEntity person =
         personRepository
             .findById(personId)
-            .orElseThrow(() -> new PersonNotFoundException("Person not found: " + personId));
+            .orElseThrow(() -> new PersonNotFoundException(ERR_PERSON_NOT_FOUND + personId));
 
     if (person.isDeleted()) {
       throw new IllegalStateException("Cannot update deleted person: " + personId);
@@ -195,7 +197,7 @@ public class PersonServiceImpl implements PersonService {
     PersonEntity person =
         personRepository
             .findById(personId)
-            .orElseThrow(() -> new PersonNotFoundException("Person not found: " + personId));
+            .orElseThrow(() -> new PersonNotFoundException(ERR_PERSON_NOT_FOUND + personId));
 
     // Export includes all data, even if deleted
     return GdprExportResponse.builder()
@@ -231,7 +233,7 @@ public class PersonServiceImpl implements PersonService {
     PersonEntity person =
         personRepository
             .findById(personId)
-            .orElseThrow(() -> new PersonNotFoundException("Person not found: " + personId));
+            .orElseThrow(() -> new PersonNotFoundException(ERR_PERSON_NOT_FOUND + personId));
 
     if (person.isDeleted()) {
       log.warn("Person already deleted: personId={}", personId);

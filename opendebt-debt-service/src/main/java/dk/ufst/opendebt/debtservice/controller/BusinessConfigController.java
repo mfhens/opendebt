@@ -35,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class BusinessConfigController {
 
+  private static final String SYSTEM_USER = "system";
+
   private final BusinessConfigService configService;
 
   /** GET /api/v1/config — list all config entries grouped by key. */
@@ -103,7 +105,7 @@ public class BusinessConfigController {
   @PreAuthorize("hasAnyRole('ADMIN','CONFIGURATION_MANAGER')")
   public ResponseEntity<ConfigCreationResult> create(
       @Valid @RequestBody CreateConfigRequest req, Principal principal) {
-    String callerName = principal != null ? principal.getName() : "system";
+    String callerName = principal != null ? principal.getName() : SYSTEM_USER;
     boolean isAdmin = true; // role checked by @PreAuthorize; treat both as having seed rights
     ConfigCreationResult result = configService.createEntry(req, callerName, isAdmin);
     log.info("Config entry created: key={} by={}", req.getConfigKey(), callerName);
@@ -115,7 +117,7 @@ public class BusinessConfigController {
   @PreAuthorize("hasAnyRole('ADMIN','CONFIGURATION_MANAGER')")
   public ResponseEntity<ConfigEntryDto> update(
       @PathVariable UUID id, @Valid @RequestBody UpdateConfigRequest req, Principal principal) {
-    String callerName = principal != null ? principal.getName() : "system";
+    String callerName = principal != null ? principal.getName() : SYSTEM_USER;
     return ResponseEntity.ok(configService.updateEntry(id, req, callerName));
   }
 
@@ -123,7 +125,7 @@ public class BusinessConfigController {
   @PutMapping("/{id}/approve")
   @PreAuthorize("hasAnyRole('ADMIN','CONFIGURATION_MANAGER')")
   public ResponseEntity<ConfigEntryDto> approve(@PathVariable UUID id, Principal principal) {
-    String callerName = principal != null ? principal.getName() : "system";
+    String callerName = principal != null ? principal.getName() : SYSTEM_USER;
     return ResponseEntity.ok(configService.approveEntry(id, callerName));
   }
 
@@ -131,7 +133,7 @@ public class BusinessConfigController {
   @PutMapping("/{id}/reject")
   @PreAuthorize("hasAnyRole('ADMIN','CONFIGURATION_MANAGER')")
   public ResponseEntity<Void> reject(@PathVariable UUID id, Principal principal) {
-    String callerName = principal != null ? principal.getName() : "system";
+    String callerName = principal != null ? principal.getName() : SYSTEM_USER;
     configService.rejectEntry(id, callerName);
     return ResponseEntity.noContent().build();
   }
@@ -140,7 +142,7 @@ public class BusinessConfigController {
   @DeleteMapping("/{id}")
   @PreAuthorize("hasAnyRole('ADMIN','CONFIGURATION_MANAGER')")
   public ResponseEntity<Void> delete(@PathVariable UUID id, Principal principal) {
-    String callerName = principal != null ? principal.getName() : "system";
+    String callerName = principal != null ? principal.getName() : SYSTEM_USER;
     configService.deleteEntry(id, callerName);
     return ResponseEntity.noContent().build();
   }

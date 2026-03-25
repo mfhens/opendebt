@@ -36,6 +36,10 @@ public class ConfigurationController {
 
   private static final String ROLE_ADMIN = "ADMIN";
   private static final String ROLE_CONFIG_MGR = "CONFIGURATION_MANAGER";
+  private static final String REDIRECT_DEMO_LOGIN = "redirect:/demo-login";
+  private static final String MSG_SUCCESS = "successMessage";
+  private static final String MSG_ERROR = "errorMessage";
+  private static final String REDIRECT_KONFIGURATION = "redirect:/konfiguration";
 
   private final ConfigServiceClient configServiceClient;
   private final CaseworkerSessionService sessionService;
@@ -45,7 +49,7 @@ public class ConfigurationController {
   public String list(HttpSession session, Model model) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
@@ -68,7 +72,7 @@ public class ConfigurationController {
   public String detail(@PathVariable String key, HttpSession session, Model model) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
@@ -97,7 +101,7 @@ public class ConfigurationController {
       Model model) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null || !isEditor(caseworker)) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
@@ -123,21 +127,21 @@ public class ConfigurationController {
       RedirectAttributes redirectAttributes) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null || !isEditor(caseworker)) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
       configServiceClient.createEntry(request);
       redirectAttributes.addFlashAttribute(
-          "successMessage", "Konfigurationsværdi oprettet og afventer godkendelse.");
+          MSG_SUCCESS, "Konfigurationsværdi oprettet og afventer godkendelse.");
       log.info("Config entry created: key={} by={}", request.getConfigKey(), caseworker.getId());
     } catch (Exception e) {
       log.warn("Failed to create config entry: {}", e.getMessage());
       redirectAttributes.addFlashAttribute(
-          "errorMessage", "Fejl ved oprettelse af konfigurationsværdi: " + e.getMessage());
+          MSG_ERROR, "Fejl ved oprettelse af konfigurationsværdi: " + e.getMessage());
     }
 
-    return "redirect:/konfiguration";
+    return REDIRECT_KONFIGURATION;
   }
 
   /** PUT /konfiguration/{id}/approve — approve a PENDING_REVIEW entry. */
@@ -146,20 +150,19 @@ public class ConfigurationController {
       @PathVariable UUID id, HttpSession session, RedirectAttributes redirectAttributes) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null || !isEditor(caseworker)) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
       configServiceClient.approveEntry(id);
-      redirectAttributes.addFlashAttribute("successMessage", "Konfigurationsværdi godkendt.");
+      redirectAttributes.addFlashAttribute(MSG_SUCCESS, "Konfigurationsværdi godkendt.");
       log.info("Config entry approved: id={} by={}", id, caseworker.getId());
     } catch (Exception e) {
       log.warn("Failed to approve config entry id={}: {}", id, e.getMessage());
-      redirectAttributes.addFlashAttribute(
-          "errorMessage", "Fejl ved godkendelse: " + e.getMessage());
+      redirectAttributes.addFlashAttribute(MSG_ERROR, "Fejl ved godkendelse: " + e.getMessage());
     }
 
-    return "redirect:/konfiguration";
+    return REDIRECT_KONFIGURATION;
   }
 
   /** POST /konfiguration/{id}/reject — reject a PENDING_REVIEW entry. */
@@ -168,19 +171,19 @@ public class ConfigurationController {
       @PathVariable UUID id, HttpSession session, RedirectAttributes redirectAttributes) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null || !isEditor(caseworker)) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
       configServiceClient.rejectEntry(id);
-      redirectAttributes.addFlashAttribute("successMessage", "Konfigurationsværdi afvist.");
+      redirectAttributes.addFlashAttribute(MSG_SUCCESS, "Konfigurationsværdi afvist.");
       log.info("Config entry rejected: id={} by={}", id, caseworker.getId());
     } catch (Exception e) {
       log.warn("Failed to reject config entry id={}: {}", id, e.getMessage());
-      redirectAttributes.addFlashAttribute("errorMessage", "Fejl ved afvisning: " + e.getMessage());
+      redirectAttributes.addFlashAttribute(MSG_ERROR, "Fejl ved afvisning: " + e.getMessage());
     }
 
-    return "redirect:/konfiguration";
+    return REDIRECT_KONFIGURATION;
   }
 
   /** POST /konfiguration/{id}/delete — delete a future entry. */
@@ -192,20 +195,19 @@ public class ConfigurationController {
       RedirectAttributes redirectAttributes) {
     CaseworkerIdentity caseworker = sessionService.getCurrentCaseworker(session);
     if (caseworker == null || !isEditor(caseworker)) {
-      return "redirect:/demo-login";
+      return REDIRECT_DEMO_LOGIN;
     }
 
     try {
       configServiceClient.deleteEntry(id);
-      redirectAttributes.addFlashAttribute(
-          "successMessage", "Fremtidig konfigurationsværdi slettet.");
+      redirectAttributes.addFlashAttribute(MSG_SUCCESS, "Fremtidig konfigurationsværdi slettet.");
       log.info("Config entry deleted: id={} by={}", id, caseworker.getId());
     } catch (Exception e) {
       log.warn("Failed to delete config entry id={}: {}", id, e.getMessage());
-      redirectAttributes.addFlashAttribute("errorMessage", "Fejl ved sletning: " + e.getMessage());
+      redirectAttributes.addFlashAttribute(MSG_ERROR, "Fejl ved sletning: " + e.getMessage());
     }
 
-    return returnKey.isEmpty() ? "redirect:/konfiguration" : "redirect:/konfiguration/" + returnKey;
+    return returnKey.isEmpty() ? REDIRECT_KONFIGURATION : REDIRECT_KONFIGURATION + "/" + returnKey;
   }
 
   private boolean isEditor(CaseworkerIdentity caseworker) {
