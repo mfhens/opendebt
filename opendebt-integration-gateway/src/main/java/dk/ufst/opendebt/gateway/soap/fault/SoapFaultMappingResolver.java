@@ -103,25 +103,27 @@ public class SoapFaultMappingResolver extends AbstractEndpointExceptionResolver 
 
   private int determineHttpStatus(Exception ex) {
     if (ex instanceof Oces3AuthenticationException authEx) {
+      // SOAP 1.1 faults are technically HTTP 500, but auth failures must use 401/403 for
+      // OCES3 certificate validation (AC-09, AC-10). SoapHttpStatusFilter preserves these.
       return "CERT_MISSING".equals(authEx.getErrorCode()) ? 401 : 403;
     } else if (ex instanceof Oces3AuthorizationException) {
       return 403;
-    } else if (ex instanceof FordringValidationException) {
-      return 400;
-    } else if (ex instanceof OpenDebtException) {
-      return 500;
     }
-    return 400;
+    // Validation errors, generic errors, and schema failures all use the SOAP 1.1 default HTTP 500.
+    // Setting -1 means: do not override — let Spring-WS write its own 500.
+    return -1;
   }
 
   private void setHttpStatus(MessageContext messageContext, int status) {
+    if (status < 0) {
+      // Negative status means "use Spring-WS default (500)"; nothing to do.
+      return;
+    }
     try {
       var connection = TransportContextHolder.getTransportContext().getConnection();
       if (connection instanceof HttpServletConnection httpConn) {
         // Only set the attribute — SoapHttpStatusFilter intercepts Spring-WS's unconditional
         // setStatus(500) after the fault body is written and substitutes the desired code.
-        // Calling setStatus() here would prematurely commit the response before the body
-        // is written, resulting in an empty fault body for non-500 status codes (e.g. 401).
         httpConn
             .getHttpServletRequest()
             .setAttribute(SoapHttpStatusFilter.DESIRED_STATUS_ATTR, status);
