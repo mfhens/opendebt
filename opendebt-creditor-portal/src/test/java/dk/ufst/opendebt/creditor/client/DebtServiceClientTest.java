@@ -75,7 +75,8 @@ class DebtServiceClientTest {
   void listDebts_throwsOnServerError() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
-    assertThatThrownBy(() -> client.listDebts(UUID.randomUUID()))
+    UUID creditorId = UUID.randomUUID();
+    assertThatThrownBy(() -> client.listDebts(creditorId))
         .isInstanceOf(OpenDebtException.class)
         .hasMessageContaining("unavailable");
   }

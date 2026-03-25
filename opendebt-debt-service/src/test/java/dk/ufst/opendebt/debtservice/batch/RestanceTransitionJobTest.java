@@ -61,7 +61,7 @@ class RestanceTransitionJobTest {
     assertThat(result).isNotNull();
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
     assertThat(result.getRecordsProcessed()).isEqualTo(2);
-    assertThat(result.getRecordsFailed()).isEqualTo(0);
+    assertThat(result.getRecordsFailed()).isZero();
     verify(claimLifecycleService, times(2)).evaluateClaimState(any(UUID.class), eq(today));
   }
 
@@ -115,7 +115,7 @@ class RestanceTransitionJobTest {
     BatchJobExecutionEntity result = job.execute(today);
 
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-    assertThat(result.getRecordsProcessed()).isEqualTo(0);
+    assertThat(result.getRecordsProcessed()).isZero();
   }
 
   private DebtEntity testDebt(ClaimLifecycleState state) {

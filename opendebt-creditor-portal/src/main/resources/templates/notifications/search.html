@@ -52,14 +52,14 @@
             <legend class="skat-legend" th:text="#{notifications.search.types.legend}">Underretningstyper</legend>
             <div class="skat-checkbox-group" th:if="${availableTypes != null and !availableTypes.isEmpty()}">
               <div class="skat-checkbox" th:each="type : ${availableTypes}">
-                <input type="checkbox"
-                       th:id="${'type-' + type.name()}"
-                       th:value="${type.name()}"
-                       th:field="*{notificationTypes}"
-                       class="skat-checkbox__input" />
-                <label th:for="${'type-' + type.name()}"
-                       th:text="#{${type.messageKey}}"
-                       class="skat-checkbox__label">Type</label>
+                <label class="skat-checkbox__label">
+                  <input type="checkbox"
+                         th:id="${'type-' + type.name()}"
+                         th:value="${type.name()}"
+                         th:field="*{notificationTypes}"
+                         class="skat-checkbox__input" />
+                  <span th:text="#{${type.messageKey}}">Type</span>
+                </label>
               </div>
             </div>
           </fieldset>

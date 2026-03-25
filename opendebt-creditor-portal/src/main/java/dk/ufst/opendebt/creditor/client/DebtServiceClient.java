@@ -40,7 +40,10 @@ public class DebtServiceClient {
   private static final String ERR_UNAVAILABLE_MSG = "Debt service unavailable";
   private static final String ERROR_CODE_CLIENT = "DEBT_CLIENT_ERROR";
   private static final String ERROR_CODE_UNAVAILABLE = "DEBT_SERVICE_UNAVAILABLE";
+
+  @SuppressWarnings("java:S1075")
   private static final String CLAIMS_PATH = "/debt-service/api/v1/debts/claims";
+
   private static final String PARAM_CREDITOR_ID = "creditorId";
   private static final String PARAM_SEARCH_QUERY = "searchQuery";
   private static final String PARAM_SEARCH_TYPE = "searchType";
@@ -840,7 +843,7 @@ public class DebtServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for getReceipt: {}", t.getMessage());
-    return null;
+    return new byte[0];
   }
 
   private RestPage<HearingClaimListItemDto> listHearingClaimsFallback(

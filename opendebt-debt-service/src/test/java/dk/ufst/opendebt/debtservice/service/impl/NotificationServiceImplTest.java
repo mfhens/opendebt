@@ -77,9 +77,10 @@ class NotificationServiceImplTest {
   @Test
   void issueDemandForPayment_generatesOcrLine() {
     String ocrLine = service.generateOcrLine(testDebt);
-    assertThat(ocrLine).startsWith("+71<");
-    assertThat(ocrLine).endsWith("+");
-    assertThat(ocrLine).hasSize(21); // +71< (4) + 16 hex chars + + (1)
+    assertThat(ocrLine)
+        .startsWith("+71<")
+        .endsWith("+")
+        .hasSize(21); // +71< (4) + 16 hex chars + + (1)
   }
 
   @Test

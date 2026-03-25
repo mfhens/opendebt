@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import dk.ufst.opendebt.common.exception.OpenDebtException;
+
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +49,10 @@ public class CaseServiceClient {
         && wcre.getStatusCode().is4xxClientError()) {
       throw wcre;
     }
-    throw new RuntimeException("Case service unavailable: " + t.getMessage(), t);
+    throw new OpenDebtException(
+        "Case service unavailable: " + t.getMessage(),
+        "CASE_SERVICE_UNAVAILABLE",
+        OpenDebtException.ErrorSeverity.CRITICAL);
   }
 
   @Data

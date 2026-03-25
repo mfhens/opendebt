@@ -71,8 +71,9 @@ class CreditorIngressServiceImplTest {
             .reasonCode("CHANNEL_NOT_BOUND")
             .build();
     when(creditorServiceClient.resolveAccess(any())).thenReturn(denied);
+    ClaimSubmissionRequest request = sampleRequest();
 
-    assertThatThrownBy(() -> service.submitClaim("SYS-BAD", sampleRequest(), "corr-1"))
+    assertThatThrownBy(() -> service.submitClaim("SYS-BAD", request, "corr-1"))
         .isInstanceOf(OpenDebtException.class)
         .hasFieldOrPropertyWithValue("errorCode", "M2M_ACCESS_DENIED");
 

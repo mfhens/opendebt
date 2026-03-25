@@ -120,12 +120,12 @@
             <legend class="skat-label" th:text="#{adjustment.label.debtor}">Vælg skyldner</legend>
             <p class="skat-hint" th:text="#{adjustment.hint.debtor}">Vælg den skyldner, som betalingen vedrører.</p>
             <div th:each="debtor, iterStat : ${debtors}" class="skat-radio-group">
-              <input th:id="${'debtor-' + iterStat.index}"
-                     type="radio"
-                     th:field="*{debtorIndex}"
-                     th:value="${iterStat.index}"
-                     class="skat-radio" />
-              <label th:for="${'debtor-' + iterStat.index}" class="skat-radio-label">
+              <label class="skat-radio-label">
+                <input th:id="${'debtor-' + iterStat.index}"
+                       type="radio"
+                       th:field="*{debtorIndex}"
+                       th:value="${iterStat.index}"
+                       class="skat-radio" />
                 <span th:text="${debtor.identifierType}">CPR</span>:
                 <span th:text="${debtor.identifier}">010190****</span>
               </label>

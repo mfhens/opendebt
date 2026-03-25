@@ -32,13 +32,13 @@
     </header>
 
     <!-- Breadcrumb -->
-    <div class="skat-breadcrumb" role="navigation" th:aria-label="#{layout.breadcrumb.label}">
+    <nav class="skat-breadcrumb" th:aria-label="#{layout.breadcrumb.label}">
       <div class="skat-breadcrumb__inner">
         <a th:href="@{/cases}" th:text="#{layout.breadcrumb.home}">Forside</a>
         <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
         <span layout:fragment="breadcrumb">Side</span>
       </div>
-    </div>
+    </nav>
 
     <!-- Main content -->
     <main id="main-content" class="skat-content" role="main">

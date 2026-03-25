@@ -39,7 +39,7 @@
       <p th:text="#{config.detail.history.empty}">Ingen historik fundet.</p>
     </div>
 
-    <table class="skat-table" th:if="${history != null and !history.isEmpty()}" role="grid">
+    <table class="skat-table" th:if="${history != null and !history.isEmpty()}" role="grid" tabindex="0">
       <thead>
         <tr>
           <th scope="col" th:text="#{config.table.value}">Værdi</th>

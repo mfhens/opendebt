@@ -333,7 +333,9 @@ class ClaimAdjustmentControllerTest {
             TEST_CLAIM_ID, form, bindingResult, "WRITE_DOWN", model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("redirect:/fordring/" + TEST_CLAIM_ID + "/adjustment/receipt");
-    assertThat(redirectAttributes.getFlashAttributes().get("receipt")).isEqualTo(receipt);
+    assertThat(redirectAttributes.getFlashAttributes())
+        .extractingByKey("receipt")
+        .isEqualTo(receipt);
     verify(debtServiceClient).submitAdjustment(eq(TEST_CLAIM_ID), any());
   }
 

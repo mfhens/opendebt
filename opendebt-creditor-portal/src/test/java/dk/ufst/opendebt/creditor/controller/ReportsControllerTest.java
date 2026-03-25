@@ -190,7 +190,7 @@ class ReportsControllerTest {
     ResponseEntity<byte[]> response = controller.downloadReport(reportId, session);
 
     assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getHeaders().getContentType().toString()).isEqualTo("application/zip");
+    assertThat(response.getHeaders().getContentType()).hasToString("application/zip");
     assertThat(response.getHeaders().getContentDisposition().getFilename())
         .isEqualTo("report-" + reportId + ".zip");
     assertThat(response.getBody()).isEqualTo(zipContent);

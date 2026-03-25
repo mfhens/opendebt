@@ -53,7 +53,7 @@ class PersonRegistryClientTest {
   }
 
   @Test
-  void lookupOrCreatePerson_createsNewPerson() throws InterruptedException {
+  void lookupOrCreatePerson_createsNewPerson() {
     UUID expectedId = UUID.randomUUID();
     mockWebServer.enqueue(
         new MockResponse()

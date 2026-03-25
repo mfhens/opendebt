@@ -2,7 +2,7 @@
 <html lang="da" xmlns:th="http://www.thymeleaf.org">
 <head><title>Language Selector Fragment</title></head>
 <body>
-  <div th:fragment="languageSelector" class="skat-language-selector" role="navigation" th:aria-label="#{layout.lang.selector.label}">
+  <nav th:fragment="languageSelector" class="skat-language-selector" th:aria-label="#{layout.lang.selector.label}">
     <div class="skat-language-selector__inner">
       <span th:each="localeTag : ${orderedSupportedLocales}">
         <a th:href="@{/(lang=${localeTag})}"
@@ -11,6 +11,6 @@
            class="skat-language-selector__link">Dansk</a>
       </span>
     </div>
-  </div>
+  </nav>
 </body>
 </html>

@@ -72,16 +72,17 @@ class SkbEdifactServiceImplTest {
     String content = new String(result, StandardCharsets.UTF_8);
 
     // Verify EDIFACT structure
-    assertThat(content).contains("UNB+UNOC:3+OPENDEBT+SKB+");
-    assertThat(content).contains("DEBMUL");
-    assertThat(content).contains("LIN+PAY-001");
-    assertThat(content).contains("MOA+9:5000.00:DKK");
-    assertThat(content).contains("LIN+PAY-002");
-    assertThat(content).contains("MOA+9:3000.50:DKK");
-    assertThat(content).contains("DTM+203:20251215:102");
-    assertThat(content).contains("RFF+PQ:CRED-001");
-    assertThat(content).contains("RFF+PQ:CRED-002");
-    assertThat(content).contains("UNZ+2+"); // trailer with message count
+    assertThat(content)
+        .contains("UNB+UNOC:3+OPENDEBT+SKB+")
+        .contains("DEBMUL")
+        .contains("LIN+PAY-001")
+        .contains("MOA+9:5000.00:DKK")
+        .contains("LIN+PAY-002")
+        .contains("MOA+9:3000.50:DKK")
+        .contains("DTM+203:20251215:102")
+        .contains("RFF+PQ:CRED-001")
+        .contains("RFF+PQ:CRED-002")
+        .contains("UNZ+2+"); // trailer with message count
   }
 
   @Test
@@ -109,9 +110,7 @@ class SkbEdifactServiceImplTest {
     assertThat(result).isNotNull();
     String content = new String(result, StandardCharsets.UTF_8);
 
-    assertThat(content).contains("UNB+");
-    assertThat(content).contains("UNZ+0+");
-    assertThat(content).doesNotContain("LIN+");
+    assertThat(content).contains("UNB+").contains("UNZ+0+").doesNotContain("LIN+");
   }
 
   @Test

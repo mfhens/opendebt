@@ -38,7 +38,7 @@
     <!-- Renter group -->
     <div class="skat-card" th:if="${grouped.containsKey('RATE_INDR_STD') or grouped.containsKey('RATE_TOLD_STD') or grouped.containsKey('RATE_NB_UDLAAN')}">
       <h2 th:text="#{config.group.renter}">Renter</h2>
-      <table class="skat-table" role="grid">
+      <table class="skat-table" role="grid" tabindex="0">
         <thead>
           <tr>
             <th scope="col" th:text="#{config.table.key}">Nøgle</th>
@@ -92,7 +92,7 @@
     <!-- Gebyrer group -->
     <div class="skat-card" th:if="${grouped.containsKey('FEE_GEBYR') or grouped.containsKey('FEE_STANDARDGEBYR')}">
       <h2 th:text="#{config.group.gebyrer}">Gebyrer</h2>
-      <table class="skat-table" role="grid">
+      <table class="skat-table" role="grid" tabindex="0">
         <thead>
           <tr>
             <th scope="col" th:text="#{config.table.key}">Nøgle</th>
@@ -134,7 +134,7 @@
     <!-- Alle øvrige / Tærskler group -->
     <div class="skat-card">
       <h2 th:text="#{config.group.other}">Øvrige konfigurationer</h2>
-      <table class="skat-table" role="grid">
+      <table class="skat-table" role="grid" tabindex="0">
         <thead>
           <tr>
             <th scope="col" th:text="#{config.table.key}">Nøgle</th>

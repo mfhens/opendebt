@@ -129,7 +129,7 @@ public class NotificationServiceClient {
           .block();
     } catch (Exception ex) {
       log.warn("Notification download unavailable: {}", ex.getMessage());
-      return null;
+      return new byte[0];
     }
   }
 
@@ -152,6 +152,6 @@ public class NotificationServiceClient {
       boolean formatXml,
       Throwable t) {
     log.warn("Notification service circuit breaker open: {}", t.getMessage());
-    return null;
+    return new byte[0];
   }
 }

@@ -60,16 +60,7 @@ public class CaseDetailController {
       model.addAttribute("caseDto", caseDto);
 
       // Resolve debtor display name (backward-compatible via deprecated field)
-      String debtorDisplay = "\u2014";
-      if (caseDto.getDebtorId() != null) {
-        try {
-          debtorDisplay =
-              personRegistryClient.getDisplayName(UUID.fromString(caseDto.getDebtorId()));
-        } catch (IllegalArgumentException ex) {
-          debtorDisplay = caseDto.getDebtorId();
-        }
-      }
-      model.addAttribute("debtorDisplay", debtorDisplay);
+      model.addAttribute("debtorDisplay", resolveDebtorDisplay(caseDto));
 
       // Load debts for this case
       if (caseDto.getDebtIds() != null && !caseDto.getDebtIds().isEmpty()) {
@@ -103,6 +94,15 @@ public class CaseDetailController {
     }
 
     return "cases/detail";
+  }
+
+  private String resolveDebtorDisplay(CaseDto caseDto) {
+    if (caseDto.getDebtorId() == null) return "\u2014";
+    try {
+      return personRegistryClient.getDisplayName(UUID.fromString(caseDto.getDebtorId()));
+    } catch (IllegalArgumentException ex) {
+      return caseDto.getDebtorId();
+    }
   }
 
   private void loadParties(UUID caseId, Model model) {

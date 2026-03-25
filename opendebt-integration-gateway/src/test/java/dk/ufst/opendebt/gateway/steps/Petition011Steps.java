@@ -98,13 +98,7 @@ public class Petition011Steps {
 
   @When("system {string} calls the creditor M2M API")
   public void systemCallsM2mApi(String systemId) {
-    lastCorrelationId = UUID.randomUUID().toString();
-    ClaimSubmissionRequest request = sampleClaimRequest();
-    try {
-      lastResponse = ingressService.submitClaim(systemId, request, lastCorrelationId);
-    } catch (Exception e) {
-      lastException = e;
-    }
+    systemSubmitsFordring(systemId);
   }
 
   @When("system {string} submits a request through integration-gateway")

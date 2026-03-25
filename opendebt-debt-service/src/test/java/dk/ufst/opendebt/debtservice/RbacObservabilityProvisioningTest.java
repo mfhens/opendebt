@@ -25,9 +25,10 @@ class RbacObservabilityProvisioningTest {
   void pinsPrometheusDatasourceUid() throws IOException {
     String datasources = read(repoRoot().resolve(datasourcePath()));
 
-    assertThat(datasources).contains("uid: prometheus");
-    assertThat(datasources).contains("tracesToMetrics:");
-    assertThat(datasources).contains("datasourceUid: prometheus");
+    assertThat(datasources)
+        .contains("uid: prometheus")
+        .contains("tracesToMetrics:")
+        .contains("datasourceUid: prometheus");
   }
 
   @Test

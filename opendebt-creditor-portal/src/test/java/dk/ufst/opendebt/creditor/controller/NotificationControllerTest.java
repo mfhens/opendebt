@@ -79,9 +79,8 @@ class NotificationControllerTest {
 
     @SuppressWarnings("unchecked")
     List<NotificationType> types = (List<NotificationType>) model.getAttribute("availableTypes");
-    assertThat(types).isNotNull();
     // When agreement unavailable, all 7 types returned
-    assertThat(types).hasSize(7);
+    assertThat(types).isNotNull().hasSize(7);
   }
 
   @Test
@@ -99,8 +98,8 @@ class NotificationControllerTest {
 
     @SuppressWarnings("unchecked")
     List<NotificationType> types = (List<NotificationType>) model.getAttribute("availableTypes");
-    assertThat(types).hasSize(3);
     assertThat(types)
+        .hasSize(3)
         .containsExactly(
             NotificationType.INTEREST, NotificationType.SETTLEMENT, NotificationType.RETURN);
   }

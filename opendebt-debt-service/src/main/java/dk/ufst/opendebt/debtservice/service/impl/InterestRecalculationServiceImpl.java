@@ -118,28 +118,26 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
     while (cursor.isBefore(today)) {
       // Re-resolve at start of window and at every month boundary (1st of month).
       boolean isMonthBoundary = cursor.getDayOfMonth() == 1;
-      if (cursor.equals(from) || isMonthBoundary) {
-        if (configKey != null) {
-          try {
-            BigDecimal resolvedRate = configService.getDecimalValue(configKey, cursor);
-            if (!resolvedRate.equals(currentRate)) {
-              log.debug(
-                  "Rate boundary crossed at {}: {} → {} for debtId={}",
-                  cursor,
-                  currentRate,
-                  resolvedRate,
-                  debtId);
-              currentRate = resolvedRate;
-              currentRateDate = cursor;
-            }
-          } catch (BusinessConfigService.ConfigurationNotFoundException e) {
-            log.warn(
-                "No rate found for key={} on {}, continuing with rate {} from {}",
-                configKey,
+      if ((cursor.equals(from) || isMonthBoundary) && configKey != null) {
+        try {
+          BigDecimal resolvedRate = configService.getDecimalValue(configKey, cursor);
+          if (!resolvedRate.equals(currentRate)) {
+            log.debug(
+                "Rate boundary crossed at {}: {} → {} for debtId={}",
                 cursor,
                 currentRate,
-                currentRateDate);
+                resolvedRate,
+                debtId);
+            currentRate = resolvedRate;
+            currentRateDate = cursor;
           }
+        } catch (BusinessConfigService.ConfigurationNotFoundException e) {
+          log.warn(
+              "No rate found for key={} on {}, continuing with rate {} from {}",
+              configKey,
+              cursor,
+              currentRate,
+              currentRateDate);
         }
       }
 

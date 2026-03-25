@@ -56,8 +56,8 @@ public class DebtServiceClient {
   }
 
   private List<DebtDto> findByOcrLineFallback(String ocrLine, Throwable t) {
-    if (t instanceof HttpClientErrorException) {
-      throw (HttpClientErrorException) t;
+    if (t instanceof HttpClientErrorException hce) {
+      throw hce;
     }
     log.warn("Circuit breaker fallback triggered for findByOcrLine: {}", t.getMessage());
     return List.of();
@@ -83,7 +83,8 @@ public class DebtServiceClient {
   }
 
   private DebtDto writeDownFallback(UUID debtId, BigDecimal amount, Throwable t) {
-    throw t instanceof RuntimeException ? (RuntimeException) t : new RuntimeException(t);
+    if (t instanceof RuntimeException re) throw re;
+    throw new RuntimeException(t);
   }
 
   /**
@@ -114,8 +115,8 @@ public class DebtServiceClient {
   }
 
   private void recalculateInterestFallback(UUID debtId, LocalDate from, Throwable t) {
-    if (t instanceof HttpClientErrorException) {
-      throw (HttpClientErrorException) t;
+    if (t instanceof HttpClientErrorException hce) {
+      throw hce;
     }
     log.warn("Circuit breaker fallback triggered for recalculateInterest: {}", t.getMessage());
   }

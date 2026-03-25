@@ -164,7 +164,7 @@ public class Petition005Steps {
   @Then("the liability is no longer active")
   public void theLiabilityIsNoLongerActive() {
     List<LiabilityDto> liabilities = liabilityService.getLiabilities(debtId);
-    assertThat(liabilities).allMatch(l -> !l.isActive());
+    assertThat(liabilities).isEmpty();
   }
 
   @Given("a debt exists with liabilities for {int} debtors")

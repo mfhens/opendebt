@@ -99,12 +99,12 @@ public class CitizenDebtController {
       @SuppressWarnings("unchecked")
       java.util.Map<String, Object> detailsMap = (java.util.Map<String, Object>) details;
       Object personIdObj = detailsMap.get("person_id");
-      if (personIdObj instanceof UUID) {
-        return (UUID) personIdObj;
+      if (personIdObj instanceof UUID uuid) {
+        return uuid;
       }
-      if (personIdObj instanceof String) {
+      if (personIdObj instanceof String s) {
         try {
-          return UUID.fromString((String) personIdObj);
+          return UUID.fromString(s);
         } catch (IllegalArgumentException e) {
           log.error("Invalid person_id format in security context: {}", personIdObj);
         }

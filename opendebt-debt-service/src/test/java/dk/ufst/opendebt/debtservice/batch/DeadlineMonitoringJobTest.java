@@ -61,7 +61,7 @@ class DeadlineMonitoringJobTest {
 
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
     assertThat(result.getRecordsProcessed()).isEqualTo(3);
-    assertThat(result.getRecordsFailed()).isEqualTo(0);
+    assertThat(result.getRecordsFailed()).isZero();
   }
 
   @Test
@@ -91,7 +91,7 @@ class DeadlineMonitoringJobTest {
     BatchJobExecutionEntity result = job.execute(today);
 
     assertThat(result.getStatus()).isEqualTo(BatchStatus.COMPLETED);
-    assertThat(result.getRecordsProcessed()).isEqualTo(0);
+    assertThat(result.getRecordsProcessed()).isZero();
   }
 
   @Test

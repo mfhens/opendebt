@@ -127,7 +127,7 @@
 }
 
 .ikon {
-  font-family: "dap-ikon-font" !important;
+  font-family: "dap-ikon-font", sans-serif !important;
   font-style: normal;
   font-weight: 400;
   font-variant: normal;

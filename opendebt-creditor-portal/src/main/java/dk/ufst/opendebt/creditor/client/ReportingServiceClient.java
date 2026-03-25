@@ -153,6 +153,6 @@ public class ReportingServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for downloadReport: {}", t.getMessage());
-    return null;
+    return new byte[0];
   }
 }

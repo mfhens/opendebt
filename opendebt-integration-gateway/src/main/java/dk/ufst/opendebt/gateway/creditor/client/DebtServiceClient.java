@@ -56,8 +56,8 @@ public class DebtServiceClient {
   }
 
   private ClaimSubmissionResult submitClaimFallback(DebtDto debtDto, Throwable t) {
-    if (t instanceof ClaimRejectedException) {
-      throw (ClaimRejectedException) t;
+    if (t instanceof ClaimRejectedException cre) {
+      throw cre;
     }
     if (t
             instanceof

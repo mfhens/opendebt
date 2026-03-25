@@ -78,7 +78,7 @@ class CitizenDebtServiceImplTest {
     assertThat(response.getDebts()).hasSize(2);
     assertThat(response.getTotalDebtCount()).isEqualTo(2);
     assertThat(response.getTotalOutstandingAmount()).isEqualByComparingTo(new BigDecimal("13000"));
-    assertThat(response.getPageNumber()).isEqualTo(0);
+    assertThat(response.getPageNumber()).isZero();
     assertThat(response.getPageSize()).isEqualTo(20);
   }
 
@@ -123,7 +123,7 @@ class CitizenDebtServiceImplTest {
         citizenDebtService.getDebtSummary(PERSON_ID, null, pageable);
 
     assertThat(response.getDebts()).isEmpty();
-    assertThat(response.getTotalDebtCount()).isEqualTo(0);
+    assertThat(response.getTotalDebtCount()).isZero();
     assertThat(response.getTotalOutstandingAmount()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 

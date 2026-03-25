@@ -82,7 +82,7 @@
     </div>
 
     <!-- Pagination controls -->
-    <nav th:if="${totalPages > 1}" class="skat-pagination" th:aria-label="#{claims.pagination.label}" role="navigation">
+    <nav th:if="${totalPages > 1}" class="skat-pagination" th:aria-label="#{claims.pagination.label}">
       <ul class="skat-pagination__list">
         <!-- Previous page -->
         <li class="skat-pagination__item" th:classappend="${currentPage == 0} ? 'skat-pagination__item--disabled' : ''">

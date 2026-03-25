@@ -129,11 +129,11 @@ public class CaseEntity {
 
   @Version private Long version;
 
-  // ── Deprecated column (kept for V3 migration backward compat) ────────
-  // Moved to CasePartyEntity with role PRIMARY_DEBTOR.
-  // Retained as a read-only fallback mapping while existing rows migrate.
-  // Will be dropped in a future migration.
-
+  /**
+   * @deprecated since v2; moved to CasePartyEntity with role PRIMARY_DEBTOR. Retained as a
+   *     read-only fallback mapping while existing rows migrate. Will be dropped in a future
+   *     migration.
+   */
   @Deprecated(since = "v2", forRemoval = true)
   @Column(name = "debtor_person_id", insertable = false, updatable = false)
   private UUID debtorPersonId;

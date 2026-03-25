@@ -372,8 +372,7 @@ class ReconciliationControllerTest {
     String checksum1 = controller.computeBasisChecksum(basis);
     String checksum2 = controller.computeBasisChecksum(basis);
 
-    assertThat(checksum1).isNotBlank();
-    assertThat(checksum1).isEqualTo(checksum2);
+    assertThat(checksum1).isNotBlank().isEqualTo(checksum2);
   }
 
   @Test

@@ -2,10 +2,6 @@
 <html lang="da" xmlns:th="http://www.thymeleaf.org">
 <head><title>Claim Counts Fragment</title></head>
 <body>
-  <!--
-    HTMX-loadable claim counts fragment.
-    Loaded asynchronously on the dashboard via hx-get="/api/claim-counts".
-  -->
   <div th:fragment="claimCounts" class="skat-card-grid" id="claim-counts">
     <div class="skat-card skat-card--count">
       <div class="skat-card__title" th:text="#{dashboard.counts.recovery}">Fordringer i inddrivelse</div>

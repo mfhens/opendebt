@@ -76,8 +76,9 @@ class InterestRecalculationServiceImplTest {
     verify(interestRepository).saveAll(captor.capture());
 
     List<InterestJournalEntry> entries = captor.getValue();
-    assertThat(entries).hasSize(3);
-    assertThat(entries).allSatisfy(e -> assertThat(e.getRate()).isEqualByComparingTo(rate));
+    assertThat(entries)
+        .hasSize(3)
+        .allSatisfy(e -> assertThat(e.getRate()).isEqualByComparingTo(rate));
   }
 
   @Test
@@ -107,9 +108,8 @@ class InterestRecalculationServiceImplTest {
 
     List<InterestJournalEntry> entries = captor.getValue();
     // Total entry count = 5 days
-    assertThat(entries).hasSize(5);
     // All entries must have a non-null rate from configService
-    assertThat(entries).allSatisfy(e -> assertThat(e.getRate()).isNotNull());
+    assertThat(entries).hasSize(5).allSatisfy(e -> assertThat(e.getRate()).isNotNull());
   }
 
   @Test
@@ -126,8 +126,8 @@ class InterestRecalculationServiceImplTest {
 
     List<InterestJournalEntry> entries = captor.getValue();
     // Fallback rate is 0.0575; entries should still be created
-    assertThat(entries).hasSize(2);
     assertThat(entries)
+        .hasSize(2)
         .allSatisfy(e -> assertThat(e.getRate()).isEqualByComparingTo(new BigDecimal("0.0575")));
   }
 
@@ -153,7 +153,7 @@ class InterestRecalculationServiceImplTest {
   void recalculateFromDate_deletesBeforeRewriting() {
     LocalDate from = LocalDate.now().minusDays(1);
     when(configService.getDecimalValue(anyString(), any())).thenReturn(new BigDecimal("0.05"));
-    when(interestRepository.deleteByDebtIdFromDate(eq(debtId), eq(from))).thenReturn(5);
+    when(interestRepository.deleteByDebtIdFromDate(debtId, from)).thenReturn(5);
 
     InterestRecalculationResult result = service.recalculateFromDate(debtId, from);
 

@@ -66,14 +66,12 @@
             if (!resp.ok) throw new Error('Download failed');
             return resp.blob();
           })
-          .then(function(blob) {
-            var disposition = '';
-            var a = document.createElement('a');
+          .then(function(blob) {            var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = url.split('/').pop() + '.zip';
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+            a.remove();
             URL.revokeObjectURL(a.href);
             statusEl.textContent = /*[[#{reports.download.complete}]]*/ 'Download complete.';
             if (progressEl) progressEl.setAttribute('hidden', '');
