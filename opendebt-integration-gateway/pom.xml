@@ -79,6 +79,16 @@
         <dependency>
             <groupId>org.smooks.cartridges.edi</groupId>
             <artifactId>smooks-edi-cartridge</artifactId>
+            <exclusions>
+                <!-- Saxon-HE conflicts with Spring-WS PayloadValidatingInterceptor:
+                     Saxon's SchemaFactory doesn't support the Xerces
+                     'disallow-doctype-decl' feature required by Spring-WS.
+                     Smooks EDI only needs the JAXP SchemaFactory from the JDK. -->
+                <exclusion>
+                    <groupId>net.sf.saxon</groupId>
+                    <artifactId>Saxon-HE</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.smooks.cartridges</groupId>
@@ -93,6 +103,28 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- Spring-WS for SOAP endpoints (ADR-019) -->
+        <dependency>
+            <groupId>org.springframework.ws</groupId>
+            <artifactId>spring-ws-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.soap</groupId>
+            <artifactId>jakarta.xml.soap-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- WireMock for SOAP test stubs (ADR-019) - standalone shades Jetty to avoid classpath conflicts -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.4.2</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Testing -->

@@ -458,6 +458,32 @@ flowchart LR
 | Log backend | Grafana Loki | latest (Docker) |
 | Dashboards | Grafana OSS | latest (Docker) |
 | Telemetry relay | OpenTelemetry Collector Contrib | latest (Docker) |
+| Backup | pgBackRest | latest |
+| PVC backup | Velero (CSI snapshots) | latest |
+| Key vault | Azure Key Vault (or platform equivalent) | - |
+
+## Disaster Recovery
+
+**Targets:** RTO 4 hours / RPO 4 hours (ADR-0028)
+
+| Failure class | Recovery mechanism | Expected time |
+|--------------|-------------------|---------------|
+| Pod / node failure | Kubernetes self-healing | 2–5 min |
+| DB primary failure (standby available) | Manual promotion (`pg_ctl promote`) | 15–30 min |
+| DB data loss / corruption | pgBackRest PITR restore + Flowable reconciliation | 90–150 min |
+| Catastrophic cluster loss | Re-provision cluster + pgBackRest restore | 2–4 hours |
+| Encryption key vault loss | Key vault recovery procedure | Escalate to platform |
+
+**Key DR components:**
+- **pgBackRest**: WAL archiving (continuous, ~5 min segments) + weekly full + daily differential backups to Azure Blob Storage
+- **Streaming replication**: Hot standby eliminates most single-host failure scenarios
+- **Encryption key vault**: `ENCRYPTION_KEY` for `person-registry` AES encryption stored in Azure Key Vault — loss of this key makes all PII permanently irrecoverable
+- **Flowable reconciliation**: In-flight BPMN processes are reconciled manually after a PITR restore with the async executor suspended
+- **Velero**: Kubernetes PVC and cluster-state snapshots (daily)
+- **Backup monitoring**: Prometheus alerts on backup staleness and WAL archiving lag
+
+See `docs/dr-runbook.md` for the step-by-step DR execution procedure.
+See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural decision.
 
 ## Services
 

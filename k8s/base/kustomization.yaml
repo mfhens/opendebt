@@ -8,6 +8,8 @@ resources:
   - configmap.yaml
   - service-account.yaml
   - case-service/
+  - pgbackrest/
+  - keycloak-backup/
 
 commonLabels:
   app.kubernetes.io/managed-by: kustomize

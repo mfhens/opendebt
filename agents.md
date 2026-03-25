@@ -27,6 +27,17 @@ When implementing against third-party libraries, SDKs, or external APIs, prefer 
 - Use the fetched documentation as the implementation reference
 - If useful, save concise local notes with `chub annotate <id> "..."`
 
+### Security Scanning (CRITICAL)
+
+BEFORE declaring any task complete: run the `snyk_code_scan` tool if a significant change has been made to first-party Java code.
+
+- Only applies to Snyk-supported languages (Java is supported)
+- If security issues are found in newly introduced or modified code or dependencies, attempt to fix them using the context from Snyk
+- Rescan after fixing to confirm the issues are resolved and no new issues were introduced
+- Repeat until no new issues are found
+
+The Snyk MCP server is configured in `.mcp.json` at the repo root.
+
 ### Documentation Maintenance (CRITICAL)
 **Every time source code is changed, check and update the following documentation if affected:**
 - `docs/architecture-overview.md` - Service inventory, implementation status, diagrams, endpoint lists
@@ -39,6 +50,16 @@ When implementing against third-party libraries, SDKs, or external APIs, prefer 
 - `docs/site/sagsbehandler/` - Caseworker user guide (Danish) if caseworker-facing features change
 
 The documentation site is built with MkDocs (`mkdocs.yml` at repo root). Run `mkdocs serve` to preview locally.
+
+### Memory MCP Synchronisation
+**When `petitions/program-status.yaml` or `docs/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
+
+Update memory when:
+- A new ADR is added or its status changes → create or update an entity for the ADR
+- A technical backlog item (TB-*) is added, completed, or blocked → update the relevant entity
+- A petition status changes (e.g. `not_started` → `implemented`) → update the petition entity
+
+Use `memory-create_entities` for new items and `memory-add_observations` / `memory-delete_observations` for status changes. Keep observations concise and factual — the YAML file is the source of truth; memory is a queryable index on top of it.
 
 ## Architecture Principles
 
@@ -390,6 +411,8 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0024: Observability Backend Stack (Grafana + Prometheus + Loki + Tempo)
 - ADR-0025: Maven Build Tool
 - ADR-0026: Inter-Service Resilience (Resilience4j Circuit Breaker + Retry)
+- ADR-0027: Offsetting merged into debt-service
+- ADR-0028: Backup and Disaster Recovery Strategy (RTO 4h / RPO 4h)
 
 ## Standard Components
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test resource — Petition 019 (Legacy SOAP Endpoints)
+  SOAP 1.1 / OIO namespace — malformed (does not conform to SOAP 1.1 or 1.2 specification)
+
+  Traceability: SPEC-019-06 (SoapFaultMappingResolver, SaajSoapFaultException handling)
+  AC-24: Malformed SOAP message returns schema validation fault HTTP 400.
+  Danish faultstring: "Ugyldig SOAP-meddelelse: skemavalidering fejlede".
+
+  PLACEHOLDER — this envelope uses an incorrect SOAP namespace to trigger parsing rejection.
+-->
+<badEnvelope xmlns="http://this.is.not.a.valid.soap.namespace/">
+  <Header/>
+  <Body>
+    <!-- Missing SOAP envelope structure — will fail SAAJ parsing -->
+    <SomeElement>invalid</SomeElement>
+  </Body>
+</badEnvelope>

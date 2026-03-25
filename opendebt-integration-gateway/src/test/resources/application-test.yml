@@ -6,18 +6,47 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
 
+server:
+  servlet:
+    context-path: /
+
 opendebt:
   integration:
     dupla:
+      enabled: false
+    cpr-register:
+      enabled: false
+    cvr-register:
+      enabled: false
+    digital-post:
       enabled: false
   skb:
     enabled: false
   services:
     debt-service:
-      url: http://localhost:8082
+      url: http://localhost:9098
     creditor-service:
-      url: http://localhost:8092
+      url: http://localhost:9098
     case-service:
-      url: http://localhost:8081
+      url: http://localhost:9098
     payment-service:
-      url: http://localhost:8083
+      url: http://localhost:9098
+  soap:
+    oces3:
+      fordringshaver-dn-field: CN
+      trusted-ca-subjects:
+    security:
+      tls-termination-mode: TEST
+  audit:
+    cls:
+      enabled: false
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      debtService:
+        enabled: false
+  retry:
+    instances:
+      debtService:
+        enabled: false

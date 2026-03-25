@@ -27,5 +27,8 @@
 | 0023 | Creditor portal frontend | Thymeleaf + HTMX for server-rendered portals |
 | 0024 | Observability backend stack | Grafana + Prometheus + Loki + Tempo for observability |
 | 0025 | Maven build tool | Maven as the build and dependency management tool |
+| 0026 | Inter-service resilience | Resilience4j circuit breaker and retry for all inter-service REST clients |
+| 0027 | Offsetting merged into debt-service | Modregning domain consolidated into debt-service |
+| 0028 | Backup and disaster recovery | pgBackRest WAL archiving + streaming replication; RTO 4h / RPO 4h |
 
 ADR source files are in `docs/adr/` in the repository.

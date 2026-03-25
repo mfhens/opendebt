@@ -1,0 +1,105 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keycloak-realm-export
+  namespace: opendebt
+  labels:
+    app: keycloak-backup
+    app.kubernetes.io/name: keycloak-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: opendebt
+spec:
+  # Nightly Keycloak realm export — 03:30 Europe/Copenhagen
+  schedule: "30 2 * * *"
+  timeZone: "Europe/Copenhagen"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: keycloak-backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: opendebt-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: keycloak-export
+              image: quay.io/keycloak/keycloak:24.0
+              imagePullPolicy: Always
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  EXPORT_DIR=/exports/$(date +%Y-%m-%d)
+                  mkdir -p "$EXPORT_DIR"
+                  /opt/keycloak/bin/kc.sh export \
+                    --realm opendebt \
+                    --users realm_file \
+                    --dir "$EXPORT_DIR"
+                  echo "Keycloak realm export completed: $EXPORT_DIR"
+              env:
+                - name: KC_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-secrets
+                      key: KC_DB
+                - name: KC_DB_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-secrets
+                      key: KC_DB_URL
+                - name: KC_DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-secrets
+                      key: KC_DB_USERNAME
+                - name: KC_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-secrets
+                      key: KC_DB_PASSWORD
+              volumeMounts:
+                - name: keycloak-exports
+                  mountPath: /exports
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+          volumes:
+            - name: keycloak-exports
+              persistentVolumeClaim:
+                claimName: keycloak-backup-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-backup-pvc
+  namespace: opendebt
+  labels:
+    app: keycloak-backup
+    app.kubernetes.io/name: keycloak-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: opendebt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # Storage class provided by platform — override in production overlay if needed
+  storageClassName: ""

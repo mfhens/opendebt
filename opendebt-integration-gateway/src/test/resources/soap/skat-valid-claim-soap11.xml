@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test resource — Petition 019 (Legacy SOAP Endpoints)
+  SOAP 1.1 / SKAT namespace — valid MFFordringIndberet_IRequest
+
+  Traceability: SPEC-019-03A (SkatFordringIndberetEndpoint), SPEC-019-10 (XSD validation)
+  AC-05: SkatFordringIndberetService accepts valid SKAT claim submission.
+  AC-20: SKAT messages validated against skat-fordring.xsd (http://skat.dk/begrebsmodel/2009/01/15/).
+
+  PLACEHOLDER — field names must match skat-fordring.xsd generated JAXB types.
+  The SkyldnerPersonId is a UUID reference (GDPR ADR-0014 — never CPR).
+-->
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:skat="http://skat.dk/begrebsmodel/2009/01/15/">
+  <soapenv:Header>
+    <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">
+      urn:uuid:test-correlation-skat-001
+    </wsa:MessageID>
+  </soapenv:Header>
+  <soapenv:Body>
+    <skat:MFFordringIndberet_IRequest>
+      <!-- PLACEHOLDER: fields must match skat-fordring.xsd generated JAXB types -->
+      <skat:FordringsType>RESTSKAT</skat:FordringsType>
+      <skat:Beloeb>25000.00</skat:Beloeb>
+      <skat:SkyldnerPersonId>550e8400-e29b-41d4-a716-446655440002</skat:SkyldnerPersonId>
+      <skat:FordringsDato>2026-02-01</skat:FordringsDato>
+      <skat:ForfaldsDato>2026-04-01</skat:ForfaldsDato>
+      <skat:EksternId>CLAIM-002</skat:EksternId>
+    </skat:MFFordringIndberet_IRequest>
+  </soapenv:Body>
+</soapenv:Envelope>

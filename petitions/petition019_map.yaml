@@ -1,0 +1,434 @@
+# petition019_map.yaml — CORRECTED after application-architect rejection
+# Component Assignment Map for Petition 019: Legacy SOAP Endpoints for External Creditors
+#
+# ⚠️  NOTE: No /design/components/*.yaml definitions exist in this repository.
+#     Components are mapped to Maven module identifiers (as they appear in the
+#     project structure).  Downstream agents should treat these identifiers as
+#     module-level ownership boundaries.
+#
+# Component legend:
+#   opendebt-integration-gateway — PRIMARY owner for all 27 scenarios.
+#                                  Protocol-adaptation and M2M ingress service;
+#                                  extends its existing role (petition011) to cover a
+#                                  second auth protocol (OCES3) and transport (SOAP).
+#                                  Hosts Spring-WS stack, OCES3SoapSecurityInterceptor,
+#                                  ClsSoapAuditInterceptor, SoapFaultResolver,
+#                                  OIO/SKAT XSD resources, and WSDL exposure.
+#   opendebt-debt-service        — SECONDARY for scenarios 001-008 (business-logic
+#                                  delegation via internal REST calls: claim ingestion,
+#                                  receipt retrieval, notification retrieval) and for
+#                                  scenarios 016-017 (source of OpenDebt domain
+#                                  exceptions that SoapFaultResolver maps to SOAP faults).
+#   opendebt-common              — SECONDARY for scenarios 009-015 (Oces3CertificateParser,
+#                                  ClsAuditClient, SoapPiiMaskingUtil — stateless,
+#                                  reusable cross-cutting utilities).
+#
+# Architectural note — SOAP as an extension of petition011 (NOT an exception):
+#   Petition011 established integration-gateway as the single M2M ingress point for
+#   external creditor systems.  Petition019 extends that role: integration-gateway now
+#   supports a second authentication protocol (OCES3 certificate) and a second
+#   transport (SOAP/Spring-WS) in addition to the OAuth2/DUPLA+REST path already in
+#   place.  No petition011 exception is required; this is additive capability.
+#   The Gherkin Background has been updated accordingly:
+#     "integration-gateway is running and listening for SOAP requests".
+#   Placing the SOAP host in debt-service (the rejected assignment) would have
+#   collapsed protocol-adaptation into a business-logic service, violating the
+#   single-responsibility boundary enforced by the architecture.
+
+petition_id: petition019
+
+scenarios:
+
+  # ── OIO Namespace Endpoints ───────────────────────────────────────────────
+
+  - id: "001"
+    title: "OIOFordringIndberetService accepts valid OIO claim submission"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-OIO-1]
+    rationale: >
+      integration-gateway hosts the Spring-WS MessageDispatcherServlet and the
+      OIOFordringIndberetService endpoint (operation MFFordringIndberet_I,
+      namespace urn:oio:skat:efi:ws:1.0.1).  It unmarshal the OIO XML payload,
+      authenticates via OCES3SoapSecurityInterceptor, and delegates to
+      opendebt-debt-service over an internal REST call (FordringsService.submitClaim).
+      The acknowledgement (ClaimSubmissionResponse, claim ID) is marshalled back
+      into an OIO-formatted SOAP response by the gateway.  debt-service is secondary
+      as the upstream business-logic provider.
+
+  - id: "002"
+    title: "OIOFordringIndberetService applies same validation rules as REST API"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-OIO-1, FR-INT-1]
+    rationale: >
+      integration-gateway forwards the unmarshalled claim payload to
+      opendebt-debt-service's existing validation layer (FordringsService.validateClaim).
+      No business rules are duplicated; the gateway is purely a protocol-adaptation
+      layer.  Validation failures surface as OpenDebt domain exceptions in
+      debt-service (secondary), which SoapFaultResolver in integration-gateway
+      converts to structured SOAP faults.
+
+  - id: "003"
+    title: "OIOKvitteringHentService returns receipt for valid claim ID"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-OIO-2]
+    rationale: >
+      integration-gateway hosts the OIOKvitteringHentService endpoint (operation
+      MFKvitteringHent_I).  It resolves the claim ID from the OIO SOAP request,
+      calls opendebt-debt-service's receipt-query REST endpoint, and marshals the
+      KvitteringResponse into an OIO-formatted SOAP response.  debt-service is
+      secondary as the authoritative source for receipt data.
+
+  - id: "004"
+    title: "OIOUnderretSamlingHentService returns notification collection for valid claim"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-OIO-3]
+    rationale: >
+      integration-gateway hosts the OIOUnderretSamlingHentService endpoint (operation
+      MFUnderretSamlingHent_I).  It forwards the claim/debtor identifier to
+      opendebt-debt-service's notification-query REST endpoint and marshals the
+      returned collection into an OIO-formatted SOAP response.  debt-service is
+      secondary as the owner of the notification domain.
+
+  # ── SKAT/PSRM Namespace Endpoints ────────────────────────────────────────
+
+  - id: "005"
+    title: "SkatFordringIndberetService accepts valid SKAT claim submission"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-SKAT-1]
+    rationale: >
+      integration-gateway hosts a second DefaultWsdl11Definition bound to the SKAT
+      namespace (http://skat.dk/begrebsmodel/2009/01/15/) at /soap/skat.
+      SkatFordringIndberetService follows the same pattern as scenario 001 but uses
+      the SKAT XSD binding for marshalling/unmarshalling.  Business-logic delegation
+      to opendebt-debt-service is identical; only the namespace and XSD differ.
+
+  - id: "006"
+    title: "SkatFordringIndberetService applies same validation rules as REST API"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-SKAT-1, FR-INT-1]
+    rationale: >
+      Mirrors scenario 002 for the SKAT namespace.  integration-gateway unmarshals
+      the SKAT-formatted payload and delegates validation to the same
+      FordringsService path in debt-service (secondary), ensuring no divergence in
+      business rules across protocol variants.
+
+  - id: "007"
+    title: "SkatKvitteringHentService returns receipt for valid claim ID"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-SKAT-2]
+    rationale: >
+      integration-gateway hosts the SkatKvitteringHentService endpoint.  Mirrors
+      scenario 003 using SKAT XSD marshalling.  Calls opendebt-debt-service's
+      receipt-query REST endpoint (secondary) and returns a SKAT-formatted response.
+
+  - id: "008"
+    title: "SkatUnderretSamlingHentService returns notification collection for valid claim"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-SKAT-3]
+    rationale: >
+      integration-gateway hosts the SkatUnderretSamlingHentService endpoint.
+      Mirrors scenario 004 using SKAT XSD marshalling.  Delegates to
+      opendebt-debt-service's notification-query REST endpoint (secondary) and
+      returns a SKAT-formatted notification collection.
+
+  # ── Authentication and Security ───────────────────────────────────────────
+
+  - id: "009"
+    title: "SOAP request without certificate returns authentication fault"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-SEC-1]
+    rationale: >
+      OCES3 certificate validation is the responsibility of
+      OCES3SoapSecurityInterceptor, a Spring-WS interceptor owned by
+      integration-gateway — consistent with its existing role as the M2M
+      authentication boundary (petition011).  When no certificate is present the
+      interceptor short-circuits with a SOAP 1.1/1.2 authentication fault before
+      any endpoint handler is invoked.  opendebt-common is secondary: it provides
+      the stateless Oces3CertificateParser utility consumed by the interceptor.
+
+  - id: "010"
+    title: "SOAP request with expired certificate returns authentication fault"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-SEC-1, FR-SEC-2]
+    rationale: >
+      Certificate expiry and revocation checks are performed by
+      OCES3SoapSecurityInterceptor in integration-gateway, using the
+      Oces3CertificateParser helper from opendebt-common (secondary).  The
+      interceptor constructs a SOAP fault with a Danish-language faultstring
+      describing certificate expiration before forwarding to any endpoint handler.
+
+  - id: "011"
+    title: "SOAP request from unauthorized system returns authorization fault"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-SEC-3]
+    rationale: >
+      After successful OCES3 certificate authentication, the fordringshaver
+      identifier extracted by Oces3CertificateParser (opendebt-common, secondary)
+      is passed to integration-gateway's authorization check, which consults the
+      channel-binding configuration (petition010/011) to verify the calling system
+      is permitted to submit claims.  Unauthorized systems receive a SOAP
+      authorization fault from OCES3SoapSecurityInterceptor.
+
+  - id: "012"
+    title: "Certificate subject is mapped to fordringshaver identifier"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-SEC-4]
+    rationale: >
+      The DN-to-fordringshaver mapping (e.g., "CN=CREDITOR-001,O=UFST" →
+      "CREDITOR-001") is implemented in Oces3CertificateParser, a stateless utility
+      in opendebt-common (secondary) so other services can reuse it.
+      OCES3SoapSecurityInterceptor in integration-gateway invokes this parser and
+      places the resolved identifier into the request context for downstream use by
+      endpoint handlers and audit interceptors.
+
+  # ── Logging and Audit (CLS) ───────────────────────────────────────────────
+
+  - id: "013"
+    title: "Successful SOAP call is logged to CLS"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-LOG-1]
+    rationale: >
+      ClsSoapAuditInterceptor in integration-gateway implements the Spring-WS
+      EndpointInterceptor contract and writes structured CLS records (timestamp,
+      calling system, service, operation, correlation ID, response time, SUCCESS
+      status) after each successful dispatch.  It consumes the ClsAuditClient
+      from opendebt-common (secondary), which already provides the typed CLS
+      write API used elsewhere in the platform.
+
+  - id: "014"
+    title: "SOAP fault is logged to CLS with error details"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-LOG-2]
+    rationale: >
+      The same ClsSoapAuditInterceptor handles the fault path, capturing error code,
+      Danish-language message, and stack trace, then writing a FAULT-status CLS
+      record via ClsAuditClient (opendebt-common, secondary).  No additional
+      ownership boundary is crossed.
+
+  - id: "015"
+    title: "SOAP request and response bodies are logged excluding PII"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-common
+    fr_refs: [FR-LOG-3]
+    rationale: >
+      ClsSoapAuditInterceptor in integration-gateway applies SoapPiiMaskingUtil
+      (opendebt-common, secondary) to the raw SOAP envelopes before writing request
+      and response bodies to CLS.  SoapPiiMaskingUtil strips CPR numbers and debtor
+      names from the XML, replacing them with UUID references.  Masking logic lives
+      in opendebt-common for reuse by any future SOAP-aware service.
+
+  # ── Error Handling ────────────────────────────────────────────────────────
+
+  - id: "016"
+    title: "SOAP validation error includes field-level details"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-ERR-1]
+    rationale: >
+      SoapFaultResolver in integration-gateway catches OpenDebt domain exceptions
+      propagated from opendebt-debt-service (secondary — the exception source) and
+      maps them to SOAP fault Detail elements containing the field name and a
+      Danish-language error message.  The fault resolver owns the structural
+      translation; debt-service owns the exception semantics.
+
+  - id: "017"
+    title: "Malformed SOAP message returns schema validation fault"
+    component: opendebt-integration-gateway
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-ERR-2]
+    rationale: >
+      PayloadValidatingInterceptor in integration-gateway validates incoming SOAP
+      payloads against the OIO or SKAT XSD schema before any endpoint handler is
+      invoked.  Schema validation failures are caught by SoapFaultResolver and
+      returned as SOAP faults with Danish-language descriptions.  opendebt-debt-service
+      is secondary because its domain exceptions inform the fault-code vocabulary
+      used in SoapFaultResolver.
+
+  # ── Protocol Compatibility ────────────────────────────────────────────────
+
+  - id: "018"
+    title: "SOAP endpoint accepts requests using SOAP 1.1 protocol"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-PROTO-1]
+    rationale: >
+      SoapWebServiceConfig in integration-gateway registers a
+      SaajSoapMessageFactory configured for SOAP 1.1.  Spring-WS selects the
+      correct factory based on the incoming Content-Type header and responds in
+      kind.  This is a pure protocol-adaptation concern with no involvement of
+      other modules.
+
+  - id: "019"
+    title: "SOAP endpoint accepts requests using SOAP 1.2 protocol"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-PROTO-2]
+    rationale: >
+      A second SaajSoapMessageFactory bean configured for the SOAP 1.2 envelope
+      namespace is registered in SoapWebServiceConfig (integration-gateway).
+      Both factories co-exist in the same MessageDispatcherServlet context.  No
+      other module is involved.
+
+  # ── WSDL Exposure ─────────────────────────────────────────────────────────
+
+  - id: "020"
+    title: "WSDL for OIO services is accessible at /soap/oio?wsdl"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-WSDL-1]
+    rationale: >
+      SoapWebServiceConfig in integration-gateway registers a
+      DefaultWsdl11Definition bean bound to the OIO XSD schema file located at
+      src/main/resources/wsdl/oio/.  Spring-WS generates the WSDL dynamically at
+      startup, exposing service definitions, port types, operations, message
+      structures, XSD schema references, and SOAP 1.1/1.2 bindings at /soap/oio?wsdl.
+
+  - id: "021"
+    title: "WSDL for SKAT services is accessible at /soap/skat?wsdl"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-WSDL-2]
+    rationale: >
+      A second DefaultWsdl11Definition bean bound to the SKAT XSD schema file
+      (src/main/resources/wsdl/skat/) is registered in SoapWebServiceConfig
+      (integration-gateway) and served at /soap/skat?wsdl.  Mirrors scenario 020
+      for the SKAT namespace.
+
+  # ── Statelessness and Scalability ─────────────────────────────────────────
+
+  - id: "022"
+    title: "SOAP services are stateless"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-NFR-1]
+    rationale: >
+      All Spring-WS endpoint beans in integration-gateway are stateless by design:
+      no HTTP session or server-side state is maintained between requests.
+      Correlation IDs are echoed from the incoming SOAP header without storage.
+      This is enforced by integration-gateway's existing ArchUnit architecture test
+      suite, extended to cover the new SOAP endpoint package.
+
+  # ── SOAP Version Fault Structure ──────────────────────────────────────────
+
+  - id: "023"
+    title: "SOAP 1.1 fault response uses correct SOAP 1.1 fault envelope structure"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-PROTO-1, FR-ERR-1]
+    rationale: >
+      SoapFaultResolver in integration-gateway handles SOAP 1.1 faults using
+      faultcode / faultstring / detail elements as required by the WS-I Basic
+      Profile.  Spring-WS's Saaj11FaultMessageResolver is wired to produce this
+      structure when the active message factory is SOAP 1.1.  Custom detail
+      population (OpenDebt error codes, Danish messages) is owned by
+      integration-gateway's SoapFaultResolver.
+
+  - id: "024"
+    title: "SOAP 1.2 fault response uses correct SOAP 1.2 fault envelope structure"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-PROTO-2, FR-ERR-1]
+    rationale: >
+      SoapFaultResolver in integration-gateway produces Code / Reason / Detail
+      elements for SOAP 1.2 faults.  Same fault-resolver class handles both SOAP
+      versions through Spring-WS's protocol-aware fault construction; the
+      implementation is owned by integration-gateway.
+
+  # ── Synchronous Processing ────────────────────────────────────────────────
+
+  - id: "025"
+    title: "SOAP services return synchronous responses only"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-NFR-2]
+    rationale: >
+      integration-gateway's SOAP endpoint implementations never set WS-Addressing
+      ReplyTo headers or asynchronous callback references; responses are always
+      returned on the same HTTP connection.  This is enforced by integration-gateway's
+      Spring-WS configuration (no WS-Addressing interceptor registered) and by
+      ArchUnit rules prohibiting async dispatch from SOAP endpoint classes.
+
+  # ── XSD Schema Validation ─────────────────────────────────────────────────
+
+  - id: "026"
+    title: "OIO SOAP messages are validated against OIO XSD schema version 1.0.1"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-WSDL-1, FR-ERR-2]
+    rationale: >
+      The OIO XSD schema file (urn:oio:skat:efi:ws:1.0.1) is bundled in
+      integration-gateway's resources at src/main/resources/wsdl/oio/ and
+      registered with a PayloadValidatingInterceptor in SoapWebServiceConfig.
+      Schema ownership — including versioning and compatibility updates — belongs
+      to integration-gateway as the protocol-adaptation boundary.
+
+  - id: "027"
+    title: "SKAT SOAP messages are validated against SKAT XSD schema version 2009/01/15"
+    component: opendebt-integration-gateway
+    fr_refs: [FR-WSDL-2, FR-ERR-2]
+    rationale: >
+      The SKAT XSD schema file (http://skat.dk/begrebsmodel/2009/01/15/) is
+      bundled in integration-gateway's resources at src/main/resources/wsdl/skat/
+      and registered with a second PayloadValidatingInterceptor bound to the
+      /soap/skat endpoint.  Same ownership pattern as scenario 026.
+
+---
+# Summary
+total_scenarios_mapped: 27
+components_missing: []   # All scenarios map to known Maven module identifiers
+
+correction_applied: true
+correction_reason: >
+  Rejected map assigned all scenarios to opendebt-debt-service as primary, which
+  collapses protocol-adaptation into a business-logic service.  The corrected map
+  assigns opendebt-integration-gateway as primary for all 27 scenarios —
+  consistent with the architecture diagram (ES → IG) and integration-gateway's
+  established role as the M2M ingress and protocol-adaptation boundary
+  (petition011).  Petition019 extends that role to a second auth protocol (OCES3)
+  and transport (SOAP); no petition011 exception is required.
+
+new_artefacts_required:
+  - module: opendebt-integration-gateway
+    artefacts:
+      - spring-ws-core and spring-ws-security Maven dependencies (new — not present anywhere in the codebase)
+      - SoapWebServiceConfig.java (MessageDispatcherServlet, two DefaultWsdl11Definition beans for OIO and SKAT)
+      - OCES3SoapSecurityInterceptor.java (X.509 cert validation, subject DN → fordringshaver mapping, fault generation)
+      - ClsSoapAuditInterceptor.java (CLS logging + PII masking for SOAP calls, wraps ClsAuditClient)
+      - SoapFaultResolver.java (maps OpenDebt domain exceptions to SOAP 1.1/1.2 faults with Danish messages)
+      - src/main/resources/wsdl/oio/ (OIO XSD schema files, namespace urn:oio:skat:efi:ws:1.0.1)
+      - src/main/resources/wsdl/skat/ (SKAT XSD schema files, namespace http://skat.dk/begrebsmodel/2009/01/15/)
+
+  - module: opendebt-common
+    artefacts:
+      - Oces3CertificateParser (stateless X.509 DN → fordringshaver ID utility; reusable across services)
+      - SoapPiiMaskingUtil (strips CPR/name from XML before CLS write, replaces with UUID refs)
+      - ClsAuditClient extension or new typed method for SOAP audit records (if not already present)
+
+changes_to_existing_map: true
+note: >
+  /design/components/*.yaml definitions do not exist in this repository.
+  Component identifiers correspond directly to Maven module directory names
+  at the repository root.  Downstream agents should treat them as module-level
+  ownership boundaries when generating implementation tasks.

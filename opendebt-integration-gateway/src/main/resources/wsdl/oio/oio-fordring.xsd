@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="urn:oio:skat:efi:ws:1.0.1"
+           targetNamespace="urn:oio:skat:efi:ws:1.0.1"
+           elementFormDefault="qualified">
+
+  <xs:element name="MFFordringIndberet_IRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FordringsType" type="xs:string"/>
+        <xs:element name="Beloeb" type="xs:decimal"/>
+        <xs:element name="SkyldnerPersonId" type="xs:string"/>
+        <xs:element name="FordringsDato" type="xs:date"/>
+        <xs:element name="ForfaldsDato" type="xs:date"/>
+        <xs:element name="EksternId" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MFFordringIndberet_IResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FordringsId" type="xs:string" minOccurs="0"/>
+        <xs:element name="Status" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MFKvitteringHent_IRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FordringsId" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MFKvitteringHent_IResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="KvitteringId" type="xs:string" minOccurs="0"/>
+        <xs:element name="FordringsId" type="xs:string"/>
+        <xs:element name="Status" type="xs:string"/>
+        <xs:element name="ModtagetDato" type="xs:dateTime" minOccurs="0"/>
+        <xs:element name="BehandletDato" type="xs:dateTime" minOccurs="0"/>
+        <xs:element name="AfvisningKode" type="xs:string" minOccurs="0"/>
+        <xs:element name="AfvisningTekst" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MFUnderretSamlingHent_IRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FordringsId" type="xs:string"/>
+        <xs:element name="SkyldnerPersonId" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MFUnderretSamlingHent_IResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FordringsId" type="xs:string"/>
+        <xs:element name="Underretninger">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Underretning" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="UnderretningId" type="xs:string" minOccurs="0"/>
+                    <xs:element name="Type" type="xs:string" minOccurs="0"/>
+                    <xs:element name="Status" type="xs:string" minOccurs="0"/>
+                    <xs:element name="OprettetDato" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="Beskrivelse" type="xs:string" minOccurs="0"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Total" type="xs:integer" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

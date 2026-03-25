@@ -43,6 +43,11 @@ logging:
     dk.ufst.opendebt: INFO
 
 opendebt:
+  soap:
+    security:
+      tls-termination-mode: ${SOAP_TLS_MODE:TEST}
+    oces3:
+      trusted-ca-subjects: []
   integration:
     dupla:
       enabled: true
@@ -96,6 +101,8 @@ resilience4j:
       debt-service-write:
         baseConfig: default
       creditor-service:
+        baseConfig: default
+      debtService:
         baseConfig: default
   retry:
     configs:

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test resource — Petition 019 (Legacy SOAP Endpoints)
+  SOAP 1.1 / OIO namespace — invalid MFFordringIndberet_IRequest (Beloeb = 0)
+
+  Traceability: SPEC-019-02A (OIOFordringIndberetEndpoint), SPEC-019-06 (SoapFaultMappingResolver)
+  AC-02: OIOFordringIndberetService applies same validation rules as REST API.
+  AC-21: SOAP fault detail contains field-level error for the amount field.
+
+  PLACEHOLDER — debt-service will return HTTP 422 with field error for amount=0.
+-->
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:oio="urn:oio:skat:efi:ws:1.0.1">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <oio:MFFordringIndberet_IRequest>
+      <!-- PLACEHOLDER: Beloeb=0 triggers FordringValidationException -->
+      <oio:FordringsType>SKAT_RESTSKAT</oio:FordringsType>
+      <oio:Beloeb>0</oio:Beloeb>
+      <oio:SkyldnerPersonId>550e8400-e29b-41d4-a716-446655440001</oio:SkyldnerPersonId>
+      <oio:FordringsDato>2026-01-15</oio:FordringsDato>
+      <oio:ForfaldsDato>2026-03-01</oio:ForfaldsDato>
+      <oio:EksternId>CLAIM-INVALID-AMOUNT</oio:EksternId>
+    </oio:MFFordringIndberet_IRequest>
+  </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+             xmlns:tns="http://skat.dk/begrebsmodel/2009/01/15/"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://skat.dk/begrebsmodel/2009/01/15/"
+             name="SkatFordring">
+
+  <types>
+    <xs:schema>
+      <xs:import namespace="http://skat.dk/begrebsmodel/2009/01/15/" schemaLocation="skat-fordring.xsd"/>
+    </xs:schema>
+  </types>
+
+  <!-- Messages -->
+  <message name="MFFordringIndberet_IRequest">
+    <part name="parameters" element="tns:MFFordringIndberet_IRequest"/>
+  </message>
+  <message name="MFFordringIndberet_IResponse">
+    <part name="parameters" element="tns:MFFordringIndberet_IResponse"/>
+  </message>
+  <message name="MFKvitteringHent_IRequest">
+    <part name="parameters" element="tns:MFKvitteringHent_IRequest"/>
+  </message>
+  <message name="MFKvitteringHent_IResponse">
+    <part name="parameters" element="tns:MFKvitteringHent_IResponse"/>
+  </message>
+  <message name="MFUnderretSamlingHent_IRequest">
+    <part name="parameters" element="tns:MFUnderretSamlingHent_IRequest"/>
+  </message>
+  <message name="MFUnderretSamlingHent_IResponse">
+    <part name="parameters" element="tns:MFUnderretSamlingHent_IResponse"/>
+  </message>
+
+  <!-- Port Types -->
+  <portType name="SkatFordringIndberetPortType">
+    <operation name="MFFordringIndberet_I">
+      <input message="tns:MFFordringIndberet_IRequest"/>
+      <output message="tns:MFFordringIndberet_IResponse"/>
+    </operation>
+  </portType>
+
+  <portType name="SkatKvitteringHentPortType">
+    <operation name="MFKvitteringHent_I">
+      <input message="tns:MFKvitteringHent_IRequest"/>
+      <output message="tns:MFKvitteringHent_IResponse"/>
+    </operation>
+  </portType>
+
+  <portType name="SkatUnderretSamlingHentPortType">
+    <operation name="MFUnderretSamlingHent_I">
+      <input message="tns:MFUnderretSamlingHent_IRequest"/>
+      <output message="tns:MFUnderretSamlingHent_IResponse"/>
+    </operation>
+  </portType>
+
+  <!-- SOAP 1.1 Bindings -->
+  <binding name="SkatFordringIndberetBinding" type="tns:SkatFordringIndberetPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFFordringIndberet_I">
+      <soap:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFFordringIndberet_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="SkatKvitteringHentBinding" type="tns:SkatKvitteringHentPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFKvitteringHent_I">
+      <soap:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFKvitteringHent_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="SkatUnderretSamlingHentBinding" type="tns:SkatUnderretSamlingHentPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFUnderretSamlingHent_I">
+      <soap:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFUnderretSamlingHent_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <!-- SOAP 1.2 Bindings -->
+  <binding name="SkatFordringIndberetBinding12" type="tns:SkatFordringIndberetPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFFordringIndberet_I">
+      <soap12:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFFordringIndberet_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="SkatKvitteringHentBinding12" type="tns:SkatKvitteringHentPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFKvitteringHent_I">
+      <soap12:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFKvitteringHent_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="SkatUnderretSamlingHentBinding12" type="tns:SkatUnderretSamlingHentPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFUnderretSamlingHent_I">
+      <soap12:operation soapAction="http://skat.dk/begrebsmodel/2009/01/15/MFUnderretSamlingHent_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <!-- Services -->
+  <service name="SkatFordringIndberetService">
+    <port name="SkatFordringIndberetPort" binding="tns:SkatFordringIndberetBinding">
+      <soap:address location="http://localhost:8080/ws/skat/fordring"/>
+    </port>
+    <port name="SkatFordringIndberetPort12" binding="tns:SkatFordringIndberetBinding12">
+      <soap12:address location="http://localhost:8080/ws/skat/fordring"/>
+    </port>
+  </service>
+
+  <service name="SkatKvitteringHentService">
+    <port name="SkatKvitteringHentPort" binding="tns:SkatKvitteringHentBinding">
+      <soap:address location="http://localhost:8080/ws/skat/kvittering"/>
+    </port>
+    <port name="SkatKvitteringHentPort12" binding="tns:SkatKvitteringHentBinding12">
+      <soap12:address location="http://localhost:8080/ws/skat/kvittering"/>
+    </port>
+  </service>
+
+  <service name="SkatUnderretSamlingHentService">
+    <port name="SkatUnderretSamlingHentPort" binding="tns:SkatUnderretSamlingHentBinding">
+      <soap:address location="http://localhost:8080/ws/skat/underretning"/>
+    </port>
+    <port name="SkatUnderretSamlingHentPort12" binding="tns:SkatUnderretSamlingHentBinding12">
+      <soap12:address location="http://localhost:8080/ws/skat/underretning"/>
+    </port>
+  </service>
+
+</definitions>

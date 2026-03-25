@@ -93,3 +93,29 @@ Each service owns its own PostgreSQL database. Schema migrations use Flyway and 
 3. Trace request flow in Tempo using correlation ID
 4. Check PostgreSQL connection pool metrics in Prometheus
 5. Review Keycloak token issuance if authentication failures spike
+
+## Disaster Recovery (ADR-0028)
+
+**Targets: RTO 4 hours / RPO 4 hours**
+
+| Failure class | Recovery mechanism | Expected time |
+|--------------|-------------------|---------------|
+| Pod / node failure | Kubernetes self-healing | 2–5 min |
+| DB primary failure (standby available) | Standby promotion | 15–30 min |
+| DB data loss / corruption | pgBackRest PITR restore | 90–150 min |
+| Catastrophic cluster loss | Re-provision + pgBackRest restore | 2–4 hours |
+
+### Backup components
+
+- **pgBackRest**: Continuous WAL archiving (~5-min segments) to Azure Blob Storage + weekly full backup + daily differential
+- **Streaming replication**: Hot standby on a second PostgreSQL instance
+- **Encryption key**: `ENCRYPTION_KEY` stored in Azure Key Vault — never in git or env vars
+- **Keycloak**: Nightly realm export + Keycloak DB backed up via pgBackRest
+
+### Backup monitoring alerts
+
+- `PostgreSQLBackupStale` — fires if backup is >24 hours old (critical)
+- `WALArchivingLagging` — fires if WAL archiving lags >15 minutes (warning)
+- `EncryptionKeyVaultUnreachable` — fires if key vault is unreachable (critical)
+
+For the step-by-step DR execution procedure see `docs/dr-runbook.md` in the repository.

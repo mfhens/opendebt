@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+             xmlns:tns="urn:oio:skat:efi:ws:1.0.1"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="urn:oio:skat:efi:ws:1.0.1"
+             name="OIOFordring">
+
+  <types>
+    <xs:schema>
+      <xs:import namespace="urn:oio:skat:efi:ws:1.0.1" schemaLocation="oio-fordring.xsd"/>
+    </xs:schema>
+  </types>
+
+  <!-- Messages -->
+  <message name="MFFordringIndberet_IRequest">
+    <part name="parameters" element="tns:MFFordringIndberet_IRequest"/>
+  </message>
+  <message name="MFFordringIndberet_IResponse">
+    <part name="parameters" element="tns:MFFordringIndberet_IResponse"/>
+  </message>
+  <message name="MFKvitteringHent_IRequest">
+    <part name="parameters" element="tns:MFKvitteringHent_IRequest"/>
+  </message>
+  <message name="MFKvitteringHent_IResponse">
+    <part name="parameters" element="tns:MFKvitteringHent_IResponse"/>
+  </message>
+  <message name="MFUnderretSamlingHent_IRequest">
+    <part name="parameters" element="tns:MFUnderretSamlingHent_IRequest"/>
+  </message>
+  <message name="MFUnderretSamlingHent_IResponse">
+    <part name="parameters" element="tns:MFUnderretSamlingHent_IResponse"/>
+  </message>
+
+  <!-- Port Types -->
+  <portType name="OIOFordringIndberetPortType">
+    <operation name="MFFordringIndberet_I">
+      <input message="tns:MFFordringIndberet_IRequest"/>
+      <output message="tns:MFFordringIndberet_IResponse"/>
+    </operation>
+  </portType>
+
+  <portType name="OIOKvitteringHentPortType">
+    <operation name="MFKvitteringHent_I">
+      <input message="tns:MFKvitteringHent_IRequest"/>
+      <output message="tns:MFKvitteringHent_IResponse"/>
+    </operation>
+  </portType>
+
+  <portType name="OIOUnderretSamlingHentPortType">
+    <operation name="MFUnderretSamlingHent_I">
+      <input message="tns:MFUnderretSamlingHent_IRequest"/>
+      <output message="tns:MFUnderretSamlingHent_IResponse"/>
+    </operation>
+  </portType>
+
+  <!-- SOAP 1.1 Bindings -->
+  <binding name="OIOFordringIndberetBinding" type="tns:OIOFordringIndberetPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFFordringIndberet_I">
+      <soap:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFFordringIndberet_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="OIOKvitteringHentBinding" type="tns:OIOKvitteringHentPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFKvitteringHent_I">
+      <soap:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFKvitteringHent_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="OIOUnderretSamlingHentBinding" type="tns:OIOUnderretSamlingHentPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFUnderretSamlingHent_I">
+      <soap:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFUnderretSamlingHent_I"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <!-- SOAP 1.2 Bindings -->
+  <binding name="OIOFordringIndberetBinding12" type="tns:OIOFordringIndberetPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFFordringIndberet_I">
+      <soap12:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFFordringIndberet_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="OIOKvitteringHentBinding12" type="tns:OIOKvitteringHentPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFKvitteringHent_I">
+      <soap12:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFKvitteringHent_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <binding name="OIOUnderretSamlingHentBinding12" type="tns:OIOUnderretSamlingHentPortType">
+    <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="MFUnderretSamlingHent_I">
+      <soap12:operation soapAction="urn:oio:skat:efi:ws:1.0.1/MFUnderretSamlingHent_I"/>
+      <input><soap12:body use="literal"/></input>
+      <output><soap12:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <!-- Services -->
+  <service name="OIOFordringIndberetService">
+    <port name="OIOFordringIndberetPort" binding="tns:OIOFordringIndberetBinding">
+      <soap:address location="http://localhost:8080/ws/oio/fordring"/>
+    </port>
+    <port name="OIOFordringIndberetPort12" binding="tns:OIOFordringIndberetBinding12">
+      <soap12:address location="http://localhost:8080/ws/oio/fordring"/>
+    </port>
+  </service>
+
+  <service name="OIOKvitteringHentService">
+    <port name="OIOKvitteringHentPort" binding="tns:OIOKvitteringHentBinding">
+      <soap:address location="http://localhost:8080/ws/oio/kvittering"/>
+    </port>
+    <port name="OIOKvitteringHentPort12" binding="tns:OIOKvitteringHentBinding12">
+      <soap12:address location="http://localhost:8080/ws/oio/kvittering"/>
+    </port>
+  </service>
+
+  <service name="OIOUnderretSamlingHentService">
+    <port name="OIOUnderretSamlingHentPort" binding="tns:OIOUnderretSamlingHentBinding">
+      <soap:address location="http://localhost:8080/ws/oio/underretning"/>
+    </port>
+    <port name="OIOUnderretSamlingHentPort12" binding="tns:OIOUnderretSamlingHentBinding12">
+      <soap12:address location="http://localhost:8080/ws/oio/underretning"/>
+    </port>
+  </service>
+
+</definitions>

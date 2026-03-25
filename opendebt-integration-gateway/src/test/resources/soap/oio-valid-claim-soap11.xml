@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test resource — Petition 019 (Legacy SOAP Endpoints)
+  SOAP 1.1 / OIO namespace — valid MFFordringIndberet_IRequest
+
+  Traceability: SPEC-019-02A (OIOFordringIndberetEndpoint), SPEC-019-10 (XSD validation)
+  AC-01: OIOFordringIndberetService accepts valid OIO claim submission.
+  AC-20: OIO messages validated against oio-fordring.xsd (urn:oio:skat:efi:ws:1.0.1).
+
+  PLACEHOLDER — field values are test fixtures only.
+  The debtorPersonId is a UUID reference (GDPR ADR-0014 — never CPR).
+  This file must be updated once oio-fordring.xsd is generated from the WSDL.
+-->
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:oio="urn:oio:skat:efi:ws:1.0.1">
+  <soapenv:Header>
+    <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">
+      urn:uuid:test-correlation-001
+    </wsa:MessageID>
+  </soapenv:Header>
+  <soapenv:Body>
+    <oio:MFFordringIndberet_IRequest>
+      <!-- PLACEHOLDER: fields must match oio-fordring.xsd generated JAXB types -->
+      <oio:FordringsType>SKAT_RESTSKAT</oio:FordringsType>
+      <oio:Beloeb>10000.00</oio:Beloeb>
+      <oio:SkyldnerPersonId>550e8400-e29b-41d4-a716-446655440001</oio:SkyldnerPersonId>
+      <oio:FordringsDato>2026-01-15</oio:FordringsDato>
+      <oio:ForfaldsDato>2026-03-01</oio:ForfaldsDato>
+      <oio:EksternId>CLAIM-001</oio:EksternId>
+    </oio:MFFordringIndberet_IRequest>
+  </soapenv:Body>
+</soapenv:Envelope>

@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-23
-  updated_by: factory-droid (W9-RBAC-04 implemented; RBAC Grafana dashboard, alert templates, and petition048 observability verification added)
+  updated_at: 2026-03-25
+  updated_by: copilot (TB-028 spike added; ADR-0029 immudb financial ledger integrity proposed)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1141,6 +1141,73 @@ program:
         offsetting-service, payment-service, and wage-garnishment-service.
       notes: Thresholds were relaxed temporarily; tests are still required before cleanup.
 
+    - id: TB-DR-001
+      title: Provision DR infrastructure (ADR-0028)
+      status: not_started
+      priority: critical
+      created: 2026-03-25
+      adr: docs/adr/0028-backup-and-disaster-recovery.md
+      description: |
+        ADR-0028 defines the backup and DR strategy (RTO 4h / RPO 4h). The architecture
+        and k8s manifests are complete. The following infrastructure must be provisioned
+        in production before the DR capability is live.
+      tasks:
+        - id: TB-DR-001-a
+          title: Move ENCRYPTION_KEY to Azure Key Vault
+          status: not_started
+          priority: critical
+          notes: |
+            person-registry ENCRYPTION_KEY must be stored in Azure Key Vault and retrieved
+            at startup via the platform secret management integration.
+            Loss of this key makes all PII in person-registry permanently irrecoverable.
+        - id: TB-DR-001-b
+          title: Configure pgBackRest WAL archiving on PostgreSQL host
+          status: not_started
+          priority: critical
+          notes: |
+            Add archive_mode=on and archive_command to postgresql.conf.
+            Configure pgbackrest-secrets in Kubernetes with Azure Blob Storage credentials
+            and PGBACKREST_CIPHER_PASSPHRASE (store passphrase in key vault alongside ENCRYPTION_KEY).
+            Run: pgbackrest --stanza=opendebt stanza-create
+            Verify: pgbackrest --stanza=opendebt check
+        - id: TB-DR-001-c
+          title: Provision PostgreSQL hot standby (streaming replication)
+          status: not_started
+          priority: high
+          notes: |
+            Add a second PostgreSQL instance as a hot standby.
+            Configure pg_hba.conf for replication user.
+            Perform initial base backup via: pgbackrest --stanza=opendebt --delta restore
+            Verify: SELECT pg_is_in_recovery() returns true on standby.
+        - id: TB-DR-001-d
+          title: Deploy pgbackrest-exporter sidecar and blackbox-exporter
+          status: not_started
+          priority: high
+          notes: |
+            Deploy pgbackrest_exporter (woblerr/pgbackrest_exporter) alongside PostgreSQL.
+            Deploy prometheus/blackbox-exporter for key vault reachability probe.
+            Both are scraped by the prometheus.yml entries added in this ticket.
+            Feeds the backup alert rules in config/grafana/provisioning/alerting/opendebt-backup-alerts.yaml.
+        - id: TB-DR-001-e
+          title: Install and configure Velero for PVC snapshots
+          status: not_started
+          priority: medium
+          notes: |
+            Install Velero with CSI snapshot plugin in opendebt-production namespace.
+            Configure VolumeSnapshotClass with velero.io/csi-volumesnapshot-class label.
+            Deploy the opendebt-daily-backup Schedule resource (see ADR-0028).
+        - id: TB-DR-001-f
+          title: Run first DR drill in staging
+          status: not_started
+          priority: high
+          depends_on:
+            - TB-DR-001-a
+            - TB-DR-001-b
+          notes: |
+            Execute the DR drill procedure in docs/dr-runbook.md Section 8.
+            Measure actual RTO. Update the runbook header with tested RTO and date.
+            File a drill report in the incident tracker.
+
     - id: TB-020
       title: Deprecate opendebt.interest.annual-rate application property
       status: done
@@ -1244,3 +1311,74 @@ program:
         templates after the migration. If any are found, remove them and update affected tests.
       depends_on:
         - petition050
+
+    - id: TB-028
+      title: "Spike: immudb financial ledger integrity (ADR-0029)"
+      status: not_started
+      priority: high
+      created: 2026-03-25
+      adr: docs/adr/0029-immudb-for-financial-ledger-integrity.md
+      type: spike
+      description: |
+        ADR-0029 proposes immudb as a cryptographic tamper-evidence layer for the
+        financial ledger (ledger_entries + debt_events in payment-service) using a
+        dual-write pattern in BookkeepingService. Before the ADR can be accepted,
+        the following must be validated:
+      tasks:
+        - id: TB-028-a
+          title: Confirm immudb runs on UFST HDP Kubernetes
+          status: not_started
+          priority: critical
+          notes: |
+            Verify resource limits, storage class compatibility, and network policies
+            on the UFST Horizontale Driftsplatform. immudb requires a persistent volume
+            and exposes port 3322 (gRPC) and 9497 (metrics).
+        - id: TB-028-b
+          title: Validate immudb4j with Spring Boot 3.3 / Java 21
+          status: not_started
+          priority: high
+          notes: |
+            Add immudb4j dependency, wire an ImmuClient @Bean, and confirm it connects
+            to a local immudb instance in the dev docker-compose stack. Verify there
+            are no classpath conflicts with existing dependencies.
+        - id: TB-028-c
+          title: Implement ImmuLedgerClient and dual-write in BookkeepingService
+          status: not_started
+          priority: high
+          notes: |
+            Implement ImmuLedgerClient as a Spring @Component wrapping immudb4j.
+            Wire async append into BookkeepingService.record*() methods (all 6 entry
+            types). Use @Retryable with exponential backoff (5 attempts). Ensure
+            PostgreSQL transaction is never rolled back on immudb failure.
+        - id: TB-028-d
+          title: Measure dual-write latency under realistic load
+          status: not_started
+          priority: high
+          notes: |
+            Run a load test simulating concurrent ledger postings (payment-service
+            under load). Measure p95/p99 latency impact of the async immudb append.
+            Acceptable threshold: async path must not increase synchronous response
+            time by more than 5ms at p95.
+        - id: TB-028-e
+          title: Demonstrate tamper-evidence proof verification
+          status: not_started
+          priority: high
+          notes: |
+            Use immudb4j verifiedGet() or the immudb CLI to retrieve a ledger entry
+            by transactionId and produce a cryptographic proof. Verify the proof
+            independently (simulating an auditor with no application access).
+            Document the verification procedure for Rigsrevisionen use.
+        - id: TB-028-f
+          title: Assess immudb backup and HA requirements (ADR-0028 alignment)
+          status: not_started
+          priority: medium
+          notes: |
+            Evaluate immudb replication options (immudb follower replication).
+            Determine how immudb data is included in the pgBackRest / Velero DR
+            strategy from ADR-0028. immudb tamper-evidence is only meaningful if
+            the immudb state itself is preserved and recoverable.
+      outcome: |
+        Spike concludes with one of:
+        - ACCEPT: ADR-0029 moves to Accepted, TB-029 created for implementation.
+        - REJECT: ADR-0029 moves to Rejected with documented reason (platform
+          blocker, SDK immaturity, unacceptable latency, or HA gap).

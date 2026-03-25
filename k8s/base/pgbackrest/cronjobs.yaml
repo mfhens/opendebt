@@ -1,0 +1,199 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgbackrest-full-backup
+  namespace: opendebt
+  labels:
+    app: pgbackrest-backup
+    app.kubernetes.io/name: pgbackrest-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: opendebt
+spec:
+  # Weekly full backup — Sunday 02:00 Europe/Copenhagen
+  schedule: "0 1 * * 0"
+  timeZone: "Europe/Copenhagen"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: pgbackrest-backup
+            backup-type: full
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: opendebt-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:latest
+              imagePullPolicy: Always
+              command:
+                - pgbackrest
+                - --stanza=opendebt
+                - --log-level-console=info
+                - backup
+                - --type=full
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-secrets
+              volumeMounts:
+                - name: pgbackrest-config
+                  mountPath: /etc/pgbackrest
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+          volumes:
+            - name: pgbackrest-config
+              configMap:
+                name: pgbackrest-config
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgbackrest-diff-backup
+  namespace: opendebt
+  labels:
+    app: pgbackrest-backup
+    app.kubernetes.io/name: pgbackrest-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: opendebt
+spec:
+  # Daily differential backup — Mon–Sat 02:00 Europe/Copenhagen
+  schedule: "0 1 * * 1-6"
+  timeZone: "Europe/Copenhagen"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: pgbackrest-backup
+            backup-type: diff
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: opendebt-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:latest
+              imagePullPolicy: Always
+              command:
+                - pgbackrest
+                - --stanza=opendebt
+                - --log-level-console=info
+                - backup
+                - --type=diff
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-secrets
+              volumeMounts:
+                - name: pgbackrest-config
+                  mountPath: /etc/pgbackrest
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+          volumes:
+            - name: pgbackrest-config
+              configMap:
+                name: pgbackrest-config
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgbackrest-verify
+  namespace: opendebt
+  labels:
+    app: pgbackrest-backup
+    app.kubernetes.io/name: pgbackrest-verify
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: opendebt
+spec:
+  # Weekly backup integrity check — Monday 03:00 (after Sunday full backup)
+  schedule: "0 2 * * 1"
+  timeZone: "Europe/Copenhagen"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: pgbackrest-backup
+            backup-type: verify
+        spec:
+          restartPolicy: Never
+          serviceAccountName: opendebt-service-account
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:latest
+              imagePullPolicy: Always
+              command:
+                - pgbackrest
+                - --stanza=opendebt
+                - --log-level-console=info
+                - verify
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-secrets
+              volumeMounts:
+                - name: pgbackrest-config
+                  mountPath: /etc/pgbackrest
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+          volumes:
+            - name: pgbackrest-config
+              configMap:
+                name: pgbackrest-config
