@@ -293,19 +293,25 @@ program:
 
     petition019:
       title: Legacy SOAP endpoints for external creditors
-      status: ready_for_implementation
+      status: implemented
       phase: phase-2
       depends_on:
         - petition015
         - petition016
         - petition017
         - petition018
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-03-25
       evidence:
-        - petition019 outcome contract and feature file (37 scenarios) exist
-        - All dependency petitions (015-018) are now implemented
-      notes: All validation rule dependencies are satisfied. SOAP endpoint implementation can proceed.
-      next_step: Implement Spring-WS endpoint handlers in integration-gateway. Validation rules from petition015-018 are ready.
+        - 59 tests pass (30 BDD Cucumber scenarios + 29 unit tests), 0 failures
+        - mvn test -pl opendebt-integration-gateway passes with spotless enforcement
+        - OIO FordringIndberet, KvitteringHent, UnderretSamlingHent at POST /soap/oio
+        - SKAT FordringIndberet, KvitteringHent, UnderretSamlingHent at POST /soap/skat
+        - WSDL serving at GET /soap/{oio|skat}?wsdl
+        - OCES3 mTLS certificate authentication implemented
+        - CLS audit logging implemented
+        - Dual SOAP 1.1/1.2 support implemented
+        - Commit: feat(petition019) implement legacy SOAP endpoints for external creditors
+      next_step: Complete.
 
     # --- Phase 3: Downstream collection model ---
 
@@ -949,21 +955,20 @@ program:
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
   #               petition008, petition010, petition011, petition015, petition016, petition017,
-  #               petition018, petition022, petition023, petition024, petition025,
+  #               petition018, petition019, petition022, petition023, petition024, petition025,
   #               petition029, petition030, petition031, petition032, petition033, petition034,
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050
   # in_progress:  petition002
-  # ready:        petition019
   # not_started:  petition026, petition027, petition028, petition042, petition049
   #
   # Total: 50 petitions
-  #   6 validated, 39 implemented, 1 in_progress, 1 ready, 3 not_started
+  #   6 validated, 40 implemented, 1 in_progress, 3 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
-  # READY TO START: petition019 (SOAP), Phase 8 (citizen self-service 026-028, unblocked)
+  # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
   # Debt-service: 258+ tests pass (0 failures)
