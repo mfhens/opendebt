@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dk.ufst.opendebt.common.audit.AuditContextService;
 import dk.ufst.opendebt.debtservice.dto.AddLiabilityRequest;
 import dk.ufst.opendebt.debtservice.dto.LiabilityDto;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity.LiabilityType;
@@ -37,6 +38,7 @@ class LiabilityControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockBean private LiabilityService liabilityService;
+  @MockBean private AuditContextService auditContextService;
 
   private static final UUID DEBT_ID = UUID.randomUUID();
   private static final UUID DEBTOR_PERSON_ID = UUID.randomUUID();

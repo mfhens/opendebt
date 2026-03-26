@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dk.ufst.opendebt.common.audit.AuditContextService;
 import dk.ufst.opendebt.debtservice.dto.ObjectionDto;
 import dk.ufst.opendebt.debtservice.dto.RegisterObjectionRequest;
 import dk.ufst.opendebt.debtservice.dto.ResolveObjectionRequest;
@@ -37,6 +38,7 @@ class ObjectionControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockBean private ObjectionService objectionService;
+  @MockBean private AuditContextService auditContextService;
 
   private static final UUID DEBT_ID = UUID.randomUUID();
   private static final UUID DEBTOR_PERSON_ID = UUID.randomUUID();

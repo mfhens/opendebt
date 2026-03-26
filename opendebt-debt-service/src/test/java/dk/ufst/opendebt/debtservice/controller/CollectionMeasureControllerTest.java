@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dk.ufst.opendebt.common.audit.AuditContextService;
 import dk.ufst.opendebt.debtservice.dto.CollectionMeasureDto;
 import dk.ufst.opendebt.debtservice.dto.InitiateMeasureRequest;
 import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity.MeasureType;
@@ -37,6 +38,7 @@ class CollectionMeasureControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockBean private CollectionMeasureService measureService;
+  @MockBean private AuditContextService auditContextService;
 
   private static final UUID DEBT_ID = UUID.randomUUID();
   private static final UUID MEASURE_ID = UUID.randomUUID();

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dk.ufst.opendebt.common.audit.AuditContextService;
 import dk.ufst.opendebt.debtservice.dto.IssueDemandRequest;
 import dk.ufst.opendebt.debtservice.dto.NotificationDto;
 import dk.ufst.opendebt.debtservice.service.NotificationService;
@@ -35,6 +36,7 @@ class NotificationControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @MockBean private NotificationService notificationService;
+  @MockBean private AuditContextService auditContextService;
 
   private static final UUID DEBT_ID = UUID.randomUUID();
   private static final UUID CREDITOR_ORG_ID = UUID.randomUUID();
