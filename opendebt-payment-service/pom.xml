@@ -97,6 +97,26 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- immudb tamper-evidence layer (ADR-0029, TB-028) -->
+        <!-- AIDEV-TODO (TB-028-b, TB-029): Add immudb4j dependency once spike SDK validation passes:
+             <dependency>
+               <groupId>io.codenotary</groupId>
+               <artifactId>immudb4j</artifactId>
+               <version>0.9.4</version>   <!- verify latest stable for Java 21 ->
+             </dependency>
+             TB-028-b spike finding: immudb4j is NOT on Maven Central (confirmed in this sprint).
+             Requires either:
+               (a) codenotary custom repo: https://packages.codenotary.io/repository/maven-public
+               (b) UFST Artifactory proxy configured to mirror the codenotary repo
+             The ImmudbApiAdapter facade decouples production code from the immudb4j classpath
+             dependency; SpikeStubImmudbAdapter is used until the JAR is available. -->
+
+        <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
