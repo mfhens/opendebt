@@ -82,6 +82,16 @@ opendebt:
       max-lookback-months: 12
   interest:
     annual-rate: 0.0575
+  # immudb tamper-evidence layer (ADR-0029, TB-028)
+  # Disabled by default — no immudb connection is required for normal operation or tests.
+  # Enable when running with docker-compose (see immudb service) or on the target platform.
+  immudb:
+    enabled: false
+    host: ${OPENDEBT_IMMUDB_HOST:localhost}
+    port: ${OPENDEBT_IMMUDB_PORT:3322}
+    username: ${OPENDEBT_IMMUDB_USERNAME:immudb}
+    password: ${OPENDEBT_IMMUDB_PASSWORD:immudb}
+    database: ${OPENDEBT_IMMUDB_DATABASE:defaultdb}
   services:
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}

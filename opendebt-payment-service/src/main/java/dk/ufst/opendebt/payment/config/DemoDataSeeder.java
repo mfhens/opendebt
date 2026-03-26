@@ -18,6 +18,7 @@ import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity.EntryCatego
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity.EntryType;
 import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
 import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
+import dk.ufst.opendebt.payment.immudb.ImmuLedgerAppender;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class DemoDataSeeder implements ApplicationRunner {
 
   private final LedgerEntryRepository ledgerEntryRepository;
   private final DebtEventRepository debtEventRepository;
+  private final ImmuLedgerAppender immuLedgerAppender;
 
   // Fixed UUIDs for deterministic, idempotent demo data
   private static final UUID DEBT_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000A01");
@@ -408,7 +410,7 @@ public class DemoDataSeeder implements ApplicationRunner {
             .reversalOfTransactionId(reversalOfTransactionId)
             .description(description)
             .build();
-    ledgerEntryRepository.save(debit);
+    LedgerEntryEntity savedDebit = ledgerEntryRepository.save(debit);
 
     LedgerEntryEntity credit =
         LedgerEntryEntity.builder()
@@ -424,7 +426,8 @@ public class DemoDataSeeder implements ApplicationRunner {
             .reversalOfTransactionId(reversalOfTransactionId)
             .description(description)
             .build();
-    ledgerEntryRepository.save(credit);
+    LedgerEntryEntity savedCredit = ledgerEntryRepository.save(credit);
+    immuLedgerAppender.appendAsync(savedDebit, savedCredit);
   }
 
   /**
@@ -451,7 +454,7 @@ public class DemoDataSeeder implements ApplicationRunner {
             .entryCategory(category)
             .description(description)
             .build();
-    ledgerEntryRepository.save(debit);
+    LedgerEntryEntity savedDebit = ledgerEntryRepository.save(debit);
 
     LedgerEntryEntity credit =
         LedgerEntryEntity.builder()
@@ -466,6 +469,7 @@ public class DemoDataSeeder implements ApplicationRunner {
             .entryCategory(category)
             .description(description)
             .build();
-    ledgerEntryRepository.save(credit);
+    LedgerEntryEntity savedCredit = ledgerEntryRepository.save(credit);
+    immuLedgerAppender.appendAsync(savedDebit, savedCredit);
   }
 }

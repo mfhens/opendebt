@@ -97,6 +97,34 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- immudb tamper-evidence layer (ADR-0029, TB-028-b) -->
+        <!-- Confirmed on Maven Central: io.codenotary:immudb4j:1.0.1 (repositoryId=central) -->
+        <!-- grpc-netty excluded: Spring Boot 3.5 manages Netty to 4.1.131 which breaks gRPC 1.44.1's -->
+        <!-- AbstractHttp2Headers.iterator(). grpc-netty-shaded bundles its own Netty to avoid conflict. -->
+        <dependency>
+            <groupId>io.codenotary</groupId>
+            <artifactId>immudb4j</artifactId>
+            <version>1.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>grpc-netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- grpc-netty-shaded bundles Netty internally, avoiding version conflict with Spring Boot -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>1.44.1</version>
+        </dependency>
+
+        <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
@@ -128,6 +156,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- Pin error_prone_annotations to resolve convergence across immudb4j gRPC transitive deps -->
+    <!-- immudb4j 1.0.1 → grpc-netty 1.44.1 pulls 2.9.0; gson 2.13.2 pulls 2.41.0; Boot pulls 2.5.1 -->
+    <!-- Pin protobuf-java: grpc-protobuf 1.44.1 directly uses 3.19.2; proto-google-common-protos 2.0.1 -->
+    <!-- (a transitive dep of grpc-protobuf) declares 3.13.0 — enforcer requires convergence -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.41.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.19.2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <!-- AIDEV-TODO: Improve bookkeeping entity/DTO/service coverage and remove overrides -->
     <!-- Current: 73% line / 54% branch. Bookkeeping entities and timeline replay pull coverage down. -->

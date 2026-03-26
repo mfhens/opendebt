@@ -19,6 +19,7 @@ import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
 import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
 import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
+import dk.ufst.opendebt.payment.immudb.NoOpImmuLedgerAppender;
 
 @ExtendWith(MockitoExtension.class)
 class BookkeepingServiceImplTest {
@@ -30,7 +31,11 @@ class BookkeepingServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new BookkeepingServiceImpl(ledgerEntryRepository, debtEventRepository);
+    // NoOpImmuLedgerAppender is used so tests never require a running immudb instance.
+    // The dual-write path (ADR-0029) is exercised in integration tests against a real immudb.
+    service =
+        new BookkeepingServiceImpl(
+            ledgerEntryRepository, debtEventRepository, new NoOpImmuLedgerAppender());
   }
 
   @Test

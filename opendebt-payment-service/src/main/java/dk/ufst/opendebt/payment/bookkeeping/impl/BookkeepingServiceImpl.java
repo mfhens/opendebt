@@ -13,6 +13,7 @@ import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
 import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
 import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
 import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
+import dk.ufst.opendebt.payment.immudb.ImmuLedgerAppender;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 // exactly two LedgerEntryEntity rows (debit + credit) sharing the same transactionId.
 // AIDEV-NOTE: postingDate is always LocalDate.now() (system date). effectiveDate is the economic
 // date supplied by the caller. These two dates enable bi-temporal querying.
+// AIDEV-NOTE: Dual-write to immudb (ADR-0029) is wired here via ImmuLedgerAppender.appendAsync().
+// The immudb write is async and fire-and-forget: PostgreSQL is never rolled back on immudb failure.
 // AIDEV-TODO: Add balance validation (debit sum == credit sum per transactionId) as a
 // @Transactional
 // post-commit assertion or a scheduled reconciliation job.
@@ -31,6 +34,7 @@ public class BookkeepingServiceImpl implements BookkeepingService {
 
   private final LedgerEntryRepository ledgerEntryRepository;
   private final DebtEventRepository debtEventRepository;
+  private final ImmuLedgerAppender immuLedgerAppender;
 
   @Override
   @Transactional
@@ -231,8 +235,8 @@ public class BookkeepingServiceImpl implements BookkeepingService {
             .entryCategory(request.category())
             .build();
 
-    ledgerEntryRepository.save(debitEntry);
-    ledgerEntryRepository.save(creditEntry);
+    LedgerEntryEntity savedDebit = ledgerEntryRepository.save(debitEntry);
+    LedgerEntryEntity savedCredit = ledgerEntryRepository.save(creditEntry);
 
     log.debug(
         "BOGFOERING: Posted txn={}, debit={} credit={} amount={}, effective={}, posting={}",
@@ -242,6 +246,12 @@ public class BookkeepingServiceImpl implements BookkeepingService {
         request.amount(),
         request.effectiveDate(),
         postingDate);
+
+    // Dual-write to immudb tamper-evidence layer (ADR-0029).
+    // This call is async and fire-and-forget — the PostgreSQL transaction is NOT extended
+    // to cover immudb. If immudb is unavailable, the ledger entry is still committed to
+    // PostgreSQL and the async path retries independently.
+    immuLedgerAppender.appendAsync(savedDebit, savedCredit);
 
     return transactionId;
   }

@@ -153,6 +153,26 @@ services:
       person-registry:
         condition: service_started
 
+  # immudb tamper-evidence layer (ADR-0029, TB-028 spike)
+  # AIDEV-NOTE: Disabled by default in payment-service (opendebt.immudb.enabled=false).
+  # Enable by setting OPENDEBT_IMMUDB_ENABLED=true in the payment-service environment block
+  # and configuring the connection properties below.
+  immudb:
+    image: codenotary/immudb:latest
+    command: ["--web-server"]
+    ports:
+      - "3322:3322"   # gRPC API
+      - "8091:8080"   # REST / web console (http://localhost:8091)
+      - "9497:9497"   # Prometheus metrics
+    volumes:
+      - immudb_data:/var/lib/immudb
+    healthcheck:
+      test: ["CMD", "immuadmin", "status"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   creditor-portal:
     build: ./opendebt-creditor-portal
     ports:
@@ -188,6 +208,7 @@ services:
 
 volumes:
   postgres_data:
+  immudb_data:
 
 networks:
   default:
