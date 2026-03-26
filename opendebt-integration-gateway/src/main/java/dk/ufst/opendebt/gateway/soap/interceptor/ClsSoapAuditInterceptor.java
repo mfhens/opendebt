@@ -52,8 +52,8 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
   public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
     messageContext.setProperty("soapAuditStartTime", Instant.now());
     String requestBody = extractBody(messageContext.getRequest());
-    messageContext.setProperty("rawRequestBody", requestBody);
     String[] serviceOp = resolveServiceAndOperation(requestBody);
+    messageContext.setProperty("maskedRequestBody", soapPiiMaskingUtil.mask(requestBody));
     messageContext.setProperty("soapServiceName", serviceOp[0]);
     messageContext.setProperty("soapOperationName", serviceOp[1]);
     return true;
@@ -61,7 +61,8 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
 
   @Override
   public boolean handleResponse(MessageContext messageContext, Object endpoint) throws Exception {
-    messageContext.setProperty("rawResponseBody", extractBody(messageContext.getResponse()));
+    messageContext.setProperty(
+        "maskedResponseBody", soapPiiMaskingUtil.mask(extractBody(messageContext.getResponse())));
     messageContext.setProperty("soapStatus", "SUCCESS");
     return true;
   }
@@ -69,7 +70,7 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
   @Override
   public boolean handleFault(MessageContext messageContext, Object endpoint) throws Exception {
     String responseBody = extractBody(messageContext.getResponse());
-    messageContext.setProperty("rawResponseBody", responseBody);
+    messageContext.setProperty("maskedResponseBody", soapPiiMaskingUtil.mask(responseBody));
     messageContext.setProperty("soapStatus", "FAULT");
     if (responseBody != null) {
       messageContext.setProperty(
@@ -108,10 +109,8 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
       String soapOperationName = (String) messageContext.getProperty("soapOperationName");
       if (soapOperationName == null) soapOperationName = "UnknownOperation";
 
-      String rawReq = (String) messageContext.getProperty("rawRequestBody");
-      String rawResp = (String) messageContext.getProperty("rawResponseBody");
-      String maskedReq = soapPiiMaskingUtil.mask(rawReq);
-      String maskedResp = soapPiiMaskingUtil.mask(rawResp);
+      String maskedReq = (String) messageContext.getProperty("maskedRequestBody");
+      String maskedResp = (String) messageContext.getProperty("maskedResponseBody");
 
       Map<String, Object> newValues = new HashMap<>();
       newValues.put("responseTimeMs", String.valueOf(responseTimeMs));

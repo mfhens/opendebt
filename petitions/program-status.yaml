@@ -1404,3 +1404,24 @@ program:
         opendebt-integration-gateway/.../gateway/soap/ClaimMapperUtils.java
         Both mappers now delegate to ClaimMapperUtils. 59/59 tests pass.
       commit: d4559ab
+
+    - id: TB-031
+      title: "Close ClsSoapAuditInterceptor PII exposure window"
+      status: done
+      priority: high
+      created: 2026-03-26
+      resolved: 2026-03-26
+      petition: petition019
+      description: |
+        ClsSoapAuditInterceptor stored the raw SOAP request and response bodies
+        (including PII such as CPR numbers, names, and account numbers) in
+        MessageContext properties "rawRequestBody" / "rawResponseBody", and only
+        applied SoapPiiMaskingUtil in afterCompletion(). This left unmasked PII
+        in memory for the full duration of each request cycle, visible to thread
+        dumps, heap dumps, or verbose logging.
+        Fix: mask at point of capture. Raw bodies are local variables only (used
+        for resolveServiceAndOperation() and fault extraction), then immediately
+        masked. MessageContext stores "maskedRequestBody" / "maskedResponseBody"
+        exclusively. afterCompletion() reads the pre-masked values directly.
+        No change to CLS audit event content or test behaviour. 59/59 tests pass.
+      commit: pending
