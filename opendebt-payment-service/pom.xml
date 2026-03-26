@@ -97,19 +97,13 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
-        <!-- immudb tamper-evidence layer (ADR-0029, TB-028) -->
-        <!-- AIDEV-TODO (TB-028-b, TB-029): Add immudb4j dependency once spike SDK validation passes:
-             <dependency>
-               <groupId>io.codenotary</groupId>
-               <artifactId>immudb4j</artifactId>
-               <version>0.9.4</version>   <!- verify latest stable for Java 21 ->
-             </dependency>
-             TB-028-b spike finding: immudb4j is NOT on Maven Central (confirmed in this sprint).
-             Requires either:
-               (a) codenotary custom repo: https://packages.codenotary.io/repository/maven-public
-               (b) UFST Artifactory proxy configured to mirror the codenotary repo
-             The ImmudbApiAdapter facade decouples production code from the immudb4j classpath
-             dependency; SpikeStubImmudbAdapter is used until the JAR is available. -->
+        <!-- immudb tamper-evidence layer (ADR-0029, TB-028-b) -->
+        <!-- Confirmed on Maven Central: io.codenotary:immudb4j:1.0.1 (repositoryId=central) -->
+        <dependency>
+            <groupId>io.codenotary</groupId>
+            <artifactId>immudb4j</artifactId>
+            <version>1.0.1</version>
+        </dependency>
 
         <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
         <dependency>
@@ -148,6 +142,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- Pin error_prone_annotations to resolve convergence across immudb4j gRPC transitive deps -->
+    <!-- immudb4j 1.0.1 → grpc-netty 1.44.1 pulls 2.9.0; gson 2.13.2 pulls 2.41.0; Boot pulls 2.5.1 -->
+    <!-- Pin protobuf-java: grpc-protobuf 1.44.1 directly uses 3.19.2; proto-google-common-protos 2.0.1 -->
+    <!-- (a transitive dep of grpc-protobuf) declares 3.13.0 — enforcer requires convergence -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.41.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.19.2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <!-- AIDEV-TODO: Improve bookkeeping entity/DTO/service coverage and remove overrides -->
     <!-- Current: 73% line / 54% branch. Bookkeeping entities and timeline replay pull coverage down. -->

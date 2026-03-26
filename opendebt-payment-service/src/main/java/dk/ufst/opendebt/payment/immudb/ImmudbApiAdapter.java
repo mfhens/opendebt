@@ -8,17 +8,12 @@ package dk.ufst.opendebt.payment.immudb;
  * dual-write pattern. Implementations:
  *
  * <ul>
- *   <li>{@link RealImmudbAdapter} — wraps the real {@code io.codenotary.immudb4j.ImmuClient}
- *       (requires immudb4j JAR; active in production once TB-028-b SDK validation passes)
- *   <li>{@link SpikeStubImmudbAdapter} — logs-only stub used for spike compilation verification and
- *       local dev when immudb4j JAR is not on the classpath
+ *   <li>{@link RealImmudbAdapter} — wraps {@code io.codenotary.immudb4j.ImmuClient}; active when
+ *       {@code opendebt.immudb.enabled=true}
+ *   <li>{@link NoOpImmuLedgerAppender} — no-op bean active by default (disabled state)
  * </ul>
  *
- * <p>AIDEV-NOTE: This façade decouples production code from the immudb4j compile-time classpath
- * requirement. Once ADR-0029 is Accepted and TB-029 begins, replace {@link SpikeStubImmudbAdapter}
- * with {@link RealImmudbAdapter} and add {@code io.codenotary:immudb4j} to the pom.xml.
- *
- * <p>API mirrors immudb4j's session-based client contract:
+ * <p>AIDEV-TODO (TB-029): Add health indicator and connection pooling once ADR-0029 is Accepted.
  *
  * <pre>
  * // Real immudb4j usage (for reference — TB-029 implementation):

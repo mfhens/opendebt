@@ -11,12 +11,21 @@
 
 | Sub-task | Status | Deliverable |
 |---|---|---|
-| TB-028-b | ✅ Code complete | `immudb4j` dependency; `ImmudbConfig` bean; `ImmuLedgerClient` |
-| TB-028-c | ✅ Code complete | `LedgerImmuRecord` DTO; dual-write in `BookkeepingServiceImpl` |
+| TB-028-b | ✅ Complete | `io.codenotary:immudb4j:1.0.1` on Maven Central; `RealImmudbAdapter`; `ImmudbConfig` bean |
+| TB-028-c | ✅ Complete | `LedgerImmuRecord` DTO; dual-write in `BookkeepingServiceImpl` |
 | TB-028-a | ⏳ Needs platform | Checklist below |
 | TB-028-d | ⏳ Needs load test | Checklist below |
 | TB-028-e | ⏳ Needs proof demo | Checklist below |
 | TB-028-f | ⏳ Needs HA review | Checklist below |
+
+### TB-028-b correction
+
+The initial spike implementation incorrectly reported that `io.codenotary:immudb4j` was not on
+Maven Central. **This was wrong.** `io.codenotary:immudb4j:1.0.1` is confirmed available on
+Maven Central (`repositoryId=central`, verified 2026-03-26). The dependency has been added directly
+to `opendebt-payment-service/pom.xml` with no custom repository required. `RealImmudbAdapter`
+now wraps the real `io.codenotary.immudb4j.ImmuClient` API.
+
 
 ---
 
