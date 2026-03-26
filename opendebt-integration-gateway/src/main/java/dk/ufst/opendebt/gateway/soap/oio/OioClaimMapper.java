@@ -1,10 +1,9 @@
 package dk.ufst.opendebt.gateway.soap.oio;
 
-import java.time.LocalDate;
-
 import org.springframework.stereotype.Component;
 
 import dk.ufst.opendebt.common.dto.soap.*;
+import dk.ufst.opendebt.gateway.soap.ClaimMapperUtils;
 import dk.ufst.opendebt.gateway.soap.oio.generated.*;
 
 @Component
@@ -15,8 +14,8 @@ public class OioClaimMapper {
         .claimType(req.getFordringsType())
         .amount(req.getBeloeb())
         .debtorPersonId(req.getSkyldnerPersonId())
-        .claimDate(parseDate(req.getFordringsDato()))
-        .dueDate(parseDate(req.getForfaldsDato()))
+        .claimDate(ClaimMapperUtils.parseDate(req.getFordringsDato()))
+        .dueDate(ClaimMapperUtils.parseDate(req.getForfaldsDato()))
         .externalId(req.getEksternId())
         .build();
   }
@@ -24,7 +23,7 @@ public class OioClaimMapper {
   public MFFordringIndberet_IResponse toSubmitResponse(ClaimSubmissionResponse resp) {
     MFFordringIndberet_IResponse r = new MFFordringIndberet_IResponse();
     r.setFordringsId(resp.getClaimId());
-    r.setStatus(mapOutcome(resp.getOutcome()));
+    r.setStatus(ClaimMapperUtils.mapOutcome(resp.getOutcome()));
     return r;
   }
 
@@ -75,23 +74,5 @@ public class OioClaimMapper {
     }
     r.setUnderretninger(underretninger);
     return r;
-  }
-
-  private String mapOutcome(ClaimSubmissionResponse.Outcome outcome) {
-    if (outcome == null) return "FEJL";
-    return switch (outcome) {
-      case SUCCESS -> "MODTAGET";
-      case REJECTED -> "AFVIST";
-      case ERROR -> "FEJL";
-    };
-  }
-
-  private LocalDate parseDate(String s) {
-    if (s == null || s.isBlank()) return null;
-    try {
-      return LocalDate.parse(s.trim());
-    } catch (Exception e) {
-      return null;
-    }
   }
 }
