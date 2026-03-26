@@ -1387,3 +1387,20 @@ program:
         - ACCEPT: ADR-0029 moves to Accepted, TB-029 created for implementation.
         - REJECT: ADR-0029 moves to Rejected with documented reason (platform
           blocker, SDK immaturity, unacceptable latency, or HA gap).
+
+    - id: TB-030
+      title: "Eliminate OioClaimMapper / SkatClaimMapper private-method duplication"
+      status: done
+      priority: low
+      created: 2026-03-26
+      resolved: 2026-03-26
+      petition: petition019
+      description: |
+        Code review of petition019 found that OioClaimMapper and SkatClaimMapper each
+        carried identical copies of mapOutcome() and parseDate() private helpers (~14
+        lines each). The concrete public methods must remain separate because OIO and
+        SKAT generated JAXB types live in different packages (different XML namespaces).
+        Resolved by extracting both helpers into a package-level utility class:
+        opendebt-integration-gateway/.../gateway/soap/ClaimMapperUtils.java
+        Both mappers now delegate to ClaimMapperUtils. 59/59 tests pass.
+      commit: d4559ab
