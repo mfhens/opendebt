@@ -16,26 +16,25 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import dk.ufst.opendebt.common.audit.AuditContextService;
 import dk.ufst.opendebt.debtservice.dto.CitizenDebtItemDto;
 import dk.ufst.opendebt.debtservice.dto.CitizenDebtSummaryResponse;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.service.CitizenDebtService;
 
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(
+@WebMvcTest(
+    controllers = CitizenDebtController.class,
     properties = {
-      "spring.cloud.config.enabled=false",
-      "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+      "spring.autoconfigure.exclude="
+          + "org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,"
+          + "org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration",
       "management.tracing.enabled=false"
     })
 class CitizenDebtControllerTest {
@@ -43,6 +42,7 @@ class CitizenDebtControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockBean private CitizenDebtService citizenDebtService;
+  @MockBean private AuditContextService auditContextService;
 
   @BeforeEach
   void setUp() {

@@ -47,7 +47,7 @@ public class Petition043Steps {
   private BatchJobExecutionEntity lastExecution;
   private final LocalDate executionDate = LocalDate.of(2026, 3, 19);
 
-  @Before
+  @Before("@petition043")
   public void setUp() {
     createdDebtIds.clear();
     lastExecution = null;
