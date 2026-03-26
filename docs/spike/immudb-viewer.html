@@ -47,7 +47,7 @@
   <div id="output"><span class="loading">Loading…</span></div>
 
   <script>
-    const API = 'http://localhost:8091/api';
+    const API = 'http://localhost:8094/api';
     let token = null;
 
     async function login() {
@@ -125,7 +125,7 @@
         </table>`;
         document.getElementById('output').innerHTML = html;
       } catch (e) {
-        document.getElementById('error').textContent = `Error: ${e.message} — Is immudb running at localhost:8091?`;
+        document.getElementById('error').textContent = `Error: ${e.message} — Is immudb running at localhost:8094?`;
         document.getElementById('error').style.display = 'block';
         document.getElementById('output').innerHTML = '';
       }

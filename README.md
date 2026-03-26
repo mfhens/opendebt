@@ -154,7 +154,7 @@ cd docs/spike
 python immudb-view.py   # generates immudb-report.html and opens it in browser
 ```
 
-The immudb web console is accessible at `http://localhost:8091` (shows Document Store; KV ledger is accessed via the viewer script above).
+The immudb web console is accessible at `http://localhost:8094` (shows Document Store; KV ledger is accessed via the viewer script above).
 
 ### Unified Compose Script (App + Observability)
 

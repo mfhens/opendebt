@@ -9,7 +9,7 @@ import base64, json, sys, webbrowser, urllib.request, urllib.error
 from datetime import datetime
 from pathlib import Path
 
-IMMUDB_URL = "http://localhost:8091/api"
+IMMUDB_URL = "http://localhost:8094/api"
 
 def b64d(s: str) -> bytes:
     return base64.b64decode(s)
@@ -118,7 +118,7 @@ def render(entries: list) -> str:
 </html>"""
 
 if __name__ == "__main__":
-    print("Connecting to immudb at localhost:8091…")
+    print("Connecting to immudb at localhost:8094…")
     try:
         token = login()
         print("✓ Logged in")

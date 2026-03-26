@@ -72,7 +72,7 @@ docker compose up -d postgres keycloak immudb
 ```
 
 - **immudb 1.10** on port 3322 (gRPC) — default credentials: `immudb` / `immudb`
-- immudb web console: http://localhost:8091 (shows Document Store; KV ledger data is in the KV namespace, not visible in the browser UI — use `docs/spike/immudb-view.py` to inspect)
+- immudb web console: http://localhost:8094 (shows Document Store; KV ledger data is in the KV namespace, not visible in the browser UI — use `docs/spike/immudb-view.py` to inspect)
 
 To include the observability stack with the provisioned RBAC dashboard and alerts:
 

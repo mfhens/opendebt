@@ -162,7 +162,7 @@ services:
     command: ["--web-server"]
     ports:
       - "3322:3322"   # gRPC API
-      - "8091:8080"   # REST / web console (http://localhost:8091)
+      - "8094:8080"   # REST / web console (http://localhost:8094) — 8091 reserved for rules-engine
       - "9497:9497"   # Prometheus metrics
     volumes:
       - immudb_data:/var/lib/immudb
