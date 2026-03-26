@@ -923,6 +923,24 @@ program:
         dashboard, FR-2 unassigned queue, FR-3 self-assignment) remain to be built.
       next_step: Implement workload dashboard and unassigned-cases queue in caseworker portal.
 
+    petition051:
+      title: immudb Ledger Integrity — Production Hardening and Audit UI
+      status: not_started
+      phase: phase-15
+      depends_on:
+        - petition040
+        - petition048
+      last_reviewed: 2026-03-26
+      notes: >
+        Hardens the immudb dual-write layer from spike TB-028 for production:
+        thread-safe connection pool, correct async retry via RetryTemplate,
+        health indicator, reconciliation table + job, and complete LedgerImmuRecord.
+        Phase 2 adds a ROLE_AUDITOR-gated audit UI in the caseworker portal that
+        calls verifiedGet() per entry and surfaces cryptographic verification status.
+        Conditional on TB-028-a (UFST HDP platform validation for immudb).
+      next_step: Awaiting TB-028-a platform validation before implementation begins.
+        Draft petition and outcome contract at petitions/petition051-*.
+
     petition050:
       title: Unified Case Timeline UI
       status: implemented
@@ -950,7 +968,7 @@ program:
         identified during code review.
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-24, all 50 petitions tracked)
+  # STATUS SUMMARY (2026-03-26, 51 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -961,13 +979,14 @@ program:
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050
   # in_progress:  petition002
-  # not_started:  petition026, petition027, petition028, petition042, petition049
+  # not_started:  petition026, petition027, petition028, petition042, petition049, petition051
   #
-  # Total: 50 petitions
-  #   6 validated, 40 implemented, 1 in_progress, 3 not_started
+  # Total: 51 petitions
+  #   6 validated, 40 implemented, 1 in_progress, 4 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
+  # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
   # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
@@ -1325,9 +1344,11 @@ program:
 
     - id: TB-028
       title: "Spike: immudb financial ledger integrity (ADR-0029)"
-      status: not_started
+      status: done
       priority: high
       created: 2026-03-25
+      resolved: 2026-03-26
+      branch: spike/TB-028-immudb-financial-ledger-integrity
       adr: docs/adr/0029-immudb-for-financial-ledger-integrity.md
       type: spike
       description: |
@@ -1344,23 +1365,28 @@ program:
             Verify resource limits, storage class compatibility, and network policies
             on the UFST Horizontale Driftsplatform. immudb requires a persistent volume
             and exposes port 3322 (gRPC) and 9497 (metrics).
+            Platform validation outstanding — this is the remaining condition for ADR-0029
+            full acceptance. Blocks petition051 Phase 1 and Phase 2 go-live on HDP.
         - id: TB-028-b
           title: Validate immudb4j with Spring Boot 3.3 / Java 21
-          status: not_started
+          status: done
           priority: high
+          resolved: 2026-03-26
           notes: |
-            Add immudb4j dependency, wire an ImmuClient @Bean, and confirm it connects
-            to a local immudb instance in the dev docker-compose stack. Verify there
-            are no classpath conflicts with existing dependencies.
+            immudb4j 1.0.1 integrates with Spring Boot 3.5 / Java 21.
+            Netty 4.1.131 conflict (Spring Boot 3.5 vs gRPC 1.44.1) resolved by excluding
+            grpc-netty and substituting grpc-netty-shaded:1.44.1 (bundles Netty internally).
+            commit: be6d0d7
         - id: TB-028-c
           title: Implement ImmuLedgerClient and dual-write in BookkeepingService
-          status: not_started
+          status: done
           priority: high
+          resolved: 2026-03-26
           notes: |
-            Implement ImmuLedgerClient as a Spring @Component wrapping immudb4j.
-            Wire async append into BookkeepingService.record*() methods (all 6 entry
-            types). Use @Retryable with exponential backoff (5 attempts). Ensure
-            PostgreSQL transaction is never rolled back on immudb failure.
+            ImmuLedgerClient, RealImmudbAdapter, ImmudbConfig, LedgerImmuRecord, and
+            DemoDataSeeder implemented and tested. 14 ledger pairs (28 entries) seeded
+            on startup. ImmudbAdapter interface allows easy test mocking.
+            commit: be6d0d7 (and preceding spike commits)
         - id: TB-028-d
           title: Measure dual-write latency under realistic load
           status: not_started
@@ -1369,7 +1395,7 @@ program:
             Run a load test simulating concurrent ledger postings (payment-service
             under load). Measure p95/p99 latency impact of the async immudb append.
             Acceptable threshold: async path must not increase synchronous response
-            time by more than 5ms at p95.
+            time by more than 5ms at p95. Deferred to petition051 NFR-2.
         - id: TB-028-e
           title: Demonstrate tamper-evidence proof verification
           status: not_started
@@ -1379,6 +1405,7 @@ program:
             by transactionId and produce a cryptographic proof. Verify the proof
             independently (simulating an auditor with no application access).
             Document the verification procedure for Rigsrevisionen use.
+            Covered by petition051 FR-6.3 (verifiedGet in audit endpoint).
         - id: TB-028-f
           title: Assess immudb backup and HA requirements (ADR-0028 alignment)
           status: not_started
@@ -1389,10 +1416,12 @@ program:
             strategy from ADR-0028. immudb tamper-evidence is only meaningful if
             the immudb state itself is preserved and recoverable.
       outcome: |
-        Spike concludes with one of:
-        - ACCEPT: ADR-0029 moves to Accepted, TB-029 created for implementation.
-        - REJECT: ADR-0029 moves to Rejected with documented reason (platform
-          blocker, SDK immaturity, unacceptable latency, or HA gap).
+        CONDITIONALLY ACCEPTED: ADR-0029 moved to Accepted — Pending Platform Validation.
+        Spike validated: immudb4j 1.0.1 works with Spring Boot 3.5 / Java 21; dual-write
+        pattern operational; 28 demo ledger entries seeded and verified via REST API;
+        Netty conflict resolved. TB-028-a (HDP platform validation) outstanding.
+        Next step: petition051 for production hardening and audit UI.
+        petition: petition051
 
     - id: TB-030
       title: "Eliminate OioClaimMapper / SkatClaimMapper private-method duplication"

@@ -2,7 +2,26 @@
 
 ## Status
 
-Proposed — pending spike TB-028
+Accepted — conditionally pending UFST HDP platform validation (TB-028-a)
+
+**Spike outcome (TB-028, 2026-03-26):** All implementable sub-tasks completed on
+branch `spike/TB-028-immudb-financial-ledger-integrity`. Key findings:
+
+- `io.codenotary:immudb4j:1.0.1` is on Maven Central and integrates with Spring Boot 3.5 / Java 21.
+- Netty version conflict (Spring Boot 3.5 → Netty 4.1.131 vs gRPC 1.44.1 → Netty 4.1.74) resolved
+  by excluding `grpc-netty` and substituting `grpc-netty-shaded:1.44.1`.
+- Dual-write pattern (PostgreSQL primary + immudb tamper-evidence) is operational in the demo stack.
+- `DemoDataSeeder` seeds all 28 ledger entries to immudb on startup, confirmed via REST API and
+  the `immudb-view.py` audit viewer script.
+- Remaining platform sub-tasks (TB-028-a: HDP validation, TB-028-d: latency measurement,
+  TB-028-e: proof verification demo, TB-028-f: HA/backup assessment) remain open and are
+  prerequisites for moving to **Fully Accepted**.
+
+**Condition for full acceptance:** TB-028-a must confirm that immudb can be scheduled on the
+UFST Horizontale Driftsplatform with a persistent volume and accessible gRPC port (3322).
+If this is not feasible, this ADR must be revisited.
+
+See `docs/spike/TB-028-findings.md` for detailed findings and acceptance criteria per sub-task.
 
 ## Date
 
