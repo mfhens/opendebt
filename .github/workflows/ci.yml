@@ -123,6 +123,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Install local modules
+        run: mvn install -DskipTests -B -q
+
       - name: OWASP Dependency Check
         # Secret must be stored as NVD_API_KEY in repository Settings → Secrets → Actions
         env:
