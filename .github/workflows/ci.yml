@@ -99,6 +99,7 @@ jobs:
 
       - name: SonarCloud Analysis
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true  # SonarCloud Automatic Analysis may conflict; non-fatal until it is disabled in SonarCloud settings
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
