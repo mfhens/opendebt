@@ -57,11 +57,12 @@
         <flowable.version>7.0.1</flowable.version>
         <smooks.version>2.0.0</smooks.version>
         <bookkeeping.version>4.3.0</bookkeeping.version>
-        <cucumber.version>7.34.3</cucumber.version>
-        <junit-platform.version>1.10.2</junit-platform.version>
+        <cucumber.version>7.18.0</cucumber.version>
+        <junit-platform.version>1.12.2</junit-platform.version>
         <scala.version>2.12.19</scala.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <resilience4j.version>2.4.0</resilience4j.version>
+        <okhttp3.version>4.12.0</okhttp3.version>
 
         <!-- Code quality thresholds -->
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
@@ -240,6 +241,23 @@
                 <version>${junit-platform.version}</version>
                 <scope>test</scope>
             </dependency>
+        <!-- Pin transitive deps to resolve Flowable vs Spring Boot 3.5 / Liquibase conflicts -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.18.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.13.0</version>
+        </dependency>
+        <!-- Pin nimbus-jose-jwt to resolve spring-security-oauth2 transitive conflict -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>9.37.4</version>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -255,6 +273,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Required since JUnit Platform 1.12: ensures Surefire uses the project's launcher version -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
