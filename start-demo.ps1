@@ -27,7 +27,7 @@ $PgPort = 5432
 $PgUser = "opendebt"
 $PgPass = "opendebt"
 
-$DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "promtail", "prometheus", "grafana")
+$DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "promtail", "prometheus", "grafana", "immudb")
 $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
 $CreditorPortalClientSecret = "creditor-portal-dev-secret"
@@ -117,6 +117,12 @@ function Ensure-DockerInfra {
     $keycloakOk = Wait-ForUrl "http://localhost:8080" 90
     if (-not $keycloakOk) {
         Write-Err "  Keycloak did not become ready in time."
+        exit 1
+    }
+
+    $immudbOk = Wait-ForUrl "http://localhost:9497/metrics" 30
+    if (-not $immudbOk) {
+        Write-Err "  immudb did not become ready on port 9497 in time."
         exit 1
     }
 
@@ -285,8 +291,14 @@ if ($startCaseworker -or $startCitizen) {
         -JarPattern "opendebt-payment-service\target\opendebt-payment-service-*.jar" `
         -Profile $backendProfile -DbName "opendebt_payment" `
         -ExtraArgs @{
-            "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
-            "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+            "KEYCLOAK_ISSUER_URI"          = $KeycloakIssuerUri
+            "KEYCLOAK_JWK_URI"             = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+            "opendebt.immudb.enabled"      = "true"
+            "opendebt.immudb.host"         = "localhost"
+            "opendebt.immudb.port"         = "3322"
+            "opendebt.immudb.username"     = "immudb"
+            "opendebt.immudb.password"     = "immudb"
+            "opendebt.immudb.database"     = "defaultdb"
         }
 }
 
