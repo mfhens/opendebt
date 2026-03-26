@@ -172,9 +172,8 @@ before production deployment:
 | 1 | `ImmuLedgerClient` | `@Async` + `@Retryable` ordering — retry fires at submission, not inside async thread. Use `RetryTemplate` internally instead. |
 | 2 | `ImmudbConfig` | Single shared `ImmuClient` session — not thread-safe under concurrent async writes. Replace with per-call sessions or a connection pool (e.g., semaphore-guarded pool). |
 | 3 | `LedgerImmuRecord` | `contraAccountCode` is `null` — populate from the paired entry by restructuring the `appendAsync` call to receive both entries and cross-populate. |
-| 4 | `ImmudbConfig` | Startup failure is fatal (`throw` on session open failure). Production should degrade gracefully with a circuit breaker and health indicator. |
+| 4 | `pom.xml` | ✅ **Resolved.** immudb4j 1.0.1 uses gRPC 1.44.1 (Netty 4.1.74). Spring Boot 3.5 manages Netty to 4.1.131. The version skew caused `AbstractHttp2Headers.iterator()` to throw at gRPC handshake. Fixed by excluding `grpc-netty` from immudb4j and adding `grpc-netty-shaded:1.44.1`, which bundles its own Netty and avoids the conflict entirely. Session open and dual-write now work correctly in demo. |
 | 5 | `ImmuLedgerClient` | No dead-letter / persistent retry queue for entries that exhaust all retry attempts. If immudb is down for > 5 retries, the entry is lost from immudb (PostgreSQL is unaffected). Production needs a reconciliation job to re-append missing entries. |
-| 6 | `pom.xml` | immudb4j `0.9.4` — verify exact version on Maven Central and confirm no gRPC / Netty classpath conflicts with `spring-boot-starter-webflux`. |
 
 ---
 
