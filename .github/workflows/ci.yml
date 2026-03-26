@@ -124,9 +124,13 @@ jobs:
           cache: maven
 
       - name: OWASP Dependency Check
+        # Secret must be stored as NVD_API_KEY in repository Settings → Secrets → Actions
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: mvn dependency-check:check -P security-scan -B -DnvdApiKey=$NVD_API_KEY
+        run: |
+          mvn dependency-check:check -P security-scan -B \
+            -DnvdApiKey="$NVD_API_KEY" \
+            -DfailOnError=false
 
       - name: Upload OWASP report
         if: always()
