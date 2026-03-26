@@ -69,7 +69,7 @@ graph TB
 |---------|------|----------------|
 | debt-service | 8082 | Claim registration, lifecycle management, validation |
 | case-service | 8081 | Case management with Flowable BPMN workflows |
-| payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry), debt event log |
+| payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry), debt event log, immudb tamper-evidence (ADR-0029) |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
 | person-registry | 8090 | GDPR vault for personal data (CPR/CVR encryption) |
 | rules-engine | 8091 | Drools-based validation rules |
@@ -81,17 +81,19 @@ graph TB
 | offsetting-service | 8087 | Modregning (set-off) |
 | wage-garnishment-service | 8088 | Loenindeholdelse (wage garnishment) |
 | opendebt-common | JAR | Shared library: audit infrastructure, DTOs, timeline components (petition050) |
+| **immudb** | **3322 (gRPC)** | **Cryptographic tamper-evidence KV store for financial ledger entries (ADR-0029)** |
 
 ## Technology stack
 
 | Layer | Technology |
 |-------|-----------|
 | Language | Java 21 |
-| Framework | Spring Boot 3.3 |
+| Framework | Spring Boot 3.5 |
 | Database | PostgreSQL 16 |
 | Authentication | Keycloak (OAuth2/OIDC) |
 | Rules engine | Drools |
 | Workflow engine | Flowable BPMN |
+| Tamper-evidence ledger | immudb 1.10 + immudb4j 1.0.1 |
 | API gateway | DUPLA (external), integration-gateway (internal) |
 | Frontend | Thymeleaf + HTMX |
 | Observability | Grafana + Prometheus + Loki + Tempo |
@@ -180,4 +182,5 @@ See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
 - **ADR-0018**: Double-entry bookkeeping for payments
 - **ADR-0019**: Orchestration over event-driven architecture
 - **ADR-0024**: Observability with Grafana stack
+- **ADR-0029**: immudb for cryptographic financial ledger integrity (conditionally accepted; pending TB-028-a HDP validation)
 - **ADR-0030**: SOAP legacy gateway (OIO/SKAT protocols via `integration-gateway`)

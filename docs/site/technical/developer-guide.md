@@ -65,6 +65,15 @@ This starts:
 - **PostgreSQL 16** on port 5432 (user: `opendebt`, password: `opendebt`, 8 databases auto-created)
 - **Keycloak 24** on port 8080 (admin: `admin`/`admin`, realm `opendebt` auto-imported)
 
+To also start **immudb** (required when running `payment-service` with `opendebt.immudb.enabled=true`):
+
+```bash
+docker compose up -d postgres keycloak immudb
+```
+
+- **immudb 1.10** on port 3322 (gRPC) — default credentials: `immudb` / `immudb`
+- immudb web console: http://localhost:8091 (shows Document Store; KV ledger data is in the KV namespace, not visible in the browser UI — use `docs/spike/immudb-view.py` to inspect)
+
 To include the observability stack with the provisioned RBAC dashboard and alerts:
 
 ```bash
@@ -122,6 +131,7 @@ All code uses **English**. Danish domain terms are mapped to English equivalents
 2. **GDPR data isolation** (ADR-0014): All PII (CPR, CVR, names, addresses) is stored only in `person-registry`. Other services store `person_id` UUIDs.
 3. **Injected WebClient.Builder** (ADR-0024): Never use `WebClient.create()`. Always inject `WebClient.Builder` for distributed trace propagation.
 4. **Security annotations**: Every endpoint must have `@PreAuthorize` with appropriate role checks.
+5. **immudb writes are non-blocking** (ADR-0029): The `ImmuLedgerClient.appendAsync()` call must never block or roll back the PostgreSQL `@Transactional` path. immudb failure is logged and handled asynchronously.
 
 ### Time-versioned entities pattern (petition 046)
 

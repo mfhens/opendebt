@@ -162,6 +162,7 @@ erDiagram
     CASES ||--o{ PAYMENTS : "case_id"
     DEBTS ||--o{ PAYMENTS : "debt_id"
     DEBTS ||--o{ LEDGER_ENTRIES : "debt_id"
+    LEDGER_ENTRIES ||--o| IMMUDB_KV : "entry_id (async)"
     DEBTS ||--o{ DEBT_EVENTS : "debt_id"
     DEBTS ||--o{ LIFECYCLE_EVENTS : "debt_id"
     DEBTS ||--o{ HOERING : "debt_id"
@@ -326,6 +327,13 @@ erDiagram
         int records_processed
         int records_failed
     }
+
+    IMMUDB_KV {
+        bytes key "ledger_entry_id (UUID → bytes)"
+        bytes value "JSON: LedgerImmuRecord"
+        bigint tx_id "immudb transaction number"
+        bytes root_hash "Merkle tree root for verifiedGet"
+    }
 ```
 
 ### Bookkeeping - Storno and Retroactive Correction Flow
@@ -369,6 +377,42 @@ sequenceDiagram
     end
 
     Correction-->>API: CorrectionResult<br/>delta=-200kr interest
+```
+
+### Tamper-Evidence Ledger (TB-028 / ADR-0029)
+
+immudb runs as a sidecar to `payment-service` and receives an asynchronous copy of every `LedgerEntryEntity` written by `BookkeepingService`. The PostgreSQL ledger is the operational source of truth; immudb provides cryptographic proof that entries have not been altered after the fact.
+
+```mermaid
+sequenceDiagram
+    participant BS as BookkeepingService
+    participant PG as PostgreSQL (ledger_entries)
+    participant IL as ImmuLedgerClient (@Async)
+    participant IM as immudb (KV store)
+
+    BS->>PG: INSERT ledger_entries (DEBIT + CREDIT pair)
+    PG-->>BS: Saved (transactionId assigned)
+    BS->>IL: appendAsync(debit, credit)
+
+    Note over IL,IM: Async — never blocks the @Transactional path
+
+    IL->>IM: client.set(debitId, LedgerImmuRecord{...})
+    IM-->>IL: txId (Merkle-stamped)
+    IL->>IM: client.set(creditId, LedgerImmuRecord{...})
+    IM-->>IL: txId
+
+    Note over IM: Each entry has a cryptographic<br/>root hash. verifiedGet() returns<br/>Merkle proof for independent audit.
+```
+
+**Key design decisions:**
+- `grpc-netty-shaded:1.44.1` substitutes `grpc-netty` to isolate immudb's gRPC layer from Spring Boot's Netty version.
+- The KV key is the `ledger_entry_id` (UUID bytes); the value is `LedgerImmuRecord` (JSON).
+- `@ConditionalOnProperty(opendebt.immudb.enabled=true)` — immudb is disabled by default; enabled in demo and production profiles.
+- Production hardening (connection pool, `RetryTemplate` fix, health indicator, reconciliation job) is tracked in petition051.
+
+Inspect the live immudb ledger during local development:
+```powershell
+cd docs/spike && python immudb-view.py
 ```
 
 ### OCR-Based Payment Matching Flow (Petition 001)
@@ -436,11 +480,12 @@ flowchart LR
 | Component | Technology | Version |
 |-----------|-----------|---------|
 | Language | Java | 21 |
-| Framework | Spring Boot | 3.3.0 |
+| Framework | Spring Boot | 3.5 |
 | Database | PostgreSQL | 16 |
 | Auth | Keycloak (OAuth2/OIDC) | 24.0 |
 | Workflow | Flowable BPMN | 7.0.1 |
 | Rules | Drools | 9.44.0 |
+| Tamper-evidence ledger | immudb + immudb4j | 1.10 / 1.0.1 |
 | EDIFACT | Smooks EDI Cartridge | 2.0.1 |
 | Bookkeeping | double-entry-bookkeeping-api | 4.3.0 |
 | Build | Maven | 3.9+ |
@@ -647,9 +692,9 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 
 ### payment-service (Port 8083)
 
-**Purpose:** Payment processing, reconciliation, double-entry bookkeeping, retroactive corrections.
+**Purpose:** Payment processing, reconciliation, double-entry bookkeeping, retroactive corrections, and cryptographic tamper-evidence via immudb (ADR-0029).
 
-**Implementation status:** PARTIALLY IMPLEMENTED
+**Implementation status:** IMPLEMENTED
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -683,6 +728,15 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | ReconciliationService | Not started | Match CREMUL entries against ledger |
 | **Timeline endpoint (petition050)** | **Done** | |
 | LedgerController | Done | `GET /api/v1/events/case/{caseId}` — debt events for timeline aggregation; SERVICE role added to @PreAuthorize |
+| **immudb tamper-evidence module (TB-028, ADR-0029)** | **Done (spike)** | |
+| ImmudbAdapter / RealImmudbAdapter | Done | Interface + immudb4j wrapper; `@ConditionalOnProperty(opendebt.immudb.enabled)` |
+| ImmuLedgerClient | Done | `@Async` dual-write appender; writes both sides of each double-entry pair to immudb KV store |
+| LedgerImmuRecord | Done | Serialisable record: debtId, accountCode, entryType, amount, postingDate, transactionId |
+| ImmudbConfig | Done | Creates `ImmuClient` bean; opens session on startup, closes `@PreDestroy`; throws `IllegalStateException` if immudb unreachable when enabled |
+| DemoDataSeeder | Done | Seeds 14 ledger pairs (28 immudb entries) on `dev` profile startup |
+| Netty conflict resolution | Done | `grpc-netty` excluded; `grpc-netty-shaded:1.44.1` substituted to isolate Netty version |
+
+**Tamper-evidence design:** Every ledger entry written by `BookkeepingService` is asynchronously appended to immudb via `ImmuLedgerClient.appendAsync()`. The KV key is the `ledgerEntryId` (UUID); the value is a JSON-serialised `LedgerImmuRecord`. The PostgreSQL write is never blocked or rolled back if immudb is unavailable — the tamper-evidence layer is additive. Production hardening (connection pool, `RetryTemplate`, reconciliation job, health indicator) is tracked in petition051.
 
 **API endpoints:**
 - `POST /api/v1/payments/incoming` - Process incoming CREMUL payment (OCR-based matching)

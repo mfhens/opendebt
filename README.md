@@ -20,38 +20,47 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
 ## Architecture
 
 ```
-                              Creditor Portal     Citizen Portal      DUPLA API
-                              (Fordringshaver)       (Borger)          Gateway
-                                    |                  |                  |
-                                    +------------------+------------------+
-                                                       |
-                                          +------------+------------+
-                                          |     Keycloak (JWT)      |
-                                          +------------+------------+
-                                                       |
-    +----------------+----------------+----------------+----------------+
-    |                |                |                |                |
-+---+---+      +-----+-----+    +-----+-----+    +-----+-----+    +-----+-----+
-| Case  |      |   Debt    |    | Payment   |    |  Letter   |    |Offsetting |
-|Service|      |  Service  |    |  Service  |    |  Service  |    |  Service  |
-+-------+      +-----------+    +-----------+    +-----------+    +-----------+
+  Creditor Portal   Caseworker Portal   Citizen Portal       DUPLA / M2M
+  (Fordringshaver)   (Sagsbehandler)      (Borger)            Gateway
+        |                  |                  |                   |
+        +------------------+------------------+-------------------+
+                                              |
+                                 +------------+------------+
+                                 |     Keycloak (JWT)      |
+                                 +------------+------------+
+                                              |
+    +----------------+----------------+-------+---------+----------------+
+    |                |                |                  |                |
++---+---+      +-----+-----+    +----+------+    +------+----+    +------+----+
+| Case  |      |   Debt    |    | Payment   |    |  Rules    |    | Creditor  |
+|Service|      |  Service  |    |  Service  |    |  Engine   |    |  Service  |
++-------+      +-----------+    +-----+-----+    +-----------+    +-----------+
+                                      |
+                               +------+------+
+                               |   immudb    |
+                               | (tamper-    |
+                               |  evidence)  |
+                               +-------------+
 ```
 
 ## Services
 
 | Service | Port | Description |
 |---------|------|-------------|
-| **person-registry** | 8090 | **GDPR data store** - single source of truth for all PII |
-| **rules-engine** | 8091 | **Business rules** - Drools-based rule evaluation |
+| **person-registry** | 8090 | **GDPR data store** — single source of truth for all PII (CPR/CVR encrypted) |
+| **rules-engine** | 8091 | **Business rules** — Drools-based rule evaluation |
 | case-service | 8081 | Case management and workflow (Flowable BPMN) |
-| debt-service | 8082 | Debt registration, readiness validation |
-| payment-service | 8083 | Payment processing |
+| debt-service | 8082 | Debt registration, lifecycle management, readiness validation |
+| payment-service | 8083 | Payment processing, double-entry bookkeeping, tamper-evidence ledger |
 | letter-service | 8084 | Letter generation, Digital Post |
 | creditor-portal | 8085 | Portal for fordringshavere |
-| citizen-portal | 8086 | Portal for borgere (TastSelv integration) |
-| offsetting-service | 8087 | Modregning processing |
+| citizen-portal | 8086 | Portal for borgere |
+| offsetting-service | 8087 | Modregning (set-off) processing |
 | wage-garnishment-service | 8088 | Loenindeholdelse processing |
-| integration-gateway | 8089 | DUPLA and external integrations |
+| integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, legacy SOAP (OIO/SKAT) |
+| creditor-service | 8092 | Creditor master data, channel binding, access resolution |
+| caseworker-portal | 8093 | Portal for sagsbehandlere |
+| **immudb** | 3322 (gRPC) | **Tamper-evidence ledger** — cryptographic integrity for financial postings (ADR-0029) |
 
 ### GDPR Architecture
 
@@ -69,8 +78,9 @@ Person Registry (PII)          Other Services (NO PII)
 
 ## Technology Stack
 
-- **Runtime**: Java 21, Spring Boot 3.3
+- **Runtime**: Java 21, Spring Boot 3.5
 - **Database**: PostgreSQL 16 (enterprise grade with audit/history)
+- **Tamper-evidence ledger**: immudb 1.10 + immudb4j 1.0.1 (cryptographic integrity, ADR-0029)
 - **Rules Engine**: Drools 9.x (business rules, decision tables)
 - **Workflow**: Flowable 7.x (BPMN 2.0 case management)
 - **Build**: Maven with Spotless, JaCoCo, OWASP
@@ -102,8 +112,8 @@ mvn spotless:apply
 ### Run Locally
 
 ```bash
-# Start infrastructure (Keycloak)
-docker-compose up -d keycloak
+# Start infrastructure (PostgreSQL + Keycloak)
+docker compose up -d postgres keycloak
 
 # Run a service
 cd opendebt-case-service
@@ -113,8 +123,38 @@ mvn spring-boot:run
 ### Run All Services
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
+
+### Demo Startup
+
+```powershell
+# Fast demo (no auth on portals/backends, immudb tamper-evidence enabled)
+.\start-demo.ps1
+
+# Security demo (Keycloak login + role-based access)
+.\start-demo.ps1 -SecurityDemo
+
+# Only caseworker flow with security
+.\start-demo.ps1 -SecurityDemo -Only caseworker
+```
+
+Seeded demo users:
+
+- `caseworker` / `caseworker123` (role: `CASEWORKER`)
+- `creditor` / `creditor123` (role: `CREDITOR`)
+- `admin` / `admin123` (role: `ADMIN`)
+
+Keycloak admin console: `http://localhost:8080/admin/` (`admin` / `admin`)
+
+When the demo starts, `payment-service` automatically seeds **14 ledger pairs (28 immudb entries)** to demonstrate the tamper-evidence layer. Inspect the ledger using:
+
+```powershell
+cd docs/spike
+python immudb-view.py   # generates immudb-report.html and opens it in browser
+```
+
+The immudb web console is accessible at `http://localhost:8091` (shows Document Store; KV ledger is accessed via the viewer script above).
 
 ### Unified Compose Script (App + Observability)
 
@@ -182,6 +222,8 @@ Key architectural decisions are documented in [docs/adr/](docs/adr/):
 - [ADR-0003: Java/Spring Boot Stack](docs/adr/0003-java-spring-boot-technology-stack.md)
 - [ADR-0007: No Direct Database Connections](docs/adr/0007-no-direct-database-connections.md)
 - [ADR-0010: Faellesoffentlige Arkitekturprincipper](docs/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
+- [ADR-0018: Double-Entry Bookkeeping](docs/adr/0018-double-entry-bookkeeping-for-payment-service.md)
+- [ADR-0029: immudb for Financial Ledger Integrity](docs/adr/0029-immudb-for-financial-ledger-integrity.md)
 
 ## Compliance
 

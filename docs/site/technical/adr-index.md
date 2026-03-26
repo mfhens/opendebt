@@ -4,7 +4,7 @@
 |-----|-------|---------|
 | 0001 | Record architecture decisions | Use ADRs to capture significant architectural decisions |
 | 0002 | Microservices architecture | Decompose the system into independently deployable services |
-| 0003 | Java/Spring Boot technology stack | Java 21 and Spring Boot 3.3 as the primary stack |
+| 0003 | Java/Spring Boot technology stack | Java 21 and Spring Boot 3.5 as the primary stack |
 | 0004 | API-first design with OpenAPI | Define APIs with OpenAPI 3.1 specs before implementation |
 | 0005 | Keycloak authentication | Keycloak for OAuth2/OIDC authentication and authorization |
 | 0006 | Kubernetes deployment | Deploy all services on Kubernetes |
@@ -30,7 +30,7 @@
 | 0026 | Inter-service resilience | Resilience4j circuit breaker and retry for all inter-service REST clients |
 | 0027 | Offsetting merged into debt-service | Modregning domain consolidated into debt-service |
 | 0028 | Backup and disaster recovery | pgBackRest WAL archiving + streaming replication; RTO 4h / RPO 4h |
-| 0029 | ImmuDB for financial ledger integrity | ImmuDB for tamper-evident financial event log |
+| 0029 | immudb for financial ledger integrity | immudb 1.10 + immudb4j 1.0.1 as cryptographic tamper-evidence KV store for double-entry ledger entries; dual-write pattern from `BookkeepingService`; conditionally accepted pending UFST HDP platform validation (TB-028-a) |
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
 
 ADR source files are in `docs/adr/` in the repository.
