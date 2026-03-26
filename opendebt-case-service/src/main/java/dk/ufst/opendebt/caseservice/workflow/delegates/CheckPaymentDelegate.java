@@ -18,7 +18,7 @@ public class CheckPaymentDelegate implements JavaDelegate {
     String caseId = (String) execution.getVariable("caseId");
     log.info("Checking payment status for case: {}", caseId);
 
-    // TODO: Integrate with the payment service once payment status lookup is available.
+    // AIDEV-TODO: Integrate with the payment service once payment status lookup is available.
 
     // For now, default to not paid
     boolean paid = false;

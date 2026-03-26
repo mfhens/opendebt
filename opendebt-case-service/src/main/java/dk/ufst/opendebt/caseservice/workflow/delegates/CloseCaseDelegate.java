@@ -23,7 +23,7 @@ public class CloseCaseDelegate implements JavaDelegate {
     String closureStatus = paid ? "CLOSED_PAID" : "CLOSED_OTHER";
     execution.setVariable("closureStatus", closureStatus);
 
-    // TODO: Persist the closure status through the case service.
+    // AIDEV-TODO: Persist the closure status through the case service.
 
     log.info("Case {} closed with status: {}", caseId, closureStatus);
   }

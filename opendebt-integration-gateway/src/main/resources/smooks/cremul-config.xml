@@ -12,6 +12,6 @@
                       xmlns:edi="https://www.smooks.org/xsd/smooks/edi-2.0.xsd"
                       xmlns:jb="https://www.smooks.org/xsd/smooks/javabean-1.6.xsd">
 
-    <!-- TODO: Add the CREMUL reader and bean mapping once the exact SKB EDIFACT directory version is confirmed. -->
+    <!-- AIDEV-TODO: Add the CREMUL reader and bean mapping once the exact SKB EDIFACT directory version is confirmed. -->
 
 </smooks-resource-list>

@@ -21,7 +21,7 @@ public class CaseAssessmentDelegate implements JavaDelegate {
     String caseId = (String) execution.getVariable("caseId");
     log.info("Assessing case: {}", caseId);
 
-    // TODO: Call rules engine to assess case and determine strategy
+    // AIDEV-TODO: Call rules engine to assess case and determine strategy
     // For now, use the strategy passed in or default to VOLUNTARY_PAYMENT
 
     String strategy = (String) execution.getVariable("collectionStrategy");
