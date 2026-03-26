@@ -116,7 +116,7 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.44.1</version>
+            <version>1.75.0</version>
         </dependency>
 
         <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
@@ -171,7 +171,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>3.19.2</version>
+                <version>3.25.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
