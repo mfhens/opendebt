@@ -941,6 +941,32 @@ program:
       next_step: Awaiting TB-028-a platform validation before implementation begins.
         Draft petition and outcome contract at petitions/petition051-*.
 
+    petition052:
+      title: Manual Nemkonto Payout with 4-Eyes Approval
+      status: not_started
+      phase: phase-16
+      depends_on:
+        - petition040
+        - petition048
+        - petition050
+      last_reviewed: 2026-03-26
+      notes: >
+        Enables caseworkers to initiate a manual payout to NemKonto with a tiered
+        4-eyes approval workflow. Three tiers: SMALL (≤ PAYOUT_SMALL_THRESHOLD —
+        any other caseworker approves), LARGE (≤ PAYOUT_LARGE_THRESHOLD —
+        supervisor approves), PEP_VIP (regardless of amount — director approves).
+        Thresholds are managed via business_config with time-versioned 4-eyes lifecycle.
+        Introduces ROLE_DIRECTOR (new Keycloak role). Disbursement via NemKonto adapter
+        in integration-gateway. Dual-write to immudb (ADR-0029) and double-entry
+        bookkeeping (ADR-0018). Six payout states with Tidslinje integration.
+        GDPR: no PII on PayoutRequest; NemKonto account resolved only at disbursement.
+        13 FR groups, 57 Gherkin scenarios across 15 sections.
+        Petition, outcome contract, and feature file at petitions/petition052-*.
+      next_step: >
+        Implement after ROLE_DIRECTOR is added to Keycloak realm and PEP/VIP flag
+        exists on PersonEntity in person-registry. NemKonto adapter in
+        integration-gateway must be operational for DISBURSED state.
+
     petition050:
       title: Unified Case Timeline UI
       status: implemented
@@ -968,7 +994,7 @@ program:
         identified during code review.
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-26, 51 petitions tracked)
+  # STATUS SUMMARY (2026-03-26, 52 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -979,14 +1005,16 @@ program:
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050
   # in_progress:  petition002
-  # not_started:  petition026, petition027, petition028, petition042, petition049, petition051
+  # not_started:  petition026, petition027, petition028, petition042, petition049,
+  #               petition051, petition052
   #
-  # Total: 51 petitions
-  #   6 validated, 40 implemented, 1 in_progress, 4 not_started
+  # Total: 52 petitions
+  #   6 validated, 40 implemented, 1 in_progress, 5 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
+  # PLANNED: Phase 16 (petition052 manual Nemkonto payout with 4-eyes approval)
   # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
