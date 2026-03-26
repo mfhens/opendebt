@@ -159,8 +159,10 @@ services:
   # and configuring the connection properties below.
   immudb:
     image: codenotary/immudb:latest
+    command: ["--web-server"]
     ports:
       - "3322:3322"   # gRPC API
+      - "8091:8080"   # REST / web console (http://localhost:8091)
       - "9497:9497"   # Prometheus metrics
     volumes:
       - immudb_data:/var/lib/immudb
