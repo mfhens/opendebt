@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,16 +22,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import dk.ufst.opendebt.caseservice.entity.*;
 import dk.ufst.opendebt.caseservice.repository.*;
 import dk.ufst.opendebt.common.dto.*;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.common.security.CaseAccessChecker;
 
 @ExtendWith(MockitoExtension.class)
 class CaseServiceImplTest {
 
   @Mock private CaseRepository caseRepository;
+  @Mock private CaseAccessChecker caseAccessChecker;
   @Mock private CasePartyRepository casePartyRepository;
   @Mock private CaseDebtRepository caseDebtRepository;
   @Mock private CaseEventRepository caseEventRepository;
@@ -42,6 +46,11 @@ class CaseServiceImplTest {
   @Mock private CaseRelationRepository caseRelationRepository;
 
   @InjectMocks private CaseServiceImpl service;
+
+  @BeforeEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
+  }
 
   // ── createCase ───────────────────────────────────────────────────────
 
