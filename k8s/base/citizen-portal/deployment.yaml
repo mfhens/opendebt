@@ -20,7 +20,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8086"
-        prometheus.io/path: "/citizen-portal/actuator/prometheus"
+        prometheus.io/path: "/borger/actuator/prometheus"
     spec:
       serviceAccountName: opendebt-service-account
       securityContext:
@@ -79,14 +79,14 @@ spec:
               cpu: "500m"
           livenessProbe:
             httpGet:
-              path: /citizen-portal/actuator/health/liveness
+              path: /borger/actuator/health/liveness
               port: 8086
             initialDelaySeconds: 60
             periodSeconds: 10
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /citizen-portal/actuator/health/readiness
+              path: /borger/actuator/health/readiness
               port: 8086
             initialDelaySeconds: 30
             periodSeconds: 5
