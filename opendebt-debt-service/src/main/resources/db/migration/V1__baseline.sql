@@ -649,12 +649,12 @@ VALUES
     ('UNDERHOLDSBIDRAG', 'Underholdsbidrag', 'BIDRAG', 'Boernebidrag / aegtefaellebidrag', 'Lov om inddrivelse SS 1', TRUE, TRUE, FALSE, FALSE, now(), now()),
     ('DAGINSTITUTION', 'Daginstitution', 'Kommune', 'Skyldig betaling for daginstitution', 'Dagtilbudsloven', TRUE, TRUE, FALSE, FALSE, now(), now()),
     ('EJENDOMSSKAT', 'Ejendomsskat', 'Skat', 'Skyldig ejendomsskat', 'Ejendomsskatteloven', TRUE, TRUE, FALSE, FALSE, now(), now()),
-    ('STRAF_BOEDE', 'Strafferetlig boede', 'BOEDE', 'Boeder idoemt ved dom/vedtaegt - rentefri', false, true, false, false, now(), now()),
-    ('DAGBOEDE', 'Dagboede', 'BOEDE', 'Administrative dagboeder - rentebearende', true, true, false, false, now(), now()),
-    ('ADMIN_BOEDE', 'Administrativ boede', 'BOEDE', 'Administrative boeder - rentebearende', true, true, false, false, now(), now()),
-    ('TOLD', 'Toldskyld', 'TOLD', 'Toldkrav under inddrivelse - NB+2% rente', true, true, false, false, now(), now()),
-    ('SU_GAELD', 'SU-gaeld', 'GAELD', 'Misligholdt studiegaeld', true, true, false, false, now(), now()),
-    ('SKAT_REST', 'Restskat', 'SKAT', 'Personlig restskat', true, true, false, false, now(), now())
+    ('STRAF_BOEDE', 'Strafferetlig boede', 'BOEDE', 'Boeder idoemt ved dom/vedtaegt - rentefri', 'Straffeloven', false, true, false, false, now(), now()),
+    ('DAGBOEDE', 'Dagboede', 'BOEDE', 'Administrative dagboeder - rentebearende', 'Retsplejeloven', true, true, false, false, now(), now()),
+    ('ADMIN_BOEDE', 'Administrativ boede', 'BOEDE', 'Administrative boeder - rentebearende', 'Opkraevningsloven', true, true, false, false, now(), now()),
+    ('TOLD', 'Toldskyld', 'TOLD', 'Toldkrav under inddrivelse - NB+2% rente', 'Toldloven', true, true, false, false, now(), now()),
+    ('SU_GAELD', 'SU-gaeld', 'GAELD', 'Misligholdt studiegaeld', 'SU-loven', true, true, false, false, now(), now()),
+    ('SKAT_REST', 'Restskat', 'SKAT', 'Personlig restskat', 'Kildeskatteloven', true, true, false, false, now(), now())
 ON CONFLICT (code) DO NOTHING;
 
 ALTER TABLE debt_types ENABLE TRIGGER debt_types_audit_trigger;
