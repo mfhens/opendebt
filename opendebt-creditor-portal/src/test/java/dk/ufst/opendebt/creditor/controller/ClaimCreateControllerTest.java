@@ -21,6 +21,8 @@ import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
+import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
 import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.PersonRegistryClient;
@@ -39,6 +41,7 @@ class ClaimCreateControllerTest {
   @Mock private DebtServiceClient debtServiceClient;
   @Mock private PersonRegistryClient personRegistryClient;
   @Mock private MessageSource messageSource;
+  @Mock private ClsAuditClient clsAuditClient;
 
   @InjectMocks private ClaimCreateController controller;
 
@@ -474,6 +477,57 @@ class ClaimCreateControllerTest {
     assertThat(dto.getAdditionalInterestRate()).isEqualByComparingTo("0.0375");
     assertThat(dto.getClaimNote()).isEqualTo("Internal note");
     assertThat(dto.getCustomerNote()).isEqualTo("Debtor note");
+  }
+
+  @Test
+  void processSubmission_shipsAuditEventOnSuccess() {
+    when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
+    UUID claimId = UUID.randomUUID();
+    when(debtServiceClient.submitClaimWizard(any()))
+        .thenReturn(
+            ClaimSubmissionResultDto.builder()
+                .outcome("UDFOERT")
+                .claimId(claimId)
+                .processingStatus("ACCEPTED")
+                .build());
+    session.setAttribute(ClaimCreateController.SESSION_WIZARD_FORM, buildCompletedWizardForm());
+
+    controller.processSubmission(new ConcurrentModel(), session);
+
+    var captor = ArgumentCaptor.forClass(ClsAuditEvent.class);
+    verify(clsAuditClient).shipEvent(captor.capture());
+    ClsAuditEvent event = captor.getValue();
+    assertThat(event.getServiceName()).isEqualTo("creditor-portal");
+    assertThat(event.getOperation()).isEqualTo("CLAIM_SUBMIT");
+    assertThat(event.getResourceType()).isEqualTo("claim");
+    assertThat(event.getResourceId()).isEqualTo(claimId);
+    assertThat(event.getNewValues()).containsEntry("outcome", "UDFOERT");
+    assertThat(event.getNewValues()).containsKey("debtorPersonId");
+    assertThat(event.getNewValues()).containsKey("creditorOrgId");
+    // PII must NOT be present
+    assertThat(event.getNewValues()).doesNotContainKey("debtorIdentifier");
+    assertThat(event.getNewValues()).doesNotContainKey("description");
+    assertThat(event.getNewValues()).doesNotContainKey("debtorNote");
+  }
+
+  @Test
+  void processSubmission_shipsAuditEventOnFailure() {
+    when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
+    when(debtServiceClient.submitClaimWizard(any()))
+        .thenThrow(new RuntimeException("Connection refused"));
+    when(messageSource.getMessage(eq("wizard.submit.error"), any(), any(), any()))
+        .thenReturn("Submission failed.");
+    session.setAttribute(ClaimCreateController.SESSION_WIZARD_FORM, buildCompletedWizardForm());
+
+    controller.processSubmission(new ConcurrentModel(), session);
+
+    var captor = ArgumentCaptor.forClass(ClsAuditEvent.class);
+    verify(clsAuditClient).shipEvent(captor.capture());
+    ClsAuditEvent event = captor.getValue();
+    assertThat(event.getOperation()).isEqualTo("CLAIM_SUBMIT");
+    assertThat(event.getNewValues()).containsEntry("outcome", "CLAIM_SUBMIT_FAILED");
+    assertThat(event.getNewValues()).containsEntry("errorType", "RuntimeException");
+    assertThat(event.getResourceId()).isNull();
   }
 
   // -----------------------------------------------------------------------

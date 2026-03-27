@@ -1,11 +1,16 @@
 package dk.ufst.opendebt.creditor.controller;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
+import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
 import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.PersonRegistryClient;
@@ -54,6 +61,7 @@ public class ClaimCreateController {
   private final DebtServiceClient debtServiceClient;
   private final PersonRegistryClient personRegistryClient;
   private final MessageSource messageSource;
+  private final ClsAuditClient clsAuditClient;
 
   // -----------------------------------------------------------------------
   // Entry point
@@ -348,11 +356,17 @@ public class ClaimCreateController {
           result.getOutcome(),
           result.getClaimId());
 
+      shipClaimAuditEvent(debtRequest, result.getOutcome(), result.getClaimId(), null);
       session.setAttribute(SESSION_WIZARD_RESULT, result);
       // Keep wizard form in session for result display
       return "redirect:/fordring/opret/step/4";
     } catch (Exception ex) {
       log.error("Error submitting claim via wizard: {}", ex.getMessage(), ex);
+      shipClaimAuditEvent(
+          mapWizardFormToDebtRequest(form, creditorOrgId),
+          "CLAIM_SUBMIT_FAILED",
+          null,
+          ex.getClass().getSimpleName());
       model.addAttribute("submissionError", resolveMessage("wizard.submit.error"));
       model.addAttribute(MODEL_WIZARD_FORM, form);
       addWizardModelAttributes(model, 3, session);
@@ -490,6 +504,54 @@ public class ClaimCreateController {
         .claimNote(form.getClaimNote())
         .customerNote(form.getDebtorNote())
         .build();
+  }
+
+  /**
+   * Ships a claim submission audit event to CLS. Only non-PII fields are included. Audit failures
+   * are logged but never propagate — the wizard response is never blocked by audit.
+   */
+  private void shipClaimAuditEvent(
+      PortalDebtDto request, String outcome, UUID claimId, String errorType) {
+    try {
+      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+      String userId = auth != null ? auth.getName() : "unknown";
+
+      Map<String, Object> payload = new LinkedHashMap<>();
+      // Non-PII claim fields
+      if (request.getDebtorPersonId() != null) {
+        payload.put("debtorPersonId", request.getDebtorPersonId().toString());
+      }
+      if (request.getCreditorOrgId() != null) {
+        payload.put("creditorOrgId", request.getCreditorOrgId().toString());
+      }
+      payload.put("debtTypeCode", request.getDebtTypeCode());
+      payload.put("principalAmount", request.getPrincipalAmount());
+      payload.put("outstandingBalance", request.getOutstandingBalance());
+      payload.put("creditorReference", request.getCreditorReference());
+      payload.put("limitationDate", request.getLimitationDate());
+      payload.put("estateProcessing", request.getEstateProcessing());
+      payload.put("interestRule", request.getInterestRule());
+      payload.put("interestRateCode", request.getInterestRateCode());
+      // Outcome metadata
+      payload.put("outcome", outcome);
+      if (errorType != null) {
+        payload.put("errorType", errorType);
+      }
+
+      clsAuditClient.shipEvent(
+          ClsAuditEvent.builder()
+              .eventId(UUID.randomUUID())
+              .timestamp(Instant.now())
+              .serviceName("creditor-portal")
+              .operation("CLAIM_SUBMIT")
+              .resourceType("claim")
+              .resourceId(claimId)
+              .userId(userId)
+              .newValues(payload)
+              .build());
+    } catch (Exception auditEx) {
+      log.warn("Failed to ship claim submission audit event: {}", auditEx.getMessage());
+    }
   }
 
   private void addWizardModelAttributes(Model model, int currentStep, HttpSession session) {
