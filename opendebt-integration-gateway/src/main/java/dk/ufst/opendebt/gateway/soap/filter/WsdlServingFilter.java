@@ -2,6 +2,7 @@ package dk.ufst.opendebt.gateway.soap.filter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(0)
 public class WsdlServingFilter extends OncePerRequestFilter {
 
+  private static final Set<String> ALLOWED_SERVICE_NAMES = Set.of("skat", "oio");
+
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -42,6 +45,12 @@ public class WsdlServingFilter extends OncePerRequestFilter {
 
     String uri = request.getRequestURI();
     String serviceName = uri.substring(uri.lastIndexOf('/') + 1);
+
+    if (!ALLOWED_SERVICE_NAMES.contains(serviceName)) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     String resourcePath = "wsdl/" + serviceName + "/" + serviceName + "-fordring.wsdl";
 
     // Use Spring ClassPathResource for reliable classpath loading in embedded-server tests
