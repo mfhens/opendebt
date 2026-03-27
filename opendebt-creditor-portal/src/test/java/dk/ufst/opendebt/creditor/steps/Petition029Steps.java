@@ -226,7 +226,7 @@ public class Petition029Steps {
 
   @Then("Danish translations exist for all claims list message keys")
   public void danishTranslationsExistForAllClaimsListMessageKeys() {
-    Locale da = new Locale("da");
+    Locale da = Locale.forLanguageTag("da");
     assertThat(messageSource.getMessage("claims.recovery.page.title", null, da)).isNotBlank();
     assertThat(messageSource.getMessage("claims.recovery.heading", null, da)).isNotBlank();
     assertThat(messageSource.getMessage("claims.zerobalance.page.title", null, da)).isNotBlank();

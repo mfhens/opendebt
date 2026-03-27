@@ -657,14 +657,13 @@ public class CaseServiceImpl implements CaseService {
                         .build())
             .toList();
 
-    // Derive debtorId from PRIMARY_DEBTOR party (backward compat)
+    // Derive debtorId from PRIMARY_DEBTOR party
     String debtorId =
         parties.stream()
             .filter(p -> p.getPartyRole() == PartyRole.PRIMARY_DEBTOR)
             .map(p -> p.getPersonId().toString())
             .findFirst()
-            .orElse(
-                entity.getDebtorPersonId() != null ? entity.getDebtorPersonId().toString() : null);
+            .orElse(null);
 
     // Derive debtIds from case_debts (backward compat)
     List<UUID> debtIds =

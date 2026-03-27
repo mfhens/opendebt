@@ -133,7 +133,8 @@ public class Petition038Steps {
     assertThat(navHtml).contains("#{nav.settings}");
 
     // Verify the message keys resolve in both Danish and English
-    assertThat(messageSource.getMessage("nav.home", null, new Locale("da"))).isEqualTo("Forside");
+    assertThat(messageSource.getMessage("nav.home", null, Locale.forLanguageTag("da")))
+        .isEqualTo("Forside");
     assertThat(messageSource.getMessage("nav.home", null, Locale.forLanguageTag("en-GB")))
         .isEqualTo("Home");
   }
