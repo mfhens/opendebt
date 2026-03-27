@@ -623,6 +623,19 @@ public class DebtServiceClient {
       submitRequest.put("dueDate", request.getDueDate());
       submitRequest.put("description", request.getDescription());
       submitRequest.put("claimArt", "INDR");
+      submitRequest.put("creditorReference", request.getCreditorReference());
+      submitRequest.put("periodFrom", request.getPeriodFrom());
+      submitRequest.put("periodTo", request.getPeriodTo());
+      submitRequest.put("inceptionDate", request.getInceptionDate());
+      submitRequest.put("limitationDate", request.getLimitationDate());
+      submitRequest.put("estateProcessing", request.getEstateProcessing());
+      submitRequest.put("judgmentDate", request.getJudgmentDate());
+      submitRequest.put("settlementDate", request.getSettlementDate());
+      submitRequest.put("interestRule", request.getInterestRule());
+      submitRequest.put("interestRateCode", request.getInterestRateCode());
+      submitRequest.put("additionalInterestRate", request.getAdditionalInterestRate());
+      submitRequest.put("claimNote", request.getClaimNote());
+      submitRequest.put("customerNote", request.getCustomerNote());
 
       java.util.Map<String, Object> response =
           webClient

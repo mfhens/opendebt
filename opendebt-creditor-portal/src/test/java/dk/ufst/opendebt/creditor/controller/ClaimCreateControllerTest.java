@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +28,7 @@ import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.ClaimWizardFormDto;
 import dk.ufst.opendebt.creditor.dto.CreditorAgreementDto;
 import dk.ufst.opendebt.creditor.dto.DebtorVerificationResultDto;
+import dk.ufst.opendebt.creditor.dto.PortalDebtDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
 @ExtendWith(MockitoExtension.class)
@@ -432,6 +434,48 @@ class ClaimCreateControllerTest {
     assertThat(model.getAttribute("submissionError")).isNotNull();
   }
 
+  @Test
+  void processSubmission_mapsAllWizardFieldsToPortalDebtDto() {
+    when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
+    when(debtServiceClient.submitClaimWizard(any()))
+        .thenReturn(
+            ClaimSubmissionResultDto.builder()
+                .outcome("UDFOERT")
+                .claimId(UUID.randomUUID())
+                .processingStatus("ACCEPTED")
+                .build());
+
+    ClaimWizardFormDto form = buildCompletedWizardForm();
+    session.setAttribute(ClaimCreateController.SESSION_WIZARD_FORM, form);
+
+    controller.processSubmission(new ConcurrentModel(), session);
+
+    var captor = ArgumentCaptor.forClass(PortalDebtDto.class);
+    verify(debtServiceClient).submitClaimWizard(captor.capture());
+
+    var dto = captor.getValue();
+    assertThat(dto.getDebtorPersonId()).isEqualTo(form.getDebtorPersonId());
+    assertThat(dto.getCreditorOrgId()).isEqualTo(ACTING_CREDITOR);
+    assertThat(dto.getPrincipalAmount()).isEqualByComparingTo("1500.00");
+    assertThat(dto.getOutstandingBalance()).isEqualByComparingTo("1000.00");
+    assertThat(dto.getDueDate()).isEqualTo(java.time.LocalDate.of(2025, 3, 1));
+    assertThat(dto.getDebtTypeCode()).isEqualTo("SKAT");
+    assertThat(dto.getDescription()).isEqualTo("Test claim description");
+    assertThat(dto.getCreditorReference()).isEqualTo("REF-001");
+    assertThat(dto.getPeriodFrom()).isEqualTo(java.time.LocalDate.of(2024, 1, 1));
+    assertThat(dto.getPeriodTo()).isEqualTo(java.time.LocalDate.of(2024, 12, 31));
+    assertThat(dto.getInceptionDate()).isEqualTo(java.time.LocalDate.of(2023, 6, 15));
+    assertThat(dto.getLimitationDate()).isEqualTo(java.time.LocalDate.of(2027, 12, 31));
+    assertThat(dto.getEstateProcessing()).isFalse();
+    assertThat(dto.getJudgmentDate()).isEqualTo(java.time.LocalDate.of(2025, 6, 1));
+    assertThat(dto.getSettlementDate()).isEqualTo(java.time.LocalDate.of(2025, 9, 1));
+    assertThat(dto.getInterestRule()).isEqualTo("STANDARD");
+    assertThat(dto.getInterestRateCode()).isEqualTo("INDR");
+    assertThat(dto.getAdditionalInterestRate()).isEqualByComparingTo("0.0375");
+    assertThat(dto.getClaimNote()).isEqualTo("Internal note");
+    assertThat(dto.getCustomerNote()).isEqualTo("Debtor note");
+  }
+
   // -----------------------------------------------------------------------
   // Step 4: Result
   // -----------------------------------------------------------------------
@@ -556,11 +600,22 @@ class ClaimCreateControllerTest {
         .debtorPersonId(UUID.randomUUID())
         .claimType("SKAT")
         .amount(new BigDecimal("1000.00"))
-        .principalAmount(new BigDecimal("500.00"))
+        .principalAmount(new BigDecimal("1500.00"))
         .creditorReference("REF-001")
         .description("Test claim description")
+        .periodFrom(java.time.LocalDate.of(2024, 1, 1))
+        .periodTo(java.time.LocalDate.of(2024, 12, 31))
+        .incorporationDate(java.time.LocalDate.of(2023, 6, 15))
+        .dueDate(java.time.LocalDate.of(2025, 3, 1))
         .limitationDate(java.time.LocalDate.of(2027, 12, 31))
         .estateProcessing(false)
+        .courtDate(java.time.LocalDate.of(2025, 6, 1))
+        .settlementDate(java.time.LocalDate.of(2025, 9, 1))
+        .interestRule("STANDARD")
+        .interestRateCode("INDR")
+        .interestRate(new BigDecimal("0.0375"))
+        .claimNote("Internal note")
+        .debtorNote("Debtor note")
         .build();
   }
 }

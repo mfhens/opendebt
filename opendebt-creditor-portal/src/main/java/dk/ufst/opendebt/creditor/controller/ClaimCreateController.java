@@ -476,7 +476,19 @@ public class ClaimCreateController {
         .dueDate(form.getDueDate() != null ? form.getDueDate() : form.getLastTimelyPaymentDate())
         .debtTypeCode(form.getClaimType())
         .description(form.getDescription())
-        .status("SUBMITTED")
+        .creditorReference(form.getCreditorReference())
+        .periodFrom(form.getPeriodFrom())
+        .periodTo(form.getPeriodTo())
+        .inceptionDate(form.getIncorporationDate())
+        .limitationDate(form.getLimitationDate())
+        .estateProcessing(form.getEstateProcessing())
+        .judgmentDate(form.getCourtDate())
+        .settlementDate(form.getSettlementDate())
+        .interestRule(form.getInterestRule())
+        .interestRateCode(form.getInterestRateCode())
+        .additionalInterestRate(form.getInterestRate())
+        .claimNote(form.getClaimNote())
+        .customerNote(form.getDebtorNote())
         .build();
   }
 
