@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,8 +39,6 @@ import dk.ufst.opendebt.common.timeline.TimelineDeduplicator;
 import dk.ufst.opendebt.common.timeline.TimelineEntryDto;
 import dk.ufst.opendebt.common.timeline.TimelineEntryMapper;
 import dk.ufst.opendebt.common.timeline.TimelineFilterDto;
-import dk.ufst.opendebt.common.timeline.TimelineFilterHelper;
-import dk.ufst.opendebt.common.timeline.TimelineUrlBuilder;
 import dk.ufst.opendebt.common.timeline.TimelineVisibilityProperties;
 
 import lombok.RequiredArgsConstructor;
@@ -61,6 +61,10 @@ public class CaseworkerTimelineController {
   private static final String FRAGMENT_ENTRIES = "fragments/timeline :: timeline-entries";
   private static final String WARNING_PARTIAL = "timeline.warning.partial";
   private static final List<String> CASEWORKER_ROLES = List.of("CASEWORKER", "SUPERVISOR", "ADMIN");
+  private static final String PARAM_EVENT_CATEGORY = "eventCategory=";
+  private static final String PARAM_FROM_DATE = "fromDate=";
+  private static final String PARAM_TO_DATE = "toDate=";
+  private static final String PARAM_DEBT_ID = "debtId=";
 
   private final CaseServiceClient caseServiceClient;
   private final PaymentServiceClient paymentServiceClient;
@@ -158,8 +162,7 @@ public class CaseworkerTimelineController {
     Set<EventCategory> allowed = visibilityProperties.getAllowedCategories(role);
 
     // Build filter DTO (constrained to allowed categories)
-    TimelineFilterDto filters =
-        TimelineFilterHelper.buildFilter(eventCategory, fromDate, toDate, debtId, allowed);
+    TimelineFilterDto filters = buildFilter(eventCategory, fromDate, toDate, debtId, allowed);
 
     // Parallel fetch from both services (4-second join timeout)
     List<String> warnings = Collections.synchronizedList(new ArrayList<>());
@@ -207,7 +210,7 @@ public class CaseworkerTimelineController {
     List<TimelineEntryDto> filtered =
         merged.stream()
             .filter(e -> allowed.contains(e.getEventCategory()))
-            .filter(e -> TimelineFilterHelper.matchesFilter(e, filters))
+            .filter(e -> matchesFilter(e, filters))
             .sorted(
                 Comparator.comparing(
                         TimelineEntryDto::getTimestamp,
@@ -229,10 +232,8 @@ public class CaseworkerTimelineController {
 
     String timelineBaseUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje");
     String timelineEntriesUrl = buildPortalUrl("/cases/" + caseId + "/tidslinje/entries");
-    String loadMoreUrl =
-        TimelineUrlBuilder.buildLoadMoreUrl(filters, timelineEntriesUrl, page, size);
-    Map<String, String> filterRemoveLinks =
-        TimelineUrlBuilder.buildFilterRemoveLinks(filters, timelineBaseUrl);
+    String loadMoreUrl = buildLoadMoreUrl(filters, timelineEntriesUrl, page, size);
+    Map<String, String> filterRemoveLinks = buildFilterRemoveLinks(filters, timelineBaseUrl);
 
     model.addAttribute("entries", pageEntries);
     model.addAttribute("page", page);
@@ -259,6 +260,61 @@ public class CaseworkerTimelineController {
     }
   }
 
+  /** Builds a TimelineFilterDto constrained to the role's allowed categories. */
+  private TimelineFilterDto buildFilter(
+      String[] eventCategory,
+      LocalDate fromDate,
+      LocalDate toDate,
+      UUID debtId,
+      Set<EventCategory> allowed) {
+
+    Set<EventCategory> categories = new HashSet<>();
+    if (eventCategory != null) {
+      for (String cat : eventCategory) {
+        try {
+          EventCategory ec = EventCategory.valueOf(cat);
+          if (allowed.contains(ec)) {
+            categories.add(ec);
+          }
+        } catch (IllegalArgumentException e) {
+          log.debug("Ignoring unknown eventCategory filter value: {}", cat);
+        }
+      }
+    }
+
+    return TimelineFilterDto.builder()
+        .eventCategories(categories)
+        .fromDate(fromDate)
+        .toDate(toDate)
+        .debtId(debtId)
+        .build();
+  }
+
+  /** Applies user-specified filter conditions (AND-combined). Spec §2.4. */
+  private boolean matchesFilter(TimelineEntryDto entry, TimelineFilterDto filter) {
+    // Category filter
+    if (!filter.getEventCategories().isEmpty()
+        && !filter.getEventCategories().contains(entry.getEventCategory())) {
+      return false;
+    }
+    // Date range filter
+    if (filter.getFromDate() != null
+        && entry.getTimestamp() != null
+        && entry.getTimestamp().toLocalDate().isBefore(filter.getFromDate())) {
+      return false;
+    }
+    if (filter.getToDate() != null
+        && entry.getTimestamp() != null
+        && entry.getTimestamp().toLocalDate().isAfter(filter.getToDate())) {
+      return false;
+    }
+    // Debt filter — when a specific debt is selected, only matching debt entries remain.
+    if (filter.getDebtId() != null && !filter.getDebtId().equals(entry.getDebtId())) {
+      return false;
+    }
+    return true;
+  }
+
   /** Fetches the list of debts for the filter bar dropdown. Returns empty list on failure. */
   private List<dk.ufst.opendebt.common.dto.CaseDebtDto> fetchAvailableDebts(UUID caseId) {
     try {
@@ -278,6 +334,108 @@ public class CaseworkerTimelineController {
       log.debug("Could not fetch case debts for filter bar: {}", e.getMessage());
       return List.of();
     }
+  }
+
+  /** Builds a URL for the "load more" button including active filter params. Ref: FIX-5. */
+  private String buildLoadMoreUrl(
+      TimelineFilterDto filters, String entriesUrl, int page, int size) {
+    StringBuilder sb = new StringBuilder(entriesUrl);
+    sb.append("?page=").append(page + 1).append("&size=").append(size);
+    for (EventCategory cat : filters.getEventCategories()) {
+      sb.append("&").append(PARAM_EVENT_CATEGORY).append(cat.name());
+    }
+    if (filters.getFromDate() != null) {
+      sb.append("&").append(PARAM_FROM_DATE).append(filters.getFromDate());
+    }
+    if (filters.getToDate() != null) {
+      sb.append("&").append(PARAM_TO_DATE).append(filters.getToDate());
+    }
+    if (filters.getDebtId() != null) {
+      sb.append("&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Builds removal URLs for each active filter chip, preserving all other active filters. Ref:
+   * FIX-4.
+   */
+  private Map<String, String> buildFilterRemoveLinks(TimelineFilterDto filters, String baseUrl) {
+    Map<String, String> links = new HashMap<>();
+    // Per-category removal: URL keeps all OTHER active categories + dates + debtId
+    for (EventCategory removedCat : filters.getEventCategories()) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        if (!cat.equals(removedCat)) {
+          sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
+          first = false;
+        }
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
+        first = false;
+      }
+      if (filters.getDebtId() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+      }
+      links.put(removedCat.name(), sb.toString());
+    }
+    // fromDate removal: keeps categories + toDate + debtId
+    if (filters.getFromDate() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
+        first = false;
+      }
+      if (filters.getDebtId() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+      }
+      links.put("fromDate", sb.toString());
+    }
+    // toDate removal: keeps categories + fromDate + debtId
+    if (filters.getToDate() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
+        first = false;
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getDebtId() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+      }
+      links.put("toDate", sb.toString());
+    }
+    if (filters.getDebtId() != null) {
+      StringBuilder sb = new StringBuilder(baseUrl);
+      boolean first = true;
+      for (EventCategory cat : filters.getEventCategories()) {
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
+        first = false;
+      }
+      if (filters.getFromDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
+        first = false;
+      }
+      if (filters.getToDate() != null) {
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
+      }
+      links.put("debtId", sb.toString());
+    }
+    return links;
   }
 
   /**
