@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   @Bean
-  @Profile("!local & !dev")
+  @Profile("!local & !dev & !demo")
   @SuppressWarnings("java:S4502")
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
@@ -32,7 +32,7 @@ public class SecurityConfig {
   }
 
   @Bean
-  @Profile("local | dev")
+  @Profile("local | dev | demo")
   @SuppressWarnings("java:S4502")
   public SecurityFilterChain localFilterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
