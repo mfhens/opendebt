@@ -2,11 +2,12 @@ openapi: 3.1.0
 info:
   title: OpenDebt - Person Registry Internal API
   description: |
-    Internal API contract for organization identity lookup needed by creditor-service.
+    Internal API contract for person and organization identity lookup used by portals and services.
 
     W1-SPEC-02 boundary decision:
     - `person-registry` remains the owner of organization identity data.
     - `creditor-service` consumes organization identity via technical UUIDs and does not duplicate PII-like organization fields.
+    - Portals (creditor-portal, caseworker-portal) look up persons by UUID for display-name resolution.
   version: 1.0.0
   contact:
     name: OpenDebt Team
@@ -20,10 +21,66 @@ security:
   - bearerAuth: []
 
 tags:
+  - name: Persons
+    description: Person identity and PII lookup operations for portals and services
   - name: Organizations
     description: Organization identity operations for internal services
 
 paths:
+  /api/v1/persons/lookup:
+    post:
+      tags: [Persons]
+      summary: Lookup or create person by CPR
+      description: |
+        Resolves a person by CPR number. If the person does not yet exist in the GDPR vault,
+        a new record is created. Returns the technical UUID (never raw PII in the response body).
+        Used by citizen-portal (CitizenOidcUserService) and creditor-portal (verifyCpr).
+      operationId: lookupOrCreatePerson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonLookupRequest'
+      responses:
+        '200':
+          description: Person resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonLookupResponse'
+
+  /api/v1/persons/{personId}:
+    get:
+      tags: [Persons]
+      summary: Get person details by technical identifier
+      description: |
+        Returns decrypted person details (name, etc.) for the given UUID.
+        Used by caseworker-portal (getDisplayName) and creditor-portal (verifyCpr name-match step).
+      operationId: getPerson
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Person details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Person has been GDPR-erased (soft-deleted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/organizations/lookup:
     post:
       tags: [Organizations]
@@ -94,6 +151,55 @@ components:
       description: Internal service-to-service token
 
   schemas:
+    PersonLookupRequest:
+      type: object
+      required:
+        - identifier
+        - identifierType
+      properties:
+        identifier:
+          type: string
+          description: CPR number (10 digits) used to resolve or create the person record
+          pattern: '^[0-9]{10}$'
+        identifierType:
+          type: string
+          enum: [CPR]
+          description: Type of identifier (currently only CPR supported)
+        role:
+          type: string
+          description: Role context for the lookup (e.g. PERSONAL, DEBTOR)
+
+    PersonLookupResponse:
+      type: object
+      required:
+        - personId
+        - created
+      properties:
+        personId:
+          type: string
+          format: uuid
+          description: Technical UUID — the only identifier returned; no PII in response
+        created:
+          type: boolean
+          description: True if a new person record was created; false if an existing record was resolved
+        role:
+          type: string
+          description: Role context echoed from the request
+
+    Person:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Full display name (decrypted); null if GDPR-erased
+        active:
+          type: boolean
+
     OrganizationLookupRequest:
       type: object
       required:

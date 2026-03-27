@@ -543,6 +543,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | PersonEntity (encrypted PII) | Done | AES encryption, hash-based lookup |
 | OrganizationEntity | Done | CVR-based organizations |
 | PersonController (REST API) | Done | lookup, CRUD, GDPR export/erase |
+| PersonRegistryExceptionHandler | Done | `@RestControllerAdvice` mapping `PersonNotFoundException` → HTTP 404 (TB-021) |
 | EncryptionService | Done | Field-level encryption |
 | PersonService | Done | Business logic |
 | PersonRepository | Done | JPA + hash index for lookups |
@@ -945,6 +946,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | application.yml | Done | References debt-service, case-service, creditor-service |
 | SKAT design tokens CSS | Done | `static/css/skat-tokens.css` — color palette, spacing, typography tokens from skat.dk design language (ADR-0023) |
 | WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
+| PersonRegistryClient | Done | REST client for person-registry CPR/CVR/SE verification (`verifyCpr`, `verifyCvr`, `verifySe`) with circuit-breaker/retry fallback (TB-021) |
 | CreditorServiceClient | Done | REST client for creditor-service (getByCreditorOrgId, resolveAccess) |
 | DebtServiceClient | Done | REST client for debt-service (listDebts, createDebt) |
 | CaseServiceClient | Done | REST client for case-service (listCases) |
@@ -1040,6 +1042,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | Component | Status | Notes |
 |-----------|--------|-------|
 | CaseworkerPortalApplication | Done | Spring Boot app |
+| PersonRegistryClient | Done | REST client for person-registry display-name lookup (`getDisplayName`) with circuit-breaker fallback to "—" (TB-021) |
 | cases/detail.html | Done | Case detail page; tab label renamed from Hændelseslog → Tidslinje (petition050) |
 | **Timeline (petition050)** | **Done** | |
 | CaseworkerTimelineController | Done | `GET /cases/{caseId}/tidslinje` + `GET /cases/{caseId}/tidslinje/entries` — all 7 EventCategory values visible to CASEWORKER, SUPERVISOR, ADMIN roles |

@@ -272,8 +272,8 @@ public class PersonServiceImpl implements PersonService {
     return personRepository.existsById(personId);
   }
 
-  static final class PersonNotFoundException extends RuntimeException {
-    PersonNotFoundException(String message) {
+  public static final class PersonNotFoundException extends RuntimeException {
+    public PersonNotFoundException(String message) {
       super(message);
     }
   }

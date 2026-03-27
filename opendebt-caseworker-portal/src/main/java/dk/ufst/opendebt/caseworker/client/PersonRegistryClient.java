@@ -8,14 +8,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
-/**
- * BFF client for person-registry service. Provides debtor display name lookup for the caseworker
- * portal. Returns initials or pseudonym to avoid exposing PII in the portal UI.
- *
- * <p>AIDEV-TODO: Implement actual person-registry call when the display-name endpoint is available.
- * Currently returns a placeholder based on the person ID.
- */
+/** BFF client for person-registry service. */
 @Slf4j
 @Component
 public class PersonRegistryClient {
@@ -28,34 +23,35 @@ public class PersonRegistryClient {
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 
-  /**
-   * Returns a display-safe name for a person (initials or pseudonym). Does not return full PII.
-   *
-   * <p>AIDEV-TODO: Replace stub with actual person-registry call for display name.
-   *
-   * @param personId the person UUID
-   * @return a display-safe name string
-   */
   @CircuitBreaker(name = "person-registry", fallbackMethod = "getDisplayNameFallback")
   public String getDisplayName(UUID personId) {
     if (personId == null) {
       return "—";
     }
-    log.debug("Getting display name for person: {}", personId);
+    log.debug("Fetching display name for person: {}", personId);
 
-    try {
-      // AIDEV-TODO: Replace with actual person-registry call
-      // Stub: return abbreviated UUID as placeholder
-      String shortId = personId.toString().substring(0, 8);
-      return "Person-" + shortId;
-    } catch (Exception ex) {
-      log.warn("Person registry unavailable for display name lookup: {}", ex.getMessage());
+    PersonFetchResponse fetched =
+        webClient
+            .get()
+            .uri("/person-registry/api/v1/persons/{id}", personId)
+            .retrieve()
+            .onStatus(
+                status -> status.value() == 404 || status.value() == 410,
+                response -> response.releaseBody().then(Mono.<Throwable>empty()))
+            .bodyToMono(PersonFetchResponse.class)
+            .block();
+
+    if (fetched == null || fetched.name() == null || fetched.name().isBlank()) {
       return "—";
     }
+    return fetched.name();
   }
 
   private String getDisplayNameFallback(UUID personId, Throwable t) {
-    log.warn("Person registry circuit breaker open: {}", t.getMessage());
+    log.warn(
+        "Person registry unavailable for display name (personId={}): {}", personId, t.getMessage());
     return "—";
   }
+
+  private record PersonFetchResponse(UUID id, String name) {}
 }
