@@ -44,6 +44,8 @@ services:
       DATABASE_PASSWORD: opendebt
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=}
+      DEMO_SEED_ORGANIZATIONS: "true"
+      DEMO_SEED_PERSONS: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:

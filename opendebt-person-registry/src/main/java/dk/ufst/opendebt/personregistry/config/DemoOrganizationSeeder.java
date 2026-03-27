@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @ConditionalOnProperty(
     name = "opendebt.demo.seed-organizations",
@@ -65,6 +67,18 @@ public class DemoOrganizationSeeder implements ApplicationRunner {
   // @formatter:off
   private static final List<OrgSeed> ORGANIZATIONS =
       List.of(
+          // ── Demo creditor orgs (match debt-service V1__baseline.sql seed UUIDs) ───────────
+          new OrgSeed(
+              "00000000-0000-0000-0000-000000000001",
+              "99000001",
+              "Skattestyrelsen (Demo)",
+              OrganizationType.STATE_AGENCY),
+          new OrgSeed(
+              "00000000-0000-0000-0000-000000000002",
+              "99000002",
+              "Toldstyrelsen (Demo)",
+              OrganizationType.STATE_AGENCY),
+
           // ── Kommuner (98) ─────────────────────────────────────────────────
           new OrgSeed(
               "c0010000-0000-0000-0000-000000000001",

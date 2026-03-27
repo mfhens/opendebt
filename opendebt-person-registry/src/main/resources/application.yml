@@ -79,3 +79,4 @@ opendebt:
     deletion-grace-period-days: 30
   demo:
     seed-organizations: ${DEMO_SEED_ORGANIZATIONS:false}
+    seed-persons: ${DEMO_SEED_PERSONS:false}
