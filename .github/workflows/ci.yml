@@ -132,8 +132,7 @@ jobs:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           mvn dependency-check:check -P security-scan -B \
-            -DnvdApiKey="$NVD_API_KEY" \
-            -DfailOnError=false
+            -DnvdApiKey="$NVD_API_KEY"
 
       - name: Upload OWASP report
         if: always()
