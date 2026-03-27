@@ -111,10 +111,16 @@ services:
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OPENDEBT_IMMUDB_ENABLED: "true"
+      OPENDEBT_IMMUDB_HOST: immudb
+      # Disable native epoll to prevent SIGSEGV in the gRPC/Netty shaded native library
+      JAVA_TOOL_OPTIONS: "-Dio.grpc.netty.shaded.io.netty.transport.noNative=true"
     depends_on:
       keycloak:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      immudb:
         condition: service_healthy
 
   letter-service:
@@ -203,6 +209,15 @@ services:
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
       PAYMENT_SERVICE_URL: http://payment-service:8083
+      PERSON_REGISTRY_URL: http://person-registry:8090
+      # TastSelv (MitID/NemID citizen login) — pointed to Keycloak for local demo.
+      # Replace with real TastSelv endpoints for production.
+      TASTSELV_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      TASTSELV_AUTH_URI: http://keycloak:8080/realms/opendebt/protocol/openid-connect/auth
+      TASTSELV_TOKEN_URI: http://keycloak:8080/realms/opendebt/protocol/openid-connect/token
+      TASTSELV_USERINFO_URI: http://keycloak:8080/realms/opendebt/protocol/openid-connect/userinfo
+      TASTSELV_JWK_URI: http://keycloak:8080/realms/opendebt/protocol/openid-connect/certs
+      TASTSELV_CLIENT_SECRET: demo-secret
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:

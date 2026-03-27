@@ -1,18 +1,16 @@
 package dk.ufst.opendebt.personregistry.config;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import dk.ufst.opendebt.personregistry.entity.OrganizationEntity;
 import dk.ufst.opendebt.personregistry.entity.OrganizationEntity.OrganizationType;
-import dk.ufst.opendebt.personregistry.repository.OrganizationRepository;
 import dk.ufst.opendebt.personregistry.service.EncryptionService;
 
 import lombok.RequiredArgsConstructor;
@@ -34,8 +32,15 @@ import lombok.extern.slf4j.Slf4j;
     matchIfMissing = false)
 public class DemoOrganizationSeeder implements ApplicationRunner {
 
-  private final OrganizationRepository organizationRepository;
+  private final JdbcTemplate jdbcTemplate;
   private final EncryptionService encryptionService;
+
+  private static final String INSERT_ORG =
+      """
+      INSERT INTO organizations (id, cvr_encrypted, cvr_hash, name_encrypted, organization_type, active)
+      VALUES (?::uuid, ?, ?, ?, ?, true)
+      ON CONFLICT (id) DO NOTHING
+      """;
 
   @Override
   @Transactional
@@ -43,20 +48,12 @@ public class DemoOrganizationSeeder implements ApplicationRunner {
     int created = 0;
     for (OrgSeed seed : ORGANIZATIONS) {
       String cvrHash = encryptionService.hash(seed.cvr, "CVR");
-      if (organizationRepository.existsByCvrHash(cvrHash)) {
-        continue;
-      }
-      OrganizationEntity entity =
-          OrganizationEntity.builder()
-              .id(UUID.fromString(seed.id))
-              .cvrEncrypted(encryptionService.encrypt(seed.cvr))
-              .cvrHash(cvrHash)
-              .nameEncrypted(encryptionService.encrypt(seed.name))
-              .organizationType(seed.type)
-              .active(true)
-              .build();
-      organizationRepository.save(entity);
-      created++;
+      byte[] cvrEncrypted = encryptionService.encrypt(seed.cvr);
+      byte[] nameEncrypted = encryptionService.encrypt(seed.name);
+      int rows =
+          jdbcTemplate.update(
+              INSERT_ORG, seed.id, cvrEncrypted, cvrHash, nameEncrypted, seed.type.name());
+      created += rows;
     }
     log.info(
         "Demo organization seeder: created {} of {} organizations", created, ORGANIZATIONS.size());

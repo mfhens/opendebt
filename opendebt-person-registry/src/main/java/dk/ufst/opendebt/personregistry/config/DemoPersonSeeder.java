@@ -1,21 +1,15 @@
 package dk.ufst.opendebt.personregistry.config;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import dk.ufst.opendebt.personregistry.entity.PersonEntity;
-import dk.ufst.opendebt.personregistry.entity.PersonEntity.IdentifierType;
-import dk.ufst.opendebt.personregistry.entity.PersonEntity.PersonRole;
-import dk.ufst.opendebt.personregistry.repository.PersonRepository;
 import dk.ufst.opendebt.personregistry.service.EncryptionService;
 
 import lombok.RequiredArgsConstructor;
@@ -49,8 +43,20 @@ public class DemoPersonSeeder implements ApplicationRunner {
 
   private static final String CPR_SALT = "CPR";
 
-  private final PersonRepository personRepository;
+  private final JdbcTemplate jdbcTemplate;
   private final EncryptionService encryptionService;
+
+  private static final String INSERT_PERSON =
+      """
+      INSERT INTO persons (
+          id, identifier_encrypted, identifier_type, identifier_hash, role,
+          name_encrypted, address_street_encrypted, address_city_encrypted,
+          address_postal_code_encrypted, address_country_encrypted,
+          email_encrypted, phone_encrypted,
+          digital_post_enabled, eboks_enabled, access_count, last_accessed_at, data_retention_until)
+      VALUES (?::uuid, ?, 'CPR', ?, 'PERSONAL', ?, ?, ?, ?, ?, ?, ?, true, true, 0, NOW(), CURRENT_DATE + INTERVAL '10 years')
+      ON CONFLICT (identifier_hash, role) DO NOTHING
+      """;
 
   @Override
   @Transactional
@@ -58,31 +64,20 @@ public class DemoPersonSeeder implements ApplicationRunner {
     int created = 0;
     for (PersonSeed seed : PERSONS) {
       String identifierHash = encryptionService.hash(seed.cpr, CPR_SALT);
-      if (personRepository.existsByIdentifierHashAndRole(identifierHash, PersonRole.PERSONAL)) {
-        continue;
-      }
-      PersonEntity entity =
-          PersonEntity.builder()
-              .id(UUID.fromString(seed.id))
-              .identifierEncrypted(encryptionService.encrypt(seed.cpr))
-              .identifierType(IdentifierType.CPR)
-              .identifierHash(identifierHash)
-              .role(PersonRole.PERSONAL)
-              .nameEncrypted(encryptionService.encrypt(seed.name))
-              .addressStreetEncrypted(encryptionService.encrypt(seed.street))
-              .addressCityEncrypted(encryptionService.encrypt(seed.city))
-              .addressPostalCodeEncrypted(encryptionService.encrypt(seed.postalCode))
-              .addressCountryEncrypted(encryptionService.encrypt("DK"))
-              .emailEncrypted(encryptionService.encrypt(seed.email))
-              .phoneEncrypted(encryptionService.encrypt(seed.phone))
-              .digitalPostEnabled(true)
-              .eboksEnabled(true)
-              .accessCount(0L)
-              .lastAccessedAt(LocalDateTime.now())
-              .dataRetentionUntil(LocalDate.now().plusYears(10))
-              .build();
-      personRepository.save(entity);
-      created++;
+      int rows =
+          jdbcTemplate.update(
+              INSERT_PERSON,
+              seed.id,
+              encryptionService.encrypt(seed.cpr),
+              identifierHash,
+              encryptionService.encrypt(seed.name),
+              encryptionService.encrypt(seed.street),
+              encryptionService.encrypt(seed.city),
+              encryptionService.encrypt(seed.postalCode),
+              encryptionService.encrypt("DK"),
+              encryptionService.encrypt(seed.email),
+              encryptionService.encrypt(seed.phone));
+      created += rows;
     }
     log.info("Demo person seeder: created {} of {} persons", created, PERSONS.size());
   }
