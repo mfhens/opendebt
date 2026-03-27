@@ -18,6 +18,13 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 @Component
 public class DebtServiceSoapClient {
 
+  private static final String HEADER_FORDRINGSHAVER_ID = "X-Fordringshaver-Id";
+  private static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
+  private static final String ERR_CODE_FORDRINGSHAVER_NOT_AUTHORIZED =
+      "FORDRINGSHAVER_NOT_AUTHORIZED";
+  private static final String ERR_MSG_DEBT_SERVICE_UNAVAILABLE = "Debt service unavailable";
+  private static final String ERR_CODE_DEBT_SERVICE_UNAVAILABLE = "DEBT_SERVICE_UNAVAILABLE";
+
   private final WebClient webClient;
 
   public DebtServiceSoapClient(
@@ -33,8 +40,8 @@ public class DebtServiceSoapClient {
       return webClient
           .post()
           .uri("/internal/fordringer")
-          .header("X-Fordringshaver-Id", fordringshaverId != null ? fordringshaverId : "")
-          .header("X-Correlation-Id", correlationId != null ? correlationId : "")
+          .header(HEADER_FORDRINGSHAVER_ID, fordringshaverId != null ? fordringshaverId : "")
+          .header(HEADER_CORRELATION_ID, correlationId != null ? correlationId : "")
           .bodyValue(request)
           .retrieve()
           .onStatus(
@@ -52,14 +59,14 @@ public class DebtServiceSoapClient {
                   reactor.core.publisher.Mono.error(
                       new Oces3AuthorizationException(
                           "Fordringshaveren er ikke autoriseret til at indsende fordringer",
-                          "FORDRINGSHAVER_NOT_AUTHORIZED")))
+                          ERR_CODE_FORDRINGSHAVER_NOT_AUTHORIZED)))
           .onStatus(
               HttpStatusCode::is5xxServerError,
               resp ->
                   reactor.core.publisher.Mono.error(
                       new OpenDebtException(
-                          "Debt service unavailable",
-                          "DEBT_SERVICE_UNAVAILABLE",
+                          ERR_MSG_DEBT_SERVICE_UNAVAILABLE,
+                          ERR_CODE_DEBT_SERVICE_UNAVAILABLE,
                           OpenDebtException.ErrorSeverity.CRITICAL)))
           .bodyToMono(ClaimSubmissionResponse.class)
           .block();
@@ -80,22 +87,23 @@ public class DebtServiceSoapClient {
       return webClient
           .get()
           .uri("/internal/fordringer/{id}/kvittering", claimId)
-          .header("X-Fordringshaver-Id", fordringshaverId != null ? fordringshaverId : "")
-          .header("X-Correlation-Id", correlationId != null ? correlationId : "")
+          .header(HEADER_FORDRINGSHAVER_ID, fordringshaverId != null ? fordringshaverId : "")
+          .header(HEADER_CORRELATION_ID, correlationId != null ? correlationId : "")
           .retrieve()
           .onStatus(
               s -> s.value() == 403,
               resp ->
                   reactor.core.publisher.Mono.error(
                       new Oces3AuthorizationException(
-                          "Fordringshaveren er ikke autoriseret", "FORDRINGSHAVER_NOT_AUTHORIZED")))
+                          "Fordringshaveren er ikke autoriseret",
+                          ERR_CODE_FORDRINGSHAVER_NOT_AUTHORIZED)))
           .onStatus(
               HttpStatusCode::is5xxServerError,
               resp ->
                   reactor.core.publisher.Mono.error(
                       new OpenDebtException(
-                          "Debt service unavailable",
-                          "DEBT_SERVICE_UNAVAILABLE",
+                          ERR_MSG_DEBT_SERVICE_UNAVAILABLE,
+                          ERR_CODE_DEBT_SERVICE_UNAVAILABLE,
                           OpenDebtException.ErrorSeverity.CRITICAL)))
           .bodyToMono(KvitteringResponse.class)
           .block();
@@ -121,22 +129,23 @@ public class DebtServiceSoapClient {
                 }
                 return b.build(claimId);
               })
-          .header("X-Fordringshaver-Id", fordringshaverId != null ? fordringshaverId : "")
-          .header("X-Correlation-Id", correlationId != null ? correlationId : "")
+          .header(HEADER_FORDRINGSHAVER_ID, fordringshaverId != null ? fordringshaverId : "")
+          .header(HEADER_CORRELATION_ID, correlationId != null ? correlationId : "")
           .retrieve()
           .onStatus(
               s -> s.value() == 403,
               resp ->
                   reactor.core.publisher.Mono.error(
                       new Oces3AuthorizationException(
-                          "Fordringshaveren er ikke autoriseret", "FORDRINGSHAVER_NOT_AUTHORIZED")))
+                          "Fordringshaveren er ikke autoriseret",
+                          ERR_CODE_FORDRINGSHAVER_NOT_AUTHORIZED)))
           .onStatus(
               HttpStatusCode::is5xxServerError,
               resp ->
                   reactor.core.publisher.Mono.error(
                       new OpenDebtException(
-                          "Debt service unavailable",
-                          "DEBT_SERVICE_UNAVAILABLE",
+                          ERR_MSG_DEBT_SERVICE_UNAVAILABLE,
+                          ERR_CODE_DEBT_SERVICE_UNAVAILABLE,
                           OpenDebtException.ErrorSeverity.CRITICAL)))
           .bodyToMono(NotificationCollectionResult.class)
           .block();

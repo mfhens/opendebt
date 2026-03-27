@@ -55,6 +55,10 @@ public class CreditorTimelineController {
   private static final String FRAGMENT_ENTRIES = "fragments/timeline :: timeline-entries";
   private static final String WARNING_PARTIAL = "timeline.warning.partial";
   private static final String CREDITOR_ROLE = "CREDITOR";
+  private static final String PARAM_EVENT_CATEGORY = "eventCategory=";
+  private static final String PARAM_FROM_DATE = "fromDate=";
+  private static final String PARAM_TO_DATE = "toDate=";
+  private static final String PARAM_DEBT_ID = "debtId=";
 
   private final CaseServiceClient caseServiceClient;
   private final PaymentServiceClient paymentServiceClient;
@@ -261,16 +265,16 @@ public class CreditorTimelineController {
     StringBuilder sb = new StringBuilder(entriesUrl);
     sb.append("?page=").append(page + 1).append("&size=").append(size);
     for (EventCategory cat : filters.getEventCategories()) {
-      sb.append("&eventCategory=").append(cat.name());
+      sb.append("&").append(PARAM_EVENT_CATEGORY).append(cat.name());
     }
     if (filters.getFromDate() != null) {
-      sb.append("&fromDate=").append(filters.getFromDate());
+      sb.append("&").append(PARAM_FROM_DATE).append(filters.getFromDate());
     }
     if (filters.getToDate() != null) {
-      sb.append("&toDate=").append(filters.getToDate());
+      sb.append("&").append(PARAM_TO_DATE).append(filters.getToDate());
     }
     if (filters.getDebtId() != null) {
-      sb.append("&debtId=").append(filters.getDebtId());
+      sb.append("&").append(PARAM_DEBT_ID).append(filters.getDebtId());
     }
     return sb.toString();
   }
@@ -282,20 +286,20 @@ public class CreditorTimelineController {
       boolean first = true;
       for (EventCategory cat : filters.getEventCategories()) {
         if (!cat.equals(removedCat)) {
-          sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+          sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
           first = false;
         }
       }
       if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
         first = false;
       }
       if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
         first = false;
       }
       if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append("debtId=").append(filters.getDebtId());
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
       }
       links.put(removedCat.name(), sb.toString());
     }
@@ -303,15 +307,15 @@ public class CreditorTimelineController {
       StringBuilder sb = new StringBuilder(baseUrl);
       boolean first = true;
       for (EventCategory cat : filters.getEventCategories()) {
-        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
         first = false;
       }
       if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
         first = false;
       }
       if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append("debtId=").append(filters.getDebtId());
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
       }
       links.put("fromDate", sb.toString());
     }
@@ -319,15 +323,15 @@ public class CreditorTimelineController {
       StringBuilder sb = new StringBuilder(baseUrl);
       boolean first = true;
       for (EventCategory cat : filters.getEventCategories()) {
-        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
         first = false;
       }
       if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
         first = false;
       }
       if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append("debtId=").append(filters.getDebtId());
+        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
       }
       links.put("toDate", sb.toString());
     }
@@ -335,15 +339,15 @@ public class CreditorTimelineController {
       StringBuilder sb = new StringBuilder(baseUrl);
       boolean first = true;
       for (EventCategory cat : filters.getEventCategories()) {
-        sb.append(first ? "?" : "&").append("eventCategory=").append(cat.name());
+        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
         first = false;
       }
       if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append("fromDate=").append(filters.getFromDate());
+        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
         first = false;
       }
       if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append("toDate=").append(filters.getToDate());
+        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
       }
       links.put("debtId", sb.toString());
     }

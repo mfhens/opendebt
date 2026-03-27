@@ -39,6 +39,11 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
           "http://skat.dk/begrebsmodel/2009/01/15/|MFUnderretSamlingHent_IRequest",
               new String[] {"SkatUnderretSamlingHentService", "MFUnderretSamlingHent_I"});
 
+  private static final String PROP_MASKED_RESPONSE_BODY = "maskedResponseBody";
+  private static final String PROP_SOAP_STATUS = "soapStatus";
+  private static final String UNKNOWN_SERVICE = "UnknownService";
+  private static final String UNKNOWN_OPERATION = "UnknownOperation";
+
   private final ClsAuditClient clsAuditClient;
   private final SoapPiiMaskingUtil soapPiiMaskingUtil;
 
@@ -62,16 +67,17 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
   @Override
   public boolean handleResponse(MessageContext messageContext, Object endpoint) throws Exception {
     messageContext.setProperty(
-        "maskedResponseBody", soapPiiMaskingUtil.mask(extractBody(messageContext.getResponse())));
-    messageContext.setProperty("soapStatus", "SUCCESS");
+        PROP_MASKED_RESPONSE_BODY,
+        soapPiiMaskingUtil.mask(extractBody(messageContext.getResponse())));
+    messageContext.setProperty(PROP_SOAP_STATUS, "SUCCESS");
     return true;
   }
 
   @Override
   public boolean handleFault(MessageContext messageContext, Object endpoint) throws Exception {
     String responseBody = extractBody(messageContext.getResponse());
-    messageContext.setProperty("maskedResponseBody", soapPiiMaskingUtil.mask(responseBody));
-    messageContext.setProperty("soapStatus", "FAULT");
+    messageContext.setProperty(PROP_MASKED_RESPONSE_BODY, soapPiiMaskingUtil.mask(responseBody));
+    messageContext.setProperty(PROP_SOAP_STATUS, "FAULT");
     if (responseBody != null) {
       messageContext.setProperty(
           "soapFaultCode", extractXmlElement(responseBody, "faultcode", "Code"));
@@ -88,7 +94,7 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
       if (startTime == null) startTime = Instant.now();
       long responseTimeMs = Instant.now().toEpochMilli() - startTime.toEpochMilli();
 
-      String status = (String) messageContext.getProperty("soapStatus");
+      String status = (String) messageContext.getProperty(PROP_SOAP_STATUS);
       if (status == null) status = ex != null ? "FAULT" : "SUCCESS";
 
       String faultCode = (String) messageContext.getProperty("soapFaultCode");
@@ -105,12 +111,12 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
       String fordringshaverId = (String) messageContext.getProperty("fordringshaverId");
       String correlationId = (String) messageContext.getProperty("correlationId");
       String soapServiceName = (String) messageContext.getProperty("soapServiceName");
-      if (soapServiceName == null) soapServiceName = "UnknownService";
+      if (soapServiceName == null) soapServiceName = UNKNOWN_SERVICE;
       String soapOperationName = (String) messageContext.getProperty("soapOperationName");
-      if (soapOperationName == null) soapOperationName = "UnknownOperation";
+      if (soapOperationName == null) soapOperationName = UNKNOWN_OPERATION;
 
       String maskedReq = (String) messageContext.getProperty("maskedRequestBody");
-      String maskedResp = (String) messageContext.getProperty("maskedResponseBody");
+      String maskedResp = (String) messageContext.getProperty(PROP_MASKED_RESPONSE_BODY);
 
       Map<String, Object> newValues = new HashMap<>();
       newValues.put("responseTimeMs", String.valueOf(responseTimeMs));
@@ -153,14 +159,14 @@ public class ClsSoapAuditInterceptor implements EndpointInterceptor {
   }
 
   private String[] resolveServiceAndOperation(String body) {
-    if (body == null) return new String[] {"UnknownService", "UnknownOperation"};
+    if (body == null) return new String[] {UNKNOWN_SERVICE, UNKNOWN_OPERATION};
     for (Map.Entry<String, String[]> e : SERVICE_OP_MAP.entrySet()) {
       String[] parts = e.getKey().split("\\|");
       if (body.contains(parts[0]) && body.contains(parts[1])) {
         return e.getValue();
       }
     }
-    return new String[] {"UnknownService", "UnknownOperation"};
+    return new String[] {UNKNOWN_SERVICE, UNKNOWN_OPERATION};
   }
 
   private String extractXmlElement(String xml, String... elementNames) {
