@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opendebt-letter-service
+  namespace: opendebt
+  labels:
+    app: opendebt-letter-service
+    app.kubernetes.io/name: opendebt-letter-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: opendebt
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: opendebt-letter-service
+  template:
+    metadata:
+      labels:
+        app: opendebt-letter-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/path: "/letter-service/actuator/prometheus"
+    spec:
+      serviceAccountName: opendebt-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: letter-service
+          image: opendebt/opendebt-letter-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: opendebt-config
+            - secretRef:
+                name: opendebt-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /letter-service/actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /letter-service/actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: opendebt-letter-service
+                topologyKey: kubernetes.io/hostname

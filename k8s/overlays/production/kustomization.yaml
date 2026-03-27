@@ -31,3 +31,23 @@ configMapGenerator:
     literals:
       - SPRING_PROFILES_ACTIVE=production
       - KEYCLOAK_ISSUER_URI=https://keycloak.opendebt.dk/realms/opendebt
+
+images:
+  - name: opendebt/opendebt-case-service
+    newTag: latest
+  - name: opendebt/opendebt-debt-service
+    newTag: latest
+  - name: opendebt/opendebt-payment-service
+    newTag: latest
+  - name: opendebt/opendebt-letter-service
+    newTag: latest
+  - name: opendebt/opendebt-person-registry
+    newTag: latest
+  - name: opendebt/opendebt-creditor-service
+    newTag: latest
+  - name: opendebt/opendebt-creditor-portal
+    newTag: latest
+  - name: opendebt/opendebt-caseworker-portal
+    newTag: latest
+  - name: opendebt/opendebt-citizen-portal
+    newTag: latest

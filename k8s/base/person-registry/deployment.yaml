@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opendebt-person-registry
+  namespace: opendebt
+  labels:
+    app: opendebt-person-registry
+    app.kubernetes.io/name: opendebt-person-registry
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: opendebt
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: opendebt-person-registry
+  template:
+    metadata:
+      labels:
+        app: opendebt-person-registry
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8090"
+        prometheus.io/path: "/person-registry/actuator/prometheus"
+    spec:
+      serviceAccountName: opendebt-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: person-registry
+          image: opendebt/opendebt-person-registry:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8090
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: opendebt-config
+            - secretRef:
+                name: opendebt-secrets
+          env:
+            - name: DEMO_SEED_ORGANIZATIONS
+              value: "false"
+            - name: DEMO_SEED_PERSONS
+              value: "false"
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: opendebt-secrets
+                  key: ENCRYPTION_KEY
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /person-registry/actuator/health/liveness
+              port: 8090
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /person-registry/actuator/health/readiness
+              port: 8090
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: opendebt-person-registry
+                topologyKey: kubernetes.io/hostname

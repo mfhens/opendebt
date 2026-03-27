@@ -26,3 +26,19 @@ configMapGenerator:
 images:
   - name: opendebt/opendebt-case-service
     newTag: staging
+  - name: opendebt/opendebt-debt-service
+    newTag: staging
+  - name: opendebt/opendebt-payment-service
+    newTag: staging
+  - name: opendebt/opendebt-letter-service
+    newTag: staging
+  - name: opendebt/opendebt-person-registry
+    newTag: staging
+  - name: opendebt/opendebt-creditor-service
+    newTag: staging
+  - name: opendebt/opendebt-creditor-portal
+    newTag: staging
+  - name: opendebt/opendebt-caseworker-portal
+    newTag: staging
+  - name: opendebt/opendebt-citizen-portal
+    newTag: staging

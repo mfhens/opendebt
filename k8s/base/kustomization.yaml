@@ -8,6 +8,14 @@ resources:
   - configmap.yaml
   - service-account.yaml
   - case-service/
+  - debt-service/
+  - payment-service/
+  - letter-service/
+  - person-registry/
+  - creditor-service/
+  - creditor-portal/
+  - caseworker-portal/
+  - citizen-portal/
   - pgbackrest/
   - keycloak-backup/
 

@@ -6,7 +6,7 @@ metadata:
 data:
   JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
   SPRING_PROFILES_ACTIVE: "kubernetes"
-  
+
   # Service discovery (internal Kubernetes DNS)
   CASE_SERVICE_URL: "http://opendebt-case-service:8081"
   DEBT_SERVICE_URL: "http://opendebt-debt-service:8082"
@@ -14,6 +14,9 @@ data:
   LETTER_SERVICE_URL: "http://opendebt-letter-service:8084"
   CREDITOR_PORTAL_URL: "http://opendebt-creditor-portal:8085"
   CITIZEN_PORTAL_URL: "http://opendebt-citizen-portal:8086"
-  OFFSETTING_SERVICE_URL: "http://opendebt-offsetting-service:8087"
+  CASEWORKER_PORTAL_URL: "http://opendebt-caseworker-portal:8087"
   WAGE_GARNISHMENT_SERVICE_URL: "http://opendebt-wage-garnishment-service:8088"
   INTEGRATION_GATEWAY_URL: "http://opendebt-integration-gateway:8089"
+  PERSON_REGISTRY_URL: "http://opendebt-person-registry:8090"
+  RULES_ENGINE_URL: "http://opendebt-rules-engine:8091"
+  CREDITOR_SERVICE_URL: "http://opendebt-creditor-service:8092"

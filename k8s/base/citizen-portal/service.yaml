@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opendebt-citizen-portal
+  namespace: opendebt
+  labels:
+    app: opendebt-citizen-portal
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8086
+      targetPort: 8086
+      protocol: TCP
+      name: http
+  selector:
+    app: opendebt-citizen-portal
