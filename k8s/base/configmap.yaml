@@ -20,3 +20,7 @@ data:
   PERSON_REGISTRY_URL: "http://opendebt-person-registry:8090"
   RULES_ENGINE_URL: "http://opendebt-rules-engine:8091"
   CREDITOR_SERVICE_URL: "http://opendebt-creditor-service:8092"
+
+  # Observability — override in overlay with the actual OTel Collector endpoint
+  # for your environment (cluster-internal Collector, Azure Monitor, etc.)
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
