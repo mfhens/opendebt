@@ -69,7 +69,7 @@
         <jacoco.branch.coverage>0.70</jacoco.branch.coverage>
 
         <!-- SonarQube -->
-        <sonar.projectKey>opendebt</sonar.projectKey>
+        <sonar.projectKey>mfhens_opendebt</sonar.projectKey>
         <sonar.organization>mfhens</sonar.organization>
         <sonar.sources>src/main/java,src/main/resources</sonar.sources>
     </properties>

@@ -1,0 +1,2 @@
+# Binary DER-format exports — keep only PEM files in version control
+*.crt

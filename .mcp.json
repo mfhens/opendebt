@@ -1,15 +1,10 @@
 {
   "mcpServers": {
-    "Snyk": {
-      "command": "npx",
-      "args": ["-y", "snyk@latest", "mcp", "-t", "stdio"],
-      "env": {}
-    },
     "sonarqube": {
       "command": "docker",
-      "args": ["run", "--init", "--pull=always", "-i", "--rm", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_ORG", "mcp/sonarqube"],
+      "args": ["run", "--init", "-i", "--rm", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_ORG", "opendebt-sonarqube-mcp"],
       "env": {
-        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}",
+        "SONARQUBE_TOKEN": "${SONAR_TOKEN}",
         "SONARQUBE_ORG": "mfhens"
       }
     }
