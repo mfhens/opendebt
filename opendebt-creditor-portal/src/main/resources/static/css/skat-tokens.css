@@ -984,3 +984,94 @@ a:focus {
 .skat-lang-check {
   font-size: 0.75em;
 }
+
+/* =========================================================================
+   Step indicator — wizard progress component
+   ========================================================================= */
+.skat-step-indicator {
+  margin-bottom: var(--spacing--lg);
+}
+
+.skat-step-indicator__list {
+  display: flex;
+  list-style: none;
+  margin: 0 0 var(--spacing--md);
+  padding: 0;
+  position: relative;
+  counter-reset: none;
+}
+
+/* Connecting line between steps */
+.skat-step-indicator__list::before {
+  content: "";
+  position: absolute;
+  top: 1.25rem;
+  left: calc(1.5rem + 0.5 * (100% - 4 * 3rem) / 3);
+  right: calc(1.5rem + 0.5 * (100% - 4 * 3rem) / 3);
+  height: 2px;
+  background-color: var(--color-mischka);
+  z-index: 0;
+}
+
+.skat-step-indicator__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Step circle */
+.skat-step-indicator__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--color-white);
+  border: 2px solid var(--color-mischka);
+  color: var(--color-storm-gray);
+  font-family: var(--font-ui);
+  font-size: var(--font-size--sm);
+  font-weight: var(--font-weight--bold);
+  margin-bottom: var(--spacing--xs);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.skat-step-indicator__label {
+  font-family: var(--font-ui);
+  font-size: var(--font-size--xs);
+  color: var(--color-storm-gray);
+  text-align: center;
+  transition: color 0.2s;
+}
+
+/* Active step */
+.skat-step-indicator__item--active .skat-step-indicator__number {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.skat-step-indicator__item--active .skat-step-indicator__label {
+  color: var(--color-primary);
+  font-weight: var(--font-weight--bold);
+}
+
+/* Completed step */
+.skat-step-indicator__item--completed .skat-step-indicator__number {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.skat-step-indicator__item--completed .skat-step-indicator__label {
+  color: var(--color-mulled-wine);
+}
+
+/* Connecting line segment turns blue for completed steps */
+.skat-step-indicator__item--completed + .skat-step-indicator__item .skat-step-indicator__number::before {
+  background-color: var(--color-secondary);
+}
