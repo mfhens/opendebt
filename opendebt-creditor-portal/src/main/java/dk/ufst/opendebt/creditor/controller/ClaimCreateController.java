@@ -558,6 +558,11 @@ public class ClaimCreateController {
     model.addAttribute("currentStep", currentStep);
     model.addAttribute("totalSteps", TOTAL_STEPS);
     model.addAttribute("currentPage", "claim-new");
+    // Step indicator CSS class names passed as model attributes to avoid Thymeleaf __
+    // preprocessing conflicts with BEM double-underscore separators in string literals.
+    model.addAttribute("stepBaseClass", "skat-step-indicator__item");
+    model.addAttribute("stepActiveClass", "skat-step-indicator__item--active");
+    model.addAttribute("stepCompletedClass", "skat-step-indicator__item--completed");
 
     UUID actingCreditor = portalSessionService.resolveActingCreditor(null, session);
     model.addAttribute("actingCreditorOrgId", actingCreditor);
