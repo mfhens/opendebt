@@ -2,6 +2,8 @@ package dk.ufst.opendebt.common.soap;
 
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -26,14 +28,30 @@ public class Oces3CertificateParser {
   }
 
   private String extractDnField(String dn, String field) {
-    String[] parts = dn.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
     String prefix = field + "=";
-    for (String part : parts) {
+    for (String part : splitDn(dn)) {
       String trimmed = part.trim();
       if (trimmed.startsWith(prefix)) {
         return trimmed.substring(prefix.length()).trim();
       }
     }
     return "";
+  }
+
+  private List<String> splitDn(String dn) {
+    List<String> parts = new ArrayList<>();
+    int start = 0;
+    boolean inQuotes = false;
+    for (int i = 0; i < dn.length(); i++) {
+      char c = dn.charAt(i);
+      if (c == '"') {
+        inQuotes = !inQuotes;
+      } else if (c == ',' && !inQuotes) {
+        parts.add(dn.substring(start, i));
+        start = i + 1;
+      }
+    }
+    parts.add(dn.substring(start));
+    return parts;
   }
 }
