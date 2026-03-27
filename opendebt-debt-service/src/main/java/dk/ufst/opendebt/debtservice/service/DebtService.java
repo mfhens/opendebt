@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimDetailResponseDto;
 import dk.ufst.opendebt.debtservice.dto.CreditorClaimListItemDto;
 
 public interface DebtService {
@@ -45,4 +46,6 @@ public interface DebtService {
 
   Page<CreditorClaimListItemDto> getClaimsForCreditor(
       UUID creditorId, String status, boolean excludeZeroBalance, Pageable pageable);
+
+  ClaimDetailResponseDto getClaimDetail(UUID claimId);
 }

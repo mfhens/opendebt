@@ -17,6 +17,7 @@ import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.config.FordringMetrics;
 import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimDetailResponseDto;
 import dk.ufst.opendebt.debtservice.dto.CreditorClaimListItemDto;
 import dk.ufst.opendebt.debtservice.entity.ClaimArtEnum;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
@@ -380,5 +381,52 @@ public class DebtServiceImpl implements DebtService {
       throw new CreditorValidationException(message, reasonCode);
     }
     log.debug("Creditor {} authorized for action {}", creditorOrgId, action);
+  }
+
+  @Override
+  public ClaimDetailResponseDto getClaimDetail(UUID claimId) {
+    return debtRepository.findById(claimId).map(this::toClaimDetailResponseDto).orElse(null);
+  }
+
+  private ClaimDetailResponseDto toClaimDetailResponseDto(DebtEntity e) {
+    BigDecimal principal =
+        e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
+    BigDecimal interest = e.getInterestAmount() != null ? e.getInterestAmount() : BigDecimal.ZERO;
+    BigDecimal fees = e.getFeesAmount() != null ? e.getFeesAmount() : BigDecimal.ZERO;
+    BigDecimal outstanding =
+        e.getOutstandingBalance() != null ? e.getOutstandingBalance() : principal;
+
+    InterestSelectionEmbeddable sel = e.getInterestSelection();
+
+    return ClaimDetailResponseDto.builder()
+        .claimId(e.getId())
+        .claimType(e.getDebtTypeCode())
+        .claimCategory(e.getClaimCategory() != null ? e.getClaimCategory().name() : null)
+        .creditorDescription(e.getDescription())
+        .receivedDate(e.getReceivedAt() != null ? e.getReceivedAt().toLocalDate() : null)
+        .periodFrom(e.getPeriodFrom())
+        .periodTo(e.getPeriodTo())
+        .incorporationDate(e.getInceptionDate())
+        .dueDate(e.getDueDate())
+        .limitationDate(e.getLimitationDate())
+        .courtDate(e.getJudgmentDate())
+        .lastTimelyPaymentDate(e.getLastPaymentDate())
+        .creditorReference(e.getCreditorReference())
+        .obligationId(e.getExternalReference())
+        .relatedObligationId(null)
+        .interestRule(sel != null ? sel.getInterestRule() : null)
+        .interestRate(sel != null ? sel.getAdditionalInterestRate() : null)
+        .extraInterestRate(null)
+        .totalDebt(principal.add(interest).add(fees))
+        .latestInterestAccrualDate(null)
+        .originalPrincipal(principal)
+        .receivedAmount(BigDecimal.ZERO)
+        .claimBalance(outstanding)
+        .totalCreditorBalance(outstanding)
+        .amountSentForRecovery(principal)
+        .amountSentForRecoveryWithWriteUps(principal)
+        .debtorCount(1)
+        .zeroBalanceExpired(outstanding.compareTo(BigDecimal.ZERO) == 0)
+        .build();
   }
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimDetailResponseDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
 import dk.ufst.opendebt.debtservice.dto.CreditorClaimListItemDto;
 import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
@@ -103,6 +104,19 @@ public class DebtController {
       Pageable pageable) {
     return ResponseEntity.ok(
         debtService.getClaimsForCreditor(creditorId, status, excludeZeroBalance, pageable));
+  }
+
+  @GetMapping("/{id}/details")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
+  @Operation(
+      summary = "Get claim detail",
+      description = "Returns the full detail view for a claim, used by the creditor portal")
+  public ResponseEntity<ClaimDetailResponseDto> getClaimDetail(@PathVariable UUID id) {
+    ClaimDetailResponseDto detail = debtService.getClaimDetail(id);
+    if (detail == null) {
+      return ResponseEntity.notFound().build();
+    }
+    return ResponseEntity.ok(detail);
   }
 
   @GetMapping("/{id}")
