@@ -48,79 +48,56 @@ public final class TimelineUrlBuilder {
     Map<String, String> links = new HashMap<>();
 
     for (EventCategory removedCat : filters.getEventCategories()) {
-      StringBuilder sb = new StringBuilder(baseUrl);
-      boolean first = true;
-      for (EventCategory cat : filters.getEventCategories()) {
-        if (!cat.equals(removedCat)) {
-          sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
-          first = false;
-        }
-      }
-      if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
-        first = false;
-      }
-      if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
-        first = false;
-      }
-      if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
-      }
-      links.put(removedCat.name(), sb.toString());
+      links.put(
+          removedCat.name(), buildQueryString(baseUrl, filters, removedCat, true, true, true));
     }
-
     if (filters.getFromDate() != null) {
-      StringBuilder sb = new StringBuilder(baseUrl);
-      boolean first = true;
-      for (EventCategory cat : filters.getEventCategories()) {
-        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
-        first = false;
-      }
-      if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
-        first = false;
-      }
-      if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
-      }
-      links.put("fromDate", sb.toString());
+      links.put("fromDate", buildQueryString(baseUrl, filters, null, false, true, true));
     }
-
     if (filters.getToDate() != null) {
-      StringBuilder sb = new StringBuilder(baseUrl);
-      boolean first = true;
-      for (EventCategory cat : filters.getEventCategories()) {
-        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
-        first = false;
-      }
-      if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
-        first = false;
-      }
-      if (filters.getDebtId() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
-      }
-      links.put("toDate", sb.toString());
+      links.put("toDate", buildQueryString(baseUrl, filters, null, true, false, true));
     }
-
     if (filters.getDebtId() != null) {
-      StringBuilder sb = new StringBuilder(baseUrl);
-      boolean first = true;
-      for (EventCategory cat : filters.getEventCategories()) {
+      links.put("debtId", buildQueryString(baseUrl, filters, null, true, true, false));
+    }
+    return links;
+  }
+
+  /**
+   * Builds a query string from {@code baseUrl} including all active filter params, optionally
+   * excluding one category, fromDate, toDate, or debtId.
+   *
+   * @param excludedCat category to omit (pass {@code null} to include all)
+   * @param includeFrom whether to include fromDate
+   * @param includeTo whether to include toDate
+   * @param includeDebt whether to include debtId
+   */
+  private static String buildQueryString(
+      String baseUrl,
+      TimelineFilterDto filters,
+      EventCategory excludedCat,
+      boolean includeFrom,
+      boolean includeTo,
+      boolean includeDebt) {
+    StringBuilder sb = new StringBuilder(baseUrl);
+    boolean first = true;
+    for (EventCategory cat : filters.getEventCategories()) {
+      if (!cat.equals(excludedCat)) {
         sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
         first = false;
       }
-      if (filters.getFromDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
-        first = false;
-      }
-      if (filters.getToDate() != null) {
-        sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
-      }
-      links.put("debtId", sb.toString());
     }
-
-    return links;
+    if (includeFrom && filters.getFromDate() != null) {
+      sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
+      first = false;
+    }
+    if (includeTo && filters.getToDate() != null) {
+      sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
+      first = false;
+    }
+    if (includeDebt && filters.getDebtId() != null) {
+      sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+    }
+    return sb.toString();
   }
 }
