@@ -87,4 +87,15 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
           + "AND d.limitationDate <= :warningDate "
           + "AND d.lifecycleState NOT IN ('TILBAGEKALDT', 'AFSKREVET', 'INDFRIET')")
   List<DebtEntity> findApproachingLimitation(@Param("warningDate") LocalDate warningDate);
+
+  @Query(
+      "SELECT COUNT(d) FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId AND d.lifecycleState = :state")
+  long countByCreditorAndLifecycleState(
+      @Param("creditorOrgId") UUID creditorOrgId, @Param("state") ClaimLifecycleState state);
+
+  @Query(
+      "SELECT COUNT(d) FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId "
+          + "AND d.outstandingBalance = 0 "
+          + "AND d.lifecycleState NOT IN ('INDFRIET', 'TILBAGEKALDT', 'AFSKREVET')")
+  long countZeroBalanceByCreditor(@Param("creditorOrgId") UUID creditorOrgId);
 }

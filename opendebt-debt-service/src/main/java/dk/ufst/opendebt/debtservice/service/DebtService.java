@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
 
 public interface DebtService {
 
@@ -38,4 +39,6 @@ public interface DebtService {
   DebtDto writeDown(UUID id, java.math.BigDecimal amount);
 
   DebtDto toDto(dk.ufst.opendebt.debtservice.entity.DebtEntity entity);
+
+  ClaimCountsDto getClaimCounts(UUID creditorOrgId);
 }

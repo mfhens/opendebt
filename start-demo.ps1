@@ -401,7 +401,7 @@ if ($startCaseworker) {
 if ($startCreditor) {
     Write-Host "  Creditor Portal:    http://localhost:8085/creditor-portal/"
     Write-Host "    Fordringer:       http://localhost:8085/creditor-portal/fordringer"
-    Write-Host "    Opret fordring:   http://localhost:8085/creditor-portal/fordring/ny"
+    Write-Host "    Opret fordring:   http://localhost:8085/creditor-portal/fordring/opret"
 }
 if ($startCitizen) {
     Write-Host "  Citizen Portal:     http://localhost:8086/borger/"

@@ -16,7 +16,9 @@ import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.config.FordringMetrics;
+import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
 import dk.ufst.opendebt.debtservice.entity.ClaimArtEnum;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.InterestSelectionEmbeddable;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
@@ -298,8 +300,23 @@ public class DebtServiceImpl implements DebtService {
     }
   }
 
+  @Override
+  public ClaimCountsDto getClaimCounts(UUID creditorOrgId) {
+    return ClaimCountsDto.builder()
+        .inRecovery(
+            debtRepository.countByCreditorAndLifecycleState(
+                creditorOrgId, ClaimLifecycleState.OVERDRAGET))
+        .inHearing(
+            debtRepository.countByCreditorAndLifecycleState(
+                creditorOrgId, ClaimLifecycleState.HOERING))
+        .rejected(
+            debtRepository.countByCreditorAndLifecycleState(
+                creditorOrgId, ClaimLifecycleState.TILBAGEKALDT))
+        .zeroBalance(debtRepository.countZeroBalanceByCreditor(creditorOrgId))
+        .build();
+  }
+
   private void validateCreditorAction(UUID creditorOrgId, CreditorAction action) {
-    log.debug("Validating creditor action {} for creditor {}", action, creditorOrgId);
     ValidateActionRequest request = ValidateActionRequest.builder().requestedAction(action).build();
     ValidateActionResponse response = creditorServiceClient.validateAction(creditorOrgId, request);
 

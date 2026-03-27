@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
+import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
 import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
 import dk.ufst.opendebt.debtservice.dto.TransferForCollectionRequest;
@@ -67,6 +68,16 @@ public class DebtController {
     }
     return ResponseEntity.ok(
         debtService.listDebts(creditorId, debtorId, status, readinessStatus, pageable));
+  }
+
+  @GetMapping("/counts")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
+  @Operation(
+      summary = "Get claim counts for creditor",
+      description = "Returns summary claim counts by lifecycle state for the given creditor")
+  public ResponseEntity<ClaimCountsDto> getClaimCounts(
+      @Parameter(description = "Creditor organisation ID") @RequestParam UUID creditorId) {
+    return ResponseEntity.ok(debtService.getClaimCounts(creditorId));
   }
 
   @GetMapping("/{id}")
