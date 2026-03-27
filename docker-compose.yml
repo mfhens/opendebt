@@ -199,6 +199,25 @@ services:
       creditor-service:
         condition: service_started
 
+  caseworker-portal:
+    build: ./opendebt-caseworker-portal
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/opendebt
+      KEYCLOAK_CLIENT_SECRET: caseworker-portal-dev-secret
+      CASE_SERVICE_URL: http://case-service:8081
+      DEBT_SERVICE_URL: http://debt-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8083
+      PERSON_REGISTRY_URL: http://person-registry:8090
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      case-service:
+        condition: service_started
+
   citizen-portal:
     build: ./opendebt-citizen-portal
     ports:
