@@ -157,5 +157,7 @@ public class Oces3SoapSecurityInterceptor implements EndpointInterceptor {
   }
 
   @Override
-  public void afterCompletion(MessageContext messageContext, Object endpoint, Exception ex) {}
+  public void afterCompletion(MessageContext messageContext, Object endpoint, Exception ex) {
+    // No post-completion cleanup required for OCES3 security validation.
+  }
 }

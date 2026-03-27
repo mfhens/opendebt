@@ -33,7 +33,9 @@ public class TestClsAuditCapture implements ClsAuditClient {
   }
 
   @Override
-  public void flush() {}
+  public void flush() {
+    // No-op: test double captures events synchronously; nothing to flush.
+  }
 
   @Override
   public boolean isEnabled() {
