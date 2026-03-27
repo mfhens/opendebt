@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
+import dk.ufst.opendebt.debtservice.dto.CreditorClaimListItemDto;
 import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
 import dk.ufst.opendebt.debtservice.dto.TransferForCollectionRequest;
 import dk.ufst.opendebt.debtservice.service.ClaimLifecycleService;
@@ -78,6 +79,30 @@ public class DebtController {
   public ResponseEntity<ClaimCountsDto> getClaimCounts(
       @Parameter(description = "Creditor organisation ID") @RequestParam UUID creditorId) {
     return ResponseEntity.ok(debtService.getClaimCounts(creditorId));
+  }
+
+  @GetMapping("/claims")
+  @PreAuthorize("hasRole('CASEWORKER') or hasRole('ADMIN') or hasRole('CREDITOR')")
+  @Operation(
+      summary = "List claims for creditor",
+      description = "Returns paginated claims filtered by creditor and lifecycle status")
+  public ResponseEntity<Page<CreditorClaimListItemDto>> getClaimsForCreditor(
+      @Parameter(description = "Creditor organisation ID") @RequestParam UUID creditorId,
+      @Parameter(description = "Status filter: IN_RECOVERY, ZERO_BALANCE, HEARING, REJECTED")
+          @RequestParam(required = false)
+          String status,
+      @Parameter(description = "Exclude zero-balance claims from IN_RECOVERY view")
+          @RequestParam(defaultValue = "false")
+          boolean excludeZeroBalance,
+      @RequestParam(required = false) String sortBy,
+      @RequestParam(required = false) String sortDirection,
+      @RequestParam(required = false) String searchQuery,
+      @RequestParam(required = false) String searchType,
+      @RequestParam(required = false) String dateFrom,
+      @RequestParam(required = false) String dateTo,
+      Pageable pageable) {
+    return ResponseEntity.ok(
+        debtService.getClaimsForCreditor(creditorId, status, excludeZeroBalance, pageable));
   }
 
   @GetMapping("/{id}")

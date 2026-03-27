@@ -98,4 +98,17 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
           + "AND d.outstandingBalance = 0 "
           + "AND d.lifecycleState NOT IN ('INDFRIET', 'TILBAGEKALDT', 'AFSKREVET')")
   long countZeroBalanceByCreditor(@Param("creditorOrgId") UUID creditorOrgId);
+
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.creditorOrgId = :creditorOrgId "
+          + "AND (:state IS NULL OR d.lifecycleState = :state) "
+          + "AND (:zeroBalanceOnly = false OR d.outstandingBalance = 0) "
+          + "AND (:excludeZeroBalance = false OR d.outstandingBalance > 0 OR d.lifecycleState != 'OVERDRAGET') "
+          + "ORDER BY d.createdAt DESC")
+  Page<DebtEntity> findClaimsForCreditor(
+      @Param("creditorOrgId") UUID creditorOrgId,
+      @Param("state") ClaimLifecycleState state,
+      @Param("zeroBalanceOnly") boolean zeroBalanceOnly,
+      @Param("excludeZeroBalance") boolean excludeZeroBalance,
+      Pageable pageable);
 }

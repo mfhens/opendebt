@@ -17,6 +17,7 @@ import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.config.FordringMetrics;
 import dk.ufst.opendebt.debtservice.dto.ClaimCountsDto;
+import dk.ufst.opendebt.debtservice.dto.CreditorClaimListItemDto;
 import dk.ufst.opendebt.debtservice.entity.ClaimArtEnum;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
@@ -313,6 +314,55 @@ public class DebtServiceImpl implements DebtService {
             debtRepository.countByCreditorAndLifecycleState(
                 creditorOrgId, ClaimLifecycleState.TILBAGEKALDT))
         .zeroBalance(debtRepository.countZeroBalanceByCreditor(creditorOrgId))
+        .build();
+  }
+
+  @Override
+  public Page<CreditorClaimListItemDto> getClaimsForCreditor(
+      UUID creditorId, String status, boolean excludeZeroBalance, Pageable pageable) {
+
+    ClaimLifecycleState state =
+        switch (status != null ? status.toUpperCase() : "") {
+          case "IN_RECOVERY" -> ClaimLifecycleState.OVERDRAGET;
+          case "HEARING" -> ClaimLifecycleState.HOERING;
+          case "REJECTED" -> ClaimLifecycleState.TILBAGEKALDT;
+          default -> null;
+        };
+    boolean zeroBalanceOnly = "ZERO_BALANCE".equalsIgnoreCase(status);
+
+    return debtRepository
+        .findClaimsForCreditor(creditorId, state, zeroBalanceOnly, excludeZeroBalance, pageable)
+        .map(this::toClaimListItemDto);
+  }
+
+  private CreditorClaimListItemDto toClaimListItemDto(DebtEntity e) {
+    BigDecimal interest = e.getInterestAmount() != null ? e.getInterestAmount() : BigDecimal.ZERO;
+    BigDecimal fees = e.getFeesAmount() != null ? e.getFeesAmount() : BigDecimal.ZERO;
+    BigDecimal principal =
+        e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
+
+    return CreditorClaimListItemDto.builder()
+        .claimId(e.getId())
+        .creditorReference(e.getCreditorReference())
+        .claimTypeName(e.getDebtTypeCode())
+        .debtorType(null)
+        .debtorIdentifier(null)
+        .debtorCount(1)
+        .receivedDate(e.getCreatedAt() != null ? e.getCreatedAt().toLocalDate() : null)
+        .reportingTimestamp(e.getCreatedAt())
+        .claimStatus(e.getLifecycleState() != null ? e.getLifecycleState().name() : null)
+        .hearingStatus(e.getLifecycleState() != null ? e.getLifecycleState().name() : null)
+        .incorporationDate(e.getInceptionDate())
+        .periodFrom(e.getPeriodFrom())
+        .periodTo(e.getPeriodTo())
+        .amountSentForRecovery(principal)
+        .balance(e.getOutstandingBalance())
+        .balanceWithInterestAndFees(principal.add(interest).add(fees))
+        .zeroBalanceReachedDate(null)
+        .errorDescription(null)
+        .errorCount(0)
+        .caseId(null)
+        .actionCode(null)
         .build();
   }
 
