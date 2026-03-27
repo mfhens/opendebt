@@ -633,13 +633,16 @@ program:
         - petition008
         - petition009
         - petition023
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-28
       notes: >
         Multi-step wizard: debtor validation (CPR/CVR/SE/AKR), claim data entry (field visibility
         driven by creditor agreement), review, and submission. Submission outcomes: UDFOERT/AFVIST/HOERING.
         Replaces legacy NyMF CreateAndUpdateClaimClient. Requires petition023 for CPR verification.
         Requires CREDITOR_EDITOR role with allow_portal_actions and allow_create_recovery_claims.
-      next_step: Implement after petition038 navigation and petition023 CPR lookup are available.
+        All 3 functional gaps now closed: (1) real person-registry lookup via WebClient (TB-021),
+        (2) all 20 wizard fields forwarded to debt-service, (3) FR 22 audit logging via ClsAuditClient
+        (non-PII only; failure-safe). CPR throttling (FR 6) deferred as separate TB item.
+      next_step: Done. CPR throttling to be raised as new TB item (FR 6).
 
     petition034:
       title: Fordringshaverportal -- Write-up and write-down submission
@@ -1488,6 +1491,21 @@ program:
         exclusively. afterCompletion() reads the pre-masked values directly.
         No change to CLS audit event content or test behaviour. 59/59 tests pass.
       commit: 62c94c6
+    - id: TB-033
+      title: "CPR lookup throttling per user per birth date in person-registry"
+      status: open
+      priority: medium
+      created: 2026-04-28
+      description: |
+        FR 6 from petition 033 outcome contract: limit CPR lookups to prevent abuse.
+        The person-registry service should enforce a rate limit on POST /persons/lookup
+        keyed by (authenticated user subject + birth date) to prevent enumeration attacks.
+        Suggested approach: Redis-backed sliding window counter (e.g. 10 lookups / 60 s),
+        returning HTTP 429 with Retry-After on breach. Creditor-portal catches 429 and
+        displays a user-friendly throttle message at the debtor step of the wizard.
+        Consider configuring the limit via Spring Boot application properties so it can
+        be tuned per environment without redeployment.
+
     - id: TB-032
       title: "Improve opendebt-common unit test coverage"
       status: open
