@@ -1003,8 +1003,37 @@ program:
         DEBT_LIFECYCLE events in the timeline. TB-025/026/027 track housekeeping items
         identified during code review.
 
+    petition053:
+      title: Fordringshaverportal — Opskrivning og nedskrivning (fuld G.A.-komplient specifikation)
+      status: not_started
+      phase: phase-3
+      depends_on:
+        - petition034
+        - petition031
+      last_reviewed: 2026-03-28
+      notes: >
+        Supersedes petition 034 with a complete, G.A.-grounded specification for fordringshaver
+        write-up and write-down operations. Key additions over petition 034:
+        (1) Nedskrivning reason as controlled dropdown (NED_INDBETALING / NED_FEJL_OVERSENDELSE /
+        NED_GRUNDLAG_AENDRET) per gæld.bekendtg. § 7 stk. 2.
+        (2) Opkrævningsrente exception: OPSKRIVNING_REGULERING blocked for RENTE-category claims;
+        portal redirects to rentefordring submission (G.A.1.4.3).
+        (3) Høring timing banner: visible advisory when claim is in HOERING state (G.A.1.4.3,
+        gæld.bekendtg. § 7 stk. 1, 4. pkt.).
+        (4) Retroactive nedskrivning advisory: inline guidance when virkningsdato < today (G.A.1.4.4).
+        (5) Annulleret nedskrivning backdating explanation (G.A.1.4.3, 5. pkt.).
+        (6) Cross-system suspension advisory (GIL § 18 k).
+        (7) Scope exclusion: DINDB/OMPL/AFSK (G.A.2.3.4.4) removed — RIM-internal codes must
+        not appear in fordringshaver portal.
+        Partial portal fixes for items (2) and (3) already implemented in current sprint;
+        this petition formalises the full scope for complete implementation.
+      next_step: >
+        Implement nedskrivning reason dropdown (FR-1) and remove DINDB/OMPL/AFSK from
+        WriteUpReasonCode (FR-7). Portal høring banner and rente block partially in sprint
+        (compliance-fixes agent). Full spec at petitions/petition053-*.
+
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-26, 52 petitions tracked)
+  # STATUS SUMMARY (2026-03-28, 53 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1016,10 +1045,10 @@ program:
   #               petition047, petition048, petition050
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
-  #               petition051, petition052
+  #               petition051, petition052, petition053
   #
-  # Total: 52 petitions
-  #   6 validated, 40 implemented, 1 in_progress, 5 not_started
+  # Total: 53 petitions
+  #   6 validated, 40 implemented, 1 in_progress, 6 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
