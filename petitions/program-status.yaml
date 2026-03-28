@@ -653,18 +653,21 @@ program:
 
     petition034:
       title: Fordringshaverportal -- Write-up and write-down submission
-      status: implemented
+      status: superseded
+      superseded_by: petition053
       phase: phase-9
       depends_on:
         - petition030
         - petition008
         - petition012
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-03-28
       notes: >
-        From claim detail page (petition030), editors submit opskrivninger (write-ups) and
-        nedskrivninger (write-downs). 8 update types governed by creditor agreement permission flags.
-        Debtor selection for payment-related write-downs on multi-debtor claims.
-      next_step: Implement after petition030 claim detail provides the entry point.
+        Rudimentary implementation exists: 8 ClaimAdjustmentType values, permission gate,
+        basic form, forwarded to debt-service. Superseded by petition053 which provides a
+        complete G.A.-grounded specification (nedskrivning reason dropdown, RENTE-category
+        block, høring banner, retroactive advisory, annulleret backdating, DINDB/OMPL/AFSK
+        exclusion). The existing code is the baseline; petition053 extends and corrects it.
+      next_step: Implement remaining FRs from petition053.
 
     petition035:
       title: Fordringshaverportal -- Notifications search and download
@@ -1039,16 +1042,17 @@ program:
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
   #               petition008, petition010, petition011, petition015, petition016, petition017,
   #               petition018, petition019, petition022, petition023, petition024, petition025,
-  #               petition029, petition030, petition031, petition032, petition033, petition034,
+  #               petition029, petition030, petition031, petition032, petition033,
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050
+  # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
   #               petition051, petition052, petition053
   #
   # Total: 53 petitions
-  #   6 validated, 40 implemented, 1 in_progress, 6 not_started
+  #   6 validated, 39 implemented, 1 superseded, 1 in_progress, 6 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
