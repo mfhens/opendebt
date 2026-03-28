@@ -12,26 +12,24 @@ Feature: Explicit hæftelse and support for multiple skyldnere
     And a JOINT_AND_SEVERAL liability is added for debtor 2
     Then 2 active liabilities exist for the debt
 
-  Scenario: A fordring can have delt hæftelse with defined shares
+  Scenario: Delt haeftelse (PROPORTIONAL) is rejected per G.A.1.3.3
     Given a debt exists in the system
-    When a PROPORTIONAL liability is added for debtor 1 with 60 percent
-    And a PROPORTIONAL liability is added for debtor 2 with 40 percent
-    Then 2 active liabilities exist for the debt
-    And the shares sum to 100 percent
+    When a PROPORTIONAL liability is attempted on the same debt
+    Then the system rejects with "PROPORTIONAL liability type is not supported"
 
   Scenario: SOLE liability rejects second party
     Given a debt exists with a SOLE liability
     When a second SOLE liability is attempted
     Then the system rejects with "SOLE liability requires exactly one"
 
-  Scenario: PROPORTIONAL shares cannot exceed 100 percent
+  Scenario: PROPORTIONAL is always rejected per G.A.1.3.3 regardless of share amount
     Given a debt exists with a PROPORTIONAL liability at 70 percent
     When a PROPORTIONAL liability of 40 percent is attempted
-    Then the system rejects with "exceed 100%"
+    Then the system rejects with "PROPORTIONAL liability type is not supported"
 
   Scenario: Liability types cannot be mixed on same debt
-    Given a debt exists with a JOINT_AND_SEVERAL liability
-    When a PROPORTIONAL liability is attempted on the same debt
+    Given a debt exists with a SOLE liability
+    When a JOINT_AND_SEVERAL liability is attempted on the same debt
     Then the system rejects with "Cannot mix liability types"
 
   Scenario: Removing a liability deactivates it

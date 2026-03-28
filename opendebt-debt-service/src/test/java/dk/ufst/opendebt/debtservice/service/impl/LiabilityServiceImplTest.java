@@ -17,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dk.ufst.opendebt.debtservice.dto.LiabilityDto;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
+import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity.LiabilityType;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -34,6 +36,11 @@ class LiabilityServiceImplTest {
   private static final UUID DEBTOR_1 = UUID.randomUUID();
   private static final UUID DEBTOR_2 = UUID.randomUUID();
 
+  /** A debt in RESTANCE state (the only state that permits liability structure changes). */
+  private static DebtEntity restanceDebt() {
+    return DebtEntity.builder().id(DEBT_ID).lifecycleState(ClaimLifecycleState.RESTANCE).build();
+  }
+
   @BeforeEach
   void setUp() {
     service = new LiabilityServiceImpl(liabilityRepository, debtRepository);
@@ -41,7 +48,7 @@ class LiabilityServiceImplTest {
 
   @Test
   void addLiability_sole_createsSuccessfully() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(restanceDebt()));
     when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_1)).thenReturn(false);
     when(liabilityRepository.findByDebtIdAndActiveTrue(DEBT_ID)).thenReturn(List.of());
     when(liabilityRepository.save(any()))
@@ -62,7 +69,7 @@ class LiabilityServiceImplTest {
 
   @Test
   void addLiability_sole_rejectsSecondParty() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(restanceDebt()));
     when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_2)).thenReturn(false);
 
     LiabilityEntity existing =
@@ -82,7 +89,7 @@ class LiabilityServiceImplTest {
 
   @Test
   void addLiability_jointAndSeveral_allowsMultipleParties() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(restanceDebt()));
     when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_2)).thenReturn(false);
 
     LiabilityEntity existing =
@@ -108,53 +115,22 @@ class LiabilityServiceImplTest {
     assertThat(result.getLiabilityType()).isEqualTo("JOINT_AND_SEVERAL");
   }
 
+  // Ref: G.A.1.3.3 — PROPORTIONAL type is rejected upfront; delt hæftelse must be split
+  // into separate fordringer by the fordringshaver before submission.
   @Test
-  void addLiability_proportional_validatesShares() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
-    when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_1)).thenReturn(false);
-    when(liabilityRepository.findByDebtIdAndActiveTrue(DEBT_ID)).thenReturn(List.of());
-    when(liabilityRepository.save(any()))
-        .thenAnswer(
-            inv -> {
-              LiabilityEntity e = inv.getArgument(0);
-              e.setId(UUID.randomUUID());
-              return e;
-            });
-
-    LiabilityDto result =
-        service.addLiability(DEBT_ID, DEBTOR_1, LiabilityType.PROPORTIONAL, new BigDecimal("60"));
-
-    assertThat(result.getLiabilityType()).isEqualTo("PROPORTIONAL");
-    assertThat(result.getSharePercentage()).isEqualByComparingTo(new BigDecimal("60"));
-  }
-
-  @Test
-  void addLiability_proportional_rejectsExceeding100Percent() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
-    when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_2)).thenReturn(false);
-
-    LiabilityEntity existing =
-        LiabilityEntity.builder()
-            .id(UUID.randomUUID())
-            .debtId(DEBT_ID)
-            .debtorPersonId(DEBTOR_1)
-            .liabilityType(LiabilityType.PROPORTIONAL)
-            .sharePercentage(new BigDecimal("70"))
-            .active(true)
-            .build();
-    when(liabilityRepository.findByDebtIdAndActiveTrue(DEBT_ID)).thenReturn(List.of(existing));
-
+  void addLiability_proportional_throws() {
     assertThatThrownBy(
             () ->
                 service.addLiability(
-                    DEBT_ID, DEBTOR_2, LiabilityType.PROPORTIONAL, new BigDecimal("40")))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("exceed 100%");
+                    DEBT_ID, DEBTOR_1, LiabilityType.PROPORTIONAL, new BigDecimal("60")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("PROPORTIONAL liability type is not supported")
+        .hasMessageContaining("G.A.1.3.3");
   }
 
   @Test
   void addLiability_rejectsMixedTypes() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(restanceDebt()));
     when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_2)).thenReturn(false);
 
     LiabilityEntity existing =
@@ -162,22 +138,20 @@ class LiabilityServiceImplTest {
             .id(UUID.randomUUID())
             .debtId(DEBT_ID)
             .debtorPersonId(DEBTOR_1)
-            .liabilityType(LiabilityType.JOINT_AND_SEVERAL)
+            .liabilityType(LiabilityType.SOLE)
             .active(true)
             .build();
     when(liabilityRepository.findByDebtIdAndActiveTrue(DEBT_ID)).thenReturn(List.of(existing));
 
     assertThatThrownBy(
-            () ->
-                service.addLiability(
-                    DEBT_ID, DEBTOR_2, LiabilityType.PROPORTIONAL, new BigDecimal("50")))
+            () -> service.addLiability(DEBT_ID, DEBTOR_2, LiabilityType.JOINT_AND_SEVERAL, null))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Cannot mix liability types");
   }
 
   @Test
   void addLiability_debtNotFound_throws() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(false);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.addLiability(DEBT_ID, DEBTOR_1, LiabilityType.SOLE, null))
         .isInstanceOf(IllegalArgumentException.class)
@@ -186,12 +160,25 @@ class LiabilityServiceImplTest {
 
   @Test
   void addLiability_duplicateDebtor_throws() {
-    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(restanceDebt()));
     when(liabilityRepository.existsByDebtIdAndDebtorPersonId(DEBT_ID, DEBTOR_1)).thenReturn(true);
 
     assertThatThrownBy(() -> service.addLiability(DEBT_ID, DEBTOR_1, LiabilityType.SOLE, null))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("already exists");
+  }
+
+  // Ref: G.A.1.3.3 / GIL § 2 stk. 5 — OVERDRAGET claims have immutable liability structure.
+  @Test
+  void addLiability_onOverdragetDebt_throws() {
+    DebtEntity overdragetDebt =
+        DebtEntity.builder().id(DEBT_ID).lifecycleState(ClaimLifecycleState.OVERDRAGET).build();
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(overdragetDebt));
+
+    assertThatThrownBy(() -> service.addLiability(DEBT_ID, DEBTOR_1, LiabilityType.SOLE, null))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Hæftelsesstruktur is immutable")
+        .hasMessageContaining("OVERDRAGET");
   }
 
   @Test

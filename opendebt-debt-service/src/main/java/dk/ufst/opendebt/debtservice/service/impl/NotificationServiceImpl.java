@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.debtservice.service.impl;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -94,6 +95,19 @@ public class NotificationServiceImpl implements NotificationService {
     return debtRepository
         .findById(debtId)
         .orElseThrow(() -> new IllegalArgumentException("Debt not found: " + debtId));
+  }
+
+  @Override
+  @Transactional
+  public void notifyModregning(UUID debtId, BigDecimal offsetAmount) {
+    // G.A.3.1.4: debtor must receive a modregningsmeddelelse when a SET_OFF is applied.
+    // Full letter-service integration is tracked in TB-038. This stub ensures the
+    // obligation is auditable until the outbound channel is implemented.
+    log.warn(
+        "MODREGNING_NOTIFICATION_REQUIRED: debt={}, offsetAmount={} — "
+            + "modregningsmeddelelse not yet dispatched (G.A.3.1.4). See TB-038.",
+        debtId,
+        offsetAmount);
   }
 
   /** Generates a structured OCR payment reference line for demand-for-payment notifications. */

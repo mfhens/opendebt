@@ -26,12 +26,14 @@ import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity.MeasureType;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.CollectionMeasureRepository;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
+import dk.ufst.opendebt.debtservice.service.NotificationService;
 
 @ExtendWith(MockitoExtension.class)
 class CollectionMeasureServiceImplTest {
 
   @Mock private CollectionMeasureRepository measureRepository;
   @Mock private DebtRepository debtRepository;
+  @Mock private NotificationService notificationService;
 
   private CollectionMeasureServiceImpl service;
 
@@ -41,7 +43,8 @@ class CollectionMeasureServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new CollectionMeasureServiceImpl(measureRepository, debtRepository);
+    service =
+        new CollectionMeasureServiceImpl(measureRepository, debtRepository, notificationService);
     overdragetDebt =
         DebtEntity.builder()
             .id(DEBT_ID)
@@ -73,6 +76,40 @@ class CollectionMeasureServiceImplTest {
     assertThat(result.getMeasureType()).isEqualTo("SET_OFF");
     assertThat(result.getStatus()).isEqualTo("INITIATED");
     assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("5000"));
+  }
+
+  // Ref: G.A.3.1.4 — notifyModregning must be called when a SET_OFF measure is initiated.
+  @Test
+  void initiateMeasure_setOff_callsNotifyModregning() {
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(overdragetDebt));
+    when(measureRepository.save(any()))
+        .thenAnswer(
+            inv -> {
+              CollectionMeasureEntity e = inv.getArgument(0);
+              e.setId(UUID.randomUUID());
+              return e;
+            });
+
+    service.initiateMeasure(DEBT_ID, MeasureType.SET_OFF, new BigDecimal("3000"), null);
+
+    verify(notificationService).notifyModregning(DEBT_ID, new BigDecimal("3000"));
+  }
+
+  // Ref: G.A.3.1.4 — notifyModregning must NOT be called for non-SET_OFF measure types.
+  @Test
+  void initiateMeasure_wageGarnishment_doesNotCallNotifyModregning() {
+    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(overdragetDebt));
+    when(measureRepository.save(any()))
+        .thenAnswer(
+            inv -> {
+              CollectionMeasureEntity e = inv.getArgument(0);
+              e.setId(UUID.randomUUID());
+              return e;
+            });
+
+    service.initiateMeasure(DEBT_ID, MeasureType.WAGE_GARNISHMENT, new BigDecimal("1000"), null);
+
+    verify(notificationService, never()).notifyModregning(any(), any());
   }
 
   @Test

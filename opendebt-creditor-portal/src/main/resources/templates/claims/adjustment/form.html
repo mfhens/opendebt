@@ -28,6 +28,11 @@
       <p th:text="${actionError}">Handlingen kunne ikke gennemføres.</p>
     </div>
 
+    <!-- P031 / G.A.1.4.3: Høring informational banner -->
+    <div th:if="${claimInHoering}" class="skat-alert skat-alert--info" role="status">
+      <p th:text="#{adjustment.info.hoering}">Denne fordring er i høring. Din opskrivning eller nedskrivning vil kun have virkning, når høringen er afgjort og bekræftet eller rettet.</p>
+    </div>
+
     <th:block th:if="${allowedTypes != null and !#lists.isEmpty(allowedTypes)}">
 
       <!-- Validation error summary -->

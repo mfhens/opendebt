@@ -50,6 +50,9 @@ public class ClaimDetailDto {
   // --- Debtor count (used for conditional display) ---
   private int debtorCount;
 
+  // --- Lifecycle state ---
+  private String lifecycleState;
+
   // --- Financial breakdown rows ---
   private List<FinancialBreakdownRowDto> financialBreakdown;
 

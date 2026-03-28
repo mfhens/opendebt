@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import dk.ufst.opendebt.debtservice.dto.LiabilityDto;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity.LiabilityType;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -50,6 +51,8 @@ public class Petition005Steps {
             .dueDate(LocalDate.now().minusMonths(1))
             .status(DebtEntity.DebtStatus.ACTIVE)
             .readinessStatus(DebtEntity.ReadinessStatus.READY_FOR_COLLECTION)
+            // G.A.1.3.3: only RESTANCE (pre-overdragelse) allows liability structure changes.
+            .lifecycleState(ClaimLifecycleState.RESTANCE)
             .build();
     debt = debtRepository.save(debt);
     debtId = debt.getId();
@@ -86,10 +89,14 @@ public class Petition005Steps {
 
   @When("a PROPORTIONAL liability is added for debtor {int} with {int} percent")
   public void aProportionalLiabilityIsAdded(int debtorNum, int percent) {
+    // G.A.1.3.3: PROPORTIONAL is rejected upfront; exception is caught for assertion.
     UUID debtorId = debtorNum == 1 ? debtor1 : debtor2;
-    lastLiability =
-        liabilityService.addLiability(
-            debtId, debtorId, LiabilityType.PROPORTIONAL, new BigDecimal(percent));
+    try {
+      liabilityService.addLiability(
+          debtId, debtorId, LiabilityType.PROPORTIONAL, new BigDecimal(percent));
+    } catch (Exception e) {
+      lastException = e;
+    }
   }
 
   @And("the shares sum to {int} percent")
@@ -125,9 +132,14 @@ public class Petition005Steps {
 
   @Given("a debt exists with a PROPORTIONAL liability at {int} percent")
   public void aDebtExistsWithProportionalLiability(int percent) {
+    // G.A.1.3.3: PROPORTIONAL is rejected; step creates a RESTANCE debt for exception-path testing.
     aDebtExistsInTheSystem();
-    liabilityService.addLiability(
-        debtId, debtor1, LiabilityType.PROPORTIONAL, new BigDecimal(percent));
+    try {
+      liabilityService.addLiability(
+          debtId, debtor1, LiabilityType.PROPORTIONAL, new BigDecimal(percent));
+    } catch (Exception e) {
+      lastException = e;
+    }
   }
 
   @When("a PROPORTIONAL liability of {int} percent is attempted")
@@ -135,6 +147,15 @@ public class Petition005Steps {
     try {
       liabilityService.addLiability(
           debtId, debtor2, LiabilityType.PROPORTIONAL, new BigDecimal(percent));
+    } catch (Exception e) {
+      lastException = e;
+    }
+  }
+
+  @When("a JOINT_AND_SEVERAL liability is attempted on the same debt")
+  public void aJointAndSeveralLiabilityIsAttemptedOnSameDebt() {
+    try {
+      liabilityService.addLiability(debtId, debtor2, LiabilityType.JOINT_AND_SEVERAL, null);
     } catch (Exception e) {
       lastException = e;
     }

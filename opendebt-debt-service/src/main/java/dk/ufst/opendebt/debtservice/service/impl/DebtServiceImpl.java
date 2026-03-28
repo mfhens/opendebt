@@ -426,6 +426,7 @@ public class DebtServiceImpl implements DebtService {
         .amountSentForRecovery(principal)
         .amountSentForRecoveryWithWriteUps(principal)
         .debtorCount(1)
+        .lifecycleState(e.getLifecycleState() != null ? e.getLifecycleState().name() : null)
         .zeroBalanceExpired(outstanding.compareTo(BigDecimal.ZERO) == 0)
         .build();
   }

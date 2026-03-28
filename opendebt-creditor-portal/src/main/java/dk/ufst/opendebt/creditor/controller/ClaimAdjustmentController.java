@@ -102,6 +102,11 @@ public class ClaimAdjustmentController {
     }
     censorDebtorCprNumbers(claimDetail);
 
+    // P031 / G.A.1.4.3: Show informational banner when claim is in høring.
+    if ("HOERING".equals(claimDetail.getLifecycleState())) {
+      model.addAttribute("claimInHoering", true);
+    }
+
     model.addAttribute(MODEL_CLAIM_ID, id);
     model.addAttribute("claim", claimDetail);
     model.addAttribute("direction", dir.name());
@@ -188,6 +193,20 @@ public class ClaimAdjustmentController {
           "adjustment.validation.debtor.required",
           messageSource.getMessage(
               "adjustment.validation.debtor.required", null, LocaleContextHolder.getLocale()));
+    }
+
+    // G.A.1.4.3 / P034-a: Write-up of opkrævningsrente must use a new rentefordring,
+    // not an opskrivningsfordring.
+    if (claimDetail != null
+        && "RENTE".equalsIgnoreCase(claimDetail.getClaimCategory())
+        && adjustmentForm.getAdjustmentType() != null
+        && adjustmentForm.getAdjustmentType().getDirection()
+            == ClaimAdjustmentType.Direction.WRITE_UP) {
+      bindingResult.rejectValue(
+          "adjustmentType",
+          "adjustment.validation.type.rentefordring",
+          messageSource.getMessage(
+              "adjustment.validation.type.rentefordring", null, LocaleContextHolder.getLocale()));
     }
 
     if (bindingResult.hasErrors()) {
@@ -300,6 +319,10 @@ public class ClaimAdjustmentController {
     ClaimDetailDto claimDetail = loadClaimDetail(claimId, model);
     if (claimDetail != null) {
       censorDebtorCprNumbers(claimDetail);
+      // P031 / G.A.1.4.3: Reapply høring banner on form reload after validation error.
+      if ("HOERING".equals(claimDetail.getLifecycleState())) {
+        model.addAttribute("claimInHoering", true);
+      }
     }
 
     model.addAttribute(MODEL_CLAIM_ID, claimId);

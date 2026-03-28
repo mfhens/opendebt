@@ -17,6 +17,7 @@ import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.repository.CollectionMeasureRepository;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.service.CollectionMeasureService;
+import dk.ufst.opendebt.debtservice.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class CollectionMeasureServiceImpl implements CollectionMeasureService {
 
   private final CollectionMeasureRepository measureRepository;
   private final DebtRepository debtRepository;
+  private final NotificationService notificationService;
 
   @Override
   @Transactional
@@ -57,6 +59,11 @@ public class CollectionMeasureServiceImpl implements CollectionMeasureService {
     entity = measureRepository.save(entity);
 
     log.info("Initiated {} for debt={}, measure={}", type, debtId, entity.getId());
+
+    // G.A.3.1.4: Notify debtor of modregning (SET_OFF) obligation.
+    if (type == MeasureType.SET_OFF) {
+      notificationService.notifyModregning(debtId, amount);
+    }
 
     return toDto(entity);
   }

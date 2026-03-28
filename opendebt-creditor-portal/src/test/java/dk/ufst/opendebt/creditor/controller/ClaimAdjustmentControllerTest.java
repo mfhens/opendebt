@@ -495,6 +495,81 @@ class ClaimAdjustmentControllerTest {
 
   // --- Receipt page tests ---
 
+  // Ref: P031 / G.A.1.4.3 — høring banner shown when claim lifecycle state is HOERING.
+  @Test
+  void showForm_setsClaimInHoeringAttribute_whenLifecycleStateIsHOERING() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    CreditorAgreementDto agreement =
+        CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
+    when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
+    ClaimDetailDto hoeringClaim =
+        ClaimDetailDto.builder()
+            .claimId(TEST_CLAIM_ID)
+            .claimType("SKAT")
+            .claimCategory("HOVEDFORDRING")
+            .lifecycleState("HOERING")
+            .debtorCount(1)
+            .debtors(
+                List.of(
+                    DebtorInfoDto.builder().identifierType("CPR").identifier("0101901234").build()))
+            .build();
+    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(hoeringClaim);
+
+    Model model = new ConcurrentModel();
+    controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_DOWN", model, session);
+
+    assertThat(model.getAttribute("claimInHoering")).isEqualTo(true);
+  }
+
+  // Ref: P034-a / G.A.1.4.3 — RENTE category + WRITE_UP direction must be rejected.
+  @Test
+  void submitAdjustment_renteCategory_writeUp_isRejected() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    CreditorAgreementDto agreement =
+        CreditorAgreementDto.builder()
+            .portalActionsAllowed(true)
+            .allowWriteUpAdjustment(true)
+            .build();
+    when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
+    ClaimDetailDto renteClaim =
+        ClaimDetailDto.builder()
+            .claimId(TEST_CLAIM_ID)
+            .claimType("RENTE")
+            .claimCategory("RENTE")
+            .debtorCount(1)
+            .debtors(
+                List.of(
+                    DebtorInfoDto.builder().identifierType("CPR").identifier("0101901234").build()))
+            .build();
+    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(renteClaim);
+    when(messageSource.getMessage(
+            eq("adjustment.validation.type.rentefordring"), any(), any(Locale.class)))
+        .thenReturn("Opskrivning af rente ikke tilladt via opskrivningsfordring.");
+
+    ClaimAdjustmentRequestDto form =
+        ClaimAdjustmentRequestDto.builder()
+            .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
+            .amount(new BigDecimal("50.00"))
+            .effectiveDate(LocalDate.of(2026, 1, 1))
+            .reason("AFSK")
+            .build();
+    BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
+    Model model = new ConcurrentModel();
+    RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+    String viewName =
+        controller.submitAdjustment(
+            TEST_CLAIM_ID, form, bindingResult, "WRITE_UP", model, session, redirectAttributes);
+
+    assertThat(viewName).isEqualTo("claims/adjustment/form");
+    assertThat(bindingResult.hasErrors()).isTrue();
+    assertThat(bindingResult.getFieldError("adjustmentType")).isNotNull();
+    assertThat(bindingResult.getFieldError("adjustmentType").getCode())
+        .isEqualTo("adjustment.validation.type.rentefordring");
+  }
+
   @Test
   void showReceipt_redirectsToDemoLogin_whenNoSession() {
     when(portalSessionService.resolveActingCreditor(eq(null), any())).thenReturn(null);

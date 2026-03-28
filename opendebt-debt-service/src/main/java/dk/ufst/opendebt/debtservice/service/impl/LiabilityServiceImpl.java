@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.debtservice.dto.LiabilityDto;
+import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
+import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity;
 import dk.ufst.opendebt.debtservice.entity.LiabilityEntity.LiabilityType;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
@@ -30,8 +32,28 @@ public class LiabilityServiceImpl implements LiabilityService {
   public LiabilityDto addLiability(
       UUID debtId, UUID debtorPersonId, LiabilityType type, BigDecimal sharePercentage) {
 
-    if (!debtRepository.existsById(debtId)) {
-      throw new IllegalArgumentException("Debt not found: " + debtId);
+    // G.A.1.3.3: Delt hæftelse must not be modelled within the inddrivelse layer.
+    // Fordringshavere must split proportional shares as separate fordringer before submission.
+    if (type == LiabilityType.PROPORTIONAL) {
+      throw new IllegalArgumentException(
+          "PROPORTIONAL liability type is not supported in the inddrivelse layer per G.A.1.3.3. "
+              + "Split delt hæftelse into separate fordringer before submission.");
+    }
+
+    DebtEntity debt =
+        debtRepository
+            .findById(debtId)
+            .orElseThrow(() -> new IllegalArgumentException("Debt not found: " + debtId));
+
+    // G.A.1.3.3 / GIL § 2 stk. 5: Hæftelsesstruktur is immutable once claim is OVERDRAGET.
+    // Only claims in RESTANCE (pre-overdragelse) may have their liability structure changed.
+    if (debt.getLifecycleState() != ClaimLifecycleState.RESTANCE) {
+      throw new IllegalStateException(
+          "Hæftelsesstruktur is immutable on claim "
+              + debtId
+              + " in state "
+              + debt.getLifecycleState()
+              + ". Changes require tilbagekaldelse and re-submission per G.A.1.3.3 / GIL § 2, stk. 5.");
     }
 
     if (liabilityRepository.existsByDebtIdAndDebtorPersonId(debtId, debtorPersonId)) {
@@ -105,25 +127,6 @@ public class LiabilityServiceImpl implements LiabilityService {
                 + existingType
                 + ", new: "
                 + type);
-      }
-    }
-
-    if (type == LiabilityType.PROPORTIONAL) {
-      if (sharePercentage == null
-          || sharePercentage.compareTo(BigDecimal.ZERO) <= 0
-          || sharePercentage.compareTo(new BigDecimal("100")) > 0) {
-        throw new IllegalArgumentException(
-            "PROPORTIONAL liability requires sharePercentage between 0 and 100");
-      }
-
-      BigDecimal totalExisting =
-          existing.stream()
-              .map(e -> e.getSharePercentage() != null ? e.getSharePercentage() : BigDecimal.ZERO)
-              .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-      if (totalExisting.add(sharePercentage).compareTo(new BigDecimal("100")) > 0) {
-        throw new IllegalStateException(
-            "Total share percentages would exceed 100%. Current total: " + totalExisting);
       }
     }
   }

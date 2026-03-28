@@ -54,6 +54,9 @@ public class ClaimDetailResponseDto {
   // Debtor count
   private int debtorCount;
 
+  // Lifecycle state (passed through to creditor portal for UI decisions, e.g. høring banner)
+  private String lifecycleState;
+
   // Sub-lists (empty for now — no PII, no write-up data in debt-service)
   @Builder.Default private List<Object> financialBreakdown = Collections.emptyList();
   @Builder.Default private List<Object> writeUps = Collections.emptyList();
