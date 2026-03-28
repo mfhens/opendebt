@@ -41,6 +41,8 @@ These are "static" validation rules that can be evaluated without complex servic
 
 12. For OPRETFORDRING and GENINDSENDFORDRING actions, the system shall verify that ArtType is either 'INDR' (inddrivelse) or 'MODR' (modregning); if not, reject with error code 411 (FORDRING_TYPE_ERROR).
 
+    > **Note on MODR:** `MODR` (Modregning) is a legacy DMI concept — it does not exist as a distinct ArtType in PSRM. Rule 411 accepts `MODR` for backwards compatibility with DMI-path submissions only. New PSRM-path fordringer must use `INDR`. If/when DMI-path support is removed, `MODR` should be dropped from the valid set. Reference: PSRM Reference Context (Fordringsart row) in this petition.
+
 ### Interest Rate Validation (Rule 438)
 
 13. The system shall verify that MerRenteSats is not negative; if negative, reject with error code 438 (NEGATIVE_INTEREST_RATE).

@@ -93,6 +93,7 @@ When a submitted claim has stamdata deviations from the indgangsfilter rules, it
 
 - The hearing workflow is managed by `debt-service` (and potentially `case-service` for workflow orchestration via Flowable).
 - This petition defines the portal views and user flows, not the backend API or workflow engine design.
+- **G.A.1.4.3 (Opskrivning modtaget under høring):** If a fordringshaver submits an opskrivningsfordring while the related (main) claim is still in høring, the opskrivningsfordring is not considered received for inddrivelse until the høring is resolved (confirmed or corrected). Interest accrual on the opskrivningsbeløb begins at the høring resolution date, not at the opskrivning submission date. The portal must communicate this timing rule to fordringshavere — e.g., via an informational notice on the høring detail view when an opskrivning is pending for a claim currently in høring.
 
 ## Out of scope
 

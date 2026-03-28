@@ -45,6 +45,8 @@ When a crossing transaction is detected, OpenDebt shall replay the full financia
 3. Recalculate interest for each period between balance-changing events using the corrected principal.
 4. The result is a complete, consistent set of ledger postings from the crossing point to the present.
 
+> **Alternative (G.A.1.4.4 / GIL § 18 l):** Per G.A.1.4.4 and GIL § 18 l, restanceinddrivelsesmyndighed may in certain cases choose to set the nedskrivning's effective date to the date of receipt (prospective, not retroactive) and instead pay the debtor a **rentegodtgørelse** (interest compensation) rather than performing a full retroactive timeline replay. This petition assumes full retroactive timeline replay as the primary implementation path; the rentegodtgørelse alternative is operationally valid under Danish law and may be preferred when retroactive replay is computationally expensive or would produce anomalous results. Future iterations may expose this as a caseworker-selectable option.
+
 ### FR-3: Dækningsophævelse and re-application
 
 When the recalculated timeline differs from the previously posted timeline:

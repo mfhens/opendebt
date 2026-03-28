@@ -33,7 +33,7 @@ Introducing a structured payout workflow closes this gap by:
 | Udbetaling | Payout / Disbursement | Return of a credit balance to the debtor |
 | Kreditsaldo | Credit balance | Positive balance remaining after overpayment or write-down |
 | NemKonto | NemKonto | The Danish national payment account; mandatory disbursement channel for public bodies |
-| 4-øjne-princip | Four-eyes principle | Workflow requiring a second authorised user to approve an action; creator ≠ approver |
+| 4-øjne-princip | Four-eyes principle | Workflow requiring a second authorised user to approve an action; creator ≠ approver. *(Note: the 4-eyes approval requirement is an internal governance control, not a G.A./GIL mandate. It reflects the principle of dual control for financial disbursements in public sector institutions, consistent with Finansministeriets retningslinjer for intern kontrol.)* |
 | Sagsbehandler | Caseworker | Internal user who initiates a payout |
 | Supervisor | Supervisor | Role authorised to approve large-amount payouts |
 | Direktør | Director | New role (`ROLE_DIRECTOR`) authorised to approve PEP/VIP payouts |

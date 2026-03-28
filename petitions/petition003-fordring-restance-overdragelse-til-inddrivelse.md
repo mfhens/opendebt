@@ -85,6 +85,11 @@ Once a restance is overdraget and accepted by Gældsstyrelsen:
    - **Udlæg** — enforcement/seizure
 4. The kvittering returned at submission contains a **fordrings-ID**, any **hæftelsesforhold** and **AKR-nummer**, and a slutstatus of **UDFØRT**, **AFVIST**, or **HØRING**
 
+## G.A. References
+
+- **G.A.1.3.2** (Overdragelse — rykkerprocedure og underretning) — legal basis for the sædvanlig rykkerprocedure and skriftlig underretning requirements referenced in the PSRM pre-conditions above.
+- **GIL § 2, stk. 3–4** (lov nr. 814/2020) — establishes that both requirements are ordensforskrifter, not gyldighedsbetingelser. A restance is validly overdraget even if rykkerprocedure or underretning was not completed; Gældsstyrelsen shall accept the overdragelse regardless.
+
 ## Out of scope
 
 - Detailed modelling of `hæftelse`

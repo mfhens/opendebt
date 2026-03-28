@@ -37,7 +37,7 @@ Without an explicit objection model, OpenDebt cannot reliably express:
 ## Constraints and assumptions
 
 - **G.A.1.3.1 (Indsigelser om kravets eksistens og størrelse):** "Skyldners indsigelser har som hovedregel ikke opsættende virkning i forhold til inddrivelsen af kravet." Indsigelser do not suspend collection. Only a formal klage med opsættende virkning — communicated via a KLAG tilbagekald — suspends inddrivelse.
-- **G.A.2.2 (Klager):** Formal appeals go through different channels (Landsskatteretten, Skatteankestyrelsen, fogedretten). The distinction between a generic indsigelse and a formal klage med opsættende virkning must be maintained in the data model and UI.
+- **G.A.2.2 (Klager):** Formal appeals go through different channels (Landsskatteretten, Skatteankestyrelsen, fogedretten). The distinction between a generic indsigelse and a formal klage med opsættende virkning must be maintained in the data model and UI. The klage framework distinguishes: (a) G.A.2.2.2 — klager to Landsskatteretten/Skatteankestyrelsen; (b) G.A.2.2.3 — klager to fogedretten. Each type carries different workflow implications for inddrivelse suspension. The KLAG årsagskode (tilbagekaldelse) covers klager med opsættende virkning per G.A.2.2; a future petition should address the full klage workflow covering both subtypes.
 - This petition defines objection lifecycle and workflow effect, not every legal subtype of objection.
 - This petition does not define final caseworker UI.
 - This petition does not define detailed SLA rules for resolving objections.

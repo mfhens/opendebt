@@ -53,13 +53,16 @@ Civilretlige fordringer have specific characteristics and limited collection opt
 
 ### Dækningsrækkefølge (coverage priority)
 
-- Inddrivelsesrente (5.75% per 1 January 2026) is always dækket **forud for hovedstol** (interest before principal).
+- Dækningsrækkefølge follows a **two-level structure** per G.A.2.3.2.1 and GIL § 4:
+  1. **Between claims:** bøder/tvangsbøder (category 1) → underholdsbidrag (category 2) → andre fordringer (category 3); FIFO within each category (the claim with the earliest modtagelsestidspunkt is covered first within each category).
+  2. **Within a claim:** inddrivelsesrenter are dækket forud for the associated hauptfordring. The inter-claim priority order determines which claim's interest and principal is covered first — not merely the interest/principal split on a single claim.
 - Simple dag-til-dag rente calculated on hovedstol.
 
 ### Modregning and afregning specifics
 
 - **Afregning** is sent monthly (last business day of the month) with details of dækninger (identification, amounts, dates, fordring references). Payment is sent to NemKonto.
-- **Udligning/allokering** underretninger show saldo movements daily, enabling fordringshavere to keep saldi ajour. Allokering specifically shows the split between afdrag on hovedstol and dækning of renter.
+- **Udligning/allokering** underretninger show saldo movements daily, enabling fordringshavere to keep saldi ajour. Allokering specifically shows the split between afdrag/hovedstol and dækning of renter.
+- **Modregning legal references:** GIL § 8 (modregning and indtrædelsesret); G.A.2.3.3 (Modregning i udbetalinger fra det offentlige — the legal framework for offsetting public payments against debt); G.A.3.1.4 (Automatiseret modregning — operational rules for automated offsetting in PSRM). When modregning is executed, a modregningsmeddelelse must be sent to the debtor.
 
 _Sources: [Civilretlige fordringer](https://gaeldst.dk/fordringshaver/find-vejledning/civilretlige-fordringer) · `docs/psrm-reference/11-civilretlige-fordringer.md`, [Renteregler](https://gaeldst.dk/fordringshaver/find-vejledning/renteregler) · `docs/psrm-reference/07-renteregler.md`, `docs/psrm-reference/06-underretningsmeddelelser.md`_
 

@@ -105,6 +105,11 @@ When stamdata deviates from the indgangsfilter rules, the fordring enters **hør
 - If approved, status changes to **"Afventer RIM"** and a Gældsstyrelsen caseworker decides: godkend, afvis, or tilpas indgangsfilter
 - Gældsstyrelsen treats all fordringer i høring **within 14 days**
 
+## G.A. References
+
+- **G.A.1.3.2** (Overdragelse af fordringer, rykkerprocedure og underretning) — primary legal basis for the rykkerprocedure and skriftlig underretning obligations described in the Pre-submission requirements above.
+- **GIL § 2, stk. 3–4** (lov nr. 814/2020) — establishes that sædvanlig rykkerprocedure (stk. 3) and skriftlig underretning (stk. 4) are ordensforskrifter, not gyldighedsbetingelser for overdragelse. A fordring is validly submitted even if these obligations were not fully met; OpenDebt must not reject a submission on that basis alone.
+
 ## Out of scope
 
 - Detailed OCES3 certificate onboarding, issuance, and lifecycle management

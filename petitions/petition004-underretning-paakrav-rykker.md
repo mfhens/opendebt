@@ -42,6 +42,11 @@ Without a shared model, OpenDebt risks scattering legal communication semantics 
 
 ## PSRM Reference Context
 
+> **Note — Two distinct underretning flows:** Implementation must not conflate these:
+> (a) **Skyldnerunderretning:** the fordringshaver's obligation to notify the debtor (skyldner) in writing before overdragelse til inddrivelse (GIL § 2, stk. 4 / G.A.1.3.2). This is directed at the debtor and is a pre-overdragelse ordensforskrift handled by the fordringshaver or opkræver — it is modelled in this petition as the skriftlig underretning subtype.
+> (b) **Fordringshaverunderretninger:** Gældsstyrelsen's operational messages sent FROM the inddrivelse system TO fordringshavere (Afregning, Udligning, Allokering, Renter, Afskrivning, Tilbagesend). These are directed at the creditor's own system and track saldo movements, settlements, and lifecycle events during inddrivelse. These are NOT modelled as `underretning` subtypes in this petition — they are described below as reference context only.
+> These two flows must be kept separate in the data model, UI, and implementation.
+
 ### PSRM underretningsmeddelelser
 
 Gældsstyrelsen sends six types of notification (underretningsmeddelelser) to fordringshavere:

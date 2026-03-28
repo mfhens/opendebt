@@ -35,6 +35,12 @@ The business needs are:
 - This petition does not define the detailed rules that decide whether an excess amount is paid out or used to cover other debt posts.
 - Manual matching is handled on the case; the detailed caseworker workflow and UI are out of scope here.
 - This petition defines business behavior, not the technical details of UN/EDIFACT parsing or file polling in the SKB integration.
+- **Excess payment dækningsrækkefølge (G.A.2.3.2.1 / GIL § 4):** When an auto-matched payment exceeds the amount applied to the matched debt and the excess is used to cover other debt posts, the coverage order must follow the dækningsrækkefølge prescribed by GIL § 4 and G.A.2.3.2.1: (1) bøder/tvangsbøder → (2) underholdsbidrag → (3) andre fordringer (FIFO within each category). Within each category, inddrivelsesrenter are dækket forud for the associated hauptfordring. The sagstype/frivillig-indbetaling rules govern the high-level payout-vs-cover decision, but the inter-claim allocation of any covered amount must respect this legal priority order.
+
+## Legal Basis / G.A. References
+
+- **GIL § 4** — dækningsrækkefølge for overskydende beløb
+- **G.A.2.3.2.1** — Dækningsrækkefølge (priority order: bøder/tvangsbøder → underholdsbidrag → andre fordringer; renter forud for hauptfordring within each category)
 
 ## Out of scope
 
