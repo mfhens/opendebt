@@ -139,6 +139,10 @@ class ClaimAdjustmentControllerTest {
     List<ClaimAdjustmentType> types =
         (List<ClaimAdjustmentType>) model.getAttribute("allowedTypes");
     assertThat(types).contains(ClaimAdjustmentType.OPSKRIVNING_REGULERING);
+    @SuppressWarnings("unchecked")
+    List<WriteUpReasonCode> reasonCodes =
+        (List<WriteUpReasonCode>) model.getAttribute("allowedReasonCodes");
+    assertThat(reasonCodes).containsExactlyInAnyOrder(WriteUpReasonCode.values());
   }
 
   @Test
@@ -410,6 +414,83 @@ class ClaimAdjustmentControllerTest {
 
     assertThat(viewName).isEqualTo("claims/adjustment/form");
     assertThat(model.getAttribute("actionError")).isEqualTo("Submission failed.");
+  }
+
+  // --- Receipt page tests ---
+
+  @Test
+  void submitAdjustment_writeUp_acceptsValidReasonCode() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    CreditorAgreementDto agreement =
+        CreditorAgreementDto.builder()
+            .portalActionsAllowed(true)
+            .allowWriteUpAdjustment(true)
+            .build();
+    when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
+    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+
+    AdjustmentReceiptDto receipt =
+        AdjustmentReceiptDto.builder()
+            .actionId("AKT-010")
+            .status("PROCESSED")
+            .amount(new BigDecimal("100.00"))
+            .adjustmentType("OPSKRIVNING_REGULERING")
+            .build();
+    when(debtServiceClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
+
+    ClaimAdjustmentRequestDto form =
+        ClaimAdjustmentRequestDto.builder()
+            .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
+            .amount(new BigDecimal("100.00"))
+            .effectiveDate(LocalDate.of(2026, 1, 1))
+            .reason("DINDB")
+            .build();
+    BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
+    Model model = new ConcurrentModel();
+    RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+    String viewName =
+        controller.submitAdjustment(
+            TEST_CLAIM_ID, form, bindingResult, "WRITE_UP", model, session, redirectAttributes);
+
+    assertThat(viewName).startsWith("redirect:");
+    assertThat(bindingResult.hasErrors()).isFalse();
+  }
+
+  @Test
+  void submitAdjustment_writeUp_rejectsInvalidReasonCode() {
+    when(portalSessionService.resolveActingCreditor(eq(null), any()))
+        .thenReturn(TEST_CREDITOR_ORG_ID);
+    CreditorAgreementDto agreement =
+        CreditorAgreementDto.builder()
+            .portalActionsAllowed(true)
+            .allowWriteUpAdjustment(true)
+            .build();
+    when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
+    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(messageSource.getMessage(
+            eq("adjustment.validation.reason.invalid"), any(), any(Locale.class)))
+        .thenReturn("Invalid reason code.");
+
+    ClaimAdjustmentRequestDto form =
+        ClaimAdjustmentRequestDto.builder()
+            .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
+            .amount(new BigDecimal("100.00"))
+            .effectiveDate(LocalDate.of(2026, 1, 1))
+            .reason("FREE_TEXT_NOT_ALLOWED")
+            .build();
+    BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
+    Model model = new ConcurrentModel();
+    RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+
+    String viewName =
+        controller.submitAdjustment(
+            TEST_CLAIM_ID, form, bindingResult, "WRITE_UP", model, session, redirectAttributes);
+
+    assertThat(viewName).isEqualTo("claims/adjustment/form");
+    assertThat(bindingResult.hasErrors()).isTrue();
+    assertThat(bindingResult.getFieldError("reason")).isNotNull();
   }
 
   // --- Receipt page tests ---

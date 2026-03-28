@@ -98,17 +98,39 @@
                 th:text="${#fields.errors('effectiveDate')[0]}">Fejl</span>
         </div>
 
-        <!-- Reason field -->
+        <!-- Reason field: dropdown for write-ups, free text for write-downs -->
         <div class="skat-form-group">
           <label class="skat-label" for="reason" th:text="#{adjustment.label.reason}">Årsag</label>
-          <input id="reason"
-                 th:field="*{reason}"
-                 type="text"
-                 class="skat-input"
-                 th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
-                 aria-describedby="reason-error"
-                 th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
-                 required="required" />
+
+          <!-- Write-up: controlled dropdown of allowed reason codes -->
+          <th:block th:if="${direction == 'WRITE_UP'}">
+            <select id="reason"
+                    th:field="*{reason}"
+                    class="skat-select"
+                    th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
+                    aria-describedby="reason-error"
+                    th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
+                    required="required">
+              <option value="" th:text="#{adjustment.reason.placeholder}">-- Vælg årsag --</option>
+              <option th:each="rc : ${allowedReasonCodes}"
+                      th:value="${rc.name()}"
+                      th:text="#{|adjustment.reason.${rc.name()}|}"
+                      th:selected="${adjustmentForm.reason == rc.name()}">Årsag</option>
+            </select>
+          </th:block>
+
+          <!-- Write-down: free-text reason -->
+          <th:block th:if="${direction != 'WRITE_UP'}">
+            <input id="reason"
+                   th:field="*{reason}"
+                   type="text"
+                   class="skat-input"
+                   th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
+                   aria-describedby="reason-error"
+                   th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
+                   required="required" />
+          </th:block>
+
           <span id="reason-error" class="skat-error-message" role="alert"
                 th:if="${#fields.hasErrors('reason')}"
                 th:text="${#fields.errors('reason')[0]}">Fejl</span>

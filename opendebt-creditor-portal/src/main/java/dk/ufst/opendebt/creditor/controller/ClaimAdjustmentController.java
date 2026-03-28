@@ -27,6 +27,7 @@ import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentType;
 import dk.ufst.opendebt.creditor.dto.ClaimDetailDto;
 import dk.ufst.opendebt.creditor.dto.CreditorAgreementDto;
 import dk.ufst.opendebt.creditor.dto.DebtorInfoDto;
+import dk.ufst.opendebt.creditor.dto.WriteUpReasonCode;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
 import lombok.RequiredArgsConstructor;
@@ -109,6 +110,10 @@ public class ClaimAdjustmentController {
     model.addAttribute("debtors", claimDetail.getDebtors());
     model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
 
+    if (dir == ClaimAdjustmentType.Direction.WRITE_UP) {
+      model.addAttribute("allowedReasonCodes", WriteUpReasonCode.allCodes());
+    }
+
     if (!model.containsAttribute(MODEL_ADJUSTMENT_FORM)) {
       model.addAttribute(MODEL_ADJUSTMENT_FORM, new ClaimAdjustmentRequestDto());
     }
@@ -151,6 +156,23 @@ public class ClaimAdjustmentController {
             "adjustment.validation.type.notpermitted",
             messageSource.getMessage(
                 "adjustment.validation.type.notpermitted", null, LocaleContextHolder.getLocale()));
+      }
+    }
+
+    // Validate write-up reason code is from the allowed set
+    ClaimAdjustmentType.Direction dir = parseDirection(direction);
+    if (dir == ClaimAdjustmentType.Direction.WRITE_UP
+        && adjustmentForm.getReason() != null
+        && !adjustmentForm.getReason().isBlank()) {
+      List<WriteUpReasonCode> allowedReasonCodes = WriteUpReasonCode.allCodes();
+      boolean reasonAllowed =
+          allowedReasonCodes.stream().anyMatch(rc -> rc.name().equals(adjustmentForm.getReason()));
+      if (!reasonAllowed) {
+        bindingResult.rejectValue(
+            "reason",
+            "adjustment.validation.reason.invalid",
+            messageSource.getMessage(
+                "adjustment.validation.reason.invalid", null, LocaleContextHolder.getLocale()));
       }
     }
 
@@ -287,6 +309,11 @@ public class ClaimAdjustmentController {
     model.addAttribute("multiDebtor", claimDetail != null && claimDetail.getDebtorCount() > 1);
     model.addAttribute("debtors", claimDetail != null ? claimDetail.getDebtors() : null);
     model.addAttribute(MODEL_CURRENT_PAGE, PAGE_CLAIMS_RECOVERY);
+
+    if (dir == ClaimAdjustmentType.Direction.WRITE_UP) {
+      model.addAttribute("allowedReasonCodes", WriteUpReasonCode.allCodes());
+    }
+
     return VIEW_ADJUSTMENT_FORM;
   }
 
