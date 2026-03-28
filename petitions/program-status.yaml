@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-26
-  updated_by: copilot (TB-019 notes updated — caseworker-portal coverage progress; all AIDEV-TODOs verified against tech backlog)
+  updated_at: 2026-03-28
+  updated_by: copilot (TB-034..039 added from G.A. petition-vs-code audit; P006 future_scope note for KLAG workflow)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -359,6 +359,13 @@ program:
         - FEJL outcome for KLAG
         - GenindsendFordring function
       next_step: Implement in Wave 7 sprint-13 (W7-INDS-01, W7-INDS-02).
+      future_scope: |
+        G.A.2.2 Klager framework (distinct from indsigelser) requires a dedicated petition.
+        Scope: distinguish G.A.2.2.2 klager to Landsskatteretten/Skatteankestyrelsen from
+        G.A.2.2.3 klager to fogedretten; each carries different opsættende virkning rules and
+        ObjectionEntity klage-type fields. KLAG årsagskode (tilbagekaldelse with opsættende
+        virkning) is currently modelled as a generic withdrawal — full klage workflow deferred.
+        Dependency: ObjectionEntity must gain a klagetype discriminator before implementation.
 
     petition007:
       title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
@@ -1523,3 +1530,108 @@ program:
         ClsAuditEventMapper), SoapPiiMaskingUtil, Oces3CertificateParser,
         GlobalExceptionHandler, and the timeline mapper. Remove the override once
         targets are met.
+
+    - id: TB-034
+      title: "Fix inter-claim dækningsrækkefølge in collection-priority.drl (GIL § 4)"
+      status: open
+      priority: high
+      created: 2026-03-28
+      petitions: [petition001, petition007]
+      description: |
+        G.A. audit found two defects in the inter-claim coverage priority:
+        (1) collection-priority.drl has the wrong category order — current: boernebidrag #1,
+        skat #2, bøder #3. Correct per GIL § 4 / G.A.2.3.2.1: bøder/tvangsbøder (cat 1) →
+        underholdsbidrag (cat 2) → andre fordringer (cat 3), FIFO within each category.
+        (2) OverpaymentRulesServiceImpl.resolveOutcome() always returns PAYOUT — the
+        COVER_OTHER_DEBTS path is an AIDEV-TODO placeholder blocked on two missing model
+        elements: a sagstype discriminator on DebtEntity and a frivillig-indbetaling boolean
+        flag. Both model additions must precede the OverpaymentRules unblock.
+        Within-claim priority (rente → gebyrer → hauptfordring) is correctly implemented in
+        CoveragePriorityServiceImpl and must not be changed.
+
+    - id: TB-035
+      title: "Enforce 5-business-day rate-lag in InterestAccrualJob (GIL § 5 / G.A.2.1.1)"
+      status: open
+      priority: medium
+      created: 2026-03-28
+      petitions: [petition043, petition045]
+      description: |
+        InterestAccrualJob.execute() calls configService.preloadRatesForDate(accrualDate)
+        which performs a straight date lookup. A new GIL § 5 inddrivelsesrente rate entered
+        effective 1 January will be applied on 1 January itself rather than 5 business days
+        later as required by G.A.2.1.1.
+        Fix: introduce a BusinessDayCalculator utility (respecting Danish public holidays)
+        and offset the rate lookup date by -5 business days before querying business_config.
+        BusinessConfigService.preloadRatesForDate() is the single point of change; the
+        effective_from dates stored in business_config remain the legislated change dates.
+
+    - id: TB-036
+      title: "INDR_CONTRACT IT-supportability gate in InterestAccrualJobHelper (G.A.2.1.2)"
+      status: open
+      priority: medium
+      created: 2026-03-28
+      petitions: [petition045]
+      description: |
+        InterestAccrualJobHelper.resolveRate() handles INDR_CONTRACT by checking only that
+        additionalInterestRate != null — if set, it blindly applies whatever rate was stored.
+        Per G.A.2.1.2 / gældsinddrivelsesbekendtgørelsens § 9 stk. 3, RIM may only apply a
+        contractual/court-ordered alternative rate if it is IT-supported. If not, the
+        fordringshaver must submit the interest themselves.
+        Fix: maintain a permitted INDR_CONTRACT rate-type registry (e.g. in business_config
+        or a new table); resolveRate() must reject unknown rate types rather than applying
+        them. The Configuration Administration UI (petition 047) should expose the permitted
+        list to fordringshavere. Also remove or disable interest-calculation.drl which
+        contains a stale hardcoded 10% rate not wired to the batch job.
+
+    - id: TB-037
+      title: "Add submissionPath to FordringValidationRequest to gate MODR to DMI-path (P015 Rule 411)"
+      status: open
+      priority: low
+      created: 2026-03-28
+      petitions: [petition015]
+      description: |
+        fordring-validation.drl Rule 411 accepts ArtType MODR unconditionally for both
+        OPRETFORDRING and GENINDSENDFORDRING. Per the petition's own PSRM Reference Context,
+        MODR is a legacy DMI concept absent from PSRM. New PSRM-path submissions must use
+        INDR only; MODR acceptance is for DMI-path backwards compatibility.
+        Fix: add a submissionPath enum field (PSRM_PATH | DMI_PATH) to
+        FordringValidationRequest. Update Rule 411 to only accept MODR when
+        submissionPath == DMI_PATH. The integration-gateway must set the correct path based
+        on the ingress channel. Cross-cutting change requiring coordination across
+        rules-engine, integration-gateway, and creditor-service.
+
+    - id: TB-038
+      title: "Wire TimelineReplayServiceImpl from retroactive nedskrivning path (P034 / P039)"
+      status: open
+      priority: medium
+      created: 2026-03-28
+      petitions: [petition034, petition039]
+      description: |
+        RetroactiveCorrectionServiceImpl and TimelineReplayServiceImpl exist in
+        opendebt-payment-service and are triggered by PaymentMatchingServiceImpl on crossing
+        detection. However, the adjustment processing path (ClaimAdjustmentController →
+        DebtServiceClient.submitAdjustment()) does not invoke replay when a nedskrivning's
+        virkningsdato precedes today. Per G.A.1.4.4, retroactive nedskrivning requires
+        reassignment of all dækninger after virkningsdato and interest recalculation.
+        Fix: debt-service must publish a RetroactiveAdjustmentEvent on any nedskrivning with
+        virkningsdato < today; payment-service must consume it and invoke
+        TimelineReplayServiceImpl.replayTimeline() for the affected claim.
+        Note: current replay handles single-event storno only — multi-event and cascading
+        corrections (FR-4, FR-5, FR-7 from petition039) remain as follow-on work here.
+
+    - id: TB-039
+      title: "Implement rentegodtgørelse alternative for retroactive nedskrivning (GIL § 18l)"
+      status: open
+      priority: low
+      created: 2026-03-28
+      petitions: [petition039]
+      description: |
+        Per G.A.1.4.4 / GIL § 18 l, restanceinddrivelsesmyndighed may choose to set a
+        nedskrivning's effective date to the date of receipt (prospective, not retroactive)
+        and instead pay the debtor a rentegodtgørelse (interest compensation), avoiding the
+        cost of full retroactive timeline replay.
+        Currently no code path exists for this alternative — petition039 mandates full replay
+        as the primary path (TB-038). The rentegodtgørelse path is an additional option, not
+        a replacement; implementation should follow TB-038 completion.
+        Requires: a caseworker decision step (caseworker-portal), a new RENTEGODTGOERELSE
+        CollectionMeasure type, and an outbound payment to the debtor via NemKonto.
