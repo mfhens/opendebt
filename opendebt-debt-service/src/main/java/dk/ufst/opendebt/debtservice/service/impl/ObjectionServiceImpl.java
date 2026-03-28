@@ -37,10 +37,9 @@ public class ObjectionServiceImpl implements ObjectionService {
       throw new IllegalStateException("Active objection already exists for debt: " + debtId);
     }
 
-    DebtEntity debt = debtRepository.findById(debtId).orElseThrow();
-    debt.setReadinessStatus(DebtEntity.ReadinessStatus.UNDER_APPEAL);
-    debtRepository.save(debt);
-
+    // G.A.1.3.1: an indsigelse has no automatic suspensive effect on inddrivelse.
+    // Readiness status is NOT changed here. Suspension only occurs via an explicit KLAG
+    // tilbagekald from fordringshaver (a separate workflow not triggered by this registration).
     ObjectionEntity entity =
         ObjectionEntity.builder()
             .debtId(debtId)

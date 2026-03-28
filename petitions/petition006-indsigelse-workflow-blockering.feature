@@ -6,12 +6,13 @@ Feature: Indsigelse and workflow blocking during dispute handling
     Then an indsigelse record is created for fordring "F1"
     And the indsigelse record identifies skyldner "S1"
     And the indsigelse record contains the stated reason
+    And collection progression for fordring "F1" is not automatically blocked
 
-  Scenario: An active objection blocks collection progression
+  Scenario: An indsigelse does not automatically suspend inddrivelse
     Given fordring "F2" has an active indsigelse
     When OpenDebt attempts to continue collection progression for fordring "F2"
-    Then the progression is blocked
-    And the related claim or case is marked as under appeal
+    Then the system reports that fordring "F2" has an active indsigelse
+    But collection progression is not automatically blocked by the indsigelse
 
   Scenario: A rejected objection allows collection to resume
     Given fordring "F3" has an active indsigelse

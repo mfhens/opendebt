@@ -56,7 +56,6 @@ class ObjectionServiceImplTest {
   @Test
   void registerObjection_createsActiveObjection() {
     when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
-    when(debtRepository.findById(DEBT_ID)).thenReturn(Optional.of(testDebt));
     when(objectionRepository.existsByDebtIdAndStatus(DEBT_ID, ObjectionStatus.ACTIVE))
         .thenReturn(false);
     when(objectionRepository.save(any()))
@@ -66,7 +65,6 @@ class ObjectionServiceImplTest {
               e.setId(UUID.randomUUID());
               return e;
             });
-    when(debtRepository.save(any())).thenReturn(testDebt);
 
     ObjectionDto result =
         service.registerObjection(DEBT_ID, DEBTOR_PERSON_ID, "claim amount disputed");
@@ -75,7 +73,31 @@ class ObjectionServiceImplTest {
     assertThat(result.getDebtId()).isEqualTo(DEBT_ID);
     assertThat(result.getDebtorPersonId()).isEqualTo(DEBTOR_PERSON_ID);
     assertThat(result.getReason()).isEqualTo("claim amount disputed");
-    assertThat(testDebt.getReadinessStatus()).isEqualTo(DebtEntity.ReadinessStatus.UNDER_APPEAL);
+    // G.A.1.3.1: registering an indsigelse must NOT change readiness status
+    verify(debtRepository, never()).findById(any());
+    verify(debtRepository, never()).save(any());
+  }
+
+  @Test
+  void registerObjection_doesNotBlockCollection() {
+    // An indsigelse has no automatic suspensive effect (G.A.1.3.1).
+    // The debt's readiness status must remain unchanged after registration.
+    when(debtRepository.existsById(DEBT_ID)).thenReturn(true);
+    when(objectionRepository.existsByDebtIdAndStatus(DEBT_ID, ObjectionStatus.ACTIVE))
+        .thenReturn(false);
+    when(objectionRepository.save(any()))
+        .thenAnswer(
+            inv -> {
+              ObjectionEntity e = inv.getArgument(0);
+              e.setId(UUID.randomUUID());
+              return e;
+            });
+
+    service.registerObjection(DEBT_ID, DEBTOR_PERSON_ID, "disputed");
+
+    assertThat(testDebt.getReadinessStatus())
+        .as("readiness must not change to UNDER_APPEAL on objection registration")
+        .isEqualTo(DebtEntity.ReadinessStatus.READY_FOR_COLLECTION);
   }
 
   @Test
@@ -127,7 +149,9 @@ class ObjectionServiceImplTest {
   }
 
   @Test
-  void resolveObjection_upheld_keepsUnderAppeal() {
+  void resolveObjection_upheld_doesNotChangeReadinessStatus() {
+    // UPHELD resolution must not auto-change the debt's readiness to READY_FOR_COLLECTION.
+    // (The UNDER_APPEAL state here simulates a separately-triggered KLAG suspension.)
     UUID objectionId = UUID.randomUUID();
     ObjectionEntity entity =
         ObjectionEntity.builder()

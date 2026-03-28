@@ -71,16 +71,30 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
       @Param("state") ClaimLifecycleState state, Pageable pageable);
 
   /**
-   * Finds debts eligible for interest accrual: OVERDRAGET, positive balance, and the debt type is
-   * interest-applicable. Uses a subquery against debt_types to filter out straffebøder and other
-   * interest-exempt types at the DB level.
+   * Finds debts eligible for interest accrual: OVERDRAGET, positive balance, the debt type is
+   * interest-applicable, and the debt is not temporarily ikkeinddrivelsesparat. Uses a subquery
+   * against debt_types to filter out straffebøder and other interest-exempt types at the DB level.
+   * Excludes ikkeinddrivelsesparate fordringer per G.A.2.4.3 (P043).
    */
   @Query(
       "SELECT d FROM DebtEntity d WHERE d.lifecycleState = :state "
           + "AND d.outstandingBalance > 0 "
+          + "AND d.ikkeinddrivelsesparat = false "
           + "AND EXISTS (SELECT 1 FROM DebtTypeEntity dt WHERE dt.code = d.debtTypeCode AND dt.interestApplicable = true)")
   Page<DebtEntity> findInterestEligibleDebts(
       @Param("state") ClaimLifecycleState state, Pageable pageable);
+
+  /**
+   * Returns true if any sibling debt (same parentClaimId, different id) is already in the given
+   * lifecycle state. Used to enforce the dual-phase prohibition per G.A.1.3.3 (P005).
+   */
+  @Query(
+      "SELECT COUNT(d) > 0 FROM DebtEntity d WHERE d.parentClaimId = :parentClaimId "
+          + "AND d.lifecycleState = :state AND d.id != :excludeId")
+  boolean existsSiblingInState(
+      @Param("parentClaimId") UUID parentClaimId,
+      @Param("state") ClaimLifecycleState state,
+      @Param("excludeId") UUID excludeId);
 
   @Query(
       "SELECT d FROM DebtEntity d WHERE d.limitationDate IS NOT NULL "

@@ -138,6 +138,14 @@ public class DebtEntity {
   @Column(name = "p_number", length = 20)
   private String pNumber;
 
+  /**
+   * When true, this fordring is temporarily ikkeinddrivelsesparat (e.g., pending stamdata
+   * correction) and must be excluded from interest accrual (P043 / G.A.2.4.3).
+   */
+  @Column(name = "ikkeinddrivelsesparat", nullable = false)
+  @Builder.Default
+  private boolean ikkeinddrivelsesparat = false;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "lifecycle_state", length = 20)
   private ClaimLifecycleState lifecycleState;

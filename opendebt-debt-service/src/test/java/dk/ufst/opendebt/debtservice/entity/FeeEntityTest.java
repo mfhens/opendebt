@@ -40,6 +40,7 @@ class FeeEntityTest {
             FeeEntity.FeeType.RYKKER,
             FeeEntity.FeeType.UDLAEG,
             FeeEntity.FeeType.LOENINDEHOLDELSE,
+            FeeEntity.FeeType.TILSIGELSE,
             FeeEntity.FeeType.OTHER);
   }
 

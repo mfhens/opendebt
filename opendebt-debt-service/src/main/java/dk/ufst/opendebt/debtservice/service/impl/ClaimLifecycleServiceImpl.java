@@ -169,6 +169,21 @@ public class ClaimLifecycleServiceImpl implements ClaimLifecycleService {
           "INVALID_LIFECYCLE_TRANSITION",
           OpenDebtException.ErrorSeverity.WARNING);
     }
+
+    // G.A.1.3.3 dual-phase prohibition: a fordring cannot be simultaneously under opkrævning and
+    // inddrivelse. If a sibling claim under the same hæftelse (parentClaimId) is already
+    // OVERDRAGET,
+    // reject the transfer.
+    if (debt.getParentClaimId() != null
+        && debtRepository.existsSiblingInState(
+            debt.getParentClaimId(), ClaimLifecycleState.OVERDRAGET, debtId)) {
+      throw new OpenDebtException(
+          "Dual-phase violation (G.A.1.3.3): a sibling claim under the same hæftelse is already in active collection (OVERDRAGET). "
+              + "Only one phase may be active at a time.",
+          "DUAL_PHASE_VIOLATION",
+          OpenDebtException.ErrorSeverity.WARNING);
+    }
+
     BigDecimal outstanding =
         debt.getOutstandingBalance() != null ? debt.getOutstandingBalance() : BigDecimal.ZERO;
     if (outstanding.compareTo(BigDecimal.ZERO) == 0) {

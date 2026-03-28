@@ -113,6 +113,7 @@ class DebtEntityTest {
             entity.getClaimNote(),
             entity.getCustomerNote(),
             entity.getPNumber(),
+            entity.isIkkeinddrivelsesparat(),
             entity.getLifecycleState(),
             entity.getReceivedAt(),
             entity.getStatus(),

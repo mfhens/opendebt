@@ -53,6 +53,8 @@ public class FeeEntity extends AuditableEntity {
     RYKKER,
     UDLAEG,
     LOENINDEHOLDELSE,
+    /** Tilsigelsesgebyr — fee for summoning debtor to udlægsforretning. GIL § 6, stk. 1. */
+    TILSIGELSE,
     OTHER
   }
 }

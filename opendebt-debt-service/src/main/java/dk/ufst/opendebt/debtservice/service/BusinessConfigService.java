@@ -89,6 +89,12 @@ public class BusinessConfigService {
   /**
    * Pre-loads rates for multiple config keys at a given date into the batch cache. Returns a map of
    * configKey → value. Used by InterestAccrualJob to resolve all needed rates in a single pass.
+   *
+   * <p><b>Rate-lag note (P043 / G.A.2.4.3):</b> When a rate change is entered, allow a minimum of 5
+   * business days before the new rate takes effect in the interest accrual batch. This is an
+   * operational discipline requirement — the system does not enforce the lag automatically. The
+   * {@code effective_from} date on the business_config entry should reflect the legislated
+   * effective date; the 5-day lag must be observed manually when creating new rate entries.
    */
   @Transactional(readOnly = true)
   public Map<String, BigDecimal> preloadRatesForDate(

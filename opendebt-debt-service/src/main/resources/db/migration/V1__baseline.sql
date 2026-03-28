@@ -170,6 +170,7 @@ CREATE TABLE debts (
     claim_note VARCHAR(500),
     customer_note VARCHAR(500),
     p_number VARCHAR(20),
+    ikkeinddrivelsesparat BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- Status
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
@@ -760,10 +761,11 @@ INSERT INTO business_config (config_key, config_value, value_type, valid_from, v
     ('RATE_INDR_TOLD_AFD', '0.0475', 'DECIMAL', '2024-01-08', '2025-01-06', 'Toldrente med afdragsordning (NB + 1%)', 'EUTK art. 114; Toldloven SS 30a', 'system-seed'),
     ('RATE_INDR_TOLD_AFD', '0.0330', 'DECIMAL', '2025-01-06', '2025-07-07', 'Toldrente med afdragsordning (NB + 1%)', 'EUTK art. 114; Toldloven SS 30a', 'system-seed'),
     ('RATE_INDR_TOLD_AFD', '0.0275', 'DECIMAL', '2025-07-07', NULL, 'Toldrente med afdragsordning (NB + 1%)', 'EUTK art. 114; Toldloven SS 30a', 'system-seed'),
-    ('FEE_RYKKER', '65.00', 'DECIMAL', '2024-01-01', NULL, 'Rykkergebyr per erindringsskrivelse', 'Opkraevningsloven SS 6', 'system-seed'),
+    ('FEE_RYKKER', '140.00', 'DECIMAL', '2024-01-01', NULL, 'Rykkergebyr per erindringsskrivelse', 'Gaeldsinddrivelsesloven SS 6, stk. 1', 'system-seed'),
     ('FEE_UDLAEG_BASE', '300.00', 'DECIMAL', '2024-01-01', NULL, 'Udlaegsafgift basisbeloeb', 'Retsafgiftsloven', 'system-seed'),
     ('FEE_UDLAEG_PCT', '0.005', 'DECIMAL', '2024-01-01', NULL, 'Udlaegsafgift procent over 3000 kr', 'Retsafgiftsloven', 'system-seed'),
-    ('FEE_LOENINDEHOLDELSE', '100.00', 'DECIMAL', '2024-01-01', NULL, 'Loenindeholdelsesgebyr', 'Gaeldsinddrivelsesloven', 'system-seed'),
+    ('FEE_LOENINDEHOLDELSE', '300.00', 'DECIMAL', '2024-01-01', NULL, 'Loenindeholdelsesgebyr', 'Gaeldsinddrivelsesloven SS 6, stk. 1', 'system-seed'),
+    ('FEE_TILSIGELSE', '450.00', 'DECIMAL', '2024-01-01', NULL, 'Tilsigelsesgebyr for indkaldelse til udlaegforretning', 'Gaeldsinddrivelsesloven SS 6, stk. 1', 'system-seed'),
     ('THRESHOLD_INTEREST_MIN', '100.00', 'DECIMAL', '2024-01-01', NULL, 'Minimum beloeb for renteberegning', 'Intern forretningsregel', 'system-seed'),
     ('THRESHOLD_FORAELDELSE_WARN', '90', 'INTEGER', '2024-01-01', NULL, 'Foraeldelsesfrist warning days', 'Intern forretningsregel', 'system-seed');
 
@@ -1021,8 +1023,8 @@ INSERT INTO fees (id, debt_id, fee_type, amount, accrual_date, legal_basis, paid
 VALUES (
     '00000000-0000-0000-0000-00000FEE0D02',
     '00000000-0000-0000-0000-000000000D02',
-    'RYKKER', 65.00, '2025-05-01',
-    'Opkrævningsloven § 6 — rykkergebyr for 1. erindringsskrivelse',
+    'RYKKER', 140.00, '2025-05-01',
+    'Gældsinddrivelsesloven § 6, stk. 1 — rykkergebyr for 1. erindringsskrivelse',
     false, 'seed-migration'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -1031,8 +1033,8 @@ INSERT INTO fees (id, debt_id, fee_type, amount, accrual_date, legal_basis, paid
 VALUES (
     '00000000-0000-0000-0000-00000FEE0E01',
     '00000000-0000-0000-0000-000000000E01',
-    'LOENINDEHOLDELSE', 100.00, '2026-01-15',
-    'Gældsinddrivelsesloven § 10 — gebyr for lønindeholdelse',
+    'LOENINDEHOLDELSE', 300.00, '2026-01-15',
+    'Gældsinddrivelsesloven § 6, stk. 1 — gebyr for lønindeholdelse',
     false, 'seed-migration'
 ) ON CONFLICT (id) DO NOTHING;
 

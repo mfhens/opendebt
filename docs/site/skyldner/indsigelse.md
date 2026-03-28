@@ -21,8 +21,8 @@ Du kan gøre indsigelse, hvis du mener at:
 
 Når du gør indsigelse:
 
-- **Inddrivelse sættes på pause** for den pågældende fordring
-- Gældsstyrelsen behandler din indsigelse
+- Din indsigelse registreres og behandles af Gældsstyrelsen
+- **Inddrivelse fortsætter** som udgangspunkt — en indsigelse har ikke automatisk opsættende virkning
 - Du får besked om resultatet
 
 ### Mulige udfald
