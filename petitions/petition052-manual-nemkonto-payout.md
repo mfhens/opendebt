@@ -184,6 +184,7 @@ The system shall determine the required approval tier at initiation time and sto
   | `CANCELLED` | `PAYOUT_CANCELLED` | `FINANCIAL` | CASEWORKER, SUPERVISOR, DIRECTOR |
   | `DISBURSED` | `PAYOUT_DISBURSED` | `FINANCIAL` | CASEWORKER, SUPERVISOR, DIRECTOR, CITIZEN |
   | `DISBURSEMENT_FAILED` | `PAYOUT_DISBURSEMENT_FAILED` | `FINANCIAL` | CASEWORKER, SUPERVISOR, DIRECTOR |
+  | `LAPSED` (≤200 kr, 3 months) | `PAYOUT_LAPSED` | `FINANCIAL` | CASEWORKER, SUPERVISOR, DIRECTOR |
 
 - **FR-9.3**: Citizen (debtor) can see only the `PAYOUT_DISBURSED` event in their portal timeline.
   All other payout events are internal only.
@@ -203,6 +204,7 @@ The system shall determine the required approval tier at initiation time and sto
   | `CANCELLED` | Annulleret | Grey |
   | `DISBURSED` | Udbetalt | Green |
   | `DISBURSEMENT_FAILED` | Udbetalingsfejl | Red (with warning icon) |
+  | `LAPSED` | Bortfaldet | Grey (200 kr rule — G.A.3.1.6.4) |
 
 ### FR-11: Threshold Configuration in business_config
 
@@ -266,6 +268,7 @@ The system shall determine the required approval tier at initiation time and sto
 - The integration-gateway NemKonto adapter is assumed to exist or will be introduced as an
   implementation task (not a separate petition).
 - Retry for failed disbursements (status `DISBURSEMENT_FAILED`) is out of scope for this petition.
+- **G.A.3.1.6.4 (De minimis lapse rule, GIL § 16, stk. 4):** Surplus amounts of **200 kr or less** that cannot be disbursed via NemKonto within **3 months** of the disbursement attempt lapse — i.e., they are forfeited and no longer owed to the debtor. When a payout with `amount ≤ 200 DKK` has remained in `DISBURSEMENT_FAILED` status for 3 calendar months without successful disbursement, the system shall automatically transition the payout to a `LAPSED` terminal state and record the lapse as a ledger entry and timeline event. This rule applies from 1 July 2016 (lov nr. 285/2016).
 - The PEP/VIP flag is a boolean field on the person-registry `PersonEntity`. If this field does
   not yet exist, its introduction is an implementation prerequisite (not a separate petition but
   a dependency surfaced here).

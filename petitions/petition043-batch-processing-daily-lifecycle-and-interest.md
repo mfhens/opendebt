@@ -33,7 +33,7 @@ These operations are inherently batch-oriented and must complete within a define
 8. The annual interest rate shall be configurable (currently 5.75%).
 9. Accrued interest shall be recorded as a separate journal entry, not by modifying the `principal_amount`.
 10. Each interest journal entry shall record the accrual date, effective date, balance snapshot, and rate used, so that it can be stornoed and recalculated by petition039 (krydsende handlinger) when a crossing transaction is detected.
-11. Interest shall not be accrued on claims in terminal states (`TILBAGEKALDT`, `AFSKREVET`, `INDFRIET`).
+11. Interest shall not be accrued on claims in terminal states (`TILBAGEKALDT`, `AFSKREVET`, `INDFRIET`), or on claims that are `ikkeinddrivelsesparate` (per GIL § 5, stk. 1, 5. pkt., effective 1 November 2024).
 
 ### Deadline monitoring
 
@@ -69,12 +69,14 @@ These operations are inherently batch-oriented and must complete within a define
 - Calculation: simpel dag-til-dag rente (simple daily interest, no compounding)
 - Start: 1st of the month following `modtagelsestidspunktet` (received_at)
 - Applies to: all claims in active collection (`OVERDRAGET`)
-- Does not apply to: withdrawn, written-off, or fully paid claims
+- Does not apply to: withdrawn, written-off, fully paid claims, or **ikkeinddrivelsesparate fordringer** (since 1 November 2024, per GIL § 5, stk. 1, 5. pkt. — claims where datafejl prevents inddrivelse are interest-exempt)
+- **Rate change lag (G.A.2.1.1):** Changes to the NB udlånsrente take effect for inddrivelsesrenten **5 hverdage after** the change date. Batch jobs must not apply a new rate from 1 January or 1 July directly — the new rate applies from the 5th business day after those dates.
 
 ### Forældelse
 
-- Standard forældelsesfrist: 3 years from betalingsfrist for most claim types
-- Extended: 5 or 10 years for specific claim types (e.g., tax, judgments)
+- Standard forældelsesfrist under inddrivelse: **3 år** for all claims in PSRM/DMI, counting from betalingsfrist
+- **G.A.2.4.3 is explicit:** the 3-year frist applies even if the claim had a longer limitation period before overdragelse, or if a retsgrundlag (e.g., a court judgment) was obtained. A judgment-backed claim under PSRM does NOT retain a 10-year period — it becomes 3 years.
+- Exceptions to the 3-year frist (not relevant for public fordringer in general): private underholdsbidrag; kommuners/regioners privatretlige fordringer
 - If a claim reaches its forældelsesfrist without interruption, it must be written off
 
 ## Out of scope

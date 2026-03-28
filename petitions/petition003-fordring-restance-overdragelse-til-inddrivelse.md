@@ -53,9 +53,11 @@ The following reference material from Gældsstyrelsen's PSRM documentation provi
 Before a restance may be overdraget til inddrivelse, PSRM requires:
 
 1. **Sidste rettidige betalingsdato (SRB) must have expired** — PSRM rejects fordringer where SRB has not yet passed
-2. **Sædvanlig rykkerprocedure** must have been completed without result (forgæves)
-3. **Skriftlig underretning** must have been given to each skyldner individually before overdragelse — may be embedded in the opkrævning/rykkerskrivelse; must be written and given by fordringshaver or the entity performing opkrævning
+2. **Sædvanlig rykkerprocedure** must ordinarily have been completed without result (forgæves). **However, per G.A.1.3.2 and GIL § 2, stk. 3 (lov nr. 814/2020), this is an *ordensforskrift*, not a *gyldighedsbetingelse*.** A fordring is validly overdraget even if rykkerprocedure was not completed; the lack of compliance does not make the overdragelse invalid.
+3. **Skriftlig underretning** must ordinarily have been given to each skyldner individually before overdragelse. **However, per G.A.1.3.2 and GIL § 2, stk. 4 (lov nr. 814/2020), underretning is likewise an *ordensforskrift*, not a *gyldighedsbetingelse* for overdragelse.** The claim is validly overdraget even without it; Gældsstyrelsen shall accept the overdragelse.
 4. **All medhæftere must be reported simultaneously** — each medhæfter receives individual underretning, but indberetning of all must happen at the same time
+
+> **Implementeringskonsekvens:** OpenDebt must NOT reject an overdragelse solely because rykkerprocedure or underretning was not documented. These are compliance obligations for the fordringshaver, not preconditions that OpenDebt enforces to gate the transfer.
 
 **Undtagelser fra underretningskrav:** When it is not possible to notify (e.g., not registered in folkeregister and exempt from Digital Post), udlæg without notification, konkursbegæring for economic crime, and arrestation.
 

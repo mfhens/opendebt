@@ -14,7 +14,7 @@ An analysis of the current OpenDebt implementation against Gældsstyrelsen's pub
 | G2 | Straffebøder receive interest | No exemption logic | Straffebøder (criminal fines) must be interest-exempt per gældsinddrivelsesloven § 5, stk. 1 |
 | G3 | No told interest regime | Only NB+4% available | Told (customs) debts use NB+2% (without afdragsordning) or NB+1% (with afdragsordning) per EUTK art. 114 |
 | G4 | No contractual rate override | Fixed rate only | Fordringshaver may request an alternative morarente (e.g., from contract or court judgment) if IT-technically supported |
-| G5 | No fee entity model | `feesAmount` is a single BigDecimal on DebtEntity | Fees must be individually tracked: rykkergebyr (65 kr), udlægsafgift (300 kr + 0.5%), lønindeholdelsesgebyr (~100 kr), each with its own accrual date |
+| G5 | No fee entity model | `feesAmount` is a single BigDecimal on DebtEntity | Fees must be individually tracked: rykkergebyr (140 kr per GIL § 6), tilsigelse til udlægsforretning (450 kr per GIL § 6), lønindeholdelsesgebyr (300 kr per GIL § 6), each with its own accrual date |
 | G6 | Fees are not interest-bearing | No interest calculation on fees | Inddrivelsesrente applies to both hovedstol AND inddrivelsesgebyrer per gældsinddrivelsesloven |
 | G7 | No separate accounting for renter vs gebyrer | Single interestAmount field | Renter tilfalder fordringshaver; gebyrer (and renter on gebyrer) tilfalder staten — requires separate ledger tracking |
 | G8 | Administrative bøder treated same as strafbøder | No distinction | Dagbøder and administrative fines ARE interest-bearing (unlike strafferetlige bøder) |
@@ -74,10 +74,11 @@ An analysis of the current OpenDebt implementation against Gældsstyrelsen's pub
 | `paid` | boolean | Whether fee has been fully covered |
 
 11. `DebtEntity.feesAmount` shall remain as a computed/denormalized total, derived from the sum of unpaid `FeeEntity` amounts.
-12. Standard fee amounts shall be configurable (see petition 046 for versioned configuration):
-    - Rykkergebyr: 65 kr per erindringsskrivelse (Opkrævningsloven § 6)
-    - Udlægsafgift: 300 kr + 0.5% of debt over 3,000 kr (Retsafgiftsloven)
-    - Lønindeholdelsesgebyr: ~100 kr per lønindeholdelse
+12. Standard fee amounts are statutory per GIL § 6, stk. 1 (inddrivelse-phase fees charged by restanceinddrivelsesmyndigheden). As statutory amounts they are defined as enum constants, not configurable values (see ADR-0031):
+    - Rykkergebyr: **140 kr** per erindringsskrivelse (GIL § 6, stk. 1) — **not** the opkrævnings-phase 65 kr (Opkrævningsloven § 6), which is charged by fordringshavere, not by Gældsstyrelsen
+    - Tilsigelse til udlægsforretning (gebyr): **450 kr** (GIL § 6, stk. 1) — separate from the retsafgift paid to the court
+    - Retsafgift (court fee for udlægsforretning): **300 kr + 0.5% of debt over 3,000 kr** (Retsafgiftsloven) — accrues to the court
+    - Afgørelse om lønindeholdelse: **300 kr** (GIL § 6, stk. 1)
 
 ### FR-5: Interest on fees
 
@@ -119,18 +120,25 @@ _Source: Gældsinddrivelsesloven § 5, stk. 1; Retsplejeloven § 997, stk. 3_
 > NB's udlånsrente + 2%-point (uden afdragsordning) eller + 1%-point (med afdragsordning).
 _Source: EU-toldkodeks art. 114; Toldloven § 30a_
 
-### Gebyrer
-> Rykkergebyr 65 kr (Opkrævningsloven § 6), udlægsafgift 300 kr + 0.5% (Retsafgiftsloven).
+### Gebyrer (inddrivelse-phase fees — GIL § 6, stk. 1)
+> Restanceinddrivelsesmyndigheden opkræver følgende gebyrer:
+> - Rykkergebyr: **140 kr** per erindringsskrivelse
+> - Afgørelse om lønindeholdelse: **300 kr**
+> - Tilsigelse til udlægsforretning (gebyr): **450 kr**
+> Derudover opkræves retsafgift til fogedretten: 300 kr + 0.5% af gæld over 3.000 kr (Retsafgiftsloven).
 > Renter tilfalder fordringshaver; gebyrer og renter på gebyrer tilfalder staten.
-_Source: Gældsinddrivelsesloven; Opkrævningsloven § 6_
+> **Bemærk:** Opkrævningsloven § 6 (65 kr rykkergebyr) gælder for fordringshavers opkrævningsfase, IKKE for Gældsstyrelsens inddrivelsesfase.
+_Source: Gældsinddrivelsesloven § 6, stk. 1; G.A.2.1.3 Gebyrer pålagt af restanceinddrivelsesmyndigheden_
 
 ### Kontraktuel rente
-> Fordringshaver kan anmode Gældsstyrelsen om at anvende en aftalt morarente i stedet for inddrivelsesrenten, hvis satsen kan understøttes it-teknisk.
-_Source: Gældsstyrelsens vejledning for fordringshavere, renteregler_
+> Fordringshaver kan anmode Gældsstyrelsen om at anvende en aftalt morarente i stedet for inddrivelsesrenten, **hvis satsen kan understøttes it-teknisk** (gældsinddrivelsesbekendtgørelsens § 9, stk. 3). Hvis satsen ikke kan understøttes it-teknisk, skal fordringshaver selv beregne og indsende renten.
+_Source: Gældsstyrelsens vejledning for fordringshavere, renteregler; G.A.2.1.2_
 
 ## Constraints and assumptions
 
 - All interest rules resolve to a single annual rate per debt per day. The system does not need to support intra-day rate changes.
+- **Interest rate change lag (G.A.2.1.1):** Changes to the NB udlånsrente take effect for the inddrivelsesrente **5 hverdage after** the date of the change (GIL-relaterede forskrifter). A new rate set on 1 January or 1 July does not apply from that exact date. The `valid_from` date stored in petition 046 rate configuration must account for this 5-business-day delay.
+- **INDR_CONTRACT IT-supportability gate (G.A.2.1.2):** The `INDR_CONTRACT` rate can only be applied if the contractual rate is supported by restanceinddrivelsesmyndighedens IT-system (gældsinddrivelsesbekendtgørelsens § 9, stk. 3). If not IT-supported, the fordringshaver must calculate and submit the interest themselves. OpenDebt must validate that a submitted `INDR_CONTRACT` rate is within supported parameters before accepting it.
 - Opkrævningsrente (pre-collection phase) is informational only — OpenDebt tracks the accumulated amount as received from fordringshaver but does not calculate it.
 - The NB udlånsrente is an external input, updated semi-annually. Petition 046 (versioned business configuration) provides the mechanism for storing and versioning this rate.
 - The fee entity model replaces the simple `feesAmount` field conceptually, but the denormalized field is retained for query performance.

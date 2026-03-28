@@ -86,7 +86,7 @@ Full mapping of PSRM withdrawal reason codes to petition lifecycle rules (ref: [
 
 | Årsagskode | Description | Virkningsdato | Dækninger | Renter | Kan genindsendes |
 |---|---|---|---|---|---|
-| **BORD** | Betalingsordning — creditor has established a payment arrangement with the debtor. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Kun via FEJL (rule 539 allows BORD for genindsend) |
+| **BORD** | Betalingsordning — creditor has established a payment arrangement with the debtor. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Ja (via GenindsendFordring); rule 539 allows BORD |
 | **BORT** | Bortfald (tvangsbøder) — coercive fines that have lapsed. | Obligatorisk (must be provided) | Fastholdes (before dato) | Beregnes til virkningsdato | Kun via FEJL; rule 538 restricts BORT to PSRM-routed claims only |
 | **FEJL** | Forkert/burde ikke have været indsendt — claim was submitted in error. | Modtagelsesdato (auto-set to original receipt date) | Ophæves alle (all coverages reversed) | Nulstilles alle (all interest zeroed) | Nej — must create entirely new fordring; rule 546 enforces empty VirkningsDato |
 | **HENS** | Henstand — creditor has granted the debtor a deferral. | Auto (bogføringsdato) | Fastholdes | Beregnes til virkningsdato | Ja (via GenindsendFordring); rule 539 allows HENS |

@@ -32,6 +32,9 @@ Without `hæftelse`, OpenDebt cannot represent several central public-sector cla
 ## Constraints and assumptions
 
 - This petition establishes the liability structure but does not define every legal variant beyond the three listed forms.
+- **G.A.1.3.3 (Dual-phase constraint):** The same fordring cannot simultaneously be under opkrævning hos fordringshaver AND under inddrivelse hos restanceinddrivelsesmyndigheden. If a fordring with multiple debtors is under inddrivelse for one debtor, the fordringshaver cannot simultaneously exercise opkrævning-phase rights (e.g., own modregning) against another debtor on the same claim. OpenDebt must not allow a state where the same fordring has active opkrævning for one hæftelse and active inddrivelse for another.
+- **Delt hæftelse scope:** PSRM only recognises solidarisk hæftelse in the inddrivelse system. For delt hæftelse, the fordringshaver must split the fordring into separate fordringer before submission. OpenDebt may model delt hæftelse for opkrævning-phase tracking, but the inddrivelse layer works on post-split fordringer only.
+- **Hæftelsesstruktur changes on active claims:** A fordring that is under inddrivelse must be tilbagekaldt before its hæftelsesstruktur can be changed (G.A.1.3.3 + G.A.1.3.5). OpenDebt must not allow modification of hæftelse on a fordring in active inddrivelse without a preceding tilbagekald.
 - This petition does not define final UI behaviour for presenting multiple liable parties.
 - This petition does not define the detailed enforcement allocation rules for payments across solidarity relationships.
 - Person and organization identity remain stored through technical UUID references only.

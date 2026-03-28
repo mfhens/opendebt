@@ -83,6 +83,8 @@ After a claim is accepted for recovery, the creditor may need to adjust the clai
 - The BFF enforces that the user's creditor agreement permits the requested update type.
 - Debtor resolution for payment write-downs requires the BFF to fetch claim details from debt-service and match the selected debtor.
 - This petition defines the portal flow, not the backend API for adjustments.
+- **G.A.3.1.2.1.3 (Lønindeholdelse and opskrivning):** An opskrivningsfordring submitted through this portal is **not** automatically included in an existing lønindeholdelsesafgørelse. A separate new afgørelse om lønindeholdelse must be issued by Gældsstyrelsen to add the opskrivningsfordring to the garnishment scope (GIL § 10, stk. 5, 2. pkt.). The portal does not issue this afgørelse; it only submits the opskrivning to the debt-service. Caseworkers and the automated inddrivelse logic must handle the subsequent lønindeholdelsesafgørelse separately. The portal should inform the fordringshaver of this limitation in the confirmation step.
+- **G.A.1.4.3 (Opskrivning af opkrævningsrenter):** When the subject being adjusted is an opkrævningsrente (pre-collection interest that predates modtagelse), an opskrivningsfordring must NOT be used. Instead, a new rentefordring with the same renteperiode as the original claim must be submitted. This edge case is out of scope for the portal UI but must be documented so that the backend API rejects an opskrivning targeting a rentefordring (see rule 474 in petition 017).
 
 ## Out of scope
 
