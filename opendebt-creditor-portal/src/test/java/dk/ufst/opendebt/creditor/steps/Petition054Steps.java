@@ -8,9 +8,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.cucumber.java.Before;
@@ -419,19 +422,26 @@ public class Petition054Steps {
     String content = readCurrentFileContent();
     assertThat(content)
         .as(
-            "Test file %s must include boundary-date assertions for the virkningsdato"
-                + " retroactivity rule: same day as fordring.receivedAt, one day before,"
-                + " and one day after. FR-3, AC-11.",
+            "Test file %s must reference fordringModtagelsestidspunkt (the retroactivity"
+                + " reference date used in FR-2.2 boundary tests). FR-3, AC-7.",
             currentFilePath)
-        .contains("virkningsdato");
-    long isoDateCount = Pattern.compile("\\d{4}-\\d{2}-\\d{2}").matcher(content).results().count();
-    assertThat(isoDateCount)
+        .contains("fordringModtagelsestidspunkt");
+    Set<LocalDate> dates =
+        Pattern.compile("\\d{4}-\\d{2}-\\d{2}")
+            .matcher(content)
+            .results()
+            .map(m -> LocalDate.parse(m.group()))
+            .collect(Collectors.toSet());
+    boolean hasThreeConsecutive =
+        dates.stream()
+            .anyMatch(d -> dates.contains(d.minusDays(1)) && dates.contains(d.plusDays(1)));
+    assertThat(hasThreeConsecutive)
         .as(
-            "Test file %s must contain at least 3 ISO-8601 date literals for the three"
-                + " boundary-date cases (same day, day before, day after fordring.receivedAt)."
-                + " Found: %d. FR-3, AC-11.",
-            currentFilePath, isoDateCount)
-        .isGreaterThanOrEqualTo(3);
+            "Test file %s must contain three consecutive boundary dates (day-before, same-day,"
+                + " day-after a common reference date) to verify the virkningsdato retroactivity"
+                + " rule at all three required offsets. FR-3, AC-7.",
+            currentFilePath)
+        .isTrue();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -644,16 +654,37 @@ public class Petition054Steps {
           + " person-days")
   public void sectionProvidesEvidenceForNoGoTriggers() {
     String content = readCurrentFileContent();
+    // N-1: temporal rule workarounds
     assertThat(content)
         .as(
-            "SPIKE-REPORT.md (%s) Go/No-Go section must address each No-Go trigger:"
-                + " temporal rule workarounds, legal ambiguities blocking encoding, and"
-                + " effort per G.A. section exceeding 4 person-days. FR-5, AC-13.",
+            "SPIKE-REPORT.md (%s) must address No-Go trigger N-1 (temporal rule workarounds)."
+                + " FR-5, AC-12.",
             currentFilePath)
         .satisfiesAnyOf(
             c -> assertThat(c).containsIgnoringCase("temporal"),
-            c -> assertThat(c).containsIgnoringCase("workaround"),
-            c -> assertThat(c).containsIgnoringCase("No-Go"));
+            c -> assertThat(c).containsIgnoringCase("workaround"));
+    // N-2: legal ambiguities blocking encoding
+    assertThat(content)
+        .as(
+            "SPIKE-REPORT.md (%s) must address No-Go trigger N-2 (legal ambiguities blocking"
+                + " encoding). FR-5, AC-12.",
+            currentFilePath)
+        .satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("ambiguity"),
+            c -> assertThat(c).containsIgnoringCase("ambiguities"),
+            c -> assertThat(c).containsIgnoringCase("tvetydighed"),
+            c -> assertThat(c).containsIgnoringCase("underspecified"));
+    // N-3: encoding effort per G.A. section exceeding 4 person-days
+    assertThat(content)
+        .as(
+            "SPIKE-REPORT.md (%s) must address No-Go trigger N-3 (effort exceeding 4"
+                + " person-days per G.A. section). FR-5, AC-12.",
+            currentFilePath)
+        .satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("person-day"),
+            c -> assertThat(c).containsIgnoringCase("person day"),
+            c -> assertThat(c).containsIgnoringCase("4 days"),
+            c -> assertThat(c).containsIgnoringCase("4 dage"));
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -826,7 +857,7 @@ public class Petition054Steps {
                 f ->
                     (f.contains("application.yml")
                         || f.contains("application.yaml")
-                        || f.contains("application-")))
+                        || Paths.get(f).getFileName().toString().startsWith("application-")))
             .filter(f -> !f.startsWith("catala/"))
             .toList();
     assertThat(violations)
