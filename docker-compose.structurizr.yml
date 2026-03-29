@@ -1,8 +1,10 @@
 services:
   structurizr:
-    image: structurizr/lite
+    image: structurizr/structurizr
+    command: ["local"]
     ports:
       - "8181:8080"
     volumes:
       - ./architecture:/usr/local/structurizr
+      - ./docs:/usr/local/structurizr/docs
     restart: unless-stopped

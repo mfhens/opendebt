@@ -24,19 +24,11 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
             tags "internal"
         }
 
-        postgresql = softwareSystem "PostgreSQL" "Primary relational datastore. Each service owns its own isolated database instance — no cross-service DB access. See ADR 0007, ADR 0011." "internal" {
-            tags "internal"
-        }
-
         flowable = softwareSystem "Flowable" "Embedded workflow/BPM engine used for case process orchestration. See ADR 0016." "internal" {
             tags "internal"
         }
 
         immudb = softwareSystem "immudb" "Tamper-proof, append-only financial audit ledger. Cryptographically verifiable event log. See ADR 0029." "internal" {
-            tags "internal"
-        }
-
-        kubernetes = softwareSystem "Kubernetes" "Container orchestration platform. All OpenDebt services are deployed as Kubernetes workloads. See ADR 0006." "internal" {
             tags "internal"
         }
 
@@ -61,6 +53,9 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         // OpenDebt Software System
         // ---------------------------------------------------------------
         openDebt = softwareSystem "OpenDebt" "Open-source debt collection platform for Danish public institutions. Manages case lifecycle, debt claims, payments, enforcement, and creditor/debtor communication." {
+
+            !docs docs
+            !adrs docs/adr
 
             // --- Portals (user-facing web applications) ---
             caseworkerPortal = container "Caseworker Portal" "Web UI for UFST caseworkers (sagsbehandlere). Case overview, manual interventions, document management." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application"
@@ -154,9 +149,9 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
 
         caseService -> flowable "Executes workflow processes via" "Embedded/API"
 
-        // [STUB — add PostgreSQL relationships per-service when deployment view is defined]
-        // Each service connects to its own PostgreSQL database instance.
-        // See ARCH-009 (no-cross-service-db-access).
+        // PostgreSQL is infrastructure — each service owns its own DB instance.
+        // Modelled at deployment-view level (see stub below), not at system-context level.
+        // See ADR 0007, ADR 0011.
 
     }
 
@@ -187,6 +182,10 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         // }
 
         theme default
+    }
+
+    configuration {
+        scope "softwareSystem"
     }
 
 }
