@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-03-29
-  updated_by: copilot (P054 Catala spike added; status summary updated to 54 petitions)
+  updated_by: copilot (P054 Phase 9 sprint-tracker — pipeline complete, BDD+review results recorded)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1047,6 +1047,11 @@ program:
         the 4-day No-Go threshold. Go verdict: proceed with Catala encoding of the G.A. Inddrivelse
         chapter. Catala CLI not yet available in spike environment; catala ocaml exit-code check
         deferred to a CI environment with the CLI installed.
+        Phase 8 code review completed in two rounds — all BLOCKERs and MAJORs resolved (PASS
+        Round 2); minimality review also PASS Round 2. BDD suite on branch: 280 run, 0 failures,
+        2 errors (NFR-1: Catala CLI absent — AC-13 deferred), 61 skipped. Full 9-phase pipeline
+        complete; final commit 723ebf3. Go/No-Go: Go (Catala compilation deferred pending CLI
+        installation in CI).
       next_step: >
         If the Go verdict is formally adopted as an architectural decision, create an ADR for
         Catala adoption and proceed with encoding remaining G.A. Inddrivelse sections. Prioritise
