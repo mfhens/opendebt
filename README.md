@@ -224,6 +224,7 @@ Key architectural decisions are documented in [docs/adr/](docs/adr/):
 - [ADR-0010: Faellesoffentlige Arkitekturprincipper](docs/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
 - [ADR-0018: Double-Entry Bookkeeping](docs/adr/0018-double-entry-bookkeeping-for-payment-service.md)
 - [ADR-0029: immudb for Financial Ledger Integrity](docs/adr/0029-immudb-for-financial-ledger-integrity.md)
+- [ADR-0032: Catala Formal Compliance Verification Layer](docs/adr/0032-catala-formal-compliance-layer.md)
 
 ## Compliance
 
@@ -232,6 +233,21 @@ OpenDebt complies with:
 - **Faellesoffentlige Arkitekturprincipper** - Danish public sector architecture principles
 - **GDPR** - Privacy by design
 - **DUPLA** - UFST data exchange platform standards
+
+### Formal Compliance Verification (Catala)
+
+High-risk G.A. Inddrivelse rules are formally encoded in [Catala](https://catala-lang.org/)
+before implementation. Catala source files under `catala/` act as an executable oracle that
+validates Gherkin scenarios against the juridisk vejledning text. See
+[ADR-0032](docs/adr/0032-catala-formal-compliance-layer.md) for the full rationale and tier
+classification.
+
+Completed spikes:
+
+| Spike | Legal section | Report |
+|-------|--------------|--------|
+| P054 | G.A.1.4.3–1.4.4 — Opskrivning/nedskrivning | [`catala/SPIKE-REPORT.md`](catala/SPIKE-REPORT.md) |
+| P069 | G.A.2.3.2.1 — Dækningsrækkefølge (GIL § 4) | [`catala/SPIKE-REPORT-069.md`](catala/SPIKE-REPORT-069.md) |
 
 ## Contributing
 

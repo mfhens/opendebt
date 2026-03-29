@@ -216,3 +216,22 @@ citations. The encoding revealed one gap (FR-1.4 missing from P053) and one disc
 **Recommendation: Go.** Proceed with Catala encoding of the G.A. Inddrivelse chapter,
 prioritising sections with complex exception hierarchies (comparable to G.A.1.4.3) and
 temporal rules (comparable to G.A.1.4.4 virkningsdato and GIL § 18 k).
+
+---
+
+## Related Spikes
+
+This report is the founding spike that established the Catala compliance layer (see ADR-0032).
+The following Tier A companion spikes were commissioned based on the Go outcome of P054:
+
+| Spike | Petition | Legal basis | Companion petition | Report |
+|-------|----------|-------------|--------------------|--------|
+| P054 (this report) | petition054 | G.A.1.4.3, G.A.1.4.4 — opskrivning/nedskrivning | petition053 | `catala/SPIKE-REPORT.md` |
+| P069 | petition069 | G.A.2.3.2.1 — Dækningsrækkefølge, GIL § 4 stk. 1–4 | petition057 | `catala/SPIKE-REPORT-069.md` |
+| P070 | petition070 | G.A.2.4 — Forældelse, GIL § 18a | petition059 | `catala/SPIKE-REPORT-070.md` |
+| P071 | petition071 | G.A.3.1.1 — Afdragsordninger, GIL § 11 | petition061 | `catala/SPIKE-REPORT-071.md` |
+| P072 | petition072 | G.A.3.1.2 — Lønindeholdelsesprocent, Gæld.bekendtg. § 14 | petition062 | `catala/SPIKE-REPORT-072.md` |
+
+P069 (Go) is the first completed Tier A follow-on spike. Its report documents the
+dækningsrækkefølge payment-order rules and includes 16 Catala test scopes covering all
+six priority tiers defined by GIL § 4 stk. 1–4.

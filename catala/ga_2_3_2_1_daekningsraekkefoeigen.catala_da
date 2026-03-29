@@ -1,0 +1,507 @@
+# G.A.2.3.2.1 — Dækningsrækkefølge — GIL § 4
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Juridisk grundlag: GIL § 4 stk. 1–4, GIL § 6a, GIL § 10b, Gæld.bekendtg. § 4 stk. 3,
+                      Gæld.bekendtg. § 7, Retsplejelovens § 507, Lov nr. 288/2022
+   Formål: Formalisering af dækningsrækkefølge-reglerne i GIL § 4, stk. 1–4, jf. G.A.2.3.2.1.
+   Petition: P069 — Catala Compliance Spike — Dækningsrækkefølge
+   Status: Research spike — ingen produktionskode. *)
+
+---
+
+## Artikel: G.A.2.3.2.1 — Dækningsrækkefølge ved betaling
+
+### Baggrund
+
+Ifølge G.A.2.3.2.1 (G.A. snapshot v3.16, 2026-03-28) fastlægger GIL § 4, stk. 1–4
+reglerne for, i hvilken rækkefølge modtagne beløb skal dække fordringer under
+inddrivelse. Reglerne opdeler fordringer i prioritetskategorier (stk. 1), angiver
+FIFO-sorteringsprincippet inden for kategorier (stk. 2), regulerer anvendelsen af
+beløb indgået ved inddrivelsesindsatser (stk. 3), og præciserer tidspunkterne for
+rækkefølgens fastlæggelse og dækningens virkning (stk. 4).
+
+Dette Catala-program formaliserer reglerne i seks scopes og tre enumerationstyper.
+
+---
+
+## Enumerationer — Juridisk grundlag: GIL § 4, stk. 1; Gæld.bekendtg. § 4, stk. 3
+
+### ENUM-1: PrioritetKategori — GIL § 4, stk. 1
+
+Fem prioritetskategorier jf. GIL § 4, stk. 1 og GIL § 6a. Rækkefølgen er fastsat
+ved lov; kategori 1 dækkes forud for kategori 2 osv.
+
+```catala
+declaration enumeration PrioritetKategori:
+  -- RIMELIGE_OMKOSTNINGER
+  -- BOEDER_TVANGSBOEEDER_TILBAGEBETALING
+  -- UNDERHOLDSBIDRAG_PRIVATRETLIG
+  -- UNDERHOLDSBIDRAG_OFFENTLIG
+  -- ANDRE_FORDRINGER
+```
+
+### ENUM-2: RenteKomponent — Gæld.bekendtg. § 4, stk. 3
+
+Seks sub-positioner inden for en fordring jf. Gæld.bekendtg. § 4, stk. 3.
+Rækkefølgen er fastsat i bekendtgørelsen; position 1 dækkes forud for position 6.
+
+```catala
+declaration enumeration RenteKomponent:
+  -- OPKRAEVANINGSRENTER
+  -- INDDRIVELSESRENTER_FORDRINGSHAVER
+  -- INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
+  -- INDDRIVELSESRENTER_STK1
+  -- OEVRIGE_RENTER_PSRM
+  -- HOVEDFORDRING
+```
+
+### ENUM-3: InddrivelsesindsatsType — GIL § 4, stk. 3
+
+Fire typer af inddrivelsesindsats jf. GIL § 4, stk. 3.
+
+```catala
+declaration enumeration InddrivelsesindsatsType:
+  -- LOENINDEHOLDELSE
+  -- UDLAEG
+  -- AFDRAGSORDNING
+  -- INGEN_INDSATS
+```
+
+---
+
+## § 4, stk. 1 — Prioritetskategorier og deres indbyrdes rækkefølge
+
+### Omfangsdeklaration — PrioritetKategoriRang
+
+GIL § 4, stk. 1 inddeler fordringer i fire prioritetskategorier. Kategori 1
+(rimelige omkostninger) dækkes fuldt ud inden kategori 2 (bøder og tvangsbøder)
+osv. Inden for kategori 3 dækkes privatretlige underholdsbidrag (kategori 3a)
+forud for offentligretlige (kategori 3b).
+
+```catala
+declaration scope PrioritetKategoriRang:
+  context kategori content PrioritetKategori           (* input *)
+  context prioritetRang content integer                (* output: 1–4 *)
+  context underholdsbidragOrdning content integer      (* output: 1=privatretlig, 2=offentlig; 0 for non-kat3 *)
+```
+
+---
+
+## GIL § 6a, stk. 1; GIL § 6a, stk. 12 — Kategori 1: Rimelige omkostninger
+
+**FR-1.1: Rimelige omkostninger er kategori 1 (højeste prioritet)**
+
+Rimelige omkostninger jf. GIL § 6a, stk. 1 og stk. 12 dækkes forud for alle
+øvrige fordringer. Ankerpunkt: GIL § 6a, stk. 1; GIL § 6a, stk. 12.
+
+```catala
+scope PrioritetKategoriRang:
+  # FR-1.1: RIMELIGE_OMKOSTNINGER → prioritetRang = 1 — Ankerpunkt: GIL § 6a, stk. 1; GIL § 6a, stk. 12
+  rule prioritetRang
+    under condition kategori = RIMELIGE_OMKOSTNINGER
+    consequence equals 1
+
+  # FR-1.1b: underholdsbidragOrdning = 0 (ikke kategori 3) — defaultregel
+  rule underholdsbidragOrdning
+    under condition kategori = RIMELIGE_OMKOSTNINGER
+    consequence equals 0
+```
+
+---
+
+## GIL § 10b; Lov nr. 288/2022 § 2, nr. 1 — Kategori 2: Bøder, tvangsbøder og tilbagebetalingskrav
+
+**FR-1.2: Bøder, tvangsbøder og tilbagebetalingskrav er kategori 2**
+
+Bøder, tvangsbøder (tilføjet ved lov nr. 288/2022 § 2, nr. 1) og tilbagebetalings­krav
+placeres i kategori 2 jf. GIL § 10b.
+
+```catala
+scope PrioritetKategoriRang:
+  # FR-1.2: BOEDER_TVANGSBOEEDER_TILBAGEBETALING → prioritetRang = 2 — Ankerpunkt: GIL § 10b; Lov nr. 288/2022 § 2, nr. 1
+  rule prioritetRang
+    under condition kategori = BOEDER_TVANGSBOEEDER_TILBAGEBETALING
+    consequence equals 2
+
+  rule underholdsbidragOrdning
+    under condition kategori = BOEDER_TVANGSBOEEDER_TILBAGEBETALING
+    consequence equals 0
+```
+
+---
+
+## GIL § 4, stk. 1, nr. 2 — Kategori 3: Underholdsbidrag (privatretlig og offentlig)
+
+**FR-1.3: Underholdsbidrag er kategori 3 — privatretlig dækkes forud for offentlig**
+
+Underholdsbidrag (privatretlige og offentligretlige) placeres begge i kategori 3 jf.
+GIL § 4, stk. 1, nr. 2. Inden for kategori 3 dækkes privatretlige underholdsbidrag
+(underholdsbidragOrdning = 1) forud for offentligretlige (underholdsbidragOrdning = 2).
+
+```catala
+scope PrioritetKategoriRang:
+  # FR-1.3a: UNDERHOLDSBIDRAG_PRIVATRETLIG → prioritetRang = 3 — Ankerpunkt: GIL § 4, stk. 1, nr. 2
+  rule prioritetRang
+    under condition kategori = UNDERHOLDSBIDRAG_PRIVATRETLIG
+    consequence equals 3
+
+  # FR-1.3b: UNDERHOLDSBIDRAG_OFFENTLIG → prioritetRang = 3 — Ankerpunkt: GIL § 4, stk. 1, nr. 2
+  rule prioritetRang
+    under condition kategori = UNDERHOLDSBIDRAG_OFFENTLIG
+    consequence equals 3
+
+  # FR-1.3c: privatretlig underholdsbidrag dækkes forud for offentlig (ordning = 1)
+  rule underholdsbidragOrdning
+    under condition kategori = UNDERHOLDSBIDRAG_PRIVATRETLIG
+    consequence equals 1
+
+  # FR-1.3d: offentligt underholdsbidrag (ordning = 2)
+  rule underholdsbidragOrdning
+    under condition kategori = UNDERHOLDSBIDRAG_OFFENTLIG
+    consequence equals 2
+```
+
+---
+
+## GIL § 4, stk. 1, nr. 3 — Kategori 4: Andre fordringer
+
+**FR-1.4: Andre fordringer er kategori 4 (laveste prioritet)**
+
+Alle øvrige fordringer (ikke omfattet af kategori 1–3) dækkes sidst jf.
+GIL § 4, stk. 1, nr. 3.
+
+```catala
+scope PrioritetKategoriRang:
+  # FR-1.4: ANDRE_FORDRINGER → prioritetRang = 4 — Ankerpunkt: GIL § 4, stk. 1, nr. 3
+  rule prioritetRang
+    under condition kategori = ANDRE_FORDRINGER
+    consequence equals 4
+
+  rule underholdsbidragOrdning
+    under condition kategori = ANDRE_FORDRINGER
+    consequence equals 0
+```
+
+---
+
+## § 4, stk. 2 — FIFO-sortering inden for kategori
+
+### Omfangsdeklaration — FifoSortNøgle
+
+GIL § 4, stk. 2, 1. pkt. fastlægger, at fordringer inden for samme prioritetskategori
+dækkes i den rækkefølge, de er modtaget (FIFO). GIL § 4, stk. 2, 5. pkt. indeholder
+en overgangsregel for fordringer overdraget inden 1. september 2013.
+
+```catala
+declaration scope FifoSortNøgle:
+  context modtagelsesdato content date                  (* input *)
+  context harLegacyModtagelsesdato content boolean      (* input *)
+  context legacyModtagelsesdato content date            (* input — betinget: kun relevant når harLegacyModtagelsesdato = true *)
+  context erFoerSeptember2013 content boolean           (* afledt: legacyModtagelsesdato < |2013-09-01| *)
+  context fifoSortKey content date                      (* output *)
+```
+
+---
+
+## GIL § 4, stk. 2, 1. pkt. — FIFO-grundregel
+
+**FR-2.1: FIFO-sorteringsnøgle er fordringens modtagelsesdato**
+
+Som udgangspunkt bruges fordringens modtagelsesdato i inddrivelsessystemet som
+FIFO-sorteringsnøgle jf. GIL § 4, stk. 2, 1. pkt.
+
+```catala
+scope FifoSortNøgle:
+  # FR-2.1: FIFO-grundregel — fifoSortKey = modtagelsesdato — Ankerpunkt: GIL § 4, stk. 2, 1. pkt.
+  rule fifoSortKey equals modtagelsesdato
+```
+
+---
+
+## GIL § 4, stk. 2, 5. pkt. — Pre-2013 overgangsregel
+
+**FR-2.2: Fordringer modtaget inden 1. september 2013 — legacyModtagelsesdato som FIFO-nøgle**
+
+For fordringer der er overdraget til inddrivelse med en registreret
+legacyModtagelsesdato fra inden 1. september 2013, bruges legacyModtagelsesdato
+som FIFO-sorteringsnøgle jf. GIL § 4, stk. 2, 5. pkt.
+
+```catala
+scope FifoSortNøgle:
+  # FR-2.2b: afledt: erFoerSeptember2013 = legacyModtagelsesdato < |2013-09-01|
+  rule erFoerSeptember2013
+    consequence equals legacyModtagelsesdato < |2013-09-01|
+
+  # FR-2.2: undtagelse til FR-2.1 — legacy-dato bruges som FIFO-nøgle ved pre-2013-fordringer
+  # Ankerpunkt: GIL § 4, stk. 2, 5. pkt.
+  exception
+  rule fifoSortKey
+    under condition harLegacyModtagelsesdato and erFoerSeptember2013
+    consequence equals legacyModtagelsesdato
+```
+
+---
+
+## § 4, stk. 2, 2. pkt.; Gæld.bekendtg. § 4, stk. 3 — Rentekomponent-rangering
+
+### Omfangsdeklaration — RenteKomponentRang
+
+Gæld.bekendtg. § 4, stk. 3 fastlægger en sekstrins sub-position rækkefølge inden
+for den enkelte fordring: renter dækkes forud for hovedstolen, og de seks
+rentekomponenter dækkes i en fastsat orden.
+
+```catala
+declaration scope RenteKomponentRang:
+  context komponent content RenteKomponent     (* input *)
+  context subPositionRang content integer      (* output: 1–6 *)
+  context erRente content boolean              (* output: true for positionerne 1–5, false for HOVEDFORDRING *)
+```
+
+---
+
+## Gæld.bekendtg. § 4, stk. 3 — Sub-position 1–6
+
+**FR-2.4: Seks sub-positioner for rentekomponenter og hovedfordring**
+
+Gæld.bekendtg. § 4, stk. 3 fastlægger den eksakte rækkefølge for rentekomponenter.
+Se også Gæld.bekendtg. § 8, stk. 3; Gæld.bekendtg. § 9, stk. 1; Gæld.bekendtg. § 9, stk. 3.
+
+```catala
+scope RenteKomponentRang:
+  # FR-2.4.1: sub-position 1 — Ankerpunkt: Gæld.bekendtg. § 4, stk. 3, pos. 1
+  rule subPositionRang
+    under condition komponent = OPKRAEVANINGSRENTER
+    consequence equals 1
+
+  # FR-2.4.2: sub-position 2 — Ankerpunkt: Gæld.bekendtg. § 9, stk. 3, 2./4. pkt.
+  rule subPositionRang
+    under condition komponent = INDDRIVELSESRENTER_FORDRINGSHAVER
+    consequence equals 2
+
+  # FR-2.4.3: sub-position 3 — Ankerpunkt: Gæld.bekendtg. § 8, stk. 3
+  rule subPositionRang
+    under condition komponent = INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
+    consequence equals 3
+
+  # FR-2.4.4: sub-position 4 — Ankerpunkt: Gæld.bekendtg. § 9, stk. 1
+  rule subPositionRang
+    under condition komponent = INDDRIVELSESRENTER_STK1
+    consequence equals 4
+
+  # FR-2.4.5: sub-position 5 — Ankerpunkt: Gæld.bekendtg. § 9, stk. 3, 1./3. pkt.
+  rule subPositionRang
+    under condition komponent = OEVRIGE_RENTER_PSRM
+    consequence equals 5
+
+  # FR-2.4.6: sub-position 6 (Hovedfordring) — Ankerpunkt: Gæld.bekendtg. § 4, stk. 3, pos. 6
+  rule subPositionRang
+    under condition komponent = HOVEDFORDRING
+    consequence equals 6
+```
+
+---
+
+## GIL § 4, stk. 2, 2. pkt. — Rente-flag
+
+**FR-2.3: erRente-flag — positionerne 1–5 er rentekrav; position 6 er hovedstol**
+
+GIL § 4, stk. 2, 2. pkt. fastlægger, at renter dækkes forud for hovedstolen.
+erRente-flaget markerer, om komponenten er et rentekrav (positionerne 1–5) eller
+er selve hovedfordringen (position 6).
+
+```catala
+scope RenteKomponentRang:
+  # FR-2.3a: erRente = true for alle komponenter undtagen HOVEDFORDRING — Ankerpunkt: GIL § 4, stk. 2, 2. pkt.
+  rule erRente
+    under condition not (komponent = HOVEDFORDRING)
+    consequence equals true
+
+  # FR-2.3b: erRente = false for HOVEDFORDRING
+  rule erRente
+    under condition komponent = HOVEDFORDRING
+    consequence equals false
+```
+
+---
+
+## § 4, stk. 3 — Inddrivelsesindsats-dækning
+
+### Omfangsdeklaration — InddrivelsesindsatsAnvendelse
+
+GIL § 4, stk. 3, 1. pkt. regulerer, hvordan beløb indgået ved en inddrivelsesindsats
+(lønindeholdelse, udlæg m.v.) fordeles. Retsplejelovens § 507 undtager udlæg fra
+reglen om, at overskud kan omfordeles til andre fordringer.
+
+```catala
+declaration scope InddrivelsesindsatsAnvendelse:
+  context inddrivelsesindsatsType content InddrivelsesindsatsType  (* input *)
+  context fordringErIndsatsFordring content boolean                 (* input *)
+  context erUdlaeg content boolean                                  (* afledt: inddrivelsesindsatsType = UDLAEG *)
+  context gaelderGIL4Stk3 content boolean                          (* output: default true; false ved udlæg *)
+  context modtagerIndsatsDaekning content boolean                   (* output *)
+  context modtagerOverskudsDaekning content boolean                 (* output *)
+  context udlaegSurplus content boolean                             (* output: true ved udlæg *)
+```
+
+---
+
+## GIL § 4, stk. 3, 1. pkt. — Grundregel: GIL § 4, stk. 3 finder anvendelse
+
+**FR-3.1: GIL § 4, stk. 3 gælder som udgangspunkt for alle inddrivelsesindsatser**
+
+GIL § 4, stk. 3, 1. pkt. fastsætter, at beløb indgået ved inddrivelsesindsats
+fordeles efter GIL § 4, stk. 3-reglerne. Udgangspunkt: gaelderGIL4Stk3 = true.
+
+```catala
+scope InddrivelsesindsatsAnvendelse:
+  # R-3.erUdlaeg: afledt flag — erUdlaeg = (inddrivelsesindsatsType = UDLAEG)
+  rule erUdlaeg
+    consequence equals inddrivelsesindsatsType = UDLAEG
+
+  # FR-3.1: gaelderGIL4Stk3 = true som grundregel — Ankerpunkt: GIL § 4, stk. 3, 1. pkt.
+  rule gaelderGIL4Stk3 equals true
+```
+
+---
+
+## Retsplejelovens § 507 — Udlæg-undtagelse (mutually exclusive med FR-3.1)
+
+**FR-3.4: Udlæg er undtaget fra GIL § 4, stk. 3 — surplus forbliver hos udlægget**
+
+Retsplejelovens § 507 undtager udlæg fra GIL § 4, stk. 3-reglen om omfordeling.
+Overskud fra et udlæg-beløb må ikke omfordeles til andre fordringer.
+Denne regel er gensidig udelukkende med FR-3.1: når erUdlaeg = true, er
+gaelderGIL4Stk3 = false og udlaegSurplus = true.
+
+```catala
+scope InddrivelsesindsatsAnvendelse:
+  # FR-3.4: undtagelse til FR-3.1 — gaelderGIL4Stk3 = false ved udlæg
+  # Ankerpunkt: Retsplejelovens § 507
+  exception
+  rule gaelderGIL4Stk3
+    under condition erUdlaeg
+    consequence equals false
+
+  # FR-3.1b: modtagerIndsatsDaekning — fordringen modtager indsats-dækning
+  # Ankerpunkt: GIL § 4, stk. 3, 1. pkt.
+  rule modtagerIndsatsDaekning
+    consequence equals fordringErIndsatsFordring and gaelderGIL4Stk3
+
+  # FR-3.2: modtagerOverskudsDaekning — ikke-indsats-fordringer kan modtage overskudsdækning
+  # Ankerpunkt: GIL § 4, stk. 3, 2. pkt.
+  rule modtagerOverskudsDaekning
+    consequence equals (not fordringErIndsatsFordring) and gaelderGIL4Stk3
+
+  # FR-3.3: afdragsordning-undtagelse for tvangsbøder
+  # ⚠️ Ingen AC — afventer bekræftelse fra juridisk team (FLAG-C)
+  # Ankerpunkt: GIL § 4, stk. 3, 2. pkt., 2. led
+  # Scope: AFDRAGSORDNING giver ikke overskudsdækning til BOEDER_TVANGSBOEEDER_TILBAGEBETALING-fordringer
+  # Ingen testcase for denne regelgren — afventer juridisk bekræftelse.
+
+  # FR-3.4b: udlaegSurplus = true ved udlæg — overskud kan ikke omfordeles
+  # Ankerpunkt: Retsplejelovens § 507
+  rule udlaegSurplus
+    consequence equals erUdlaeg
+```
+
+---
+
+## § 4, stk. 4 — Tidspunkter for rækkefølgens fastlæggelse og dækningens virkning
+
+### Omfangsdeklaration — TimingRegel
+
+GIL § 4, stk. 4 præciserer to tidspunkter: det tidspunkt rækkefølgen fastlægges
+(applikationstidspunkt — 1. pkt.) og det tidspunkt dækningen har virkning fra
+(betalingstidspunkt — 2. pkt.).
+
+```catala
+declaration scope TimingRegel:
+  context applikationstidspunkt content date    (* input *)
+  context betalingstidspunkt content date       (* input *)
+  context raekkefoelgeFastlagtVed content date  (* output = applikationstidspunkt *)
+  context daekningVirkerFra content date        (* output = betalingstidspunkt *)
+```
+
+---
+
+## GIL § 4, stk. 4 — Rækkefølgefastlæggelse og dækningsvirkning
+
+**FR-4.1 og FR-4.2: Tidspunkter**
+
+GIL § 4, stk. 4, 1. pkt.: Rækkefølgen fastlægges ved applikationstidspunktet.
+GIL § 4, stk. 4, 2. pkt.: Dækningen har virkning fra betalingstidspunktet.
+
+> FLAG-D — Catala date type limitation: Catala's native `date` type lacks time-of-day
+> precision. FR-4 timestamps from P057 Gherkin are ISO-8601 datetimes (e.g.
+> `2025-01-10T09:00:00Z`). The Catala encoding uses `date`. This scope limitation is
+> evaluated in SPIKE-REPORT-069.md under No-Go trigger N-1.
+
+```catala
+scope TimingRegel:
+  # FR-4.1: rækkefølgeFastlagtVed = applikationstidspunkt — Ankerpunkt: GIL § 4, stk. 4, 1. pkt.
+  rule raekkefoelgeFastlagtVed equals applikationstidspunkt
+
+  # FR-4.2: daekningVirkerFra = betalingstidspunkt — Ankerpunkt: GIL § 4, stk. 4, 2. pkt.
+  rule daekningVirkerFra equals betalingstidspunkt
+```
+
+---
+
+## Gæld.bekendtg. § 7 — Opskrivningsfordring og FIFO-nøgle
+
+### Omfangsdeklaration — OpskrivningFifoNøgle
+
+Gæld.bekendtg. § 7 fastlægger, at en opskrivningsfordring placeres umiddelbart
+efter sin stamfordring i dækningsrækkefølgen. Opskrivningsfordringen arver
+stamfordringens FIFO-sorteringsnøgle — den starter ikke en ny FIFO-position
+baseret på sin egen modtagelsesdato.
+
+```catala
+declaration scope OpskrivningFifoNøgle:
+  context erOpskrivningsfordring content boolean    (* input *)
+  context egnModtagelsesdato content date           (* input — opskrivningsfordringens eget modtagelsesdato *)
+  context stamfordringFifoNoegle content date       (* input — stamfordringens effektive FIFO-nøgle *)
+  context fifoSortKey content date                  (* output *)
+```
+
+---
+
+## Gæld.bekendtg. § 7 — Opskrivningsfordring arver stamfordringens FIFO-nøgle
+
+**FR-5.1 og FR-5.2: Opskrivningsfordring placeres efter stamfordring**
+
+Gæld.bekendtg. § 7: Opskrivningsfordringen placeres umiddelbart efter stamfordringen.
+FR-5.2: Opskrivningsfordringen arver stamfordringens FIFO-sorteringsnøgle — den
+bruger IKKE sin egnModtagelsesdato som FIFO-nøgle (undtagelse til FR-2.1).
+
+```catala
+scope OpskrivningFifoNøgle:
+  # FR-5.default: standardregel — fifoSortKey = egnModtagelsesdato (for ikke-opskrivnings-fordringer)
+  rule fifoSortKey equals egnModtagelsesdato
+
+  # FR-5.1+5.2: undtagelse til FR-5.default og undtagelse til FR-2.1
+  # opskrivningsfordring arver stamfordringens FIFO-nøgle
+  # FR-5.2: undtagelse til FR-2.1 — opskrivningsfordring starter IKKE ny FIFO-position fra sin egnModtagelsesdato
+  # Ankerpunkt: Gæld.bekendtg. § 7
+  exception
+  rule fifoSortKey
+    under condition erOpskrivningsfordring
+    consequence equals stamfordringFifoNoegle
+
+  # FR-5.3: indbyrdes FIFO for søsterfordringer — GIL § 4, stk. 2 (Gæld.bekendtg. § 7)
+  # Når harFlereOpskrivninger = true, ordnes søsterfordringer indbyrdes via egnModtagelsesdato
+  # som tiebreaker, mens de alle deler stamfordringFifoNoegle som primær FIFO-nøgle.
+  # Ingen separat regelblok kræves: annotationen er dokumentation til implementeringsguide.
+```
+
+---
+
+(* Filende: ga_2_3_2_1_daekningsraekkefoeigen.catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Dialect: catala_da
+   6 scopes: PrioritetKategoriRang, FifoSortNøgle, RenteKomponentRang,
+             InddrivelsesindsatsAnvendelse, TimingRegel, OpskrivningFifoNøgle
+   3 enumerationer: PrioritetKategori (5 varianter), RenteKomponent (6 varianter),
+                    InddrivelsesindsatsType (4 varianter)
+   Petition: P069 — Catala Compliance Spike — Dækningsrækkefølge *)
