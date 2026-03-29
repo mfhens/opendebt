@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Write Petition057Steps.java with proper Unicode handling."""
+
+TARGET = r'C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-payment-service\src\test\java\dk\ufst\opendebt\payment\steps\Petition057Steps.java'
+
+content = """\
 package dk.ufst.opendebt.payment.steps;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +52,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 /**
- * BDD step definitions for Petition 057 — Dækningsrækkefølge (GIL § 4).
+ * BDD step definitions for Petition 057 — D\u00e6kningsr\u00e6kkef\u00f8lge (GIL \u00a7 4).
  */
 public class Petition057Steps {
 
@@ -173,13 +180,13 @@ public class Petition057Steps {
   // FR-1
   // =========================================================================
 
-  @Given("^debtor \"([^\"]+)\" has the following active fordringer:$")
+  @Given("^debtor \\"([^\\"]+)\\" has the following active fordringer:$")
   public void debtorHasFollowingActiveFordringer(String debtorId, DataTable table) {
     seedFordringer(debtorId, table);
   }
 
-  @When("^a payment of (\\d+(?:\\.\\d+)?) DKK is received for debtor \"([^\"]+)\""
-      + "(?: with betalingstidspunkt \"([^\"]+)\")?$")
+  @When("^a payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK is received for debtor \\"([^\\"]+)\\""
+      + "(?: with betalingstidspunkt \\"([^\\"]+)\\")?$")
   public void aPaymentIsReceivedForDebtor(
       BigDecimal beloeb, String debtorId, String betalingstidspunkt) {
     currentDebtorId = debtorId;
@@ -187,12 +194,12 @@ public class Petition057Steps {
     currentBetalingstidspunkt = betalingstidspunkt;
   }
 
-  @When("the dækningsrækkefølge rule engine applies the payment")
+  @When("the d\u00e6kningsr\u00e6kkef\u00f8lge rule engine applies the payment")
   public void theRuleEngineAppliesThePayment() {
     applyPaymentNow();
   }
 
-  @Then("^fordring \"([^\"]+)\" \\(.*?\\) is fully covered with (\\d+(?:\\.\\d+)?) DKK$")
+  @Then("^fordring \\"([^\\"]+)\\" \\\\(.*?\\\\) is fully covered with (\\\\d+(?:\\\\.\\\\d+)?) DKK$")
   public void fordringIsFullyCovered(String fordringId, BigDecimal expectedBeloeb) {
     // Exclude udlaegSurplus records — they represent returned money, not actual coverage
     BigDecimal total = currentDaekningRecords.stream()
@@ -203,12 +210,12 @@ public class Petition057Steps {
         .isEqualByComparingTo(expectedBeloeb.setScale(2, RoundingMode.HALF_UP));
   }
 
-  @Then("^fordring \"([^\"]+)\" \\(.*?\\) is covered with (\\d+(?:\\.\\d+)?) DKK$")
+  @Then("^fordring \\"([^\\"]+)\\" \\\\(.*?\\\\) is covered with (\\\\d+(?:\\\\.\\\\d+)?) DKK$")
   public void fordringIsCoveredWith(String fordringId, BigDecimal expectedBeloeb) {
     fordringIsFullyCovered(fordringId, expectedBeloeb);
   }
 
-  @Then("^fordring \"([^\"]+)\" \\(.*?\\) receives no dækning(?:.*)?$")
+  @Then("^fordring \\"([^\\"]+)\\" \\\\(.*?\\\\) receives no d\u00e6kning(?:.*)?$")
   public void fordringReceivesNoDaekning(String fordringId) {
     BigDecimal total = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId))
@@ -216,12 +223,12 @@ public class Petition057Steps {
     assertThat(total).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
-  @Then("^fordring \"([^\"]+)\" \\(.*?\\) is partially covered with (\\d+(?:\\.\\d+)?) DKK$")
+  @Then("^fordring \\"([^\\"]+)\\" \\\\(.*?\\\\) is partially covered with (\\\\d+(?:\\\\.\\\\d+)?) DKK$")
   public void fordringIsPartiallyCovered(String fordringId, BigDecimal expectedBeloeb) {
     fordringIsFullyCovered(fordringId, expectedBeloeb);
   }
 
-  @Then("^the dækning record for \"([^\"]+)\" carries gilParagraf \"([^\"]+)\"$")
+  @Then("^the d\u00e6kning record for \\"([^\\"]+)\\" carries gilParagraf \\"([^\\"]+)\\"$")
   public void daekningRecordCarriesGilParagraf(String fordringId, String gilParagraf) {
     List<DaekningRecord> records = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId)).toList();
@@ -230,13 +237,13 @@ public class Petition057Steps {
     assertThat(records.stream().anyMatch(r -> r.getGilParagraf() != null)).isTrue();
   }
 
-  @Then("^fordringer \"([^\"]+)\", \"([^\"]+)\", and \"([^\"]+)\" receive no dækning$")
+  @Then("^fordringer \\"([^\\"]+)\\", \\"([^\\"]+)\\", and \\"([^\\"]+)\\" receive no d\u00e6kning$")
   public void fordringerReceiveNoDaekning(String id1, String id2, String id3) {
     for (String id : List.of(id1, id2, id3)) {
       BigDecimal total = currentDaekningRecords.stream()
           .filter(r -> r.getFordringId().equals(id))
           .map(DaekningRecord::getDaekningBeloeb).reduce(BigDecimal.ZERO, BigDecimal::add);
-      assertThat(total).as("No dækning for " + id).isEqualByComparingTo(BigDecimal.ZERO);
+      assertThat(total).as("No d\u00e6kning for " + id).isEqualByComparingTo(BigDecimal.ZERO);
     }
   }
 
@@ -248,7 +255,7 @@ public class Petition057Steps {
     fordringRepository.save(entity);
   }
 
-  @Then("^the dækning record for \"([^\"]+)\" carries prioritetKategori \"([^\"]+)\"$")
+  @Then("^the d\u00e6kning record for \\"([^\\"]+)\\" carries prioritetKategori \\"([^\\"]+)\\"$")
   public void daekningRecordCarriesPrioritetKategori(String fordringId, String prioritetKategori) {
     List<DaekningRecord> records = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId)).toList();
@@ -261,12 +268,12 @@ public class Petition057Steps {
   // FR-2
   // =========================================================================
 
-  @Given("^debtor \"([^\"]+)\" has the following active fordringer in the same priority category:$")
+  @Given("^debtor \\"([^\\"]+)\\" has the following active fordringer in the same priority category:$")
   public void debtorHasFordringerInSamePriorityCategory(String debtorId, DataTable table) {
     seedFordringer(debtorId, table);
   }
 
-  @Given("fordring {string} has a legacyModtagelsesdato of {string} \\(before 1 September 2013\\)")
+  @Given("fordring {string} has a legacyModtagelsesdato of {string} \\\\(before 1 September 2013\\\\)")
   public void fordringHasLegacyModtagelsesdato(String fordringId, String legacyDate) {
     DaekningFordringEntity entity = fordringRepository.findByDebtorId(currentDebtorId).stream()
         .filter(f -> f.getFordringId().equals(fordringId)).findFirst().orElseThrow();
@@ -300,7 +307,7 @@ public class Petition057Steps {
   // FR-3
   // =========================================================================
 
-  @Given("^debtor \"([^\"]+)\" has fordring \"([^\"]+)\" with the following outstanding components:$")
+  @Given("^debtor \\"([^\\"]+)\\" has fordring \\"([^\\"]+)\\" with the following outstanding components:$")
   public void debtorHasFordringWithOutstandingComponents(
       String debtorId, String fordringId, DataTable table) {
     currentDebtorId = debtorId;
@@ -313,24 +320,24 @@ public class Petition057Steps {
     currentFordringerMap.put(fordringId, entity);
   }
 
-  @When("^a payment of (\\d+(?:\\.\\d+)?) DKK is applied to fordring \"([^\"]+)\"$")
+  @When("^a payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK is applied to fordring \\"([^\\"]+)\\"$")
   public void aPaymentIsAppliedToFordring(BigDecimal beloeb, String fordringId) {
     currentPaymentAmount = beloeb;
     currentTargetFordringId = fordringId;
     applyPaymentNow();
   }
 
-  @Then("^opkrævningsrenter \\((\\d+(?:\\.\\d+)?)\\) are fully covered first$")
+  @Then("^opkr\u00e6vningsrenter \\\\((\\\\d+(?:\\\\.\\\\d+)?)\\\\) are fully covered first$")
   public void opkraevningsrenterAreFullyCoveredFirst(BigDecimal expectedBeloeb) {
     assertKomponentAmount(RenteKomponent.OPKRAEVNINGSRENTER, expectedBeloeb);
   }
 
-  @Then("^inddrivelsesrenter_stk1 \\((\\d+(?:\\.\\d+)?)\\) are fully covered second$")
+  @Then("^inddrivelsesrenter_stk1 \\\\((\\\\d+(?:\\\\.\\\\d+)?)\\\\) are fully covered second$")
   public void inddrivelsesrenterStk1AreFullyCoveredSecond(BigDecimal expectedBeloeb) {
     assertKomponentAmount(RenteKomponent.INDDRIVELSESRENTER_STK1, expectedBeloeb);
   }
 
-  @Then("Hoofdfordring receives no dækning")
+  @Then("Hoofdfordring receives no d\u00e6kning")
   public void hoofdfordringReceivesNoDaekning() {
     BigDecimal total = currentDaekningRecords.stream()
         .filter(r -> r.getKomponent() == RenteKomponent.HOOFDFORDRING)
@@ -338,7 +345,7 @@ public class Petition057Steps {
     assertThat(total).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
-  @Then("no dækning record has komponent {string} with beloeb > 0")
+  @Then("no d\u00e6kning record has komponent {string} with beloeb > 0")
   public void noDaekningRecordHasKomponentWithPositiveBeloeb(String komponent) {
     RenteKomponent k = RenteKomponent.valueOf(komponent);
     BigDecimal total = currentDaekningRecords.stream().filter(r -> r.getKomponent() == k)
@@ -346,7 +353,7 @@ public class Petition057Steps {
     assertThat(total).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
-  @Given("^debtor \"([^\"]+)\" has fordring \"([^\"]+)\" with all six cost components outstanding:$")
+  @Given("^debtor \\"([^\\"]+)\\" has fordring \\"([^\\"]+)\\" with all six cost components outstanding:$")
   public void debtorHasFordringWithAllSixCostComponents(
       String debtorId, String fordringId, DataTable table) {
     currentDebtorId = debtorId;
@@ -359,7 +366,7 @@ public class Petition057Steps {
     currentFordringerMap.put(fordringId, entity);
   }
 
-  @Then("^sub-positions 1 through 5 are fully covered in ascending order \\(total (\\d+(?:\\.\\d+)?) DKK\\)$")
+  @Then("^sub-positions 1 through 5 are fully covered in ascending order \\\\(total (\\\\d+(?:\\\\.\\\\d+)?) DKK\\\\)$")
   public void subPositions1Through5AreFullyCovered(BigDecimal total) {
     BigDecimal sum = List.of(RenteKomponent.OPKRAEVNINGSRENTER,
         RenteKomponent.INDDRIVELSESRENTER_FORDRINGSHAVER_STK3,
@@ -372,7 +379,7 @@ public class Petition057Steps {
         .isEqualByComparingTo(total.setScale(2, RoundingMode.HALF_UP));
   }
 
-  @Then("^the Hoofdfordring receives (\\d+(?:\\.\\d+)?) DKK dækning \\(the remaining amount after renter\\)$")
+  @Then("^the Hoofdfordring receives (\\\\d+(?:\\\\.\\\\d+)?) DKK d\u00e6kning \\\\(the remaining amount after renter\\\\)$")
   public void hoofdfordringReceivesRemainingDaekning(BigDecimal expectedBeloeb) {
     assertKomponentAmount(RenteKomponent.HOOFDFORDRING, expectedBeloeb);
   }
@@ -387,7 +394,7 @@ public class Petition057Steps {
     }
   }
 
-  @Given("^debtor \"([^\"]+)\" has fordring \"([^\"]+)\" with two INDDRIVELSESRENTER_STK1 periods:$")
+  @Given("^debtor \\"([^\\"]+)\\" has fordring \\"([^\\"]+)\\" with two INDDRIVELSESRENTER_STK1 periods:$")
   public void debtorHasFordringWithTwoInddrivelsesrenterPeriods(
       String debtorId, String fordringId, DataTable table) {
     currentDebtorId = debtorId;
@@ -403,14 +410,14 @@ public class Petition057Steps {
     }
   }
 
-  @When("^a payment of (\\d+(?:\\.\\d+)?) DKK reaches fordring \"([^\"]+)\" after opkrævningsrenter are covered$")
+  @When("^a payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK reaches fordring \\"([^\\"]+)\\" after opkr\u00e6vningsrenter are covered$")
   public void aPaymentReachesFordringAfterOpkraevningsrenter(BigDecimal beloeb, String fordringId) {
     currentPaymentAmount = beloeb;
     currentTargetFordringId = fordringId;
     applyPaymentNow();
   }
 
-  @Then("^the 2023-Q1 inddrivelsesrente period \\((\\d+(?:\\.\\d+)?)\\) is fully covered first$")
+  @Then("^the 2023-Q1 inddrivelsesrente period \\\\((\\\\d+(?:\\\\.\\\\d+)?)\\\\) is fully covered first$")
   public void period2023Q1IsFullyCoveredFirst(BigDecimal expectedBeloeb) {
     List<DaekningRecord> records = currentDaekningRecords.stream()
         .filter(r -> r.getKomponent() == RenteKomponent.INDDRIVELSESRENTER_STK1)
@@ -434,23 +441,23 @@ public class Petition057Steps {
   // FR-4
   // =========================================================================
 
-  @When("^a lønindeholdelse payment of (\\d+(?:\\.\\d+)?) DKK is received with inddrivelsesindsatsType \"([^\"]+)\"$")
+  @When("^a l\u00f8nindeholdelse payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK is received with inddrivelsesindsatsType \\"([^\\"]+)\\"$")
   public void aLoenindeholdelsePaymentIsReceived(BigDecimal beloeb, String indsatsType) {
     currentPaymentAmount = beloeb;
     currentIndsatsType = InddrivelsesindsatsType.valueOf(indsatsType);
   }
 
-  @Then("^fordring \"([^\"]+)\" \\(indsats-fordring\\) is fully covered with (\\d+(?:\\.\\d+)?) DKK first$")
+  @Then("^fordring \\"([^\\"]+)\\" \\\\(indsats-fordring\\\\) is fully covered with (\\\\d+(?:\\\\.\\\\d+)?) DKK first$")
   public void indsatsFordringIsFullyCoveredFirst(String fordringId, BigDecimal expectedBeloeb) {
     fordringIsFullyCovered(fordringId, expectedBeloeb);
   }
 
-  @Then("^surplus (\\d+(?:\\.\\d+)?) DKK is applied to fordring \"([^\"]+)\" \\(same-type-eligible\\)$")
+  @Then("^surplus (\\\\d+(?:\\\\.\\\\d+)?) DKK is applied to fordring \\"([^\\"]+)\\" \\\\(same-type-eligible\\\\)$")
   public void surplusIsAppliedToEligibleFordring(BigDecimal surplus, String fordringId) {
     fordringIsCoveredWith(fordringId, surplus);
   }
 
-  @Then("^each dækning record carries gilParagraf \"([^\"]+)\"$")
+  @Then("^each d\u00e6kning record carries gilParagraf \\"([^\\"]+)\\"$")
   public void eachDaekningRecordCarriesGilParagraf(String expectedGilParagraf) {
     assertThat(currentDaekningRecords).isNotEmpty();
     for (DaekningRecord r : currentDaekningRecords) {
@@ -461,13 +468,13 @@ public class Petition057Steps {
     }
   }
 
-  @When("^an udlæg payment of (\\d+(?:\\.\\d+)?) DKK is received with inddrivelsesindsatsType \"([^\"]+)\"$")
+  @When("^an udl\u00e6g payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK is received with inddrivelsesindsatsType \\"([^\\"]+)\\"$")
   public void anUdlaegPaymentIsReceived(BigDecimal beloeb, String indsatsType) {
     currentPaymentAmount = beloeb;
     currentIndsatsType = InddrivelsesindsatsType.valueOf(indsatsType);
   }
 
-  @Then("^the remaining (\\d+(?:\\.\\d+)?) DKK surplus is flagged as udlaegSurplus = true$")
+  @Then("^the remaining (\\\\d+(?:\\\\.\\\\d+)?) DKK surplus is flagged as udlaegSurplus = true$")
   public void remainingSurplusIsFlaggedAsUdlaegSurplus(BigDecimal surplus) {
     List<DaekningRecord> surplusRecords = currentDaekningRecords.stream()
         .filter(r -> Boolean.TRUE.equals(r.getUdlaegSurplus())).toList();
@@ -478,7 +485,7 @@ public class Petition057Steps {
         .isEqualByComparingTo(surplus.setScale(2, RoundingMode.HALF_UP));
   }
 
-  @Then("no dækning record exists for fordring {string}")
+  @Then("no d\u00e6kning record exists for fordring {string}")
   public void noDaekningRecordExistsForFordring(String fordringId) {
     BigDecimal total = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId) && !Boolean.TRUE.equals(r.getUdlaegSurplus()))
@@ -490,7 +497,7 @@ public class Petition057Steps {
   // FR-5
   // =========================================================================
 
-  @When("the dækningsrækkefølge ordered list is retrieved for debtor {string}")
+  @When("the d\u00e6kningsr\u00e6kkef\u00f8lge ordered list is retrieved for debtor {string}")
   public void orderedListIsRetrievedForDebtor(String debtorId) {
     currentDebtorId = debtorId;
     currentOrderedList = daekningsService.getOrdering(debtorId, null);
@@ -509,19 +516,19 @@ public class Petition057Steps {
     }
   }
 
-  @Then("^the entry for \"([^\"]+)\" carries opskrivningAfFordringId \"([^\"]+)\"$")
+  @Then("^the entry for \\"([^\\"]+)\\" carries opskrivningAfFordringId \\"([^\\"]+)\\"$")
   public void entryCarriesOpskrivningAfFordringId(String fordringId, String expectedParentId) {
     var pos = currentOrderedList.stream().filter(p -> p.fordringId().equals(fordringId)).findFirst();
     assertThat(pos).isPresent();
     assertThat(pos.get().opskrivningAfFordringId()).isEqualTo(expectedParentId);
   }
 
-  @Given("^debtor \"([^\"]+)\" has the following fordringer:$")
+  @Given("^debtor \\"([^\\"]+)\\" has the following fordringer:$")
   public void debtorHasFollowingFordringer(String debtorId, DataTable table) {
     seedFordringer(debtorId, table);
   }
 
-  @Then("^the ordered list includes \"([^\"]+)\" at rank 1 \\(inheriting parent.s FIFO sort key (\\d{4}-\\d{2}-\\d{2})\\)$")
+  @Then("^the ordered list includes \\"([^\\"]+)\\" at rank 1 \\\\(inheriting parent.s FIFO sort key (\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\)$")
   public void orderedListIncludesAtRank1InheritingParentFifoSortKey(
       String fordringId, String parentFifoKey) {
     List<String> positionIds = new ArrayList<>();
@@ -533,7 +540,7 @@ public class Petition057Steps {
     assertThat(pos.get().fifoSortKey().toString()).isEqualTo(parentFifoKey);
   }
 
-  @Then("^\"([^\"]+)\" is at rank (\\d+) \\(FIFO (\\d{4}-\\d{2}-\\d{2})\\)$")
+  @Then("^\\\"([^\\"]+)\\" is at rank (\\\\d+) \\\\(FIFO (\\\\d{4}-\\\\d{2}-\\\\d{2})\\\\)$")
   public void fordringIsAtRankWithFifoKey(String fordringId, int rank, String fifoDate) {
     List<String> positionIds = new ArrayList<>();
     for (var pos : currentOrderedList) {
@@ -542,13 +549,13 @@ public class Petition057Steps {
     assertThat(positionIds.get(rank - 1)).isEqualTo(fordringId);
   }
 
-  @Then("^\"([^\"]+)\" is not present \\(fully covered, saldo = 0\\)$")
+  @Then("^\\"([^\\"]+)\\" is not present \\\\(fully covered, saldo = 0\\\\)$")
   public void fordringIsNotPresentFullyCovered(String fordringId) {
     assertThat(currentOrderedList.stream()
         .anyMatch(p -> p.fordringId().equals(fordringId))).isFalse();
   }
 
-  @Given("^fordring \"([^\"]+)\" has the following outstanding components:$")
+  @Given("^fordring \\"([^\\"]+)\\" has the following outstanding components:$")
   public void fordringHasFollowingOutstandingComponents(String fordringId, DataTable table) {
     DaekningFordringEntity entity = fordringRepository.findByDebtorId(currentDebtorId).stream()
         .filter(f -> f.getFordringId().equals(fordringId)).findFirst()
@@ -558,13 +565,13 @@ public class Petition057Steps {
     currentFordringerMap.put(fordringId, entity);
   }
 
-  @When("^a payment of (\\d+(?:\\.\\d+)?) DKK is applied to opskrivningsfordring \"([^\"]+)\"$")
+  @When("^a payment of (\\\\d+(?:\\\\.\\\\d+)?) DKK is applied to opskrivningsfordring \\"([^\\"]+)\\"$")
   public void aPaymentIsAppliedToOpskrivningsfordring(BigDecimal beloeb, String fordringId) {
     currentPaymentAmount = beloeb;
     currentTargetFordringId = fordringId;
   }
 
-  @Then("^INDDRIVELSESRENTER_STK1 on fordring \"([^\"]+)\" receives (\\d+(?:\\.\\d+)?) DKK dækning$")
+  @Then("^INDDRIVELSESRENTER_STK1 on fordring \\"([^\\"]+)\\" receives (\\\\d+(?:\\\\.\\\\d+)?) DKK d\u00e6kning$")
   public void inddrivelsesrenterStk1OnFordringReceivesDaekning(
       String fordringId, BigDecimal expectedBeloeb) {
     BigDecimal total = currentDaekningRecords.stream()
@@ -575,7 +582,7 @@ public class Petition057Steps {
         .isEqualByComparingTo(expectedBeloeb.setScale(2, RoundingMode.HALF_UP));
   }
 
-  @Then("^HOOFDFORDRING on fordring \"([^\"]+)\" receives no dækning$")
+  @Then("^HOOFDFORDRING on fordring \\"([^\\"]+)\\" receives no d\u00e6kning$")
   public void hoofdfordringOnFordringReceivesNoDaekning(String fordringId) {
     BigDecimal total = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId)
@@ -606,7 +613,7 @@ public class Petition057Steps {
     currentPaymentAmount = BigDecimal.valueOf(9999);
   }
 
-  @And("fordring {string} arrives at {string} \\(after betalingstidspunkt but before application\\)")
+  @And("fordring {string} arrives at {string} \\\\(after betalingstidspunkt but before application\\\\)")
   public void fordringArrivesAfterBetalingstidspunkt(String fordringId, String arrivalTimestamp) {
     fordringRepository.save(DaekningFordringEntity.builder()
         .fordringId(fordringId).debtorId(currentDebtorId)
@@ -632,7 +639,7 @@ public class Petition057Steps {
         .anyMatch(r -> r.getFordringId().equals(fordring2))).isTrue();
   }
 
-  @Then("the dækning records carry betalingstidspunkt {string}")
+  @Then("the d\u00e6kning records carry betalingstidspunkt {string}")
   public void daekningRecordsCarryBetalingstidspunkt(String expectedTimestamp) {
     Instant expected = Instant.parse(expectedTimestamp);
     assertThat(currentDaekningRecords).isNotEmpty();
@@ -640,7 +647,7 @@ public class Petition057Steps {
         .allMatch(r -> expected.equals(r.getBetalingstidspunkt()))).isTrue();
   }
 
-  @Then("the dækning records carry applicationTimestamp {string}")
+  @Then("the d\u00e6kning records carry applicationTimestamp {string}")
   public void daekningRecordsCarryApplicationTimestamp(String expectedTimestamp) {
     Instant expected = Instant.parse(expectedTimestamp);
     assertThat(currentDaekningRecords).isNotEmpty();
@@ -671,7 +678,7 @@ public class Petition057Steps {
         null, btp, btp.plusSeconds(300));
   }
 
-  @Then("^a dækning record is created for fordring \"([^\"]+)\" with:$")
+  @Then("^a d\u00e6kning record is created for fordring \\"([^\\"]+)\\" with:$")
   public void aDaekningRecordIsCreatedForFordringWith(String fordringId, DataTable table) {
     List<DaekningRecord> records = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId)).toList();
@@ -693,7 +700,7 @@ public class Petition057Steps {
     }
   }
 
-  @Then("^the CLS audit log contains an entry for fordring \"([^\"]+)\" with all eight required fields:.*$")
+  @Then("^the CLS audit log contains an entry for fordring \\"([^\\"]+)\\" with all eight required fields:.*$")
   public void clsAuditLogContainsEntryWithEightRequiredFields(String fordringId) {
     List<DaekningRecord> records = currentDaekningRecords.stream()
         .filter(r -> r.getFordringId().equals(fordringId)).toList();
@@ -771,7 +778,7 @@ public class Petition057Steps {
         .receivedAt(asOf.minusMonths(3).atStartOfDay().toInstant(ZoneOffset.UTC)).build());
   }
 
-  @Then("^the response includes fordring \"([^\"]+)\" with its historical tilbaestaaendeBeloeb as of (\\d{4}-\\d{2}-\\d{2})$")
+  @Then("^the response includes fordring \\"([^\\"]+)\\" with its historical tilbaestaaendeBeloeb as of (\\\\d{4}-\\\\d{2}-\\\\d{2})$")
   public void responseIncludesFordringWithHistoricalBalance(String fordringId, String asOfDate)
       throws Exception {
     assertThat(lastHttpStatus).isEqualTo(200);
@@ -911,3 +918,8 @@ public class Petition057Steps {
     }
   }
 }
+"""
+
+with open(TARGET, 'w', encoding='utf-8') as f:
+    f.write(content)
+print(f'Written {len(content)} chars')
