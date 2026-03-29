@@ -253,8 +253,8 @@ public class Petition054Steps {
   }
 
   /**
-   * FR-2.2 (AC-8) — Virkningsdato retroactivity rule: {@code virkningsdato < fordring.receivedAt}
-   * encoded using strict less-than (not less-than-or-equal).
+   * FR-2.2 (AC-8) — Virkningsdato retroactivity rule: {@code virkningsdato <
+   * fordringModtagelsestidspunkt} encoded using strict less-than (not less-than-or-equal).
    */
   @Then("the file contains a Catala rule block determining retroactivity when {string}")
   public void fileContainsRetroactivityRuleBlock(String condition) {
@@ -270,10 +270,10 @@ public class Petition054Steps {
         .contains("virkningsdato");
     assertThat(content)
         .as(
-            "Retroactivity rule in %s must reference 'fordring.receivedAt' (or equivalent"
-                + " Catala identifier) using strict less-than (<). FR-2.2, AC-8.",
+            "Retroactivity rule in %s must reference 'fordringModtagelsestidspunkt'"
+                + " using strict less-than (<). FR-2.2, AC-8.",
             currentFilePath)
-        .contains("receivedAt");
+        .contains("fordringModtagelsestidspunkt");
   }
 
   /** FR-2.3 (AC-9) — GIL § 18 k suspension flag anchored to the correct citation. */
@@ -413,11 +413,11 @@ public class Petition054Steps {
 
   /**
    * FR-3 (AC-11) — Boundary-date assertions for the virkningsdato retroactivity rule. Must cover:
-   * same day as {@code fordring.receivedAt}, one day before, and one day after.
+   * same day as {@code fordringModtagelsestidspunkt}, one day before, and one day after.
    */
   @Then(
       "the test cases include boundary-date assertions for the virkningsdato retroactivity"
-          + " rule covering the same day as fordring.receivedAt, the day before, and the day after")
+          + " rule covering the same day as fordringModtagelsestidspunkt, the day before, and the day after")
   public void testCasesIncludeBoundaryDateAssertions() {
     String content = readCurrentFileContent();
     Set<LocalDate> dates =

@@ -101,7 +101,7 @@ scope Nedskrivning:
 
 ---
 
-## Retroaktivitetsregel — virkningsdato < fordring.receivedAt (FR-2.2)
+## Retroaktivitetsregel — virkningsdato < fordringModtagelsestidspunkt (FR-2.2)
 
 **Afgørelse af retroaktivitet**
 

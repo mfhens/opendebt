@@ -25,7 +25,7 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
     Then the file "catala/ga_1_4_4_nedskrivning.catala_da" exists in the repository
     And the file declares the Danish Catala dialect "catala_da"
     And the file contains Catala rule blocks for all three nedskrivningsgrunde anchored to "Gæld.bekendtg. § 7, stk. 2, nr. 1", "Gæld.bekendtg. § 7, stk. 2, nr. 2", and "Gæld.bekendtg. § 7, stk. 2, nr. 3"
-    And the file contains a Catala rule block determining retroactivity when "virkningsdato < fordring.receivedAt"
+    And the file contains a Catala rule block determining retroactivity when "virkningsdato < fordringModtagelsestidspunkt"
     And the file contains a Catala rule block for the GIL § 18 k suspension flag anchored to "GIL § 18 k"
     And the file contains a Catala validation rule rejecting a nedskrivning submitted without a valid grund
 
@@ -38,7 +38,7 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
     And the test cases cover all three FR-2 nedskrivningsgrunde
     And the test cases cover the GIL § 18 k suspension flag for both true and false outcomes
     And the test cases include a test for the FR-2.4 validation rule: a nedskrivning submitted without a valid grund is rejected
-    And the test cases include boundary-date assertions for the virkningsdato retroactivity rule covering the same day as fordring.receivedAt, the day before, and the day after
+    And the test cases include boundary-date assertions for the virkningsdato retroactivity rule covering the same day as fordringModtagelsestidspunkt, the day before, and the day after
 
   # --- FR-4: Comparison report against P053 Gherkin scenarios ---
 
