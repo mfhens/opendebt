@@ -95,7 +95,7 @@ Prototyping · Learning · Demos · Personal tools
 
 # 🏛️ Act II: Enterprise AI Development
 
-### *OpenDebt — replacing EFI/DMI for Denmark's public sector*
+### *OpenDebt — can AI help to replace PSRM/DMI?*
 
 ---
 
@@ -118,7 +118,7 @@ An open-source debt collection platform for Danish public institutions
 
 <br>
 
-> Replacing EFI/DMI — systems responsible for billions in public revenue.
+> Replacing PSRM/DMI — systems responsible for billions in public revenue.
 > **This cannot vibe.**
 
 ---
@@ -248,6 +248,8 @@ Red first. AI writes green. Human reviews.
 
 ---
 
+<!-- _class: compact -->
+
 ## Step 4: The AI Agent Pipeline
 
 **9 phases — each with a dedicated, stateless, auditable agent**
@@ -271,6 +273,8 @@ Red first. AI writes green. Human reviews.
 > Each agent is **stateless, scoped, and auditable**. No single model owns the whole flow.
 
 ---
+
+<!-- _class: compact -->
 
 ## Step 5: Law as Code — Juridisk Vejledning → Catala
 
