@@ -17,17 +17,17 @@ SET config_value = '140.00',
     legal_basis   = 'Gaeldsinddrivelsesloven SS 6, stk. 1',
     description   = 'Rykkergebyr per erindringsskrivelse'
 WHERE config_key = 'FEE_RYKKER'
-  AND effective_to IS NULL;
+  AND valid_to IS NULL;
 
 UPDATE business_config
 SET config_value = '300.00',
     legal_basis   = 'Gaeldsinddrivelsesloven SS 6, stk. 1',
     description   = 'Loenindeholdelsesgebyr'
 WHERE config_key = 'FEE_LOENINDEHOLDELSE'
-  AND effective_to IS NULL;
+  AND valid_to IS NULL;
 
 -- Insert FEE_TILSIGELSE (450 kr) — missing entirely from prior versions
-INSERT INTO business_config (config_key, config_value, value_type, effective_from, effective_to,
+INSERT INTO business_config (config_key, config_value, value_type, valid_from, valid_to,
                               description, legal_basis, created_by)
 SELECT 'FEE_TILSIGELSE', '450.00', 'DECIMAL', '2024-01-01', NULL,
        'Tilsigelsesgebyr for indkaldelse til udlaegforretning',
