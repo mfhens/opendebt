@@ -89,6 +89,13 @@ docker-compose.override.yml
 .demo-logs/
 .demo-pgdata/
 
+# Structurizr Lite runtime state (local cache, logs, auto-generated thumbnails)
+# Source of truth is architecture/workspace.dsl — commit that, not this
+architecture/.structurizr/
+
+# workspace.json is auto-exported by Structurizr Lite on save; workspace.dsl is canonical
+architecture/workspace.json
+
 # Proprietary SKAT fonts (not distributable in open-source repo)
 opendebt-creditor-portal/src/main/resources/static/fonts/academy-sans/
 opendebt-creditor-portal/src/main/resources/static/fonts/republic/
