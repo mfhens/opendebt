@@ -1,0 +1,121 @@
+# G.A.1.4.3 — Opskrivninger af fordringer — Modtagelsestidspunkt
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Juridisk grundlag: Gæld.bekendtg. § 7, stk. 1, 3.–6. pkt.
+   Formål: Formalisering af reglerne for, hvornår en opskrivningsfordring
+           anses for modtaget (modtagelsestidspunkt), jf. G.A.1.4.3.
+   Petition: P054 — Catala Compliance Spike
+   Status: Research spike — ingen produktionskode. *)
+
+## Artikel: G.A.1.4.3 — Modtagelsestidspunkt for opskrivningsfordringer
+
+### Baggrund
+
+Ifølge G.A.1.4.3 (G.A. snapshot v3.16, 2026-01-30) gælder særlige regler for,
+hvornår en opskrivningsfordring anses for modtaget. Reglerne er fastsat i
+Gæld.bekendtg. § 7, stk. 1, med fire underpunkter (3.–6. pkt.).
+
+---
+
+## Omfangsdeklaration — OpskrivningsfordringModtagelse
+
+```catala
+declaration scope OpskrivningsfordringModtagelse:
+  context erFordringIHøring content boolean
+  context erAnnulleretNedskrivning content boolean
+  context erKrydssystemNedskrivning content boolean
+  context originalFordringModtagelsestidspunkt content date
+  context modtagelseISystemet content date
+  context modtagelsestidspunkt content date
+```
+
+---
+
+## § 7, stk. 1, 3. pkt. — Gæld.bekendtg. § 7, stk. 1, 3. pkt.
+
+**Grundregel (FR-1.1 — standardmodtagelse)**
+
+En opskrivningsfordring anses for modtaget, når den er registreret i
+modtagelsessystemet (Gæld.bekendtg. § 7, stk. 1, 3. pkt.).
+Denne regel er udgangspunktet — den finder anvendelse, medmindre en af
+undtagelserne i 4.–6. pkt. gælder.
+
+```catala
+scope OpskrivningsfordringModtagelse:
+  # FR-1.1: standardregel — modtagelse ved registrering i modtagelsessystemet
+  # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 3. pkt.
+  rule modtagelsestidspunkt equals modtagelseISystemet
+```
+
+---
+
+## § 7, stk. 1, 4. pkt. — Gæld.bekendtg. § 7, stk. 1, 4. pkt.
+
+**Høring-undtagelse (FR-1.2)**
+
+Er opskrivningsfordringen under høring på tidspunktet for indsendelsen, anses
+fordringen for modtaget, når bekræftelsen eller rettelsen er registreret i
+modtagelsessystemet — ikke på tidspunktet for den oprindelige indsendelse
+(Gæld.bekendtg. § 7, stk. 1, 4. pkt.).
+
+```catala
+scope OpskrivningsfordringModtagelse:
+  # FR-1.2: høring-undtagelse — modtagelse ved høringens afslutning
+  # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 4. pkt.
+  exception
+  rule modtagelsestidspunkt
+    under condition erFordringIHøring
+    consequence equals modtagelseISystemet
+```
+
+---
+
+## § 7, stk. 1, 5. pkt. — Gæld.bekendtg. § 7, stk. 1, 5. pkt.
+
+**Annulleret nedskrivning — samme system (FR-1.3)**
+
+Er opskrivningsfordringen en omgørelse (annullering) af en nedskrivning inden
+for samme system, anses fordringen for modtaget på samme tidspunkt som den
+oprindelige fordring (Gæld.bekendtg. § 7, stk. 1, 5. pkt.).
+
+```catala
+scope OpskrivningsfordringModtagelse:
+  # FR-1.3: annulleret nedskrivning, samme system — modtagelse lig den originale fordrings tidspunkt
+  # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 5. pkt.
+  exception
+  rule modtagelsestidspunkt
+    under condition
+      erAnnulleretNedskrivning and
+      not erKrydssystemNedskrivning
+    consequence equals originalFordringModtagelsestidspunkt
+```
+
+---
+
+## § 7, stk. 1, 6. pkt. — Gæld.bekendtg. § 7, stk. 1, 6. pkt.
+
+**Annulleret nedskrivning — krydssystem (FR-1.4)**
+
+Er opskrivningsfordringen en omgørelse af en nedskrivning, der er gået på tværs
+af systemer (krydssystem), anses fordringen altid for modtaget ved registrering i
+modtagelsessystemet — uanset den oprindelige fordrings tidspunkt
+(Gæld.bekendtg. § 7, stk. 1, 6. pkt.).
+
+```catala
+scope OpskrivningsfordringModtagelse:
+  # FR-1.4: annulleret nedskrivning, krydssystem — altid ved modtagelsessystem-registrering
+  # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 6. pkt.
+  exception
+  rule modtagelsestidspunkt
+    under condition
+      erAnnulleretNedskrivning and
+      erKrydssystemNedskrivning
+    consequence equals modtagelseISystemet
+```
+
+---
+
+(* Filende: ga_1_4_3_opskrivning.catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Dialect: catala_da *)

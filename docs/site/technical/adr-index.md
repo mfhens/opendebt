@@ -32,5 +32,6 @@
 | 0028 | Backup and disaster recovery | pgBackRest WAL archiving + streaming replication; RTO 4h / RPO 4h |
 | 0029 | immudb for financial ledger integrity | immudb 1.10 + immudb4j 1.0.1 as cryptographic tamper-evidence KV store for double-entry ledger entries; dual-write pattern from `BookkeepingService`; conditionally accepted pending UFST HDP platform validation (TB-028-a) |
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
+| 0031 | Statutory codes as enums | Values defined by statute (e.g., `WriteDownReasonCode`) are Java enums, not DB configuration; confirmed compatible with Catala's enumeration model (P054 spike) |
 
 ADR source files are in `docs/adr/` in the repository.

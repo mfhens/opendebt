@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-28
-  updated_by: copilot (TB-034..039 added from G.A. petition-vs-code audit; P006 future_scope note for KLAG workflow)
+  updated_at: 2026-03-29
+  updated_by: copilot (P054 Phase 9 sprint-tracker — pipeline complete, BDD+review results recorded)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1029,8 +1029,38 @@ program:
         All BDD scenarios green in both modules.
       next_step: n/a
 
+    petition054:
+      title: Catala Compliance Spike — G.A.1.4.3 og G.A.1.4.4 formal encoding
+      status: implemented
+      branch: feature/p054-catala-spike
+      last_reviewed: 2026-03-29
+      notes: >
+        Research spike — no API surface, no database schema changes, no portal UI changes.
+        Delivered four files in the catala/ top-level directory:
+        ga_1_4_3_opskrivning.catala_da (four modtagelsestidspunkt sub-rules per Gæld.bekendtg.
+        § 7, stk. 1), ga_1_4_4_nedskrivning.catala_da (three nedskrivningsgrunde, virkningsdato
+        retroactivity, GIL § 18 k, FR-2.4 validation), tests/ga_opskrivning_nedskrivning_tests.catala_da
+        (11 test cases), and SPIKE-REPORT.md. Coverage table maps all P053 FR-1/FR-2 scenarios
+        to Catala rule blocks: 16 of 18 scenarios covered, 2 gaps (FR-1.4 cross-system case,
+        UGYLDIG_GRUND exhaustiveness), 2 discrepancies (retroaktivitet reference date, høring
+        banner vs. modtagelsestidspunkt). Effort: ~1 person-day per G.A. section, well below
+        the 4-day No-Go threshold. Go verdict: proceed with Catala encoding of the G.A. Inddrivelse
+        chapter. Catala CLI not yet available in spike environment; catala ocaml exit-code check
+        deferred to a CI environment with the CLI installed.
+        Phase 8 code review completed in two rounds — all BLOCKERs and MAJORs resolved (PASS
+        Round 2); minimality review also PASS Round 2. BDD suite on branch: 280 run, 0 failures,
+        2 errors (NFR-1: Catala CLI absent — AC-13 deferred), 61 skipped. Full 9-phase pipeline
+        complete; final commit 723ebf3. Go/No-Go: Go (Catala compilation deferred pending CLI
+        installation in CI).
+      next_step: >
+        If the Go verdict is formally adopted as an architectural decision, create an ADR for
+        Catala adoption and proceed with encoding remaining G.A. Inddrivelse sections. Prioritise
+        sections with complex exception hierarchies (comparable to G.A.1.4.3) and temporal rules
+        (comparable to G.A.1.4.4 virkningsdato and GIL § 18 k). Install Catala CLI in CI to
+        validate catala ocaml compilation (AC-13 deferred).
+
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-29, 53 petitions tracked)
+  # STATUS SUMMARY (2026-03-29, 54 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1039,14 +1069,14 @@ program:
   #               petition029, petition030, petition031, petition032, petition033,
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
-  #               petition047, petition048, petition050, petition053
+  #               petition047, petition048, petition050, petition053, petition054
   # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
   #               petition051, petition052
   #
-  # Total: 53 petitions
-  #   6 validated, 40 implemented, 1 superseded, 1 in_progress, 5 not_started
+  # Total: 54 petitions
+  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 5 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)

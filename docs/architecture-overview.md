@@ -1203,6 +1203,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | 0028 | Backup and Disaster Recovery (pgBackRest + Velero) |
 | 0029 | ImmuDB for Financial Ledger Integrity |
 | 0030 | SOAP Legacy Gateway (OIO/SKAT protocols via integration-gateway) |
+| 0031 | Statutory Codes as Enums, Not Configuration |
 
 ## Unit Tests
 
@@ -1280,3 +1281,14 @@ Pre-defined API specs (API-first, ADR-0004):
 | citizen-portal | Partial | ~19 | 6 | - |
 | caseworker-portal | Partial | ~5 | 2 | - |
 | **Total** | | **~347** | **~115** | **16** |
+
+## Research Spikes
+
+The `catala/` top-level directory contains deliverables from formal-methods feasibility spikes.
+These are **not production code** and have no API surface, database schema, or portal UI impact.
+
+| Directory | Spike | Status | Verdict |
+|-----------|-------|--------|---------|
+| `catala/` | P054 — Catala encoding of G.A.1.4.3 (four modtagelsestidspunkt sub-rules) and G.A.1.4.4 (three nedskrivningsgrunde, virkningsdato retroactivity, GIL § 18 k, FR-2.4 validation); 11 test cases; SPIKE-REPORT.md | Implemented (branch `feature/p054-catala-spike`) | **Go** — all 4 sub-rules encode without ambiguity; ~1 person-day per G.A. section; 2 gaps and 2 discrepancies found relative to P053 Gherkin. See `catala/SPIKE-REPORT.md`. |
+
+> **Note:** The Go verdict is a spike finding, not a committed architectural decision. Catala adoption as a formal compliance layer requires a dedicated ADR before any production encoding proceeds. The Catala CLI was not available in the spike environment; `catala ocaml` compilation is deferred to a CI environment where the CLI is installed.
