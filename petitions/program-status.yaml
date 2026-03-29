@@ -1372,8 +1372,90 @@ program:
         Draft petition document. Identify which fordring types are in scope for the
         MVP (likely restskat and studielån as highest-volume types).
 
+    # --- Catala spike companions (phase-18/19) ---
+
+    petition069:
+      title: Catala Compliance Spike — Dækningsrækkefølge GIL § 4 (companion to P057)
+      status: not_started
+      phase: phase-18
+      depends_on:
+        - petition057
+      last_reviewed: 2026-03-29
+      notes: >
+        Research spike encoding GIL § 4 stk. 1-4 dækningsrækkefølge rules in Catala:
+        four priority categories (bøder → underholdsbidrag → andre fordringer → udenretlige
+        omkostninger), FIFO within each category, interest ordering (Gæld.bekendtg. § 4,
+        stk. 3 — five interest tiers for PSRM), inddrivelsesindsats allocation (§ 4, stk. 3),
+        and opskrivningsfordring positioning. Discrepancies between PSRM implementation
+        and G.A.2.3.2.1 are likely — especially the interest-within-fordring ordering
+        with its five tiers. Catala Tier A spike following the P054 research-spike pattern.
+        Time box: 2 working days.
+      next_step: >
+        Draft petition document after P057 petition is approved. Follow P054 spike structure:
+        Catala source + test suite + SPIKE-REPORT with Go/No-Go.
+
+    petition070:
+      title: Catala Compliance Spike — Forældelse G.A.2.4 (companion to P059)
+      status: not_started
+      phase: phase-18
+      depends_on:
+        - petition059
+      last_reviewed: 2026-03-29
+      notes: >
+        Research spike encoding the complete G.A.2.4 forældelses-ruleset in Catala:
+        3-year base frist, system-specific udskydelse start dates (GIL § 18a, stk. 1:
+        20-11-2021 for PSRM, 20-11-2027 for DMI), three afbrydelse types (berostillelse,
+        lønindeholdelse afgørelse, udlæg), fordringskompleks propagation, and 2-year
+        tillægsfrister. This is the HIGHEST PRIORITY Catala spike in the roadmap:
+        the temporal date arithmetic (udskydelse to specific fixed dates) and afbrydelse
+        interaction rules almost certainly contain PSRM discrepancies comparable to
+        G.A.1.4.3/1.4.4. The lønindeholdelse-in-bero-for-1-year rule and the
+        fordringskompleks propagation are the most likely discrepancy hotspots.
+        Time box: 3 working days (higher complexity than P054).
+      next_step: >
+        Draft petition document after P059 petition is approved. This is the highest-priority
+        Catala spike — commission as soon as P059 petition documents are in place.
+        Follow P054 spike pattern with Go/No-Go recommendation.
+
+    petition071:
+      title: Catala Compliance Spike — Afdragsordninger GIL § 11 (companion to P061)
+      status: not_started
+      phase: phase-19
+      depends_on:
+        - petition061
+      last_reviewed: 2026-03-29
+      notes: >
+        Research spike encoding GIL § 11 afdragsordning calculation rules in Catala:
+        tabeltræk table lookup (income bracket → afdragsprocent, with/without
+        forsørgerpligt), lavindkomstgrænse threshold, monthly ydelse calculation
+        (annual_betalingsevne / 12, rounded down to nearest 50/100 kr, § 11 stk. 2),
+        and concrete betalingsevnevurdering trigger conditions (§ 11 stk. 6).
+        Discrepancy risk: rounding rules, lavindkomstgrænse edge cases, and the
+        interaction between annual index regulation and mid-year afdragsordninger.
+        Time box: 2 working days.
+      next_step: >
+        Draft petition document after P061 petition is approved.
+
+    petition072:
+      title: Catala Compliance Spike — Lønindeholdelsesprocent GIL § 14 (companion to P062)
+      status: not_started
+      phase: phase-19
+      depends_on:
+        - petition062
+      last_reviewed: 2026-03-29
+      notes: >
+        Research spike encoding the lønindeholdelsesprocent formula from Gæld.bekendtg.
+        § 14, stk. 2 in Catala: (afdragsprocent × nettoindkomst) / (nettoindkomst -
+        fradragsbeløb) × (100% - trækprocent), maximum cap, nedrunding (always down),
+        and frikort edge case (0 trækgrundlag after fradrag). The formula conversion
+        from afdragsprocent to lønindeholdelsesprocent involves division that may produce
+        rounding discrepancies compared to PSRM's integer arithmetic implementation.
+        Time box: 2 working days.
+      next_step: >
+        Draft petition document after P062 petition is approved.
+
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-29, 68 petitions tracked)
+  # STATUS SUMMARY (2026-03-29, 72 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1389,25 +1471,29 @@ program:
   #               petition051, petition052,
   #               petition055, petition056, petition057, petition058, petition059, petition060,
   #               petition061, petition062, petition063, petition064, petition065,
-  #               petition066, petition067, petition068
+  #               petition066, petition067, petition068,
+  #               petition069, petition070, petition071, petition072
   #
-  # Total: 68 petitions
-  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 19 not_started
+  # Total: 72 petitions
+  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 23 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
   # PLANNED: Phase 16 (petition052 manual Nemkonto payout with 4-eyes approval)
   # PLANNED: Phase 17 (petition055-056 G.A.1 lifecycle gaps)
-  # PLANNED: Phase 18 (petition057-060 G.A.2 payment + prescription rules, Catala priority)
-  # PLANNED: Phase 19 (petition061-065 G.A.3 enkel inddrivelse, 2 Catala companions)
+  # PLANNED: Phase 18 (petition057-060 G.A.2 payment + prescription rules + P069/P070 Catala spikes)
+  # PLANNED: Phase 19 (petition061-065 G.A.3 enkel inddrivelse + P071/P072 Catala spikes)
   # PLANNED: Phase 20 (petition066-068 G.A.3 skærpet inddrivelse + special types)
   # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
   #
   # G.A. COVERAGE ROADMAP (juridisk vejledning G.A.1-G.A.3):
-  #   Catala Tier A targets: petition057 (dækningsrækkefølge), petition059 (forældelse — highest),
-  #                          petition061 (afdragsordninger), petition062 (lønindeholdelse)
+  #   Catala Tier A targets:
+  #     petition057 (dækningsrækkefølge) + spike petition069
+  #     petition059 (forældelse — highest priority) + spike petition070
+  #     petition061 (afdragsordninger) + spike petition071
+  #     petition062 (lønindeholdelse) + spike petition072
   #   Reference-only (Tier C, no petition): G.A.2.2 klager, G.A.3.3 særlige hæftelsesformer,
   #                                         G.A.3.4 insolvens, G.A.3.6 international inddrivelse
   #
