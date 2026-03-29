@@ -2,6 +2,7 @@
 ai-driven-development.html
 ai-driven-development.md
 marptemplate/
+*.pptx
 
 # Maven
 target/
