@@ -1166,19 +1166,24 @@ program:
 
     petition057:
       title: Dækningsrækkefølge — payment application order (G.A.2.3.2)
-      status: not_started
+      status: implemented
       phase: phase-18
       depends_on: []
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-03-30
       notes: >
         G.A.2.3.2: formalises the mandatory order in which received payments are applied across
         outstanding fordringer and cost components (renter, gebyrer, principal). PSRM applies
         a fixed hierarchy defined in GIL § 4. Discrepancies between PSRM's implementation and
         the G.A. text are likely — Catala spike recommended.
         Tier A + Catala companion spike.
+        Implemented in opendebt-payment-service: 8-step GIL § 4 algorithm
+        (DaekningsRaekkefoeigenServiceImpl), 3 enums (PrioritetKategori, RenteKomponent,
+        InddrivelsesindsatsType), 2 JPA entities (DaekningFordringEntity, DaekningRecord),
+        2 repositories, 3 DTOs, REST controller with GET and POST simulate endpoints,
+        2 Flyway migrations (V2 daekning_fordring, V3 daekning_record). 103 tests pass.
       next_step: >
-        Draft petition document and Catala companion spike petition. Catala spike to encode
-        GIL § 4 priority rules and test against known PSRM test cases.
+        Proceed to petition058 (modregning + korrektionspulje) which depends on this
+        ordering model. Resolve Catala spike AC-18 (petition069) in a CI environment.
 
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
@@ -1376,23 +1381,26 @@ program:
 
     petition069:
       title: Catala Compliance Spike — Dækningsrækkefølge GIL § 4 (companion to P057)
-      status: not_started
+      status: in_progress
       phase: phase-18
       depends_on:
         - petition057
       last_reviewed: 2026-03-29
       notes: >
-        Research spike encoding GIL § 4 stk. 1-4 dækningsrækkefølge rules in Catala:
-        four priority categories (bøder → underholdsbidrag → andre fordringer → udenretlige
-        omkostninger), FIFO within each category, interest ordering (Gæld.bekendtg. § 4,
-        stk. 3 — five interest tiers for PSRM), inddrivelsesindsats allocation (§ 4, stk. 3),
-        and opskrivningsfordring positioning. Discrepancies between PSRM implementation
-        and G.A.2.3.2.1 are likely — especially the interest-within-fordring ordering
-        with its five tiers. Catala Tier A spike following the P054 research-spike pattern.
-        Time box: 2 working days.
+        Spike implemented with Go verdict. All four Go-criteria met; no No-Go triggers
+        activated. Deliverables produced: Catala encoding of GIL § 4, stk. 1–4
+        (catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da, 19 633 bytes), 16-scope
+        test suite (catala/tests/ga_daekningsraekkefoeigen_tests.catala_da, 13 623 bytes),
+        SPIKE-REPORT-069.md (22 442 bytes), and implementation spec
+        design/specs-p069-catala-spike-daekningsraekkefoeigen.md (51 039 bytes).
+        Key discrepancy found: INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 token mismatch
+        between P057 Gherkin and G.A. text — flagged for P057 follow-up.
+        Open item: AC-18 (Catala CLI compilation exit-code 0) deferred — requires a
+        CI environment with the Catala CLI installed.
       next_step: >
-        Draft petition document after P057 petition is approved. Follow P054 spike structure:
-        Catala source + test suite + SPIKE-REPORT with Go/No-Go.
+        Resolve AC-18: run `catala typecheck` in a CI environment with Catala CLI
+        installed to confirm compilation exits with code 0. Once AC-18 passes, mark
+        petition069 done and proceed with P057 implementation.
 
     petition070:
       title: Catala Compliance Spike — Forældelse G.A.2.4 (companion to P059)
@@ -1464,18 +1472,19 @@ program:
   #               petition029, petition030, petition031, petition032, petition033,
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
-  #               petition047, petition048, petition050, petition053, petition054
+  #               petition047, petition048, petition050, petition053, petition054,
+  #               petition057
   # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
   #               petition051, petition052,
-  #               petition055, petition056, petition057, petition058, petition059, petition060,
+  #               petition055, petition056, petition058, petition059, petition060,
   #               petition061, petition062, petition063, petition064, petition065,
   #               petition066, petition067, petition068,
   #               petition069, petition070, petition071, petition072
   #
   # Total: 72 petitions
-  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 23 not_started
+  #   6 validated, 42 implemented, 1 superseded, 1 in_progress, 22 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)

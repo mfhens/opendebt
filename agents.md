@@ -194,6 +194,22 @@ dk.ufst.opendebt.integrationgateway.soap/
 └── skat/            # SKAT endpoints, SkatClaimMapper, generated JAXB
 ```
 
+`payment-service` additionally contains a `daekning/` domain sub-package for the GIL § 4 payment application order module (petition057):
+
+```
+dk.ufst.opendebt.payment.daekning/
+├── PrioritetKategori.java       # Enum — 5 GIL § 4 priority categories
+├── RenteKomponent.java          # Enum — 6 interest component sub-positions
+├── InddrivelsesindsatsType.java # Enum — 4 inddrivelsesindsats types
+├── dto/                         # DaekningsraekkefoelgePositionDto, SimulatePositionDto, SimulateRequestDto
+├── entity/                      # DaekningFordringEntity (daekning_fordring), DaekningRecord (daekning_record)
+├── repository/                  # DaekningFordringRepository, DaekningRecordRepository
+└── service/
+    ├── DaekningsRaekkefoeigenService.java      # Interface
+    └── impl/
+        └── DaekningsRaekkefoeigenServiceImpl.java  # 8-step GIL § 4 algorithm
+```
+
 Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
 
 ```

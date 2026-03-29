@@ -706,7 +706,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | Component | Status | Notes |
 |-----------|--------|-------|
 | PaymentEntity | Done | Amount, method, status, transaction ref |
-| Flyway V1 (payments) | Done | Payments, audit, history |
+| Flyway V1 (payments) | Done | Payments, payments_history, audit_log, ledger_entries, debt_events, chart_of_accounts; OCR-linje column for Betalingsservice matching |
 | **Bookkeeping module** | **Done** | |
 | AccountCode (kontoplan) | Done | 7 accounts aligned with statsligt regnskab |
 | LedgerEntryEntity (bi-temporal) | Done | effective_date + posting_date + storno |
@@ -717,7 +717,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | RetroactiveCorrectionService | Done | Storno + recalculate + re-post |
 | LedgerEntryRepository | Done | Queries for storno, interest, active entries |
 | DebtEventRepository | Done | Timeline queries, principal-affecting events |
-| Flyway V2 (ledger) | Done | ledger_entries, debt_events, chart_of_accounts, views |
+| Flyway V2 (p057_daekning_fordring) | Done | daekning_fordring — fordring data copy for GIL § 4 payment ordering; indexes on debtor_id and fordring_id |
 | **Unit tests** | **Done** | BookkeepingServiceImplTest, RetroactiveCorrectionServiceImplTest, InterestAccrualServiceImplTest |
 | **Payment matching module** | **Done** | |
 | IncomingPaymentDto | Done | DTO for incoming CREMUL payments |
@@ -730,11 +730,26 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | DebtServiceClient | Done | REST client for debt-service (ADR-0007) |
 | PaymentRepository | Done | JPA repository for PaymentEntity |
 | PaymentController | Done | REST API for incoming payment processing |
-| Flyway V3 (ocr_line, nullable case) | Done | OCR-linje column, nullable case_id/debtor fields |
+| Flyway V3 (p057_daekning_record) | Done | daekning_record — immutable payment application records per fordring component; indexes on debtor_id and fordring_id |
 | **Unit tests** | **Done** | PaymentMatchingServiceImplTest (10 tests) |
 | ReconciliationService | Not started | Match CREMUL entries against ledger |
 | **Timeline endpoint (petition050)** | **Done** | |
 | LedgerController | Done | `GET /api/v1/events/case/{caseId}` — debt events for timeline aggregation; SERVICE role added to @PreAuthorize |
+| **Dækningsrækkefølge module (petition057)** | **Done** | |
+| PrioritetKategori | Done | Enum — 5 GIL § 4 priority categories (INDDRIVELSESRENTER, OPKRAEVNINGSRENTER, GEBYRER, AFDRAG, ANDRE) |
+| RenteKomponent | Done | Enum — 6 interest component sub-positions (INDDRIVELSESRENTER_STK1, INDDRIVELSESRENTER_FORDRINGSHAVER, INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL, OPKRAEVNINGSRENTER, OEVRIGE_RENTER_PSRM, INGEN) |
+| InddrivelsesindsatsType | Done | Enum — 4 inddrivelsesindsats types (LOENINDEHOLDELSE, UDLAEG, BEGGE, INGEN) |
+| DaekningFordringEntity | Done | JPA entity — table `daekning_fordring`; fordring data copy with GIL § 4 priority fields and interest component amounts |
+| DaekningRecord | Done | JPA entity — table `daekning_record`; immutable payment application record per fordring component |
+| DaekningFordringRepository | Done | JPA repository — `findByDebtorId`, ordering by prioritet and FIFO sort key |
+| DaekningRecordRepository | Done | JPA repository — `findByDebtorId`, `findByFordringId` |
+| DaekningsraekkefoelgePositionDto | Done | DTO — response position with fordring_id, komponent, daekning_beloeb, prioritet_kategori |
+| SimulatePositionDto | Done | DTO — simulated application position for dry-run requests |
+| SimulateRequestDto | Done | DTO — simulate request body: incoming payment amount + debtor context |
+| DaekningsRaekkefoeigenService | Done | Interface — `getForDebtor(debtorId)`, `simulate(debtorId, request)` |
+| DaekningsRaekkefoeigenServiceImpl | Done | 8-step GIL § 4 algorithm: priority sort → FIFO within kategori → component allocation → stk. 3 surplus → udlæg check → record creation |
+| DaekningsRaekkefoeigenController | Done | REST controller — `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge`, `POST /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate` |
+| Petition057Steps | Done | BDD step definitions — 103 tests pass; no remaining `fail()` calls |
 | **immudb tamper-evidence module (TB-028, ADR-0029)** | **Done (spike)** | |
 | ImmudbAdapter / RealImmudbAdapter | Done | Interface + immudb4j wrapper; `@ConditionalOnProperty(opendebt.immudb.enabled)` |
 | ImmuLedgerClient | Done | `@Async` dual-write appender; writes both sides of each double-entry pair to immudb KV store |
@@ -748,6 +763,8 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 **API endpoints:**
 - `POST /api/v1/payments/incoming` - Process incoming CREMUL payment (OCR-based matching)
 - `GET /api/v1/events/case/{caseId}` - Get debt events by case for BFF timeline aggregation (roles: CASEWORKER, CREDITOR, CITIZEN, SERVICE; petition050)
+- `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` - Get GIL § 4 payment application order for a debtor (petition057)
+- `POST /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate` - Simulate payment application against a debtor's fordringer (petition057)
 
 ---
 
@@ -1120,7 +1137,7 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 | opendebt_case | case-service | cases, case_debt_ids, ACT_* (Flowable) |
 | opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries |
 | opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
-| opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts |
+| opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts, daekning_fordring, daekning_record |
 | opendebt_letter | letter-service | letters, letter_templates |
 | opendebt_rules | rules-engine | rule_audit |
 
@@ -1234,6 +1251,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | CitizenDebtControllerTest | debt-service | 6 | REST endpoint tests for citizen debt summary |
 | RunCucumberTest (petition002-007,024,043) | debt-service | 59 | BDD scenarios across 8 petitions |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
+| RunCucumberTest (petition057) | payment-service | 103 | BDD: GIL § 4 8-step payment application order, priority sort, FIFO, simulate endpoint |
 | CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |
 | CreditorIngressServiceImplTest | integration-gateway | 8 | Access resolution + claim forwarding orchestration |
 | RunCucumberTest (petition011) | integration-gateway | 3 | BDD: M2M claim submission, access denied, correlation propagation |
@@ -1271,7 +1289,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | debt-service | Done | 94 | 29 | V1-V7 |
 | case-service | Done | 10 | 8 | V1 |
 | rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
-| payment-service | Partial | 22 | 2 | V1, V2, V3 |
+| payment-service | Partial | ~68 | 4 | V1, V2, V3 |
 | integration-gateway | Partial | ~44 (+generated) | 7 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
