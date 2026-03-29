@@ -12,7 +12,6 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
   # --- FR-1: Catala encoding of G.A.1.4.3 modtagelsestidspunkt rules ---
 
   Scenario: ga_1_4_3_opskrivning.catala_da exists and encodes all four modtagelsestidspunkt sub-rules
-    Given the spike has been completed within the 2-working-day time box
     Then the file "catala/ga_1_4_3_opskrivning.catala_da" exists in the repository
     And the file declares the Danish Catala dialect "catala_da"
     And the file contains a Catala rule block for the default receipt rule anchored to "Gæld.bekendtg. § 7, stk. 1, 3. pkt."
@@ -23,7 +22,6 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
   # --- FR-2: Catala encoding of G.A.1.4.4 nedskrivning rules ---
 
   Scenario: ga_1_4_4_nedskrivning.catala_da exists and encodes nedskrivningsgrunde, virkningsdato and GIL § 18 k
-    Given the spike has been completed within the 2-working-day time box
     Then the file "catala/ga_1_4_4_nedskrivning.catala_da" exists in the repository
     And the file declares the Danish Catala dialect "catala_da"
     And the file contains Catala rule blocks for all three nedskrivningsgrunde anchored to "Gæld.bekendtg. § 7, stk. 2, nr. 1", "Gæld.bekendtg. § 7, stk. 2, nr. 2", and "Gæld.bekendtg. § 7, stk. 2, nr. 3"
@@ -34,18 +32,17 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
   # --- FR-3: Catala test suite ---
 
   Scenario: ga_opskrivning_nedskrivning_tests.catala_da exists and contains at least 8 tests
-    Given the spike has been completed within the 2-working-day time box
     Then the file "catala/tests/ga_opskrivning_nedskrivning_tests.catala_da" exists in the repository
     And the file contains at least 8 test cases expressed using Catala's built-in Test module
     And the test cases cover all four FR-1 modtagelsestidspunkt sub-rules
     And the test cases cover all three FR-2 nedskrivningsgrunde
     And the test cases cover the GIL § 18 k suspension flag for both true and false outcomes
-    And the test cases include at least one boundary-date assertion for the virkningsdato retroactivity rule
+    And the test cases include a test for the FR-2.4 validation rule: a nedskrivning submitted without a valid grund is rejected
+    And the test cases include boundary-date assertions for the virkningsdato retroactivity rule covering the same day as fordring.receivedAt, the day before, and the day after
 
   # --- FR-4: Comparison report against P053 Gherkin scenarios ---
 
   Scenario: SPIKE-REPORT.md exists and contains a P053 coverage comparison table and effort estimate
-    Given the spike has been completed within the 2-working-day time box
     Then the file "catala/SPIKE-REPORT.md" exists in the repository
     And the report contains a table mapping each P053 FR-1 and FR-2 Gherkin scenario to a coverage status of "Covered", "Not covered", or "Discrepancy found"
     And every scenario from "petitions/petition053-fordringshaverportal-opskrivning-nedskrivning-fuld-spec.feature" that is in scope for FR-1 or FR-2 has a row in the table
@@ -56,7 +53,6 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
   # --- FR-5: Go/No-Go recommendation ---
 
   Scenario: SPIKE-REPORT.md contains an explicit Go/No-Go recommendation with evidence for each criterion
-    Given the spike has been completed within the 2-working-day time box
     Then the file "catala/SPIKE-REPORT.md" contains a "Go/No-Go" section with an unambiguous verdict of "Go" or "No-Go"
     And the section provides evidence for whether all 4 modtagelsestidspunkt sub-rules encoded without ambiguity
     And the section provides evidence for whether at least 1 gap or discrepancy was found relative to P053 Gherkin
@@ -64,20 +60,28 @@ Feature: Catala Compliance Spike — G.A.1.4.3 and G.A.1.4.4 Encoding (P054)
     And the section provides evidence for whether OCaml or Python extraction produced runnable code
     And the section provides evidence for each No-Go trigger: temporal rule workarounds, legal ambiguities blocking encoding, and encoding effort per G.A. section exceeding 4 person-days
 
+  # --- NFR-3: G.A. citation snapshot version ---
+
+  Scenario: All G.A. article citations reference snapshot version v3.16 dated 2026-01-30
+    Then the file "catala/ga_1_4_3_opskrivning.catala_da" contains a version reference to "v3.16" and "2026-01-30"
+    And the file "catala/ga_1_4_4_nedskrivning.catala_da" contains a version reference to "v3.16" and "2026-01-30"
+
   # --- NFR-1: Catala CLI compilation exits 0 ---
 
-  Scenario: Both Catala source files compile without errors
+  Scenario: ga_1_4_3_opskrivning.catala_da compiles without errors
     Given the Catala CLI is available on the execution PATH
     When "catala ocaml ga_1_4_3_opskrivning.catala_da" is executed from the "catala/" directory
     Then the command exits with code 0
+
+  Scenario: ga_1_4_4_nedskrivning.catala_da compiles without errors
+    Given the Catala CLI is available on the execution PATH
     When "catala ocaml ga_1_4_4_nedskrivning.catala_da" is executed from the "catala/" directory
     Then the command exits with code 0
 
   # --- NFR-4: No production artefacts modified ---
 
   Scenario: No Java source files, database migrations, or API specifications are modified by the spike
-    Given the spike has been completed within the 2-working-day time box
     Then no Java source files have been created or modified under any "src/main/java" path
-    And no database migration scripts have been added under any "db/migration" or "resources/db" path
+    And no database migration scripts have been added under any "src/main/resources/db/migration" path
     And no OpenAPI or Swagger specification files have been modified
     And no Spring Boot module configuration files have been created or modified
