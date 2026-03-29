@@ -97,7 +97,7 @@ scope Test NedskrivningTest5:
   definition nedskrivningsGrund equals NED_INDBETALING
   definition virkningsdato equals |2025-03-10|
   # fordringModtagelsestidspunkt = fordring.receivedAt
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion grundErGyldig = true
 ```
 
@@ -112,7 +112,7 @@ Gæld.bekendtg. § 7, stk. 2, nr. 2: NED_FEJL_OVERSENDELSE godkendes som gyldig 
 scope Test NedskrivningTest6:
   definition nedskrivningsGrund equals NED_FEJL_OVERSENDELSE
   definition virkningsdato equals |2025-03-10|
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion grundErGyldig = true
 ```
 
@@ -127,7 +127,7 @@ Gæld.bekendtg. § 7, stk. 2, nr. 3: NED_GRUNDLAG_AENDRET godkendes som gyldig �
 scope Test NedskrivningTest7:
   definition nedskrivningsGrund equals NED_GRUNDLAG_AENDRET
   definition virkningsdato equals |2025-03-10|
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion grundErGyldig = true
 ```
 
@@ -145,7 +145,7 @@ scope Test NedskrivningTest8:
   definition nedskrivningsGrund equals NED_INDBETALING
   definition virkningsdato equals |2025-03-09|
   # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion erRetroaktiv = true
   assertion erGIL18kSuspenderet = true
 ```
@@ -164,7 +164,7 @@ scope Test NedskrivningTest9:
   definition nedskrivningsGrund equals NED_INDBETALING
   definition virkningsdato equals |2025-03-10|
   # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion erRetroaktiv = false
   assertion erGIL18kSuspenderet = false
 ```
@@ -182,7 +182,7 @@ scope Test NedskrivningTest10:
   definition nedskrivningsGrund equals NED_GRUNDLAG_AENDRET
   definition virkningsdato equals |2025-03-11|
   # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion erRetroaktiv = false
   assertion erGIL18kSuspenderet = false
 ```
@@ -200,7 +200,7 @@ afvises. grundErGyldig = false og assertion fejler korrekt.
 scope Test NedskrivningTest11:
   definition nedskrivningsGrund equals UGYLDIG_GRUND
   definition virkningsdato equals |2025-03-10|
-  definition fordring.receivedAt equals |2025-03-10|
+  definition fordringModtagelsestidspunkt equals |2025-03-10|
   assertion grundErGyldig = false
 ```
 

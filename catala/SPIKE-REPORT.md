@@ -64,11 +64,11 @@ as formalized in the Catala spike:
 
 1. **Retroaktivitet — grænseværdi (FR-2.2):** P053 FR-4 describes the retroactivity advisory as
    appearing when "virkningsdato er i fortiden" (in the past relative to *today*). The G.A.1.4.4
-   text formalized in Catala uses `virkningsdato < fordring.receivedAt` (the fordring's own receipt
-   date), which may differ from today's date. This is a potential discrepancy: the portal compares
-   to today, while the legal rule compares to `fordring.receivedAt`. For most cases these are
-   equivalent, but for older fordringer the reference date differs. This discrepancy was flagged
-   during encoding and is documented here for legal review.
+   text formalized in Catala uses `virkningsdato < fordringModtagelsestidspunkt` (the fordring's own
+   receipt date), which may differ from today's date. This is a potential discrepancy: the portal
+   compares to today, while the legal rule compares to `fordringModtagelsestidspunkt`. For most cases
+   these are equivalent, but for older fordringer the reference date differs. This discrepancy was
+   flagged during encoding and is documented here for legal review.
 
 2. **Høring-tidspunktsbanner vs. modtagelsestidspunkt (FR-1.2 / FR-3):** P053 FR-3 specifies that
    the portal displays a banner when `fordring.lifecycleState = HOERING`. The Catala rule (FR-1.2)
@@ -76,6 +76,33 @@ as formalized in the Catala spike:
    display logic. The Gherkin scenario is about UI behaviour; the Catala rule is about the legal
    timestamp. These address related but distinct concerns, which could cause confusion in future
    test traceability.
+
+3. **GIL § 18 k suspensionsflag — retroaktiv vs. krydssystem (FR-2.3):** P053 scenario
+   "Suspensionsadvisory vises ved krydssystem retroaktiv nedskrivning" implies the flag requires
+   *both* retroaktivitet AND krydssystem. The G.A.1.4.4 text (G.A. snapshot v3.16) specifies the
+   flag activates for all retroaktive nedskrivninger. The Catala encoding uses `erRetroaktiv` alone
+   (no krydssystem condition), following the G.A. text. The P053 Gherkin is more restrictive than
+   the legal rule — this is a discrepancy where the Catala encoding is more faithful to the statute.
+   Resolution: the legal rule governs; the P053 Gherkin may need a corrective petition.
+
+4. **FR-1.2 — modtagelseISystemet reused for both FR-1.1 and FR-1.2 timestamps:** SPEC-P054 §2.4
+   noted that a separate `høringsafslutningTidspunkt` field might be needed for the høring
+   resolution timestamp (FR-1.2), distinct from the standard system-registration timestamp (FR-1.1).
+   Decision: `modtagelseISystemet` is reused for both. Rationale: G.A.1.4.4 does not name the
+   høring timestamp separately — the rule states the fordring is deemed received "ved registrering
+   af bekræftelsen" (upon registration of confirmation), which is captured by `modtagelseISystemet`.
+   Adding a separate field would introduce a scope field with no distinct G.A. article anchor.
+
+### Design decisions
+
+The following field names in `ga_1_4_4_nedskrivning.catala_da` deviate from the suggested names
+in SPEC-P054 §3.3. The spec names were marked as "suggested" — these are documented choices:
+
+| SPEC-P054 suggested name | Implemented name | Rationale |
+|---|---|---|
+| `grund` | `nedskrivningsGrund` | More descriptive; avoids collision with generic `grund` in other scopes |
+| `gilParagraf18kSuspensionKrævet` | `erGIL18kSuspenderet` | Danish naming convention (`er`-prefix for boolean state); shorter and idiomatic |
+| `fordringModtagelsestidspunkt` (flat) | Initially `fordring.receivedAt` (sub-scope) | Reverted to flat field in code review fix; sub-scope was an undocumented deviation |
 
 ---
 

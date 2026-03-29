@@ -32,19 +32,17 @@ declaration enumeration NedskrivningsGrund:
 
 ---
 
-## Omfangsdeklaration — NedskrivningsBeslutning
+## Omfangsdeklaration — Nedskrivning
 
 ```catala
-declaration scope NedskrivningsBeslutning:
+declaration scope Nedskrivning:
   context nedskrivningsGrund content NedskrivningsGrund
   context virkningsdato content date
-  context fordring scope Fordring
+  context fordringModtagelsestidspunkt content date
   context erRetroaktiv content boolean
   context erGIL18kSuspenderet content boolean
   context grundErGyldig content boolean
-
-declaration scope Fordring:
-  context receivedAt content date
+  context nedskrivningGodkendt content boolean
 ```
 
 ---
@@ -57,7 +55,7 @@ En fordring kan nedsættes, hvis skyldneren har foretaget en direkte indbetaling
 til fordringshaveren (Gæld.bekendtg. § 7, stk. 2, nr. 1 — NED_INDBETALING).
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.1, nr. 1: NED_INDBETALING — direkte indbetaling til fordringshaver
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 1
   rule grundErGyldig
@@ -75,7 +73,7 @@ En fordring kan nedsættes, hvis den er fejlagtigt oversendt til inddrivelse
 (Gæld.bekendtg. § 7, stk. 2, nr. 2 — NED_FEJL_OVERSENDELSE).
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.1, nr. 2: NED_FEJL_OVERSENDELSE — fejlagtig oversendelse til inddrivelse
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 2
   rule grundErGyldig
@@ -93,7 +91,7 @@ En fordring kan nedsættes, hvis opkrævningsgrundlaget har ændret sig
 (Gæld.bekendtg. § 7, stk. 2, nr. 3 — NED_GRUNDLAG_AENDRET).
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.1, nr. 3: NED_GRUNDLAG_AENDRET — opkrævningsgrundlaget har ændret sig
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 3
   rule grundErGyldig
@@ -108,19 +106,19 @@ scope NedskrivningsBeslutning:
 **Afgørelse af retroaktivitet**
 
 En nedskrivning er retroaktiv, hvis virkningsdato er strengt mindre end
-fordringens modtagelsestidspunkt (fordring.receivedAt). Sammenligningen bruger
+fordringens modtagelsestidspunkt (fordringModtagelsestidspunkt). Sammenligningen bruger
 strengt less-than (<) — ikke less-than-or-equal.
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.2: retroaktivitetsregel — strengt less-than (<), ikke <=
-  # virkningsdato < fordring.receivedAt => erRetroaktiv = true
+  # virkningsdato < fordringModtagelsestidspunkt => erRetroaktiv = true
   rule erRetroaktiv
-    under condition virkningsdato < fordring.receivedAt
+    under condition virkningsdato < fordringModtagelsestidspunkt
     consequence equals true
 
   rule erRetroaktiv
-    under condition not (virkningsdato < fordring.receivedAt)
+    under condition not (virkningsdato < fordringModtagelsestidspunkt)
     consequence equals false
 ```
 
@@ -130,13 +128,14 @@ scope NedskrivningsBeslutning:
 
 **GIL § 18 k suspensionsflag**
 
-Når en nedskrivning er retroaktiv (virkningsdato < fordring.receivedAt) og
-nedskrivningen ikke kan gennemføres øjeblikkeligt (krydssystem), skal
-GIL § 18 k-suspensionsflagget sættes til true. Dette markerer, at sagen
-afventer systemsynkronisering (GIL § 18 k).
+Når en nedskrivning er retroaktiv (virkningsdato < fordringModtagelsestidspunkt),
+skal GIL § 18 k-suspensionsflagget sættes til true. Dette markerer, at sagen
+afventer systemsynkronisering (GIL § 18 k). Bemærk: per G.A.1.4.4 aktiveres
+flagget ved enhver retroaktiv nedskrivning — uanset om det er en krydssystem- eller
+samlesystem-nedskrivning. Se SPIKE-REPORT.md Discrepancies afsnit 3 for detaljer.
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.3: GIL § 18 k suspensionsflag — aktiveres ved retroaktiv nedskrivning
   # Ankerpunkt: GIL § 18 k
   rule erGIL18kSuspenderet
@@ -159,7 +158,7 @@ De tre gyldige koder er: NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AE
 Enhver anden kode — herunder UGYLDIG_GRUND — er ugyldig og skal afvise nedskrivningen.
 
 ```catala
-scope NedskrivningsBeslutning:
+scope Nedskrivning:
   # FR-2.4: validering — nedskrivning uden gyldig grund afvises
   # assertion: grundErGyldig skal være true; ellers invalid (ugyldig) nedskrivningsgrund
   assertion grundErGyldig
@@ -167,6 +166,11 @@ scope NedskrivningsBeslutning:
   rule grundErGyldig
     under condition nedskrivningsGrund = UGYLDIG_GRUND
     consequence equals false
+
+  # BLOCKER-2 fix: nedskrivningGodkendt er output-flagget der afspejler grundErGyldig
+  # Spec SPEC-P054 §3.7: nedskrivningGodkendt equals grundErGyldig
+  rule nedskrivningGodkendt
+    consequence equals grundErGyldig
 ```
 
 ---

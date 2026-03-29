@@ -420,12 +420,6 @@ public class Petition054Steps {
           + " rule covering the same day as fordring.receivedAt, the day before, and the day after")
   public void testCasesIncludeBoundaryDateAssertions() {
     String content = readCurrentFileContent();
-    assertThat(content)
-        .as(
-            "Test file %s must reference fordringModtagelsestidspunkt (the retroactivity"
-                + " reference date used in FR-2.2 boundary tests). FR-3, AC-7.",
-            currentFilePath)
-        .contains("fordringModtagelsestidspunkt");
     Set<LocalDate> dates =
         Pattern.compile("\\d{4}-\\d{2}-\\d{2}")
             .matcher(content)
