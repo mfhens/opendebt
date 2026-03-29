@@ -514,3 +514,15 @@ improvements that are not blocking but should be tracked, use `AIDEV-` prefixed 
 3. `tech-debt-executor` implements items from the technical_backlog
 
 These comments are collected into `petitions/program-status.yaml` under `technical_backlog`.
+
+
+## C4 Architecture Governance
+
+Architecture is governed using Structurizr DSL. Key files:
+
+| File | Purpose |
+|---|---|
+| `architecture/workspace.dsl` | Canonical C4 model — updated by `solution-architect`, maintained by `implementation-doc-sync` |
+| `architecture/policies.yaml` | Architecture policy set — evaluated by `c4-model-validator` and `c4-architecture-governor` |
+
+Architectural decisions are recorded in `docs/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.
