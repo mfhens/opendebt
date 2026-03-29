@@ -131,16 +131,12 @@ jobs:
         run: mvn install -DskipTests -B -q
 
       - name: OWASP Dependency Check
-        # NVD_API_KEY secret required (Settings → Secrets → Actions).
-        # New NVD API keys can take up to 24h to activate — continue-on-error
-        # keeps the build green during that window. Remove once key is active.
-        continue-on-error: true
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           mvn dependency-check:check -P security-scan -B \
             -DnvdApiKey="$NVD_API_KEY" \
-            -DnvdApiDelay=2000
+            -DnvdApiDelay=4000
 
       - name: Upload OWASP report
         if: always()
