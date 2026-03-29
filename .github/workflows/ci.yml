@@ -33,6 +33,12 @@ jobs:
       - name: Validate Maven project
         run: mvn validate -B
 
+      - name: Validate C4 architecture model
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/architecture:/usr/local/structurizr \
+            structurizr/cli validate --workspace workspace.dsl
+
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
