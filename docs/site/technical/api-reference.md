@@ -34,6 +34,12 @@ Each OpenDebt service exposes a REST API documented with OpenAPI 3.1. Swagger UI
 | `POST` | `/api/v1/debts/{id}/write-down` | Write down claim balance |
 | `POST` | `/api/v1/debts/{id}/interest/recalculate` | Recalculate interest from a date (rate boundary-aware) |
 
+#### Adjustments (petition 053)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/v1/debts/{id}/adjustments` | Submit write-up or write-down adjustment; enforces all G.A.1.4.3/G.A.1.4.4/Gæld.bekendtg. § 7 rules independently of the portal (FR-9). Returns `201` with `ClaimAdjustmentResponseDto` or `422` with RFC 7807 `ProblemDetail`. |
+
 #### Readiness
 
 | Method | Endpoint | Purpose |

@@ -1008,35 +1008,29 @@ program:
 
     petition053:
       title: Fordringshaverportal — Opskrivning og nedskrivning (fuld G.A.-komplient specifikation)
-      status: not_started
+      status: implemented
       phase: phase-3
       depends_on:
         - petition034
         - petition031
-      last_reviewed: 2026-03-28
+      last_reviewed: 2026-03-29
       notes: >
-        Supersedes petition 034 with a complete, G.A.-grounded specification for fordringshaver
-        write-up and write-down operations. Key additions over petition 034:
-        (1) Nedskrivning reason as controlled dropdown (NED_INDBETALING / NED_FEJL_OVERSENDELSE /
-        NED_GRUNDLAG_AENDRET) per gæld.bekendtg. § 7 stk. 2.
-        (2) Opkrævningsrente exception: OPSKRIVNING_REGULERING blocked for RENTE-category claims;
-        portal redirects to rentefordring submission (G.A.1.4.3).
-        (3) Høring timing banner: visible advisory when claim is in HOERING state (G.A.1.4.3,
-        gæld.bekendtg. § 7 stk. 1, 4. pkt.).
-        (4) Retroactive nedskrivning advisory: inline guidance when virkningsdato < today (G.A.1.4.4).
-        (5) Annulleret nedskrivning backdating explanation (G.A.1.4.3, 5. pkt.).
-        (6) Cross-system suspension advisory (GIL § 18 k).
-        (7) Scope exclusion: DINDB/OMPL/AFSK (G.A.2.3.4.4) removed — RIM-internal codes must
-        not appear in fordringshaver portal.
-        Partial portal fixes for items (2) and (3) already implemented in current sprint;
-        this petition formalises the full scope for complete implementation.
-      next_step: >
-        Implement nedskrivning reason dropdown (FR-1) and remove DINDB/OMPL/AFSK from
-        WriteUpReasonCode (FR-7). Portal høring banner and rente block partially in sprint
-        (compliance-fixes agent). Full spec at petitions/petition053-*.
+        Implemented in commit a93052f. Supersedes petition 034 with a complete,
+        G.A.-grounded implementation for fordringshaver write-up and write-down operations.
+        Delivered: (1) WriteDownReasonCode enum (NED_INDBETALING / NED_FEJL_OVERSENDELSE /
+        NED_GRUNDLAG_AENDRET) per gæld.bekendtg. § 7 stk. 2 — portal + debt-service.
+        (2) Opkrævningsrente exception: OPSKRIVNING_REGULERING blocked for RENTE-category claims
+        (G.A.1.4.3). (3) Høring timing banner (G.A.1.4.3, gæld.bekendtg. § 7 stk. 1, 4. pkt.).
+        (4) Retroactive nedskrivning advisory with aria-live=polite (G.A.1.4.4).
+        (5) Annulleret nedskrivning backdating explanation block (§5.1). (6) Cross-system
+        suspension advisory on receipt (GIL § 18 k). (7) WriteUpReasonCode deleted — DINDB/OMPL/AFSK
+        removed from portal (G.A.2.3.4.4). Debt-service: new ClaimAdjustmentController
+        POST /api/v1/debts/{id}/adjustments with full FR-9 enforcement and RFC 7807 error responses.
+        All BDD scenarios green in both modules.
+      next_step: n/a
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-28, 53 petitions tracked)
+  # STATUS SUMMARY (2026-03-29, 53 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1045,14 +1039,14 @@ program:
   #               petition029, petition030, petition031, petition032, petition033,
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
-  #               petition047, petition048, petition050
+  #               petition047, petition048, petition050, petition053
   # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
-  #               petition051, petition052, petition053
+  #               petition051, petition052
   #
   # Total: 53 petitions
-  #   6 validated, 39 implemented, 1 superseded, 1 in_progress, 6 not_started
+  #   6 validated, 40 implemented, 1 superseded, 1 in_progress, 5 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)

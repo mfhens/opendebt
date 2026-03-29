@@ -606,6 +606,11 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | RestanceTransitionJob | Done | Daily REGISTERED->RESTANCE for expired payment deadlines |
 | InterestAccrualJob | Done | Daily inddrivelsesrente at 5.75% for OVERDRAGET claims |
 | DeadlineMonitoringJob | Done | Daily forældelsesfrist and hearing SLA monitoring |
+| **Claim adjustments (petition053)** | | |
+| ClaimAdjustmentController | Done | `POST /api/v1/debts/{id}/adjustments` — write-up/write-down; 201 on success, 422 + RFC 7807 ProblemDetail on validation failure |
+| ClaimAdjustmentService / Impl | Done | FR-1 write-down reason required, AC-12 RENTE rejection, AC-13/FR-7 RIM-internal code (DINDB/OMPL/AFSK) rejection, FR-3 høring timing rule, FR-4 retroactive WARN log marker, AC-16 CLS audit all outcomes |
+| ClaimAdjustmentRequestDto / ResponseDto | Done | Request: adjustmentType, writeDownReasonCode, amount, effectiveDate, notes; Response: includes crossSystemRetroactiveApplies flag (GIL § 18 k) |
+| WriteDownReasonCode | Done | NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET (gæld.bekendtg. § 7 stk. 2) |
 | **Foundation** | | |
 | DebtController | Done | Full CRUD + readiness + lifecycle + submit |
 | DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown |
@@ -625,7 +630,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | Flyway V6 | Done | Collection measures table |
 | Flyway V7 | Done | Batch job executions + interest journal entries |
 
-**API endpoints (28):**
+**API endpoints (29):**
 - `GET/POST /api/v1/debts` - List/create debts
 - `GET/PUT /api/v1/debts/{id}` - Get/update debt
 - `POST /api/v1/debts/submit` - Submit claim (full validation + kvittering)
@@ -637,6 +642,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 - `POST /api/v1/debts/{id}/evaluate-state` - Evaluate lifecycle state
 - `POST /api/v1/debts/{id}/transfer-for-collection` - Transfer for collection (RESTANCE->OVERDRAGET)
 - `POST /api/v1/debts/{id}/write-down?amount={amount}` - Write down outstanding balance
+- `POST /api/v1/debts/{id}/adjustments` - Submit claim adjustment (write-up/write-down with full G.A. validation; petition053)
 - `DELETE /api/v1/debts/{id}` - Cancel (soft delete)
 - `POST /api/v1/debts/{debtId}/demand-for-payment` - Issue paakrav notification
 - `POST /api/v1/debts/{debtId}/reminder` - Issue rykker notification
@@ -978,10 +984,20 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | TimelineVisibilityProperties | Done | @ConfigurationProperties for creditor-visible event category allow-list (petition050) |
 | bffFetchExecutor | Done | Fixed thread pool bean for parallel upstream fetches via CompletableFuture (petition050) |
 | claims/detail.html (skat-card) | Done | New skat-card section with HTMX-driven timeline tab on fordring detail page (petition050) |
+| **Claim adjustments (petition053)** | **Done** | |
+| ClaimAdjustmentController (extended) | Done | FR-1 write-down reason code guard; FR-4 retroactive advisory model attr; WriteDownReasonCode model population; AdjustmentReceiptDto with crossSystemRetroactiveApplies propagation |
+| WriteDownReasonCode | Done | Portal-side enum: NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET |
+| WriteUpReasonCode | Removed | FR-7: RIM-internal codes (DINDB/OMPL/AFSK) must not appear in portal (G.A.2.3.4.4) |
+| form.html (extended) | Done | Write-down reason dropdown (§1.5), retroactive advisory with aria-live=polite (§4.2), backdating description block (§5.1), write-up reason dropdown removed (§7.3) |
+| receipt.html (extended) | Done | Cross-system suspension advisory (GIL § 18 k) conditional on crossSystemRetroactiveApplies |
+| i18n DA + EN (extended) | Done | 5 new keys: NED reason labels, retroaktiv advisory, suspension advisory (GIL § 18 k), OMGJORT description |
 
 **Portal routes include:**
 - `GET /fordring/{id}/tidslinje` - Timeline tab fragment (HTMX, petition050)
 - `GET /fordring/{id}/poster` - Timeline entries, load-more (HTMX, petition050)
+- `GET /fordring/{id}/adjustment` - Adjustment form (write-up/write-down; petition034/053)
+- `POST /fordring/{id}/adjustment` - Submit adjustment (petition034/053)
+- `GET /fordring/{id}/adjustment/receipt` - Adjustment receipt (petition053)
 
 ---
 
@@ -1251,7 +1267,7 @@ Pre-defined API specs (API-first, ADR-0004):
 |---------|--------|-----------|-----------|---------------|
 | opendebt-common | Done | ~41 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
-| debt-service | Done | 88 | 28 | V1-V7 |
+| debt-service | Done | 94 | 29 | V1-V7 |
 | case-service | Done | 10 | 8 | V1 |
 | rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
 | payment-service | Partial | 22 | 2 | V1, V2, V3 |
@@ -1260,7 +1276,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | **Merged into debt-service** (ADR-0027) | - | - | - |
 | wage-garnishment-service | Scaffold | 1 | 0 | - |
-| creditor-portal | Partial | ~74 | ~50 | - |
+| creditor-portal | Partial | ~74 | ~53 | - |
 | citizen-portal | Partial | ~19 | 6 | - |
 | caseworker-portal | Partial | ~5 | 2 | - |
-| **Total** | | **~341** | **~113** | **16** |
+| **Total** | | **~347** | **~115** | **16** |
