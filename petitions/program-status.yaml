@@ -139,6 +139,73 @@ program:
         require backend hearing and validation infrastructure. Petitions 035-037 (notifications,
         reconciliation, reports) require backend modules not yet built.
 
+    - id: phase-17
+      name: G.A.1 fordring lifecycle gaps
+      objective: >
+        Fill the remaining G.A.1 implementation gaps: datafejl suspension, tilbagekaldelse,
+        ikkeinddrivelsesparate fordringer, and ophør. These are Tier-B (workflow) and Tier-A
+        (formal rule) petitions anchored to G.A.1.3.4, G.A.1.3.5, G.A.1.4.2, and G.A.1.4.5.
+      petitions:
+        - petition055
+        - petition056
+      notes: >
+        Both petitions can be sequenced after phase 0 (petition002 validation) completes.
+        No Catala companion needed — rule density is low (enumerated lifecycle states).
+
+    - id: phase-18
+      name: G.A.2 formal payment and prescription rules
+      objective: >
+        Encode and implement the core G.A.2 payment-handling and prescription rules that govern
+        dækningsrækkefølge, modregning, korrektionspulje, forældelse, and retskraftvurdering.
+        Highest Catala priority in the backlog: G.A.2.4 forældelse contains complex date arithmetic
+        (3/10-year limits, afbrydelse conditions, tillægsfrister) almost certain to reveal
+        PSRM discrepancies comparable to G.A.1.4.3/1.4.4.
+      petitions:
+        - petition057
+        - petition058
+        - petition059
+        - petition060
+      notes: >
+        petition057 (dækningsrækkefølge) and petition059 (forældelse) are the highest-value targets —
+        both warrant Catala companion spikes. Petition058 and petition060 are workflow petitions
+        with no Catala companion. Sequence: 057 → 058 → 059 (depends on 057 ordering model) → 060.
+
+    - id: phase-19
+      name: G.A.3 enkel inddrivelse tools
+      objective: >
+        Implement the G.A.3 simple debt-collection tools: afdragsordninger (instalment plans),
+        lønindeholdelse (full specification), henstand (deferral), ægtefællehæftelse,
+        and afskrivning/bortfald. Afdragsordninger and lønindeholdelse contain formal
+        calculation rules (tabeltræk, betalingsevne, lønindeholdelsesprocent) suitable for Catala.
+      petitions:
+        - petition061
+        - petition062
+        - petition063
+        - petition064
+        - petition065
+      notes: >
+        petition062 lønindeholdelse extends the partial implementation from petition007.
+        petition061 afdragsordninger introduces the tabeltræk lookup (§11 stk. 1) and
+        betalingsevnevurdering (§11 stk. 6) — both are Catala Tier A.
+        petition063-065 are Tier B (no Catala companion needed).
+
+    - id: phase-20
+      name: G.A.3 skærpet inddrivelse and special types
+      objective: >
+        Implement skærpet inddrivelse (udlæg workflows), særlige inddrivelsesværktøjer,
+        and support for særlige fordringstyper. Primarily Tier B (workflow and UI) — court
+        procedure sections (udlægsforretning detail, arrest) are Tier C reference-only.
+      petitions:
+        - petition066
+        - petition067
+        - petition068
+      notes: >
+        G.A.3.2 udlæg has deep leaf sections (fast ejendom, løsøre, virksomhedspant) that
+        are Tier C (court procedures) and do not require PSRM implementation. petition066
+        scopes only the PSRM-side workflow (udlægsafgørelse dispatch, status tracking).
+        G.A.3.3 (særlige hæftelsesformer), G.A.3.4 (insolvens), G.A.3.6 (international)
+        are excluded as Tier C reference-only — no petition planned.
+
   # ===========================================================================
   # PETITION STATUS
   # ===========================================================================
@@ -1059,8 +1126,254 @@ program:
         (comparable to G.A.1.4.4 virkningsdato and GIL § 18 k). Install Catala CLI in CI to
         validate catala ocaml compilation (AC-13 deferred).
 
+    # --- Phase 17: G.A.1 fordring lifecycle gaps ---
+
+    petition055:
+      title: Suspension pga. datafejl og tilbagekaldelse (G.A.1.3.4–1.3.5)
+      status: not_started
+      phase: phase-17
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.1.3.4: fordring suspended when PSRM detects datafejl (missing mandatory field,
+        invalid CVR/CPR). System must block inddrivelse actions until fejl is corrected by
+        fordringshaver. G.A.1.3.5: fordringshaver may recall (tilbagekalde) a fordring from
+        PSRM; results in status TILBAGEKALDT, archival of all related inddrivelsesdata.
+        Tier B — no Catala companion (enumerated lifecycle states, no date arithmetic).
+      next_step: >
+        Draft petition document and outcome contract. Map to PSRM status machine.
+
+    petition056:
+      title: Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
+      status: not_started
+      phase: phase-17
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.1.4.2: full lifecycle of ikkeinddrivelsesparate fordringer — the categories that
+        block inddrivelse (missing obligatoriske data, contested debts, insolvency, dødsfald),
+        transitions back to inddrivelsesparat when condition resolves. Complements the partial
+        coverage in petition043 (interest exemption flag). G.A.1.4.5: ophør — permanent
+        closure of fordring (betalt, afskrevet, bortfaldet, prescription passed); downstream
+        effects on case archival and NemKonto reconciliation.
+        Tier A — consider Catala encoding for ikkeinddrivelsesparat transition conditions
+        once forældelse (petition059) spike experience is available.
+      next_step: >
+        Draft petition document. Coordinate with petition043 (ikkeinddrivelsesparate interest
+        exemption) to ensure consistent model.
+
+    # --- Phase 18: G.A.2 formal payment and prescription rules ---
+
+    petition057:
+      title: Dækningsrækkefølge — payment application order (G.A.2.3.2)
+      status: not_started
+      phase: phase-18
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.2.3.2: formalises the mandatory order in which received payments are applied across
+        outstanding fordringer and cost components (renter, gebyrer, principal). PSRM applies
+        a fixed hierarchy defined in GIL § 4. Discrepancies between PSRM's implementation and
+        the G.A. text are likely — Catala spike recommended.
+        Tier A + Catala companion spike.
+      next_step: >
+        Draft petition document and Catala companion spike petition. Catala spike to encode
+        GIL § 4 priority rules and test against known PSRM test cases.
+
+    petition058:
+      title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
+      status: not_started
+      phase: phase-18
+      depends_on:
+        - petition057
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.2.3.3: full modregning (set-off) rules — conditions (klar, forfallen, ensartet),
+        prioritisation when debtor has multiple claims against the state, and notice requirements
+        (underretning senest 3 hverdage). G.A.2.3.4: korrektionspulje — pooling mechanism for
+        minor corrections before disbursement. Depends on dækningsrækkefølge model (petition057)
+        being settled first.
+        Tier B — workflow and notification; no Catala companion needed.
+      next_step: >
+        Draft petition document after petition057 is in review.
+
+    petition059:
+      title: Forældelse — prescription rules (G.A.2.4)
+      status: not_started
+      phase: phase-18
+      depends_on:
+        - petition057
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.2.4: complete forældelses-ruleset — 3/10-year base periods (forældelsesloven §§ 3, 5),
+        afbrydelse conditions (lønindeholdelse, udlæg, afgørelse, debtor acknowledgement),
+        2-year tillægsfrister (fordringshaver ubekendt med krav), suspension during
+        ikkeinddrivelsesparat periods. Highest Catala priority in the backlog: temporal date
+        arithmetic, multiple exception hierarchies, and afbrydelse interaction with inddrivelse
+        actions are almost certain to reveal PSRM discrepancies.
+        Tier A + Catala companion spike (highest priority Catala target after P054).
+      next_step: >
+        Draft petition document and Catala companion spike petition. Catala spike to encode
+        forældelseloven §§ 3, 5, and afbrydelse conditions; cross-validate with PSRM rule
+        engine for prescription date calculation.
+
+    petition060:
+      title: Retskraftvurdering — § 50 priority ordering (G.A.2.5)
+      status: not_started
+      phase: phase-18
+      depends_on:
+        - petition057
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.2.5: formalization of the § 50 retskraft hierarchy — which creditors take priority
+        when multiple fordringer compete for the same inddrivelsesprovenu. PSRM enforces
+        retskraftrækkefølge automatically; petition scopes the UI surface and case-handler
+        visibility of the ranking. Tier A — no Catala companion (rule is a priority enumeration,
+        not date arithmetic).
+      next_step: >
+        Draft petition document. Coordinate with petition057 (dækningsrækkefølge) for consistent
+        payment application model.
+
+    # --- Phase 19: G.A.3 enkel inddrivelse tools ---
+
+    petition061:
+      title: Afdragsordninger — instalment plan management (G.A.3.1.1)
+      status: not_started
+      phase: phase-19
+      depends_on:
+        - petition059
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.1.1: full afdragsordning lifecycle — betalingsevnevurdering (§ 11 stk. 6),
+        tabeltræk lookup (§ 11 stk. 1), minimum ydelse threshold, default and reinstatement.
+        Betalingsevnevurdering and tabeltræk contain formal calculation rules — Catala Tier A.
+        Afdragsordning suspends lønindeholdelse whilst active; resumption logic after default
+        interacts with prescription (petition059 dependency).
+        Tier A + Catala companion.
+      next_step: >
+        Draft petition document. Catala companion to encode tabeltræk lookup and
+        betalingsevne calculation per GIL § 11.
+
+    petition062:
+      title: Lønindeholdelse fuld specifikation (G.A.3.1.2)
+      status: not_started
+      phase: phase-19
+      depends_on:
+        - petition059
+        - petition061
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.1.2: extends petition007 (basic lønindeholdelse trigger) to cover the full
+        G.A.3.1.2 surface: lønindeholdelsesprocent calculation (§ 10), frikort threshold,
+        EB (erhvervsindkomst-begrænsning), partial payments, tilsigelse requirements, and
+        the three-stage escalation (advis → tilsigelse → udlæg). Depends on afdragsordning
+        suspension model (petition061) and prescription interaction (petition059).
+        Tier A + Catala companion.
+      next_step: >
+        Draft petition document. Catala to encode lønindeholdelsesprocent (§ 10) and frikort
+        threshold logic; cross-validate with PSRM rule engine.
+
+    petition063:
+      title: Henstand — deferral of collection (G.A.3.1.3)
+      status: not_started
+      phase: phase-19
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.1.3: henstand (voluntary deferral) — caseworker-granted postponement of
+        inddrivelse pending debtor documentation (e.g., klage, hardship review). Duration
+        limits (max 3 months without renewal), interaction with prescription suspension,
+        and re-activation workflow. Tier B — no Catala companion (decision is discretionary;
+        rule density is low).
+      next_step: >
+        Draft petition document and outcome contract.
+
+    petition064:
+      title: Ægtefællehæftelse — spousal joint liability (G.A.3.1.5)
+      status: not_started
+      phase: phase-19
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.1.5: ægtefællehæftelse — when a debtor is married, the non-debtor spouse's
+        income can be included in lønindeholdelsesberegning under the conditions of
+        inddrivelseslovens § 2 stk. 4. PSRM must track spousal relation (via CPR lookup),
+        confirm samtykke or legal basis, and adjust lønindeholdelses-beregning accordingly.
+        PII sensitivity: CPR of spouse goes via Person Registry (no direct storage).
+        Tier B — no Catala companion.
+      next_step: >
+        Draft petition document. Confirm PII isolation pattern with GDPR register.
+
+    petition065:
+      title: Afskrivning og bortfald — write-off and lapse (G.A.3.1.6)
+      status: not_started
+      phase: phase-19
+      depends_on:
+        - petition059
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.1.6: afskrivning (administrative write-off by PSRM on fordringshaver request or
+        internal criteria) and bortfald (automatic lapse — debtor death without estate,
+        prescription, or legal cancellation). Downstream: case closure, NemKonto
+        reconciliation, archival. Depends on prescription model (petition059) for automatic
+        bortfald trigger. Tier B — no Catala companion.
+      next_step: >
+        Draft petition document. Coordinate with petition056 (ophør model) and petition059
+        (prescription trigger for bortfald).
+
+    # --- Phase 20: G.A.3 skærpet inddrivelse and special types ---
+
+    petition066:
+      title: Udlæg — skærpet inddrivelse PSRM workflow (G.A.3.2)
+      status: not_started
+      phase: phase-20
+      depends_on:
+        - petition062
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.2: PSRM-side udlægsforretning workflow — dispatch of udlægsafgørelse to
+        fogedretten, status tracking (anmodet, under behandling, afsluttet/forgæves),
+        and downstream effects on prescription (udlæg afbryder forældelse per petition059).
+        Scoped to PSRM side only; court procedures (fast ejendom, løsøre, virksomhedspant)
+        are Tier C reference-only — no implementation. Tier B.
+      next_step: >
+        Draft petition document. Coordinate with petition059 for afbrydelse effect on
+        prescription date.
+
+    petition067:
+      title: Særlige inddrivelsesværktøjer (G.A.3.5)
+      status: not_started
+      phase: phase-20
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.5: covers tools not in the main inddrivelse sequence — underpantebrev,
+        tilbageholdelsesret, and modregning i tilbagesøgningskrav. These are rare-path
+        tools that require caseworker-initiated workflows and specific PSRM status codes.
+        Tier B — no Catala companion.
+      next_step: >
+        Draft petition document. Scope analysis needed to determine which sub-tools
+        are in PSRM scope vs. court-only.
+
+    petition068:
+      title: Inddrivelse af særlige fordringstyper (G.A.3.7)
+      status: not_started
+      phase: phase-20
+      depends_on: []
+      last_reviewed: 2026-03-29
+      notes: >
+        G.A.3.7: special fordring categories with non-standard inddrivelse rules —
+        bøder og konfiskationer (criminal fines), studielån (SU-lån, rente calculation
+        differences), underholdsbidrag (maintenance payments, different service rules),
+        and restskat (residual tax, specific SKAT forwarding). Each type has minor rule
+        deviations from the standard inddrivelse process. Tier B — scope limited to
+        the PSRM fordring-type flag and routing logic; no Catala companion.
+      next_step: >
+        Draft petition document. Identify which fordring types are in scope for the
+        MVP (likely restskat and studielån as highest-volume types).
+
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-29, 54 petitions tracked)
+  # STATUS SUMMARY (2026-03-29, 68 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1073,17 +1386,30 @@ program:
   # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
-  #               petition051, petition052
+  #               petition051, petition052,
+  #               petition055, petition056, petition057, petition058, petition059, petition060,
+  #               petition061, petition062, petition063, petition064, petition065,
+  #               petition066, petition067, petition068
   #
-  # Total: 54 petitions
-  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 5 not_started
+  # Total: 68 petitions
+  #   6 validated, 41 implemented, 1 superseded, 1 in_progress, 19 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
   # PLANNED: Phase 16 (petition052 manual Nemkonto payout with 4-eyes approval)
+  # PLANNED: Phase 17 (petition055-056 G.A.1 lifecycle gaps)
+  # PLANNED: Phase 18 (petition057-060 G.A.2 payment + prescription rules, Catala priority)
+  # PLANNED: Phase 19 (petition061-065 G.A.3 enkel inddrivelse, 2 Catala companions)
+  # PLANNED: Phase 20 (petition066-068 G.A.3 skærpet inddrivelse + special types)
   # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
+  #
+  # G.A. COVERAGE ROADMAP (juridisk vejledning G.A.1-G.A.3):
+  #   Catala Tier A targets: petition057 (dækningsrækkefølge), petition059 (forældelse — highest),
+  #                          petition061 (afdragsordninger), petition062 (lønindeholdelse)
+  #   Reference-only (Tier C, no petition): G.A.2.2 klager, G.A.3.3 særlige hæftelsesformer,
+  #                                         G.A.3.4 insolvens, G.A.3.6 international inddrivelse
   #
   # Debt-service: 258+ tests pass (0 failures)
 
