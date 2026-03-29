@@ -47,7 +47,7 @@
         <lombok.version>1.18.32</lombok.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <archunit.version>1.4.1</archunit.version>
-        <spotless.version>2.43.0</spotless.version>
+        <spotless.version>2.46.1</spotless.version>
         <jacoco.version>0.8.14</jacoco.version>
         <sonar.version>3.11.0.3922</sonar.version>
         <owasp.version>9.2.0</owasp.version>
