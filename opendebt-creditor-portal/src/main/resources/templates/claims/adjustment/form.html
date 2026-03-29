@@ -61,8 +61,7 @@
             <option value="" th:text="#{adjustment.type.placeholder}">-- Vælg type --</option>
             <option th:each="type : ${allowedTypes}"
                     th:value="${type.name()}"
-                    th:text="#{|adjustment.type.${type.name()}|}"
-                    th:selected="${adjustmentForm.adjustmentType != null and adjustmentForm.adjustmentType.name() == type.name()}">Type</option>
+                    th:text="#{|adjustment.type.${type.name()}|}">Type</option>
           </select>
           <span id="adjustmentType-error" class="skat-error-message" role="alert"
                 th:if="${#fields.hasErrors('adjustmentType')}"
@@ -139,12 +138,9 @@
                     th:attr="aria-invalid=${#fields.hasErrors('writeDownReasonCode')} ? 'true' : 'false'"
                     required="required">
               <option value="" th:text="#{adjustment.reason.placeholder}">-- Vælg årsag --</option>
-              <option value="NED_INDBETALING" th:text="#{adjustment.reason.ned.indbetaling}"
-                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_INDBETALING'}">Direkte indbetaling til fordringshaver</option>
-              <option value="NED_FEJL_OVERSENDELSE" th:text="#{adjustment.reason.ned.fejl_oversendelse}"
-                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_FEJL_OVERSENDELSE'}">Fejlagtig oversendelse til inddrivelse</option>
-              <option value="NED_GRUNDLAG_AENDRET" th:text="#{adjustment.reason.ned.grundlag_aendret}"
-                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_GRUNDLAG_AENDRET'}">Opkrævningsgrundlaget har ændret sig</option>
+              <option value="NED_INDBETALING" th:text="#{adjustment.reason.ned.indbetaling}">Direkte indbetaling til fordringshaver</option>
+              <option value="NED_FEJL_OVERSENDELSE" th:text="#{adjustment.reason.ned.fejl_oversendelse}">Fejlagtig oversendelse til inddrivelse</option>
+              <option value="NED_GRUNDLAG_AENDRET" th:text="#{adjustment.reason.ned.grundlag_aendret}">Opkrævningsgrundlaget har ændret sig</option>
             </select>
             <span id="writeDownReasonCode-error"
                   class="skat-error-message"

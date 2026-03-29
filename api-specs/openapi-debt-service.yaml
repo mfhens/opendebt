@@ -1037,7 +1037,6 @@ components:
           example: WRITE_DOWN
         amount:
           type: number
-          format: decimal
           minimum: 0.01
           example: 500.00
         effectiveDate:
@@ -1069,7 +1068,6 @@ components:
           example: ACCEPTED
         amount:
           type: number
-          format: decimal
           example: 500.00
         crossSystemRetroactiveApplies:
           type: boolean
@@ -1927,48 +1925,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DebtType'
-  /api/v1/debts/{id}/adjustments:
-    post:
-      tags:
-        - Claim Adjustments
-      summary: Submit a claim adjustment
-      description: >
-        Processes a creditor-portal write-up/write-down for a claim. Enforces all FR-9
-        legal constraints at the API boundary (SPEC-P053 section 9.2).
-        Auth: CREDITOR or ADMIN role required.
-      operationId: submitClaimAdjustment
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ClaimAdjustmentRequest'
-      responses:
-        '201':
-          description: Adjustment accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClaimAdjustmentResponse'
-        '422':
-          description: Validation failure
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdjustmentValidationProblem'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
 components:
   securitySchemes:

@@ -3,11 +3,14 @@ package dk.ufst.opendebt.debtservice.service.impl;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
@@ -16,6 +19,7 @@ import dk.ufst.opendebt.debtservice.dto.ClaimAdjustmentResponseDto;
 import dk.ufst.opendebt.debtservice.entity.ClaimCategory;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
+import dk.ufst.opendebt.debtservice.entity.HoeringEntity;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.HoeringRepository;
@@ -49,6 +53,21 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
   /** RIM-internal write-up reason codes that must not be submitted by fordringshavere (FR-7). */
   private static final Set<String> RIM_INTERNAL_CODES = Set.of("DINDB", "OMPL", "AFSK");
 
+  /** All legal adjustment type values (SPEC-P053 §9.3 / B4 validation). */
+  private static final Set<String> LEGAL_ADJUSTMENT_TYPES =
+      Set.of(
+          "NEDSKRIV",
+          "NEDSKRIVNING",
+          "NEDSKRIVNING_INDBETALING",
+          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_REGULERING",
+          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_INDBETALING",
+          "WRITE_DOWN",
+          "OPSKRIVNING_REGULERING",
+          "OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING",
+          "OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING",
+          "FEJLAGTIG_HOVEDSTOL_INDBERETNING",
+          "WRITE_UP");
+
   /** Prefix used by write-down adjustment types (for direction detection). */
   private static final String WRITE_DOWN_TYPE_PREFIX = "NEDSKRIVNING";
 
@@ -63,20 +82,36 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
   private final ClsAuditClient clsAuditClient;
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
   public ClaimAdjustmentResponseDto processAdjustment(
       UUID claimId, ClaimAdjustmentRequestDto request) {
 
     String adjustmentType = request.getAdjustmentType();
 
-    // Load claim — 404 if not found
+    // --- B4: adjustmentType whitelist validation ---
+    if (adjustmentType == null || !LEGAL_ADJUSTMENT_TYPES.contains(adjustmentType)) {
+      // claimId known but claim not yet loaded — audit with null for claimId-level detail
+      shipAuditFailure(claimId, adjustmentType, "INVALID_ADJUSTMENT_TYPE");
+      throw new CreditorValidationException(
+          "Unknown adjustmentType: '"
+              + adjustmentType
+              + "'. Must be one of: "
+              + LEGAL_ADJUSTMENT_TYPES,
+          "INVALID_ADJUSTMENT_TYPE");
+    }
+
+    // Load claim — 404 if not found (B2 + B3)
     DebtEntity debt =
         debtRepository
             .findById(claimId)
             .orElseThrow(
-                () ->
-                    new CreditorValidationException(
-                        "Claim not found: " + claimId, "CLAIM_NOT_FOUND"));
+                () -> {
+                  // B3: CLS audit before throwing not-found
+                  shipAuditFailure(claimId, adjustmentType, "CLAIM_NOT_FOUND");
+                  // B2: HTTP 404, not 422
+                  return new ResponseStatusException(
+                      HttpStatus.NOT_FOUND, "Claim not found: " + claimId);
+                });
 
     boolean isWriteDown = isWriteDownDirection(adjustmentType);
 
@@ -102,27 +137,57 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
           "RIM_INTERNAL_CODE");
     }
 
-    // --- FR-2: OPSKRIVNING_REGULERING on RENTE claim ---
+    // --- FR-2: OPSKRIVNING_REGULERING on RENTE claim (M4: null-safe enum compare) ---
     if (OPSKRIVNING_REGULERING.equals(adjustmentType)
-        && ClaimCategory.RENTE == debt.getClaimCategory()) {
+        && ClaimCategory.RENTE.equals(debt.getClaimCategory())) {
       shipAuditFailure(claimId, adjustmentType, null);
       throw new CreditorValidationException(
           "RENTE claims must use a rentefordring, not an opskrivningsfordring (G.A.1.4.3).",
           "RENTE_OPSKRIVNING_FORBIDDEN");
     }
 
-    // --- FR-3: Høring timing rule ---
-    // When claim is in HOERING, the opskrivningsfordring receipt timestamp is the høring
-    // resolution time, not the portal submission time. We record this in the status field.
+    // --- FR-3: Høring timing rule (B1) ---
+    // For ALL adjustment types on a HOERING claim, the response status is PENDING_HOERING to
+    // indicate the opskrivningsfordring receipt time is the høring resolution time.
+    // For OPSKRIVNING_REGULERING specifically, the actual høring resolution timestamp is fetched
+    // and used as the authoritative receipt time. (G.A.1.4.3, Gæld.bekendtg. § 7 stk. 1, 4. pkt.)
+    Instant receiptTimestamp = Instant.now();
     String status = "ACCEPTED";
     if (ClaimLifecycleState.HOERING == debt.getLifecycleState()) {
-      log.info(
-          "HOERING_TIMING_RULE claimId={} adjustmentType={}: receipt timestamp set to"
-              + " høring resolution time, not portal submission time (G.A.1.4.3,"
-              + " Gæld.bekendtg. § 7 stk. 1, 4. pkt.)",
-          claimId,
-          adjustmentType);
+      // All HOERING claims return PENDING_HOERING to signal the timing rule is active
       status = "PENDING_HOERING";
+      if (OPSKRIVNING_REGULERING.equals(adjustmentType)) {
+        // B1: Fetch the actual resolution timestamp for OPSKRIVNING_REGULERING
+        HoeringEntity hoering =
+            hoeringRepository
+                .findByDebtId(claimId)
+                .orElseThrow(
+                    () -> {
+                      shipAuditFailure(claimId, adjustmentType, "HOERING_RECORD_MISSING");
+                      return new CreditorValidationException(
+                          "Claim is in HOERING state but no høring record exists for claim: "
+                              + claimId,
+                          "HOERING_RECORD_MISSING");
+                    });
+        LocalDateTime resolvedAt = hoering.getResolvedAt();
+        if (resolvedAt == null) {
+          // Høring not yet resolved — reject per FR-3
+          shipAuditFailure(claimId, adjustmentType, "HOERING_NOT_YET_RESOLVED");
+          throw new CreditorValidationException(
+              "Cannot process OPSKRIVNING_REGULERING: høring for claim "
+                  + claimId
+                  + " has not yet been resolved (Gæld.bekendtg. § 7 stk. 1, 4. pkt.).",
+              "HOERING_NOT_YET_RESOLVED");
+        }
+        receiptTimestamp = resolvedAt.atZone(java.time.ZoneOffset.UTC).toInstant();
+        log.info(
+            "HOERING_TIMING_RULE claimId={} adjustmentType={}: receipt timestamp set to"
+                + " høring resolution time {} (not portal submission time) (G.A.1.4.3,"
+                + " Gæld.bekendtg. § 7 stk. 1, 4. pkt.)",
+            claimId,
+            adjustmentType,
+            receiptTimestamp);
+      }
     }
 
     // --- FR-4: Retroactive nedskrivning log marker ---

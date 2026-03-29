@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,6 +78,28 @@ public class ClaimAdjustmentController {
     ClaimAdjustmentResponseDto response = claimAdjustmentService.processAdjustment(id, request);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  /**
+   * Maps {@link HttpMessageNotReadableException} (e.g. invalid enum value in JSON body) to HTTP 422
+   * Unprocessable Entity with RFC 7807 ProblemDetail body (SPEC-P053 §9.5 / B5).
+   *
+   * <p>This prevents Jackson deserialization errors for bad enum values (e.g. {@code
+   * "writeDownReasonCode": "GARBAGE"}) from leaking as HTTP 400 instead of 422.
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ProblemDetail> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException ex) {
+    log.warn("Claim adjustment request deserialization failure: {}", ex.getMessage());
+
+    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+    problem.setType(PROBLEM_TYPE_URI);
+    problem.setTitle("Unprocessable Entity");
+    problem.setDetail(
+        "Request body could not be parsed. Check enum values and field formats: "
+            + ex.getMostSpecificCause().getMessage());
+
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(problem);
   }
 
   /**
