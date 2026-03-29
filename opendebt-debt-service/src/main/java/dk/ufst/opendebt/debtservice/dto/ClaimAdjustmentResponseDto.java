@@ -1,6 +1,7 @@
 package dk.ufst.opendebt.debtservice.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,4 +43,11 @@ public class ClaimAdjustmentResponseDto {
    * cross-system retroactive nedskrivning requiring possible temporary suspension.
    */
   private boolean crossSystemRetroactiveApplies;
+
+  /**
+   * Authoritative receipt timestamp for the adjustment (FR-3 / B1 fix). For HOERING claims with
+   * OPSKRIVNING_REGULERING, this is set to the høring resolution time; otherwise it is the portal
+   * submission time ({@code Instant.now()}).
+   */
+  private Instant receiptTimestamp;
 }

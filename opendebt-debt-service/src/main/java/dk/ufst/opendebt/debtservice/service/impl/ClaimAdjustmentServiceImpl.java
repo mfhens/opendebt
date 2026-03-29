@@ -20,6 +20,7 @@ import dk.ufst.opendebt.debtservice.entity.ClaimCategory;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
 import dk.ufst.opendebt.debtservice.entity.HoeringEntity;
+import dk.ufst.opendebt.debtservice.entity.HoeringStatus;
 import dk.ufst.opendebt.debtservice.exception.CreditorValidationException;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.HoeringRepository;
@@ -160,7 +161,7 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
         // B1: Fetch the actual resolution timestamp for OPSKRIVNING_REGULERING
         HoeringEntity hoering =
             hoeringRepository
-                .findByDebtId(claimId)
+                .findTopByDebtIdOrderByResolvedAtDesc(claimId)
                 .orElseThrow(
                     () -> {
                       shipAuditFailure(claimId, adjustmentType, "HOERING_RECORD_MISSING");
@@ -170,7 +171,10 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
                           "HOERING_RECORD_MISSING");
                     });
         LocalDateTime resolvedAt = hoering.getResolvedAt();
-        if (resolvedAt == null) {
+        boolean statusIsResolved =
+            hoering.getHoeringStatus() != HoeringStatus.AFVENTER_FORDRINGSHAVER
+                && hoering.getHoeringStatus() != HoeringStatus.AFVENTER_RIM;
+        if (resolvedAt == null || !statusIsResolved) {
           // Høring not yet resolved — reject per FR-3
           shipAuditFailure(claimId, adjustmentType, "HOERING_NOT_YET_RESOLVED");
           throw new CreditorValidationException(
@@ -217,6 +221,7 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
         .status(status)
         .amount(amount)
         .crossSystemRetroactiveApplies(crossSystemRetroactiveApplies)
+        .receiptTimestamp(receiptTimestamp)
         .build();
   }
 

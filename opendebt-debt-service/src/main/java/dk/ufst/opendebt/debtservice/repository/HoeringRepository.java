@@ -16,7 +16,13 @@ import dk.ufst.opendebt.debtservice.entity.HoeringStatus;
 @Repository
 public interface HoeringRepository extends JpaRepository<HoeringEntity, UUID> {
 
-  Optional<HoeringEntity> findByDebtId(UUID debtId);
+  /**
+   * Returns the most recently resolved høring record for the given debt, or empty if none exists.
+   * Using {@code findTop…OrderByResolvedAtDesc} avoids {@code
+   * IncorrectResultSizeDataAccessException} when multiple høring records exist for the same debt
+   * (NB1 fix).
+   */
+  Optional<HoeringEntity> findTopByDebtIdOrderByResolvedAtDesc(UUID debtId);
 
   Page<HoeringEntity> findByHoeringStatus(HoeringStatus status, Pageable pageable);
 
