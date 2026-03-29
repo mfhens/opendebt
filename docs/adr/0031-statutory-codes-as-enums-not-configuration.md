@@ -59,3 +59,11 @@ The following are **operational configuration** (per-creditor, DB-stored, `Credi
 The following are **statutory codes** (enum-only):
 - `WriteDownReasonCode` — NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET as defined in gæld.bekendtg. § 7 stk. 2 (portal and debt-service; introduced petition053)
 - `ClaimAdjustmentType` — adjustment operation types tied to PSRM transaction semantics
+
+**Note (P054 Catala spike):** The P054 Catala compliance spike (branch `feature/p054-catala-spike`)
+confirmed that the `WriteDownReasonCode` enum approach aligns naturally with Catala's enumeration
+model. In the Catala encoding of G.A.1.4.4 (`catala/ga_1_4_4_nedskrivning.catala_da`),
+`NED_INDBETALING`, `NED_FEJL_OVERSENDELSE`, and `NED_GRUNDLAG_AENDRET` are represented as distinct
+members of a Catala scope enumeration, and `UGYLDIG_GRUND` is explicitly modeled as a rejected enum
+value — confirming that the Java enum-only approach produces a clean one-to-one mapping with
+Catala's formal type system. See `catala/SPIKE-REPORT.md` for full coverage details.
