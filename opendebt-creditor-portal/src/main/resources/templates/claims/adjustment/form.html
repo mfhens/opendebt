@@ -69,6 +69,15 @@
                 th:text="${#fields.errors('adjustmentType')[0]}">Fejl</span>
         </div>
 
+        <!-- FR-5 / Gæld.bekendtg. § 7 stk. 1, 5. pkt.: Backdating description for annulleret nedskrivning -->
+        <div th:if="${adjustmentForm.adjustmentType != null and adjustmentForm.adjustmentType.name() == 'OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING'}"
+             class="skat-alert skat-alert--info">
+          <p th:text="#{adjustment.type.description.omgjort_nedskrivning_regulering}">
+            Opskrivning af annulleret nedskrivning: opskrivningsfordringen anses for modtaget
+            på samme tidspunkt som den fordring, der fejlagtigt blev nedskrevet (G.A.1.4.3).
+          </p>
+        </div>
+
         <!-- Amount field -->
         <div class="skat-form-group">
           <label class="skat-label" for="amount" th:text="#{adjustment.label.amount}">Beløb (DKK)</label>
@@ -101,45 +110,49 @@
           <span id="effectiveDate-error" class="skat-error-message" role="alert"
                 th:if="${#fields.hasErrors('effectiveDate')}"
                 th:text="${#fields.errors('effectiveDate')[0]}">Fejl</span>
+
+          <!-- FR-4 / G.A.1.4.4: Inline advisory when virkningsdato is retroactive (SPEC-P053 §4.2) -->
+          <div id="retroaktiv-advisory"
+               th:if="${retroaktivAdvisoryActive}"
+               class="skat-alert skat-alert--warning"
+               aria-live="polite">
+            <p th:text="#{adjustment.info.retroaktiv.virkningsdato}">
+              Virkningsdato er i fortiden. Gældsstyrelsen er forpligtet til at omfordele alle
+              dækninger foretaget efter denne dato og genberegne renter for den berørte periode.
+              Behandlingen kan tage ekstra tid. Se G.A.1.4.4.
+            </p>
+          </div>
         </div>
 
-        <!-- Reason field: dropdown for write-ups, free text for write-downs -->
-        <div class="skat-form-group">
-          <label class="skat-label" for="reason" th:text="#{adjustment.label.reason}">Årsag</label>
-
-          <!-- Write-up: controlled dropdown of allowed reason codes -->
-          <th:block th:if="${direction == 'WRITE_UP'}">
-            <select id="reason"
-                    th:field="*{reason}"
+        <!-- FR-1 / Gæld.bekendtg. § 7 stk. 2: Write-down reason dropdown (controlled codes only) -->
+        <!-- FR-7 / G.A.2.3.4.4: Write-up has no reason dropdown (RIM-internal codes removed) -->
+        <th:block th:if="${direction != 'WRITE_UP'}">
+          <div class="skat-form-group">
+            <label for="writeDownReasonCode"
+                   class="skat-label"
+                   th:text="#{adjustment.label.reason}">Årsag / årsagskode</label>
+            <select id="writeDownReasonCode"
+                    th:field="*{writeDownReasonCode}"
                     class="skat-select"
-                    th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
-                    aria-describedby="reason-error"
-                    th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
+                    th:classappend="${#fields.hasErrors('writeDownReasonCode')} ? 'skat-input--error'"
+                    aria-describedby="writeDownReasonCode-error"
+                    th:attr="aria-invalid=${#fields.hasErrors('writeDownReasonCode')} ? 'true' : 'false'"
                     required="required">
               <option value="" th:text="#{adjustment.reason.placeholder}">-- Vælg årsag --</option>
-              <option th:each="rc : ${allowedReasonCodes}"
-                      th:value="${rc.name()}"
-                      th:text="#{|adjustment.reason.${rc.name()}|}"
-                      th:selected="${adjustmentForm.reason == rc.name()}">Årsag</option>
+              <option value="NED_INDBETALING" th:text="#{adjustment.reason.ned.indbetaling}"
+                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_INDBETALING'}">Direkte indbetaling til fordringshaver</option>
+              <option value="NED_FEJL_OVERSENDELSE" th:text="#{adjustment.reason.ned.fejl_oversendelse}"
+                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_FEJL_OVERSENDELSE'}">Fejlagtig oversendelse til inddrivelse</option>
+              <option value="NED_GRUNDLAG_AENDRET" th:text="#{adjustment.reason.ned.grundlag_aendret}"
+                      th:selected="${adjustmentForm.writeDownReasonCode != null and adjustmentForm.writeDownReasonCode.name() == 'NED_GRUNDLAG_AENDRET'}">Opkrævningsgrundlaget har ændret sig</option>
             </select>
-          </th:block>
-
-          <!-- Write-down: free-text reason -->
-          <th:block th:if="${direction != 'WRITE_UP'}">
-            <input id="reason"
-                   th:field="*{reason}"
-                   type="text"
-                   class="skat-input"
-                   th:classappend="${#fields.hasErrors('reason')} ? 'skat-input--error'"
-                   aria-describedby="reason-error"
-                   th:aria-invalid="${#fields.hasErrors('reason')} ? 'true' : 'false'"
-                   required="required" />
-          </th:block>
-
-          <span id="reason-error" class="skat-error-message" role="alert"
-                th:if="${#fields.hasErrors('reason')}"
-                th:text="${#fields.errors('reason')[0]}">Fejl</span>
-        </div>
+            <span id="writeDownReasonCode-error"
+                  class="skat-error-message"
+                  role="alert"
+                  th:if="${#fields.hasErrors('writeDownReasonCode')}"
+                  th:text="${#fields.errors('writeDownReasonCode')[0]}">Fejl</span>
+          </div>
+        </th:block>
 
         <!-- Debtor selection (radio buttons) - shown for payment-related types with multiple debtors -->
         <div th:if="${multiDebtor}" class="skat-form-group" id="debtor-selection">

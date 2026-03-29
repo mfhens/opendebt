@@ -935,6 +935,48 @@ paths:
           description: Entry rejected and deleted
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/debts/{id}/adjustments:
+    post:
+      tags:
+        - Claim Adjustments
+      summary: Submit a claim adjustment
+      description: >
+        Processes a creditor-portal write-up/write-down for a claim. Enforces all FR-9
+        legal constraints at the API boundary (SPEC-P053 section 9.2).
+        Auth: CREDITOR or ADMIN role required.
+      operationId: submitClaimAdjustment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimAdjustmentRequest'
+      responses:
+        '201':
+          description: Adjustment accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimAdjustmentResponse'
+        '422':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdjustmentValidationProblem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
   securitySchemes:
@@ -984,6 +1026,73 @@ components:
 
     # ── Debt ─────────────────────────────────────────────────────────────────
 
+
+    ClaimAdjustmentRequest:
+      type: object
+      required: [adjustmentType, amount, effectiveDate]
+      description: Request for POST /api/v1/debts/{id}/adjustments (SPEC-P053 section 9.0)
+      properties:
+        adjustmentType:
+          type: string
+          example: WRITE_DOWN
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+          example: 500.00
+        effectiveDate:
+          type: string
+          format: date
+          example: "2024-01-01"
+        writeDownReasonCode:
+          type: string
+          nullable: true
+          enum: [NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET]
+          description: Required when direction is WRITE_DOWN. Gaeld.bekendtg. section 7 stk. 2.
+        writeUpReasonCode:
+          type: string
+          nullable: true
+          description: Optional for write-up. Must NOT be DINDB, OMPL, or AFSK (FR-7).
+        debtorId:
+          type: string
+          nullable: true
+
+    ClaimAdjustmentResponse:
+      type: object
+      description: Response for POST /api/v1/debts/{id}/adjustments (SPEC-P053 section 6.1)
+      properties:
+        actionId:
+          type: string
+          example: ACT-20240101-00042
+        status:
+          type: string
+          example: ACCEPTED
+        amount:
+          type: number
+          format: decimal
+          example: 500.00
+        crossSystemRetroactiveApplies:
+          type: boolean
+          description: GIL section 18 k flag (FR-6). True when virkningsdato is before PSRM registration date.
+          example: false
+
+    AdjustmentValidationProblem:
+      type: object
+      description: RFC 7807 ProblemDetail for HTTP 422 (SPEC-P053 section 9.5)
+      properties:
+        type:
+          type: string
+          format: uri
+          example: https://opendebt.ufst.dk/problems/validation-failure
+        title:
+          type: string
+          example: Unprocessable Entity
+        status:
+          type: integer
+          example: 422
+        detail:
+          type: string
+          example: WriteDownReasonCode is required for write-down adjustments
     Debt:
       type: object
       properties:
@@ -1818,6 +1927,48 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DebtType'
+  /api/v1/debts/{id}/adjustments:
+    post:
+      tags:
+        - Claim Adjustments
+      summary: Submit a claim adjustment
+      description: >
+        Processes a creditor-portal write-up/write-down for a claim. Enforces all FR-9
+        legal constraints at the API boundary (SPEC-P053 section 9.2).
+        Auth: CREDITOR or ADMIN role required.
+      operationId: submitClaimAdjustment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimAdjustmentRequest'
+      responses:
+        '201':
+          description: Adjustment accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimAdjustmentResponse'
+        '422':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdjustmentValidationProblem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
   securitySchemes:
@@ -2044,3 +2195,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
+
+
