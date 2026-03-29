@@ -16,8 +16,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assumptions;
+
 import io.cucumber.java.Before;
-import io.cucumber.java.PendingException;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -39,10 +40,10 @@ import io.cucumber.java.en.When;
  *   <li>{@code catala/SPIKE-REPORT.md} (FR-4/FR-5, AC-12–AC-13)
  * </ul>
  *
- * <p>NFR-1 (Catala CLI compilation) steps emit a {@link PendingException} when the {@code catala}
- * executable is absent from PATH, rather than failing the build. NFR-4 (no production artefacts
- * modified) steps are protective constraints that pass immediately and must continue to pass after
- * the spike.
+ * <p>NFR-1 (Catala CLI compilation) steps call {@link org.junit.jupiter.api.Assumptions#assumeTrue}
+ * to abort gracefully when the {@code catala} executable is absent from PATH; the scenario is
+ * reported as skipped rather than failed. NFR-4 (no production artefacts modified) steps are
+ * protective constraints that pass immediately and must continue to pass after the spike.
  *
  * <p>Spec reference: {@code design/specs-p054-catala-compliance-spike.md} (SPEC-P054)<br>
  * Outcome contract: {@code petitions/petition054-catala-compliance-spike-outcome-contract.md}<br>
@@ -727,9 +728,10 @@ public class Petition054Steps {
    * NFR-1 — Assert the Catala CLI is available on PATH.
    *
    * <p>If the CLI is absent (e.g. in a CI environment that does not have Catala installed), this
-   * step emits a {@link PendingException} — which Cucumber reports as "skipped" — rather than
-   * failing the build. This matches the mandate: "if CLI not found, skip with a clear message; do
-   * NOT fail the build if CLI is absent." SPEC-P054 §6.
+   * step calls {@link org.junit.jupiter.api.Assumptions#assumeTrue(boolean, String)} with {@code
+   * false}, causing JUnit 5 to abort the scenario as "skipped" rather than failing the build. This
+   * matches the mandate: "if CLI not found, skip with a clear message; do NOT fail the build if CLI
+   * is absent." SPEC-P054 §6.
    */
   @Given("the Catala CLI is available on the execution PATH")
   public void theCatalaCliIsAvailableOnPath() {
@@ -743,7 +745,8 @@ public class Petition054Steps {
       catalaCliAvailable = false;
     }
     if (!catalaCliAvailable) {
-      throw new PendingException(
+      Assumptions.assumeTrue(
+          false,
           "Catala CLI is not installed on the execution PATH — NFR-1 compilation validation"
               + " is skipped. Install the Catala CLI to enable this check. SPEC-P054 §6.");
     }
@@ -753,8 +756,8 @@ public class Petition054Steps {
   @When("{string} is executed from the {string} directory")
   public void commandIsExecutedFromDirectory(String command, String directory) {
     if (!catalaCliAvailable) {
-      throw new PendingException(
-          "Catala CLI unavailable — compilation command step skipped. SPEC-P054 §6.");
+      Assumptions.assumeTrue(
+          false, "Catala CLI unavailable — compilation command step skipped. SPEC-P054 §6.");
     }
     Path workingDir = resolveRepoRoot().resolve(directory);
     assertThat(Files.isDirectory(workingDir))
@@ -783,8 +786,8 @@ public class Petition054Steps {
   @Then("the command exits with code 0")
   public void theCommandExitsWithCode0() {
     if (!catalaCliAvailable) {
-      throw new PendingException(
-          "Catala CLI unavailable — exit code assertion skipped. SPEC-P054 §6.");
+      Assumptions.assumeTrue(
+          false, "Catala CLI unavailable — exit code assertion skipped. SPEC-P054 §6.");
     }
     assertThat(lastExitCode)
         .as(
@@ -876,8 +879,8 @@ public class Petition054Steps {
 
   /**
    * Return the list of files that are staged or modified relative to HEAD using {@code git diff
-   * --name-only} and {@code git diff --name-only --cached}. Throws a {@link PendingException} if
-   * git is not available.
+   * --name-only} and {@code git diff --name-only --cached}. Calls {@link
+   * org.junit.jupiter.api.Assumptions#assumeTrue} with {@code false} if git is not available.
    */
   private List<String> getGitModifiedFiles() {
     try {
@@ -890,10 +893,12 @@ public class Petition054Steps {
           .distinct()
           .toList();
     } catch (IOException | InterruptedException e) {
-      throw new PendingException(
+      Assumptions.assumeTrue(
+          false,
           "git command unavailable — NFR-4 file-modification check cannot be performed."
               + " Ensure git is on the PATH. Cause: "
               + e.getMessage());
+      return List.of(); // unreachable — satisfies compiler
     }
   }
 
