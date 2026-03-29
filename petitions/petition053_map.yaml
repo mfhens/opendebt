@@ -1,0 +1,412 @@
+# petition053_map.yaml
+# Component Assignment Map for Petition 053:
+#   Fordringshaverportal — Opskrivning og nedskrivning (fuld G.A.-komplient specifikation)
+#
+# Supersedes: Petition 034 (opskrivning og nedskrivning — basic portal flow).
+# Legal basis: G.A.1.4.3, G.A.1.4.4, G.A.2.3.4.4, Gæld.bekendtg. § 7 stk. 1–2, GIL § 18 k
+#
+# ⚠️  NOTE: No /design/components/*.yaml definitions exist in this repository.
+#     Components are mapped to Maven module identifiers (as they appear in the
+#     project structure).  Downstream agents should treat these identifiers as
+#     module-level ownership boundaries.
+#
+# Component legend:
+#   opendebt-creditor-portal  — Thymeleaf BFF; ClaimAdjustmentController, form.html,
+#                               portal-side validation, i18n message bundles,
+#                               WriteDownReasonCode enum (portal DTO layer),
+#                               WriteDownDto / WriteUpReasonCode (portal DTO layer),
+#                               receipt page rendering.
+#   opendebt-debt-service     — REST API + business logic; WriteDownReasonCode enum
+#                               (service DTO layer), WriteDownDto (service DTO),
+#                               ClaimAdjustmentService (FR-9 enforcement),
+#                               retroactive log marker, høring timing rule,
+#                               CLS audit logging.
+#
+# Baseline note (FR-2, FR-3):
+#   FR-2 (RENTE rejection) and FR-3 (høring banner) were implemented in the
+#   compliance-fixes sprint via ClaimAdjustmentController + form.html + i18n.
+#   Their Gherkin scenarios are retained for regression; component assignments
+#   reflect the already-implemented ownership boundary.
+#
+# Baseline note (FR-8):
+#   FR-8 (permission-based type filtering) was implemented in petition 034
+#   (grantedAdjustmentPermissions filter in ClaimAdjustmentController).
+#   No scenarios for FR-8 appear in this feature file (covered by petition 034).
+
+petition_id: petition053
+
+scenarios:
+
+  # ── FR-1: Nedskrivning — controlled reason selection ──────────────────────
+  # New work: WriteDownReasonCode enum, WriteDownDto.reasonCode, form dropdown,
+  # portal validation, debt-service API validation.
+
+  - id: "001"
+    title: "Nedskrivningsformular viser præcis tre lovlige årsagskoder"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-1]
+    rationale: >
+      The nedskrivning adjustment form (form.html) is rendered by
+      ClaimAdjustmentController in opendebt-creditor-portal.  This scenario
+      verifies the Thymeleaf template renders exactly three <option> elements
+      (NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET) bound to
+      the WriteDownReasonCode enum, with no free-text input field present.
+      Pure portal rendering concern; no debt-service call occurs.
+
+  - id: "002"
+    title: "Nedskrivning med gyldig årsagskode sendes korrekt til debt-service"
+    component: opendebt-creditor-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      The BFF controller (ClaimAdjustmentController) constructs a WriteDownDto
+      carrying the selected WriteDownReasonCode and forwards it to debt-service
+      via the internal REST client.  opendebt-creditor-portal owns the DTO
+      assembly and the HTTP call; opendebt-debt-service is secondary as the
+      downstream acceptance point verified in the "Then" step ("debt-service
+      accepts the request and returns a success receipt").
+
+  - id: "003"
+    title: "Nedskrivning med gyldig årsagskode accepteres for alle tre koder (Scenario Outline)"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-creditor-portal
+    fr_refs: [FR-1]
+    rationale: >
+      The Scenario Outline exercises NED_FEJL_OVERSENDELSE and NED_GRUNDLAG_AENDRET
+      (NED_INDBETALING is already covered by scenario 002).  The "Then" step
+      asserts only "debt-service accepts the request" — the acceptance logic lives
+      in ClaimAdjustmentService.  opendebt-creditor-portal is secondary as the
+      submission path that carries the payload.
+
+  - id: "004"
+    title: "Nedskrivning uden valgt årsagskode afvises af portalen inden BFF-kald"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-1]
+    rationale: >
+      Portal-side validation (Spring MVC @Valid / Thymeleaf error display) rejects
+      the form and shows the "adjustment.validation.reason.required" message key
+      before the BFF ever calls debt-service.  Entirely a creditor-portal concern;
+      debt-service is not invoked.
+
+  - id: "005"
+    title: "Nedskrivning med ugyldig årsagskode afvises af portalen"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-1]
+    rationale: >
+      When a tampered or unrecognised reason code ("UNKNOWN_CODE") reaches the
+      BFF controller, it must be rejected before forwarding to debt-service.
+      ClaimAdjustmentController performs enum-binding validation; if binding fails
+      (no matching WriteDownReasonCode constant) the form is redisplayed with an
+      error.  Pure portal-side guard; debt-service is not called.
+
+  # ── FR-2: Opskrivning — opkrævningsrente exception ────────────────────────
+  # Baseline implemented (compliance-fixes sprint). Scenarios retained for regression.
+
+  - id: "006"
+    title: "Opskrivning på rentefordring afvises med vejledningsbesked"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-2]
+    rationale: >
+      ClaimAdjustmentController detects claim category RENTE before rendering the
+      opskrivning form and instead renders a rejection message using key
+      "adjustment.validation.type.rentefordring", instructing the user to submit
+      a ny rentefordring.  The form is never submitted to debt-service.  Baseline
+      implementation; scenario retained for regression coverage.
+
+  - id: "007"
+    title: "Opskrivning på ikke-rentefordring tillades"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-2]
+    rationale: >
+      Negative case for FR-2: when claim category is not RENTE, the controller
+      renders the adjustment form without a rejection message.  Confirms the RENTE
+      guard is scoped correctly.  Portal rendering concern only; baseline regression.
+
+  # ── FR-3: Opskrivning — høring timing banner ──────────────────────────────
+  # Baseline implemented (compliance-fixes sprint). Scenarios retained for regression.
+
+  - id: "008"
+    title: "Høringsbanner vises på justeringsformular når fordring er i høring"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-3]
+    rationale: >
+      ClaimAdjustmentController checks lifecycleState == HOERING and sets a model
+      flag; form.html conditionally renders the persistent banner element with
+      role="status" and i18n key "adjustment.info.hoering" before the form fields.
+      Baseline implementation; scenario retained for regression.
+
+  - id: "009"
+    title: "Høringsbanner vises ved både opskrivning og nedskrivning"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-3]
+    rationale: >
+      Verifies that the shared høring banner fragment (or the common model flag set
+      by ClaimAdjustmentController) is rendered on both the write-up and write-down
+      form endpoints.  Single controller / shared form.html; portal concern only.
+      Baseline regression.
+
+  - id: "010"
+    title: "Høringsbanner vises ikke når fordring ikke er i høring"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-3]
+    rationale: >
+      Negative case: when lifecycleState is UNDER_INDDRIVELSE (not HOERING), the
+      banner must be absent.  Confirms the conditional rendering logic in form.html
+      is correctly gated.  Portal rendering concern; baseline regression.
+
+  # ── FR-4: Retroactive nedskrivning — user guidance ────────────────────────
+  # New work: inline advisory below virkningsdato field (portal),
+  #           retroactive log marker (debt-service).
+
+  - id: "011"
+    title: "Retroaktiv advarsel vises når virkningsdato er i fortiden"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-4]
+    rationale: >
+      When the user enters a virkningsdato earlier than today, ClaimAdjustmentController
+      (or a client-side HTMX hook) detects the retroactive condition and the form.html
+      renders an inline advisory below the virkningsdato field using key
+      "adjustment.info.retroaktiv.virkningsdato" and aria-live="polite".  The advisory
+      does not block submission.  Portal rendering / JS-triggered concern only.
+
+  - id: "012"
+    title: "Retroaktiv advarsel vises ikke når virkningsdato ikke er i fortiden (Scenario Outline)"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-4]
+    rationale: >
+      Outline exercises virkningsdato = today and virkningsdato = future date.
+      In both cases the retroactive advisory must be absent.  Confirms the boundary
+      condition of the portal-side date comparison.  Portal rendering concern only.
+
+  - id: "013"
+    title: "Retroaktiv nedskrivning kan stadig indsendes trods advarsel"
+    component: opendebt-creditor-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      The advisory is non-blocking: the user can submit with virkningsdato 60 days
+      ago and the BFF must forward to debt-service, which must accept (HTTP 2xx).
+      opendebt-creditor-portal owns the non-blocking advisory UX; opendebt-debt-service
+      is secondary as the acceptance point confirmed in the final "Then" step.
+
+  # ── FR-5: Annulleret nedskrivning — backdated opskrivning type description ─
+  # New work: type description text shown for OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING.
+
+  - id: "014"
+    title: "Tilbagedateringsbeskrivelse vises for OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-5]
+    rationale: >
+      ClaimAdjustmentController passes the selected adjustment type to the view model;
+      form.html conditionally renders a description element (i18n key
+      "adjustment.type.description.omgjort_nedskrivning_regulering") when the type
+      is OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING.  Portal rendering concern only;
+      no backend change required.
+
+  - id: "015"
+    title: "Tilbagedateringsbeskrivelse vises ikke for andre opskrivningstyper"
+    component: opendebt-creditor-portal
+    fr_refs: [FR-5]
+    rationale: >
+      Negative case: for OPSKRIVNING_REGULERING the backdating description must be
+      absent.  Confirms the conditional rendering in form.html is correctly scoped
+      to the specific type constant.  Portal rendering concern only.
+
+  # ── FR-6: Cross-system retroactive nedskrivning — suspension advisory ──────
+  # New work: receipt page advisory (portal); debt-service must surface
+  #           PSRM registration date in adjustment response for portal to compare.
+
+  - id: "016"
+    title: "Suspensionsadvisory vises på kvitteringssiden ved krydssystem retroaktiv nedskrivning"
+    component: opendebt-creditor-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-6]
+    rationale: >
+      After debt-service accepts the nedskrivning, it evaluates the GIL § 18 k
+      condition (virkningsdato < PSRM registration date) server-side and returns
+      `crossSystemRetroactiveApplies: true` in the ClaimAdjustmentResponseDto.
+      The portal maps this flag into AdjustmentReceiptDto and renders the suspension
+      advisory element (i18n key "adjustment.info.suspension.krydssystem") on the
+      receipt page based solely on the flag — without performing date arithmetic.
+      opendebt-creditor-portal owns the receipt rendering; opendebt-debt-service
+      is secondary as the evaluator of the GIL § 18 k rule (SA Decision 1).
+
+  - id: "017"
+    title: "Suspensionsadvisory vises ikke når virkningsdato er efter PSRM-registreringsdato"
+    component: opendebt-creditor-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-6]
+    rationale: >
+      Negative case: when virkningsdato (2023-06-01) is after the PSRM registration
+      date (2023-01-15), debt-service returns `crossSystemRetroactiveApplies: false`.
+      The portal must NOT render the suspension advisory on the receipt page.
+      Confirms that the debt-service flag evaluation is correct and that the portal
+      renders nothing for the false case.  Same two-component boundary as scenario 016.
+
+  # ── FR-7: Scope exclusion — interne opskrivningskoder fjernet fra portalen ─
+  # New work: remove DINDB/OMPL/AFSK from WriteUpReasonCode (portal DTO);
+  #           form must not expose them.
+
+  - id: "018"
+    title: "RIM-interne årsagskoder er ikke tilgængelige i opskrivningsformularen"
+    component: opendebt-creditor-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      The "Then" steps assert absence of DINDB, OMPL, and AFSK from all selectable
+      options in the portal opskrivning form.  This requires (a) removing these
+      constants from WriteUpReasonCode in opendebt-creditor-portal (portal DTO layer)
+      and (b) ensuring form.html iterates only over the remaining enum values.
+      opendebt-debt-service is secondary because it too must remove these codes from
+      its own WriteUpReasonCode and reject them at the API boundary (FR-9 / FR-7
+      backend enforcement), but the Gherkin assertion here is portal-facing.
+
+  # ── AC-16: Audit log (CLS) ────────────────────────────────────────────────
+  # New work: CLS log entry on every adjustment submission (success and failure),
+  #           implemented in ClaimAdjustmentService in debt-service.
+
+  - id: "019"
+    title: "Vellykket justering logges til revisionssporet"
+    component: opendebt-debt-service
+    fr_refs: [AC-16]
+    rationale: >
+      The scenario submits a valid nedskrivning via a direct API call (bypassing the
+      portal BFF).  The "Then" steps verify HTTP 201 AND a CLS audit log entry with
+      outcome "SUCCESS".  Both observations are solely debt-service responsibilities:
+      ClaimAdjustmentService writes the CLS entry via the audit client after a
+      successful persistence of the adjustment record.
+
+  - id: "020"
+    title: "Fejlende justering logges til revisionssporet"
+    component: opendebt-debt-service
+    fr_refs: [AC-16]
+    rationale: >
+      The scenario submits a WriteDownDto without a reasonCode via a direct API call.
+      The "Then" steps verify HTTP 422 AND a CLS audit log entry with outcome
+      "FAILURE".  Both observations are debt-service responsibilities: the validation
+      layer rejects the DTO and ClaimAdjustmentService (or an AOP interceptor) writes
+      a FAILURE entry to CLS regardless of the validation outcome.
+
+  # ── FR-9: Backend enforcement independent of portal ───────────────────────
+  # New work: ClaimAdjustmentService enforces all constraints at API boundary.
+
+  - id: "021"
+    title: "debt-service afviser nedskrivning uden årsagskode med HTTP 422"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-1]
+    rationale: >
+      Direct API call (no portal).  debt-service must independently reject a
+      WriteDownDto missing reasonCode with HTTP 422 and a problem-detail body.
+      ClaimAdjustmentService / Bean Validation owns this enforcement.  Pure
+      backend concern; portal is not involved.
+
+  - id: "022"
+    title: "debt-service afviser nedskrivning med ukendt årsagskode med HTTP 422"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-1]
+    rationale: >
+      Direct API call with reasonCode "UNKNOWN_CODE".  debt-service must reject
+      values not present in WriteDownReasonCode enum via deserialization validation
+      or explicit enum-bound @Valid check, returning HTTP 422.  Pure backend
+      enforcement; no portal involvement.
+
+  - id: "023"
+    title: "debt-service afviser opskrivning på rentefordring med HTTP 422"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-2]
+    rationale: >
+      Direct API call submitting OPSKRIVNING_REGULERING for a RENTE-category claim.
+      ClaimAdjustmentService fetches the claim category and rejects the combination
+      with HTTP 422.  Backend-only enforcement; complements the portal-side
+      rejection in scenario 006.
+
+  - id: "024"
+    title: "debt-service afviser opskrivning med RIM-intern kode DINDB/OMPL/AFSK med HTTP 422 (Scenario Outline)"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-7]
+    rationale: >
+      Outline exercises DINDB, OMPL, and AFSK individually.  ClaimAdjustmentService
+      (or its validation layer) must treat these as forbidden codes in write-up
+      requests and return HTTP 422 for each.  Backend-only enforcement;
+      complements the portal absence assertion in scenario 018.
+
+  - id: "025"
+    title: "debt-service accepterer gyldig nedskrivning med korrekt årsagskode"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-1]
+    rationale: >
+      Positive backend test: a WriteDownDto with reasonCode NED_GRUNDLAG_AENDRET
+      submitted directly to the API must return HTTP 201 and create an adjustment
+      record.  ClaimAdjustmentService is the primary owner of the persistence logic.
+      Confirms the happy path in isolation from the portal.
+
+  - id: "026"
+    title: "debt-service anvender høring-tidspunktsregel uafhængigt af portal"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-3]
+    rationale: >
+      Direct API call for a claim in lifecycleState HOERING.  debt-service must
+      record the opskrivningsfordring receipt timestamp as the høring resolution
+      time (not the submission timestamp).  This timing-rule logic lives in
+      ClaimAdjustmentService.  Backend-only; confirms FR-3 backend enforcement
+      operates independently of whether the portal displayed the banner.
+
+  - id: "027"
+    title: "debt-service logger retroaktiv nedskrivning separat til driftsovervågning"
+    component: opendebt-debt-service
+    fr_refs: [FR-9, FR-4]
+    rationale: >
+      Direct API call with virkningsdato 60 days in the past.  debt-service must
+      return HTTP 201 AND emit a retroactive nedskrivning log marker (e.g. a dedicated
+      MDC/structured log event or metric) for operational monitoring.  This is a
+      ClaimAdjustmentService / logging-infrastructure concern; no portal involvement.
+
+---
+# Summary
+total_scenarios_mapped: 27
+components_missing: []
+new_component_definitions_required:
+  - id: opendebt-creditor-portal/dto/WriteDownReasonCode.java
+    note: >
+      New enum (NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET).
+      Replaces the free-text WriteDownDto.reason field.  Must be created before
+      ClaimAdjustmentController and form.html can be updated for FR-1.
+  - id: opendebt-debt-service/dto/WriteDownReasonCode.java
+    note: >
+      Mirror enum in the debt-service DTO layer.  Required for FR-9 (API-boundary
+      validation) and AC-16 (CLS audit log).  Must be created before
+      ClaimAdjustmentService validation changes can compile.
+  - id: opendebt-creditor-portal/dto/WriteUpReasonCode.java (modified)
+    note: >
+      Existing enum; DINDB, OMPL, AFSK must be removed (FR-7).
+      If the enum becomes empty after removal it shall be deleted entirely.
+  - id: opendebt-creditor-portal/ClaimAdjustmentController.java (extended)
+    note: >
+      Existing controller; must be extended for FR-4 (retroactive advisory model flag),
+      FR-5 (type description conditional), FR-6 (receipt page suspension advisory).
+      Already owns FR-2 and FR-3 (baseline).
+  - id: opendebt-debt-service/service/ClaimAdjustmentService.java (extended)
+    note: >
+      Existing service; must be extended for FR-9 enforcement (reasonCode validation,
+      RENTE rejection, internal-code rejection, høring timing rule), AC-16 (CLS
+      audit client calls on success and failure), and FR-4 retroactive log marker.
+changes_to_existing_maps: false   # No prior map file existed for petition053
+baseline_already_implemented:
+  - FR-2: "ClaimAdjustmentController + form.html + i18n (compliance-fixes sprint)"
+  - FR-3: "ClaimAdjustmentController + form.html + i18n (compliance-fixes sprint)"
+  - FR-8: "grantedAdjustmentPermissions filter in ClaimAdjustmentController (petition 034)"
+note: >
+  /design/components/*.yaml definitions do not exist in this repository.
+  Component identifiers above correspond directly to Maven module directory names
+  at the repository root.  Downstream agents should treat them as module-level
+  ownership boundaries when generating implementation tasks.
+  Scenarios 006–010 (FR-2, FR-3) are baseline-implemented; they are assigned to
+  opendebt-creditor-portal for regression traceability, not as new work items.
+  Scenarios 019–027 (AC-16, FR-9) operate via direct API calls to debt-service
+  and are exclusively backend concerns.

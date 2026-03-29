@@ -70,6 +70,22 @@ Both enums must have identical values: `NED_INDBETALING`, `NED_FEJL_OVERSENDELSE
 
 **Rationale:** The values are anchored in statute (§ 7 stk. 2) and cannot change without a legislative amendment. The coordination risk of divergence is extremely low, and keeping modules independently deployable outweighs the duplication cost. Parity is enforced by code review checklist.
 
+### Decision 3 — ADR 0031 deviation: FR-7 removes portal-facing write-up codes
+
+**Decision: FR-7 constitutes a bounded deviation from ADR 0031 §3 ("the creditor portal presents all values from the enum"). No ADR amendment required.**
+
+ADR 0031 states: *"The creditor portal presents all values from the enum in the write-up form."* FR-7 removes `DINDB`, `OMPL`, and `AFSK` from the portal-facing `WriteUpReasonCode` enum.
+
+These codes are classified in G.A.2.3.4.4 as RIM-internal initiation codes — they are not valid for creditor-initiated submissions through the fordringshaver portal, only for system-internal operations. ADR 0031's intent was to prevent configurable filtering of *valid portal codes*; it did not anticipate codes that are definitionally outside the portal's authorised operation set.
+
+| Option | Verdict |
+|--------|---------|
+| Present all enum values including DINDB/OMPL/AFSK (ADR 0031 literal) | Exposes RIM-internal codes to creditors, violating G.A.2.3.4.4. **Rejected.** |
+| Remove from portal enum, retain in debt-service denylist (chosen) | Eliminates portal exposure while preserving backend auditability. Consistent with G.A.2.3.4.4. |
+| Amend ADR 0031 | Disproportionate — the issue is a single edge case in code classification, not a general policy failure. **Not required.** |
+
+**Rationale:** G.A.2.3.4.4 restrictions are legally binding and supersede the ADR 0031 portal-presentation clause. The deviation is bounded to three specific enum constants that are definitionally not portal-accessible. Debt-service retains independent enforcement (FR-9) to reject these codes even if submitted directly.
+
 ---
 
 ## 3. Module Changes
@@ -99,6 +115,7 @@ Both enums must have identical values: `NED_INDBETALING`, `NED_FEJL_OVERSENDELSE
 | `service/ClaimAdjustmentService.java` | **CREATE** | FR-9 | New service interface declaring `ClaimAdjustmentResponseDto processAdjustment(UUID claimId, ClaimAdjustmentRequestDto request)`. |
 | `service/impl/ClaimAdjustmentServiceImpl.java` | **CREATE** | FR-9 | Implementation. Executes FR-9 validations in sequence (see §6.2), evaluates GIL § 18 k flag (Decision 1), emits retroactive log marker (FR-4), and calls CLS audit. |
 | `controller/ClaimAdjustmentController.java` | **CREATE** (debt-service REST controller) | FR-9 | `@RestController @RequestMapping("/api/v1/debts/{id}/adjustments")` — exposes `POST` endpoint consumed by the portal BFF. |
+| `api-specs/openapi-debt-service.yaml` | **MODIFY** | FR-9, FR-1, FR-6 | Add `POST /api/v1/debts/{id}/adjustments` path, `ClaimAdjustmentRequestDto` schema (including `writeUpReasonCode` and `writeDownReasonCode` fields), and `ClaimAdjustmentResponseDto` schema (including `crossSystemRetroactiveApplies`). Required per ADR 0004 (API-First Design) before implementation begins. |
 
 > **Note on existing write-down endpoint:** `DebtController.writeDown()` (`POST /{id}/write-down`) is an internal caseworker/admin path that takes a raw `BigDecimal amount`. It is **not** the creditor-portal adjustment endpoint. The creditor-portal adjustment endpoint lives at `/api/v1/debts/{id}/adjustments` (already called by `DebtServiceClient.submitAdjustment()`). The new `ClaimAdjustmentController` in debt-service formalises and replaces any placeholder implementation at that path.
 
@@ -238,6 +255,8 @@ Insert immediately after the `virkningsdato` field's error span:
 
 The `retroaktivAdvisoryActive` model flag is set by `ClaimAdjustmentController` on form reload (POST path, after binding) when `adjustmentForm.effectiveDate != null && adjustmentForm.effectiveDate.isBefore(LocalDate.now())` and `direction == WRITE_DOWN`. It is **not set on GET** (the user has not yet entered a date). This is a server-side advisory; client-side JS enhancement is permitted but not architecturally required.
 
+> **Test engineer note:** The retroactive advisory is observable only after a form POST submission causes a page reload — not on date-field input. Gherkin step definitions for FR-4 scenarios must trigger a form submission (POST) and observe the advisory in the resulting rendered response, not in an intermediate DOM state.
+
 The advisory does not block submission. No `bindingResult.rejectValue()` call is made for this condition.
 
 ### 5.3 Backdated type description for OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING (FR-5)
@@ -363,7 +382,7 @@ The enum currently contains `DINDB`, `OMPL`, `AFSK`. All three are RIM-internal 
 
 All 7 keys below must be present in **both** `messages_da.properties` and `messages_en_GB.properties`. Absence of any key from either file will cause the CI bundle-lint check to fail.
 
-> **Note:** The petition outcome contract's success metric cites 8 new keys. Seven are explicitly specified across FR-1, FR-4, FR-5, and FR-6. Implementers should verify whether a label key for the nedskrivning reason field heading (`adjustment.label.reason.writedown` or similar) is required as the 8th key once the shared `adjustment.label.reason` key is confirmed adequate for both directions.
+> **i18n key count resolved (7, not 8):** The petition outcome contract's success metric cited 8 new keys. After confirming the bundle, `adjustment.label.reason` (`Årsag / årsagskode`) already exists in both property files — it is reused as the form-field label for both write-up and write-down directions. No additional label key is required. The definitive count is **7 new keys**. The outcome contract success metric is updated accordingly.
 
 | Key | DA value | EN value |
 |-----|----------|----------|
@@ -394,6 +413,7 @@ All 7 keys below must be present in **both** `messages_da.properties` and `messa
   "amount": 500.00,
   "effectiveDate": "2022-12-01",
   "writeDownReasonCode": "NED_INDBETALING",
+  "writeUpReasonCode": null,
   "debtorId": "optional-debtor-uuid"
 }
 ```
@@ -404,6 +424,7 @@ All 7 keys below must be present in **both** `messages_da.properties` and `messa
 | `amount` | `BigDecimal` | Yes | `> 0.00` |
 | `effectiveDate` | `LocalDate` (ISO-8601) | Yes | Must not be null |
 | `writeDownReasonCode` | `String` (enum name) | Conditional | Required when `adjustmentType` is `WRITE_DOWN`; must be one of `NED_INDBETALING`, `NED_FEJL_OVERSENDELSE`, `NED_GRUNDLAG_AENDRET` |
+| `writeUpReasonCode` | `String` | Conditional | Optional when `adjustmentType` is `WRITE_UP`. Debt-service **rejects** any value in `{DINDB, OMPL, AFSK}` with HTTP 422 (FR-7 / G.A.2.3.4.4 enforcement). Null or absent is valid for write-up submissions where the portal sends no reason code. |
 | `debtorId` | `String` (UUID) | Conditional | Required for payment-related types with multiple debtors |
 
 #### Success response — HTTP 201
@@ -462,7 +483,7 @@ No additional HTTP hops. The flag travels as a JSON field and a Java boolean thr
 | # | Assumption | Risk if wrong |
 |---|------------|---------------|
 | A1 | `POST /api/v1/debts/{id}/adjustments` does not currently have a production implementation with a signed API contract. Any placeholder from P034 can be replaced. | If a hard API contract exists, the new `ClaimAdjustmentResponseDto` shape (adding `crossSystemRetroactiveApplies`) requires a versioned endpoint or negotiated schema update. |
-| A2 | `claim.psrmRegistrationDate` is a field available on the `DebtEntity` or retrievable from a debt-service query. | If PSRM registration date is not persisted in debt-service's data model, debt-service cannot evaluate the GIL § 18 k flag server-side. Escalate to human architect before implementation begins. |
+| **A2 — PRE-SPEC GATE** | `claim.psrmRegistrationDate` (or an equivalent field) is available on `DebtEntity` or retrievable from a debt-service query. **This assumption must be resolved before specs are written.** Field inspection finds `DebtEntity.receivedAt` (LocalDateTime) — it is unclear whether this is the PSRM system-of-record registration date or the claim intake timestamp. If it is not equivalent, FR-6's flag mechanism (`virkningsdato < psrmRegistrationDate`) cannot be implemented as specified. | If `receivedAt` ≠ PSRM registration date: either a new `psrmRegistrationDate` field + DB migration is required (separate tech-backlog item), or FR-6 must be re-specified with the available field as a proxy. Do not proceed to spec phase without confirming this mapping. |
 | A3 | CLS audit service is already integrated in debt-service (used by other services). The `ClaimAdjustmentService` will use the same integration point. | If CLS is not yet integrated in debt-service, this is a separate infrastructure task (not tracked in this petition). |
 | A4 | The `WriteUpReasonCode` enum's `allCodes()` method is not referenced outside `ClaimAdjustmentController` and `form.html`. | A wider usage sweep must be done before deletion. |
 | A5 | Retroactive advisory (FR-4) is server-side rendered on POST reload. Client-side JS enhancement (showing advisory on date-field change without a round-trip) is out of scope but does not conflict with this design. | None — JS enhancement is additive. |
