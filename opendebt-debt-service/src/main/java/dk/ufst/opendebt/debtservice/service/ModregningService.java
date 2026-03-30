@@ -176,6 +176,7 @@ public class ModregningService implements OffsettingService {
               .measureType(CollectionMeasureEntity.MeasureType.SET_OFF)
               .modregningEventId(event.getId())
               .amount(alloc.amountCovered())
+              .tierLevel(alloc.tier())
               .build();
       collectionMeasureRepository.save(measure);
 
@@ -241,8 +242,8 @@ public class ModregningService implements OffsettingService {
 
     // MISSING-2: Mark existing tier-2 CollectionMeasure rows as waiver_applied
     List<CollectionMeasureEntity> tier2Measures =
-        collectionMeasureRepository.findByModregningEventIdAndMeasureType(
-            modregningEventId, CollectionMeasureEntity.MeasureType.SET_OFF);
+        collectionMeasureRepository.findByModregningEventIdAndMeasureTypeAndTierLevel(
+            modregningEventId, CollectionMeasureEntity.MeasureType.SET_OFF, 2);
     for (CollectionMeasureEntity cm : tier2Measures) {
       cm.setWaiverApplied(true);
       cm.setCaseworkerId(caseworkerId);
@@ -271,6 +272,7 @@ public class ModregningService implements OffsettingService {
               .modregningEventId(modregningEventId)
               .amount(alloc.amountCovered())
               .caseworkerId(caseworkerId)
+              .tierLevel(3)
               .build();
       collectionMeasureRepository.save(newMeasure);
     }

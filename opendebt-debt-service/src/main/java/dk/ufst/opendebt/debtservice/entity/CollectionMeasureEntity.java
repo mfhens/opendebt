@@ -67,6 +67,10 @@ public class CollectionMeasureEntity extends AuditableEntity {
   @Column(name = "caseworker_id")
   private UUID caseworkerId;
 
+  /** Tier that produced this measure (1, 2, or 3). Nullable for rows created before V10. */
+  @Column(name = "tier_level")
+  private Integer tierLevel;
+
   public enum MeasureType {
     SET_OFF,
     WAGE_GARNISHMENT,
