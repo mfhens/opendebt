@@ -100,6 +100,15 @@ dk.ufst.opendebt.integrationgateway.soap/
 - CLS audit logging and circuit breakers apply uniformly to both REST and SOAP ingress paths.
 - Static WSDLs allow dual SOAP 1.1/1.2 bindings without runtime generation.
 
+### Note — OCES3 parser extraction (TB-042)
+
+The `Oces3CertificateParser` and `Oces3AuthContext` classes were extracted in TB-042 to a
+standalone Maven library (`dk.ufst:oces3-certificate-parser:1.0`, module `oces3-certificate-parser/`).
+The package changed from `dk.ufst.opendebt.common.soap` to `dk.ufst.security.oces3` and the
+configuration property from `opendebt.soap.oces3.fordringshaver-dn-field` to `oces3.dn-field`.
+The library is provided to the integration-gateway via a local Maven install and Spring Boot
+auto-configuration, so no changes are required in `SoapConfig` or the main application class.
+
 ### Negative
 - Spring-WS adds a second web framework alongside Spring MVC; developers must understand both dispatch models.
 - JAXB code generation for OIO and SKAT XSDs must be maintained when schemas change.

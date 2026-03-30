@@ -1206,6 +1206,11 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | messages_da.properties (timeline keys) | Done | Danish i18n keys for timeline event titles and category labels |
 | messages_en_GB.properties (timeline keys) | Done | English i18n keys for timeline event titles and category labels |
 
+> **TB-042:** `Oces3CertificateParser` and `Oces3AuthContext` were extracted from
+> `opendebt-common` to the standalone library `dk.ufst:oces3-certificate-parser:1.0`
+> (module `oces3-certificate-parser/`). Package: `dk.ufst.security.oces3`.
+> Property key: `oces3.dn-field` (was `opendebt.soap.oces3.fordringshaver-dn-field`).
+
 ## Database Architecture
 
 Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0007):

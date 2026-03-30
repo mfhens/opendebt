@@ -2273,10 +2273,19 @@ program:
 
     - id: TB-042
       title: "Extract OCES3 Certificate Parser as standalone Maven library"
-      status: not_started
+      status: done
       priority: high
       created: 2026-03-30
       petitions: []
+      implementation_notes: |
+        Extracted to oces3-certificate-parser/ (standalone Maven module, NOT in parent POM).
+        groupId=dk.ufst, artifactId=oces3-certificate-parser, version=1.0.
+        New package: dk.ufst.security.oces3 (was dk.ufst.opendebt.common.soap).
+        Property key: oces3.dn-field (was opendebt.soap.oces3.fordringshaver-dn-field).
+        Spring Boot auto-configuration via META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports.
+        Only Oces3SoapSecurityInterceptor.java in integration-gateway needed import updates.
+        All 59 integration-gateway tests pass (29 scenarios).
+        References: ADR-0030, docs/architecture-overview.md (TB-042 note).
       description: |
         The OCES3 X.509 certificate parsing logic in opendebt-common is fully reusable
         by any Danish e-government system using SOAP/mTLS. Handles RFC2253 DN parsing,
