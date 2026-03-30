@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
+import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
@@ -34,6 +35,18 @@ public class TestConfig {
   public ClsAuditClient clsAuditClient() {
     ClsAuditClient mockClient = mock(ClsAuditClient.class);
     when(mockClient.isEnabled()).thenReturn(false);
+    return mockClient;
+  }
+
+  @Bean
+  @Primary
+  public CaseServiceClient caseServiceClient() {
+    CaseServiceClient mockClient = mock(CaseServiceClient.class);
+    CaseServiceClient.CaseAssignmentResult result = new CaseServiceClient.CaseAssignmentResult();
+    result.setCaseId(UUID.randomUUID());
+    result.setCaseNumber("CASE-TEST-001");
+    result.setNewCase(true);
+    when(mockClient.assignDebtToCase(any(String.class), any(String.class))).thenReturn(result);
     return mockClient;
   }
 }

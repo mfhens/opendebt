@@ -108,6 +108,10 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         creditorPortal   -> creditorService "Manages creditor data via"   "HTTPS/REST"
         creditorPortal   -> debtService     "Submits claims via"          "HTTPS/REST"
 
+        // M2M / API path — Petition 011: fordringshaver system submits fordringer via OCES3 certificate
+        creditor         -> integrationGateway "Submits fordringer via API with OCES3 certificate (M2M)" "HTTPS/REST"
+        integrationGateway -> debtService    "Routes M2M fordring submissions to"  "HTTPS/REST"
+
         // ---------------------------------------------------------------
         // Relationships — Service to Service (core orchestration)
         // ---------------------------------------------------------------
