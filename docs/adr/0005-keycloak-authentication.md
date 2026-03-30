@@ -62,3 +62,22 @@ We use Keycloak as the central identity broker:
 
 ### TastSelv Integration
 Citizens authenticate via TastSelv, which provides its own OIDC flow. The citizen-portal acts as a relying party to TastSelv, then exchanges tokens for internal Keycloak tokens if needed.
+
+## Amendment: TB-043 — keycloak-oauth2-starter (2026-03-30)
+
+The repeated SecurityConfig boilerplate across all API services has been extracted into a
+standalone Spring Boot auto-configuration starter:
+
+**Module:** dk.ufst:keycloak-oauth2-starter:1.0
+
+The starter registers KeycloakResourceServerAutoConfiguration via
+META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports and provides:
+
+- keycloakSecuredFilterChain — active for !local & !dev & !demo: stateless JWT resource server,
+  CSRF disabled, actuator + Swagger UI permitted without authentication.
+- keycloakPermissiveFilterChain — active for local | dev | demo: permits all requests for
+  local development.
+
+Both beans use @ConditionalOnMissingBean so individual services can override.
+Portal modules (creditor-portal, caseworker-portal, citizen-portal) are **not** affected —
+they use the OAuth2 client (browser SSO) pattern and retain their own SecurityConfig.

@@ -984,7 +984,8 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | CreditorMapper / ChannelBindingMapper | Done | MapStruct mappers |
 | CreditorRepository | Done | JPA with filtering indexes |
 | ChannelBindingRepository | Done | JPA repository |
-| SecurityConfig | Done | OAuth2 resource server, actuator/swagger permitted |
+| SecurityConfig | Removed (TB-043) | Replaced by keycloak-oauth2-starter auto-configuration |
+| MethodSecurityConfig | Done | Enables `@PreAuthorize` / `@PostAuthorize` for non-local profiles |
 | AccessResolutionMetrics | Done | `creditor_access_resolution_total` counter (tags: result=allowed/denied) |
 | logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
 | Flyway migration V1 | Done | `creditors`, audit, history |

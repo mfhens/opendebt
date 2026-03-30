@@ -2308,9 +2308,10 @@ program:
 
     - id: TB-043
       title: "Extract Keycloak/OAuth2 Spring Boot Starter"
-      status: not_started
+      status: done
       priority: high
       created: 2026-03-30
+      completed: 2026-03-30
       petitions: []
       description: |
         Every OpenDebt service duplicates the same OAuth2 resource server configuration
@@ -2332,6 +2333,23 @@ program:
       implementation_notes: |
         Pure Spring Security — zero OpenDebt domain concepts. Highest reuse potential.
         All UFST services use Keycloak as identity provider.
+        IMPLEMENTED 2026-03-30:
+        - Created standalone module keycloak-oauth2-starter/ (dk.ufst:keycloak-oauth2-starter:1.0)
+        - KeycloakResourceServerAutoConfiguration: @AutoConfiguration with two profile-gated
+          SecurityFilterChain beans (@ConditionalOnMissingBean back-off for service overrides)
+        - keycloakSecuredFilterChain active for !local & !dev & !demo: stateless JWT, CSRF off,
+          actuator + Swagger UI permitted without authentication
+        - keycloakPermissiveFilterChain active for local|dev|demo: permit all (no auth)
+        - Registered via META-INF/spring/AutoConfiguration.imports (Spring Boot 3.x)
+        - SecurityConfig deleted from: debt-service, case-service, person-registry,
+          creditor-service, payment-service
+        - MethodSecurityConfig retained in creditor-service (@Profile !local&!dev&!demo)
+          and payment-service (no profile restriction, matches original behaviour)
+        - spring-boot-starter-oauth2-resource-server replaced by keycloak-oauth2-starter
+          in all 5 service pom.xml files (transitive dep preserved)
+        - AuthContext NOT moved — stays in opendebt-common (domain-coupled)
+        - Portal SecurityConfigs NOT touched (OAuth2 client pattern)
+        - All 5 services compile successfully (mvn compile -q exit 0)
 
     - id: TB-044
       title: "Extract SOAP PII Masking Utility into shared commons"
