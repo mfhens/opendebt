@@ -235,3 +235,13 @@ The following Tier A companion spikes were commissioned based on the Go outcome 
 P069 (Go) is the first completed Tier A follow-on spike. Its report documents the
 dækningsrækkefølge payment-order rules and includes 16 Catala test scopes covering all
 six priority tiers defined by GIL § 4 stk. 1–4.
+
+P070 (Go) is the second completed Tier A follow-on spike. Its report covers G.A.2.4
+forældelses-regler (GIL § 18a stk. 1–4, stk. 7; Forældelsesl. §§ 3, 5, 14–18;
+SKM2015.718.ØLR), encodes 5 Catala scopes across 16 test cases, and confirms that
+all three Go criteria are met: all afbrydelse-types (berostillelse, lønindeholdelse,
+udlæg) encode without ambiguity; the varsel/afgørelse distinction (SKM2015.718.ØLR)
+is structurally enforced via the type system; and fordringskompleks-propagation
+atomicity is expressed as a Catala assertion. Two coverage gaps relative to P059
+Gherkin scenarios were identified (tomt-kompleks foreløbig afbrydelse; boundary-value
+tests for GIL § 18a, stk. 1 udskydelsesdato). P059 implementation sprint is unblocked.

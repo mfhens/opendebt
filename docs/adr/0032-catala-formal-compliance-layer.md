@@ -60,6 +60,10 @@ The P054 Catala compliance spike (petition054) validated this approach against G
 
 The P054 outcome was **Go**. Catala Tier A spikes (P069–P072) are now commissioned for the four highest-risk G.A.2/G.A.3 domains.
 
+Subsequent spike results:
+- **P069 (Go)** — G.A.2.3.2.1 Dækningsrækkefølge (GIL § 4 stk. 1–4). All six priority tiers encoded without ambiguity; 16 Catala test scopes. P057 implementation sprint unblocked.
+- **P070 (Go)** — G.A.2.4 Forældelse (GIL § 18a stk. 1–4, stk. 7; Forældelsesl. §§ 3, 5, 14–18; SKM2015.718.ØLR). All three afbrydelse-types encoded without ambiguity; varsel/afgørelse distinction structurally enforced via Catala type system; fordringskompleks atomicity formalised as a Catala assertion; 16 test cases across 5 scopes. Two P059 Gherkin coverage gaps surfaced. P059 implementation sprint unblocked.
+
 ## Decision
 
 OpenDebt adopts **Catala as a formal compliance verification layer** positioned between the juridisk vejledning and the Gherkin test suite. Catala does not replace the existing pipeline — it augments it as an oracle.

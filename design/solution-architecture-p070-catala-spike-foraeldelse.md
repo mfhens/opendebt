@@ -3,7 +3,7 @@
 **Document ID:** SA-P070
 **Petition:** `petitions/petition070-catala-spike-foraeldelse.md`
 **Status:** Approved for spike execution
-**Legal basis:** GIL § 18a stk. 1–4; Forældelsesl. § 5; Forældelsesl. §§ 14–18;
+**Legal basis:** GIL § 18a stk. 1–4; GIL § 18a stk. 7; Forældelsesl. § 5; Forældelsesl. §§ 14–18;
 G.A.2.4 (G.A. snapshot v3.16, 2026-03-28); SKM2015.718.ØLR
 **G.A. snapshot:** v3.16 (2026-03-28)
 **Spike type:** Research spike — **no production code**
@@ -50,6 +50,7 @@ file artefacts (see §2) whose sole purpose is to:
 | SKM2015.718.ØLR — varsel ≠ afbrydelse rule | Payment application logic (P057) |
 | Fordringskompleks propagation and atomicity (GIL § 18a, stk. 2) | Pro-rata distribution (P062) |
 | Tillaegsfrist calculation (G.A.2.4.4.2) | CI compilation of Catala artefacts (deferred, AC-18) |
+| GIL § 18a stk. 7 — foreløbig afbrydelse (tomt fordringskompleks) | — |
 | ≥8 Catala test cases covering all scopes | Deployment of any artefact to any environment |
 | SPIKE-REPORT-070.md with explicit Go/No-Go verdict | Gherkin feature file authorship (owned by P059) |
 
@@ -92,7 +93,7 @@ Java / Spring Boot production code
 
 | Artefact ID | File path | Type | Responsibility |
 |-------------|-----------|------|----------------|
-| ART-070-1 | `catala/ga_2_4_foraeldelse.catala_da` | Catala source | Formal encoding of G.A.2.4 rules (GIL § 18a stk. 1–4, Forældelsesl. § 5, §§ 14–18). Five scopes, four enumeration types. Article-anchored rule blocks in Danish. |
+| ART-070-1 | `catala/ga_2_4_foraeldelse.catala_da` | Catala source | Formal encoding of G.A.2.4 rules (GIL § 18a stk. 1–4, GIL § 18a stk. 7, Forældelsesl. § 5, §§ 14–18). Six scopes, four enumeration types. Article-anchored rule blocks in Danish. |
 | ART-070-2 | `catala/tests/ga_foraeldelse_tests.catala_da` | Catala test module | ≥8 test cases exercising all scope branches and boundary conditions. Uses Catala `Test` module with `assertion` blocks. |
 | ART-070-3 | `catala/SPIKE-REPORT-070.md` | Markdown report | Coverage table (P059 Gherkin scenarios × Catala scopes), gap analysis, discrepancy list, Go/No-Go verdict. |
 
@@ -211,7 +212,7 @@ declaration enumeration AfbrydelseType:
 
 ### 3.2 Scope Definitions
 
-Five scopes encode the full G.A.2.4 rule set. Each scope has a single,
+Six scopes encode the full G.A.2.4 rule set. Each scope has a single,
 well-bounded responsibility. Scopes are sequentially composable: the output of
 `UdskydelsesBeregning` feeds `ForaeldelseFristBeregning`; the output of
 `AfbrydelseValidering` is consumed by `ForaeldelseFristBeregning` and
@@ -262,6 +263,8 @@ cleanly.
 
 #### SCOPE-3: AfbrydelseValidering — Forældelsesl. §§ 14–18; SKM2015.718.ØLR
 
+> **Naming note:** Also known as `AfbrydelseRegler` in earlier drafts; the canonical name is `AfbrydelseValidering` (chosen for precision — the scope validates the legal classification of each event, not just applies rules). All references in this document and in ART-070-1 use `AfbrydelseValidering`.
+
 **Responsibility:** Validate whether a given afbrydelse event constitutes a genuine
 interruption/suspension of the forældelsesfrist, and compute the net adjustment in
 days to apply to `ForaeldelseFristBeregning`.
@@ -303,7 +306,7 @@ atomically for the entire kompleks.
 
 **Rules:**
 - FR-4.1: `kompleksAfbrudt = exists fordring in fordringIds such that erAfbrudt[fordring] = true` — Ankerpunkt: GIL § 18a, stk. 2
-- FR-4.2: `alleForaeldet = for all fordring in fordringIds: erForaeldet[fordring] = true` (atomicity) — Ankerpunkt: GIL § 18a, stk. 2
+- FR-4.1b (atomicity): `alleForaeldet = for all fordring in fordringIds: erForaeldet[fordring] = true` — Ankerpunkt: GIL § 18a, stk. 2
 
 **Spike validation target:** Verify that Catala's list/aggregate semantics can
 express the existential and universal quantification required by stk. 2 without
@@ -330,6 +333,36 @@ specific conditions delay the effective knowledge of the debt's existence.
 to parameterise `tillaegsfristDage` without ambiguity. If it is not (i.e. the
 number of days is underspecified), this must be flagged as a No-Go trigger.
 
+#### SCOPE-6: ForeløbigAfbrydelse — GIL § 18a, stk. 7
+
+**Responsibility:** Model the foreløbig (provisional) afbrydelse that arises when
+a fordringskompleks with no existing members carrying an active frist is received
+into inddrivelse. GIL § 18a stk. 7 mandates that in this situation a new,
+provisional 3-year frist begins from modtagelsesdato, even though no prior
+afbrydelse event has occurred. This scope is distinct from `AfbrydelseValidering`
+(SCOPE-3), which classifies ongoing interruption events; SCOPE-6 handles the
+receipt-triggered provisional frist for an initially empty kompleks.
+
+| Context field | Direction | Type | Description |
+|---------------|-----------|------|-------------|
+| `erTomtKompleks` | input | `boolean` | `true` if the fordringskompleks has no existing members with an active frist at time of modtagelse |
+| `modtagelsesDato` | input | `date` | Date the (empty) fordringskompleks was received into inddrivelse |
+| `foreløbigAfbrydelse` | output | `boolean` | `true` if the foreløbige afbrydelse rule applies (stk. 7 trigger met) |
+| `foreløbigFristUdloebsDato` | output | `date` | Provisional frist expiry date (`modtagelsesDato + 3 years`) when `foreløbigAfbrydelse = true`; undefined otherwise |
+
+**Rules:**
+- FR-4.2 (foreløbig afbrydelse — tomt kompleks): when `erTomtKompleks = true`:
+  `foreløbigAfbrydelse = true`; `foreløbigFristUdloebsDato = modtagelsesDato + 3 years`
+  — Ankerpunkt: GIL § 18a, stk. 7
+- FR-4.2 (base — kompleks med medlemmer): when `erTomtKompleks = false`:
+  `foreløbigAfbrydelse = false` — stk. 7 trigger does not apply
+
+**Spike validation target:** Verify that the "tomt kompleks" trigger condition is
+unambiguous in G.A.2.4 / GIL § 18a stk. 7 text, and that Catala's date arithmetic
+handles the 3-year addition from modtagelsesdato cleanly. If the legal text is
+underspecified about what constitutes "tomt" (e.g. kompleks with inactive or
+historically forældet members), flag as a No-Go trigger.
+
 ### 3.3 Scope Composition Diagram
 
 ```
@@ -353,7 +386,7 @@ number of days is underspecified), this must be flagged as a No-Go trigger.
                               │                  │ udloebsDato
                               │                  ▼
   AfbrydelseValidering ──────►│  ┌───────────────────────────────┐
-  (per fordring in kompleks)  │  │  TillaegsfristBeregning       │  SCOPE-5
+  (per fordring i kompleks)   │  │  TillaegsfristBeregning       │  SCOPE-5
                               │  │  grundUdloebsDato +           │  G.A.2.4.4.2
                               │  │  tillæg (conditional)         │
                               │  │  → effektivUdloebsDato        │
@@ -364,6 +397,12 @@ number of days is underspecified), this must be flagged as a No-Go trigger.
   fordringIds, erAfbrudt
   → kompleksAfbrudt, alleForaeldet
   GIL § 18a, stk. 2
+
+  ForeløbigAfbrydelse                            SCOPE-6
+  erTomtKompleks, modtagelsesDato                GIL § 18a, stk. 7
+  → foreløbigAfbrydelse
+  → foreløbigFristUdloebsDato
+  [Parallel path — triggered at receipt of empty kompleks]
 ```
 
 ### 3.4 Critical Design Decision: LOENINDEHOLDELSE_VARSEL in AfbrydelseType
@@ -398,8 +437,9 @@ authoritative interpretation under Danish administrative law.
 | Statutory basis | G.A. section | Catala scope | Rule ID |
 |-----------------|-------------|--------------|---------|
 | GIL § 18a, stk. 1 (udskydelse by kildesystem) | G.A.2.4.1 | `UdskydelsesBeregning` | FR-1.1, FR-1.2 |
-| GIL § 18a, stk. 2 (fordringskompleks propagation) | G.A.2.4.2 | `Fordringskompleks` | FR-4.1, FR-4.2 |
+| GIL § 18a, stk. 2 (fordringskompleks propagation) | G.A.2.4.2 | `Fordringskompleks` | FR-4.1, FR-4.1b |
 | GIL § 18a, stk. 4 (frist expiry from derived start) | G.A.2.4.4 | `ForaeldelseFristBeregning` | FR-2.1, FR-2.2 |
+| GIL § 18a, stk. 7 (foreløbig afbrydelse — tomt fordringskompleks) | G.A.2.4.2 | `ForeløbigAfbrydelse` | FR-4.2 |
 | Forældelsesl. § 5, stk. 1 (3-year ordinary period) | G.A.2.4.4.1 | `ForaeldelseFristBeregning` | FR-2.1 |
 | Forældelsesl. § 5, stk. 2 (special period) | G.A.2.4.4.1 | `ForaeldelseFristBeregning` | FR-2.2 |
 | Forældelsesl. § 14 (berostillelse / suspension) | G.A.2.4.3 | `AfbrydelseValidering` | FR-3.1 |
@@ -415,7 +455,8 @@ authoritative interpretation under Danish administrative law.
 | FR-1 | Effective forældelsesfrist start date conditioned on kildesystem | ART-070-1 | `UdskydelsesBeregning` FR-1.1, FR-1.2 |
 | FR-2 | Forældelsesfrist expiry computed from derived start date | ART-070-1 | `ForaeldelseFristBeregning` FR-2.1–2.3 |
 | FR-3 | Afbrydelse events validated; varsel explicitly excluded (SKM2015.718.ØLR) | ART-070-1 | `AfbrydelseValidering` FR-3.1–3.4 |
-| FR-4 | Fordringskompleks propagation and atomicity | ART-070-1 | `Fordringskompleks` FR-4.1–4.2 |
+| FR-4 | Fordringskompleks propagation and atomicity | ART-070-1 | `Fordringskompleks` FR-4.1, FR-4.1b |
+| FR-4.2 | Foreløbig afbrydelse — new 3-year frist when tomt fordringskompleks received into inddrivelse (GIL § 18a stk. 7) | ART-070-1 | `ForeløbigAfbrydelse` FR-4.2 |
 | FR-5 | Tillægsfrist conditional extension | ART-070-1 | `TillaegsfristBeregning` FR-5.1–5.2 |
 | FR-T | ≥8 test cases covering all FR IDs | ART-070-2 | All scopes |
 | FR-R | Go/No-Go verdict with coverage table | ART-070-3 | Report document |
@@ -436,6 +477,7 @@ The test suite must cover the following boundary conditions as a minimum:
 | T-08 | UDLAEG — afbryderForaeldelse = true; nulstillerFrist = true | `AfbrydelseValidering` | FR-3.4 |
 | T-09 | Fordringskompleks — one AFGOERELSE propagates kompleksAfbrudt = true to all | `Fordringskompleks` | FR-4.1 |
 | T-10 | TillaegsfristBeregning — harTillaegsbetingelse = true extends effektivUdloebsDato | `TillaegsfristBeregning` | FR-5.2 |
+| T-15 | ForeløbigAfbrydelse — tomt fordringskompleks received into inddrivelse → foreløbigAfbrydelse = true; foreløbigFristUdloebsDato = modtagelsesDato + 3 years (GIL § 18a stk. 7) | `ForeløbigAfbrydelse` | FR-4.2 |
 
 ---
 
@@ -502,7 +544,7 @@ boundary and confirm the oracle's relevance.
 | NFR-1 | **No production deployment** — spike artefacts are files only | All three deliverables are Markdown or `.catala_da` files. No JAR, no Docker image, no Kubernetes manifest. |
 | NFR-2 | **G.A. version pinning** — all files cite snapshot v3.16 (2026-03-28) | File headers in ART-070-1 and ART-070-2 must cite the G.A. snapshot version, consistent with the P069 convention. |
 | NFR-3 | **Article anchoring** — every Catala rule block must cite the specific GIL / Forældelsesl. article it encodes | Rule comments in ART-070-1 must include an `# Ankerpunkt:` citation, consistent with the P069 pattern. |
-| NFR-4 | **Test coverage** — ≥8 test cases, all 5 scopes exercised | ART-070-2 minimum test inventory is specified in §4.3. T-07 (varsel negative rule) is mandatory. |
+| NFR-4 | **Test coverage** — ≥8 test cases, all 6 scopes exercised | ART-070-2 minimum test inventory is specified in §4.3. T-07 (varsel negative rule) and T-15 (foreløbig afbrydelse — stk. 7) are mandatory. |
 | NFR-5 | **Go/No-Go binary verdict** — SPIKE-REPORT-070.md must emit exactly one of Go or No-Go | ART-070-3 must contain an unambiguous verdict per ADR 0032 §"Go/No-Go gate" criteria. |
 | NFR-6 | **3-day time box** — spike must complete within the forældelse-extended time allowance | The three deliverables are the completion criterion. No further work is in scope. |
 
@@ -551,63 +593,57 @@ extension pattern. It does **not** add any new runtime container to the `openDeb
 software system.
 
 ```dsl
-# P070: Catala Compliance Spike — Forældelse G.A.2.4
-# Spike artifacts only — no new runtime containers
-# Merge target: architecture/workspace.dsl (model block extension)
-# ADR basis: ADR-0032 §"Repository conventions"
-
 workspace extends architecture/workspace.dsl {
 
-    model {
+  model {
 
-        # P070 spike artifact — documentation element, not a deployable container
-        catalaForaeldelse = element "Catala Forældelse Spike (P070)" \
-            "Formal Catala encoding of G.A.2.4 forældelses-regler (GIL § 18a stk. 1–4, Forældelsesl. § 5, §§ 14–18, G.A.2.4.4.2, SKM2015.718.ØLR). Research artifact — no production deployment." \
-            "Catala DSL (.catala_da)" {
-            tags "Spike" "CatalaCompliance" "ResearchArtifact"
-            description "Five scopes: UdskydelsesBeregning (GIL § 18a stk. 1), ForaeldelseFristBeregning (GIL § 18a stk. 4 + Forældelsesl. § 5), AfbrydelseValidering (Forældelsesl. §§ 14–18 + SKM2015.718.ØLR), Fordringskompleks (GIL § 18a stk. 2), TillaegsfristBeregning (G.A.2.4.4.2). Oracle artifact — gates P059 implementation petition."
-        }
+    # P070: Catala Compliance Spike — Forældelse G.A.2.4
+    # Three research artifact file outputs — no runtime deployment
 
-        catalaForaeldelseTests = element "Catala Forældelse Tests (P070)" \
-            "Catala test suite for ga_2_4_foraeldelse.catala_da. Minimum 8 test cases covering all 5 scopes and boundary conditions, including mandatory T-07 (LOENINDEHOLDELSE_VARSEL → afbryderForaeldelse = false per SKM2015.718.ØLR)." \
-            "Catala DSL / Test module" {
-            tags "Spike" "CatalaCompliance" "ResearchArtifact" "TestSuite"
-        }
-
-        catalaForaeldelseReport = element "Spike Report P070" \
-            "SPIKE-REPORT-070.md — coverage table (P059 Gherkin scenarios vs Catala scopes), gap analysis, discrepancy list, and explicit Go/No-Go verdict. Gates P059 implementation sprint." \
-            "Markdown" {
-            tags "Spike" "CatalaCompliance" "ResearchArtifact" "SpikeReport"
-        }
-
-        # Relationships: spike artifacts compose into the oracle pipeline
-        catalaForaeldelseTests -> catalaForaeldelse "Imports and asserts rules from" "Catala module import"
-        catalaForaeldelseReport -> catalaForaeldelse "References scope definitions from" "Catala analysis"
-        catalaForaeldelseReport -> catalaForaeldelseTests "References test results from" "Catala test output"
-
-        # Relationship to existing OpenDebt containers (oracle role — specification time only)
-        catalaForaeldelse -> debtService "Acts as specification-time oracle for forældelsesfrist rules (P059 gates)" "Specification oracle"
-        catalaForaeldelse -> paymentService "Validates erForaeldet check-before-apply rule" "Specification oracle"
-        catalaForaeldelse -> caseworkerPortal "Validates forældelsesstatus display logic" "Specification oracle"
-
+    catalaForaeldelse = softwareSystem "Catala Forældelse Spike (P070)" "Catala DSL" {
+      tags "Spike" "CatalaCompliance" "ResearchArtifact" "internal"
+      description "Formal Catala encoding of G.A.2.4 forældelses-regler. Six scopes: UdskydelsesBeregning (GIL §18a stk.1), ForaeldelseFristBeregning (GIL §18a stk.4 + FL §5), AfbrydelseValidering (GIL §18 stk.4 + §18a stk.8 + FL §18 stk.1 + SKM2015.718.ØLR), Fordringskompleks (GIL §18a stk.2), TillaegsfristBeregning (G.A.2.4.4.2), ForeløbigAfbrydelse (GIL §18a stk.7). Oracle artifact — no production deployment."
     }
 
-    views {
-
-        filtered "CatalaSpikes" {
-            include tag==CatalaCompliance
-            title "Catala Compliance Spike Artifacts (All Tiers)"
-            description "All Catala Tier A compliance spike artifacts: P054 (G.A.1.4.3/1.4.4), P069 (G.A.2.3.2.1), P070 (G.A.2.4 Forældelse), P071 (G.A.3.1.1), P072 (G.A.3.1.2)"
-        }
-
-        filtered "CatalaP070" {
-            include tag==Spike and catalaForaeldelse
-            include tag==Spike and catalaForaeldelseTests
-            include tag==Spike and catalaForaeldelseReport
-            title "P070 Catala Forældelse Spike — Artifact View"
-        }
-
+    catalaForaeldelseTests = softwareSystem "Catala Forældelse Tests (P070)" "Catala DSL" {
+      tags "Spike" "CatalaCompliance" "ResearchArtifact" "internal"
+      description "Test suite for ga_2_4_foraeldelse.catala_da. 15 test cases covering FR-1 through FR-4 boundary cases, SKM2015.718.ØLR negative case, fordringskompleks propagation, and both max() formula branches."
     }
+
+    catalaForaeldelseReport = softwareSystem "Catala Forældelse Spike Report (P070)" "Markdown" {
+      tags "Spike" "CatalaCompliance" "ResearchArtifact" "internal"
+      description "SPIKE-REPORT-070.md. Coverage table for all 29 P059 Gherkin scenarios. Gaps, discrepancies (5 hotspots), effort estimate, and Go/No-Go verdict."
+    }
+
+    # Oracle relationships to existing OpenDebt containers (specification-time only)
+    catalaForaeldelse -> debtService "Provides prescription calculation oracle for" "Specification-time"
+    catalaForaeldelse -> paymentService "Provides prescription-aware payment oracle for" "Specification-time"
+    catalaForaeldelse -> caseworkerPortal "Provides caseworker prescription rules oracle for" "Specification-time"
+
+    # Intra-spike artifact relationships
+    catalaForaeldelseTests -> catalaForaeldelse "Tests and validates" "Catala test-doc"
+    catalaForaeldelseReport -> catalaForaeldelse "Analyses and documents" "Go/No-Go verdict"
+    catalaForaeldelseReport -> catalaForaeldelseTests "References test results from" "Coverage evidence"
+
+  }
+
+  views {
+
+    filtered "SystemContext" include tag == "CatalaCompliance" "CatalaSpikes" "Catala Compliance Spike Artifacts (all petitions)"
+
+    filtered "SystemContext" include tag == "Spike" "CatalaP070" "Catala P070 Forældelse Spike"
+
+    styles {
+      element "Spike" {
+        background #c0e0ff
+        shape Component
+      }
+      element "ResearchArtifact" {
+        border dashed
+      }
+    }
+
+  }
 
 }
 ```
@@ -624,7 +660,7 @@ in `ga_2_3_2_1_daekningsraekkefoeigen.catala_da`:
 # G.A.2.4 — Forældelse — GIL § 18a
 (* Catala kildedialekt: catala_da
    G.A. snapshot v3.16, dated 2026-03-28
-   Juridisk grundlag: GIL § 18a stk. 1–4, Forældelsesl. § 5,
+   Juridisk grundlag: GIL § 18a stk. 1–4, GIL § 18a stk. 7, Forældelsesl. § 5,
                       Forældelsesl. §§ 14–18, G.A.2.4.4.2,
                       SKM2015.718.ØLR (varsel ≠ afbrydelse)
    Formål: Formalisering af forældelsesfrist-reglerne i G.A.2.4,

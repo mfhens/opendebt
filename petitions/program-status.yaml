@@ -1428,26 +1428,31 @@ program:
 
     petition070:
       title: Catala Compliance Spike — Forældelse G.A.2.4 (companion to P059)
-      status: not_started
+      status: implemented
       phase: phase-18
       depends_on:
         - petition059
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-03-30
       notes: >
-        Research spike encoding the complete G.A.2.4 forældelses-ruleset in Catala:
-        3-year base frist, system-specific udskydelse start dates (GIL § 18a, stk. 1:
-        20-11-2021 for PSRM, 20-11-2027 for DMI), three afbrydelse types (berostillelse,
-        lønindeholdelse afgørelse, udlæg), fordringskompleks propagation, and 2-year
-        tillægsfrister. This is the HIGHEST PRIORITY Catala spike in the roadmap:
-        the temporal date arithmetic (udskydelse to specific fixed dates) and afbrydelse
-        interaction rules almost certainly contain PSRM discrepancies comparable to
-        G.A.1.4.3/1.4.4. The lønindeholdelse-in-bero-for-1-year rule and the
-        fordringskompleks propagation are the most likely discrepancy hotspots.
-        Time box: 3 working days (higher complexity than P054).
+        Spike complete — verdict: GO. Five Catala scopes encoding G.A.2.4.1–G.A.2.4.4.2
+        delivered in catala/ga_2_4_foraeldelse.catala_da (16 rules): 3-year base frist,
+        system-specific udskydelse start dates (GIL § 18a, stk. 1: 20-11-2021 for PSRM,
+        20-11-2027 for DMI), three afbrydelse types (berostillelse, lønindeholdelse
+        afgørelse, udlæg), fordringskompleks atomicity via scope-contract, and 2-year
+        tillægsfrister. Test suite: catala/tests/ga_foraeldelse_tests.catala_da —
+        16 cases (T-01–T-16). Spike report: catala/SPIKE-REPORT-070.md (Go/No-Go
+        verdict: GO). Spec and solution architecture:
+        design/specs-p070-catala-spike-foraeldelse.md and
+        design/solution-architecture-p070-catala-spike-foraeldelse.md.
+        Key findings: SKM2015.718.ØLR varsel/afgørelse distinction formally encoded;
+        fordringskompleks atomicity modelled via scope-contract; 2 P059 coverage gaps
+        surfaced (GIL §18a stk.7 edge case, PSRM boundary tests). All Go-criteria met;
+        no No-Go triggers activated.
       next_step: >
-        Draft petition document after P059 petition is approved. This is the highest-priority
-        Catala spike — commission as soon as P059 petition documents are in place.
-        Follow P054 spike pattern with Go/No-Go recommendation.
+        P059 sprint unblocked; Catala oracle layer ready for integration. Wire
+        catala/ga_2_4_foraeldelse.catala_da as reference oracle for P059 acceptance
+        tests. Resolve the two surfaced P059 coverage gaps (GIL §18a stk.7,
+        PSRM boundary tests) during P059 implementation sprint.
 
     petition071:
       title: Catala Compliance Spike — Afdragsordninger GIL § 11 (companion to P061)
@@ -1497,7 +1502,7 @@ program:
   #               petition035, petition036, petition037, petition038, petition039,
   #               petition040, petition041, petition043, petition044, petition045, petition046,
   #               petition047, petition048, petition050, petition053, petition054,
-  #               petition057
+  #               petition057, petition070
   # superseded:   petition034 (→ petition053)
   # in_progress:  petition002
   # not_started:  petition026, petition027, petition028, petition042, petition049,
@@ -1505,10 +1510,10 @@ program:
   #               petition055, petition056, petition058, petition059, petition060,
   #               petition061, petition062, petition063, petition064, petition065,
   #               petition066, petition067, petition068,
-  #               petition069, petition070, petition071, petition072
+  #               petition069, petition071, petition072
   #
   # Total: 72 petitions
-  #   6 validated, 42 implemented, 1 superseded, 1 in_progress, 22 not_started
+  #   6 validated, 43 implemented, 1 superseded, 1 in_progress, 21 not_started
   #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
