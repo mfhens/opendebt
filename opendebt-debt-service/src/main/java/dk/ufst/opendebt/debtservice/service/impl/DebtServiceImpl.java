@@ -434,6 +434,6 @@ public class DebtServiceImpl implements DebtService {
   /** GDPR: scrub CPR numbers (DDMMYY[-]XXXX) from the Beskrivelse field before persistence. */
   private String scrubCprFromDescription(String description) {
     if (description == null) return null;
-    return description.replaceAll("\\d{6}-?\\d{4}", "[FJERNET]");
+    return description.replaceAll("\\b\\d{6}-?\\d{4}\\b", "[FJERNET]");
   }
 }

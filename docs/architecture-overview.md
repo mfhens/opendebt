@@ -613,7 +613,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | WriteDownReasonCode | Done | NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET (gæld.bekendtg. § 7 stk. 2) |
 | **Foundation** | | |
 | DebtController | Done | Full CRUD + readiness + lifecycle + submit |
-| DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown |
+| DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown; `scrubCprFromDescription()` strips CPR patterns (`\d{6}-?\d{4}`) from Beskrivelse on claim creation (P002 GDPR defense) |
 | ReadinessValidationService | Done | Calls rules-engine for evaluation |
 | ClaimValidationService / Impl | Done | Drools-based claim validation |
 | ClaimSubmissionService / Impl | Done | End-to-end claim submission flow |
@@ -1255,7 +1255,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | ObjectionControllerTest | debt-service | 4 | REST endpoint tests for objection operations |
 | CollectionMeasureControllerTest | debt-service | 5 | REST endpoint tests for collection measure operations |
 | CitizenDebtControllerTest | debt-service | 6 | REST endpoint tests for citizen debt summary |
-| RunCucumberTest (petition002-007,024,043) | debt-service | 59 | BDD scenarios across 8 petitions |
+| RunCucumberTest (petition002-007,024,043) | debt-service | 62 | BDD scenarios across 8 petitions |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
 | RunCucumberTest (petition057) | payment-service | 103 | BDD: GIL § 4 8-step payment application order, priority sort, FIFO, simulate endpoint |
 | CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |

@@ -177,6 +177,7 @@ CREATE TABLE organizations (
 - Batch API for bulk lookups
 - Short-lived in-memory caching with strict TTL
 - Display services aggregate data at presentation layer
+- **CPR scrubbing in debt-service** — `DebtServiceImpl.scrubCprFromDescription()` strips CPR patterns (`\d{6}-?\d{4}`) from the `Beskrivelse` field before persistence, as a defense-in-depth safeguard against accidental PII inclusion by creditors (P002)
 
 ## GDPR Operations
 
