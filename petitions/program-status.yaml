@@ -2137,9 +2137,10 @@ program:
 
     - id: TB-040
       title: "Implement GET /internal/debtors/{debtorId}/fordringer/active in debt-service (DEP-1)"
-      status: open
+      status: done
       priority: high
       created: 2026-03-29
+      completed: 2026-03-30
       petitions: [petition057]
       description: |
         P057 (dækningsrækkefølge) requires the active fordringer list for a debtor at payment
@@ -2149,3 +2150,13 @@ program:
         This interim pattern must be replaced once TB-040 is delivered. Blocks live
         integration testing of the full P057 payment application flow end-to-end.
         Unblocks: P057 integration tests, P058, P059, P060 payment-chain petitions.
+      implementation_notes: |
+        Implemented in feat(tb-040) commit. Deliverables:
+        - V3__active_fordringer_psrm_fields.sql: Flyway migration adds 7 PSRM columns to debts table
+          (sekvens_nummer, gil_paragraf, 5 interest-breakdown amounts).
+        - ActiveFordringResponseDto: response DTO with all P057 fields.
+        - ActiveFordringService / ActiveFordringServiceImpl: service layer with batch N+1-safe
+          wage-garnishment lookup.
+        - InternalDebtorController: GET /internal/debtors/{debtorId}/fordringer/active,
+          secured with hasRole('SERVICE'), hidden from public OpenAPI spec.
+        - 376 tests pass, Spotless clean.

@@ -138,6 +138,42 @@ public class DebtEntity {
   @Column(name = "p_number", length = 20)
   private String pNumber;
 
+  // --- P057 / TB-040: PSRM dækningsrækkefølge fields ---
+
+  /**
+   * Application order within a debtor's portfolio for dækningsrækkefølge (P057). Null means not yet
+   * assigned; ordering falls back to receivedAt for FIFO tie-breaking.
+   */
+  @Column(name = "sekvens_nummer")
+  private Integer sekvensNummer;
+
+  /** GIL legal paragraph, e.g. {@code "GIL § 4, stk. 1"}. */
+  @Column(name = "gil_paragraf", length = 100)
+  private String gilParagraf;
+
+  /** Opkrævningsrenter component (STK2 rate) stored at claim receipt time. */
+  @Column(name = "beloeb_opkraevningsrenter", precision = 15, scale = 2)
+  private BigDecimal beloebOpkraevningsrenter;
+
+  /**
+   * Inddrivelsesrenter – fordringshaver component. Previously referred to as _STK3; renamed per GIL
+   * terminology alignment (TB-040).
+   */
+  @Column(name = "beloeb_inddrivelsesrenter_fordringshaver", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterFordringshaver;
+
+  /** Inddrivelsesrenter accrued before any reversal / tilbageføring. */
+  @Column(name = "beloeb_inddrivelsesrenter_foer_tilbagefoersel", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterFoerTilbagefoersel;
+
+  /** Inddrivelsesrenter – stk. 1 component. */
+  @Column(name = "beloeb_inddrivelsesrenter_stk1", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterStk1;
+
+  /** Øvrige renter from PSRM legacy system (carried over on migration). */
+  @Column(name = "beloeb_oevrige_renter_psrm", precision = 15, scale = 2)
+  private BigDecimal beloebOevrigeRenterPsrm;
+
   /**
    * When true, this fordring is temporarily ikkeinddrivelsesparat (e.g., pending stamdata
    * correction) and must be excluded from interest accrual (P043 / G.A.2.4.3).

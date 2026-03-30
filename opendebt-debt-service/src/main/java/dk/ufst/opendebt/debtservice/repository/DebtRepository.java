@@ -96,6 +96,20 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
       @Param("state") ClaimLifecycleState state,
       @Param("excludeId") UUID excludeId);
 
+  /**
+   * Returns all active fordringer for the given debtor: positive remaining balance and not in a
+   * terminal status (PAID, WRITTEN_OFF, CANCELLED). Results are ordered by sekvensNummer ASC (NULLS
+   * LAST), then by receivedAt ASC as FIFO tie-breaker, consistent with P057 § dækningsrækkefølge.
+   */
+  @Query(
+      "SELECT d FROM DebtEntity d "
+          + "WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.sekvensNummer ASC NULLS LAST, d.receivedAt ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByDebtorPersonId(
+      @Param("debtorPersonId") UUID debtorPersonId);
+
   @Query(
       "SELECT d FROM DebtEntity d WHERE d.limitationDate IS NOT NULL "
           + "AND d.limitationDate <= :warningDate "
