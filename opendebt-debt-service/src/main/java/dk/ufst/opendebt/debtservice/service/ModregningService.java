@@ -93,8 +93,22 @@ public class ModregningService implements OffsettingService {
       Object sourceEvent,
       boolean restrictedPayment) {
 
-    // Derive idempotency key
-    String refId = (sourceEvent instanceof String s) ? s : UUID.randomUUID().toString();
+    // Derive idempotency key and event metadata
+    String refId;
+    LocalDate receiptDate;
+    LocalDate decisionDate;
+    Integer indkomstAar = null;
+
+    if (sourceEvent instanceof PublicDisbursementEvent pde) {
+      refId = pde.nemkontoReferenceId();
+      receiptDate = pde.receiptDate();
+      decisionDate = pde.decisionDate();
+      indkomstAar = pde.indkomstAar();
+    } else {
+      refId = (sourceEvent instanceof String s) ? s : UUID.randomUUID().toString();
+      receiptDate = LocalDate.now();
+      decisionDate = LocalDate.now();
+    }
 
     // Idempotency guard
     Optional<ModregningEvent> existing = modregningEventRepository.findByNemkontoReferenceId(refId);
@@ -103,9 +117,9 @@ public class ModregningService implements OffsettingService {
     }
 
     // RenteGodtgørelse decision
-    LocalDate today = LocalDate.now();
     RenteGodtgoerelseDecision rg =
-        renteGodtgoerelseService.computeDecision(today, today, paymentType, null);
+        renteGodtgoerelseService.computeDecision(
+            receiptDate, decisionDate, paymentType, indkomstAar);
 
     // 3-tier allocation
     TierAllocationResult allocation =
@@ -116,15 +130,15 @@ public class ModregningService implements OffsettingService {
         ModregningEvent.builder()
             .nemkontoReferenceId(refId)
             .debtorPersonId(debtorPersonId)
-            .receiptDate(today)
-            .decisionDate(today)
+            .receiptDate(receiptDate)
+            .decisionDate(decisionDate)
             .paymentType(paymentType)
             .disbursementAmount(availableAmount)
             .tier1Amount(sumTier(allocation.tier1Allocations()))
             .tier2Amount(sumTier(allocation.tier2Allocations()))
             .tier3Amount(sumTier(allocation.tier3Allocations()))
             .residualPayoutAmount(allocation.residualPayoutAmount())
-            .klageFristDato(today.plusYears(1))
+            .klageFristDato(decisionDate.plusYears(1))
             .renteGodtgoerelseStartDate(rg.startDate())
             .renteGodtgoerelseNonTaxable(true)
             .build();

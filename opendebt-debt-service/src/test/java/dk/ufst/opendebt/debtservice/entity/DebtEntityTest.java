@@ -123,6 +123,7 @@ class DebtEntityTest {
             entity.getBeloebOevrigeRenterPsrm(),
             entity.isIkkeinddrivelsesparat(),
             entity.getLifecycleState(),
+            entity.getModregningTier(),
             entity.getReceivedAt(),
             entity.getStatus(),
             entity.getReadinessStatus(),

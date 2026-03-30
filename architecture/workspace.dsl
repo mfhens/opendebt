@@ -49,6 +49,12 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
             tags "external"
         }
 
+        // GOV-009: Nemkonto — Danish public disbursement clearing system (NETS). Routed via
+        // Integration Gateway per ARCH-003 (trust-boundary-enforcement). GIL § 16 stk. 1.
+        nemkonto = softwareSystem "Nemkonto" "Danish public disbursement clearing system operated by NETS. Intercepts public disbursements (e.g. overskydende skat, offentlige ydelser) eligible for offsetting against outstanding debts. Governed by GIL § 16 stk. 1." "external" {
+            tags "external"
+        }
+
         // ---------------------------------------------------------------
         // OpenDebt Software System
         // ---------------------------------------------------------------
@@ -69,7 +75,32 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
 
             creditorService = container "Creditor Service" "Creditor and master data management. Maintains creditor profiles, agreements, and claim submission rules." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
-            debtService = container "Debt Service" "Fordring (debt claim) management. Handles claim registration, prioritisation, interest calculation, and offsetting (modregning)." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
+            debtService = container "Debt Service" "Fordring (debt claim) management. Handles claim registration, prioritisation, interest calculation, and offsetting (modregning)." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
+
+                // ── P058: Modregning og Korrektionspulje — component declarations ────────
+                publicDisbursementEventConsumer = component "PublicDisbursementEventConsumer" "Receives PublicDisbursementEvent from Nemkonto. Validates fields and idempotency. Delegates to ModregningService.initiateModregning(). Dead-letters validation failures." "Java 21, Spring @Component, Event Consumer" "Component"
+
+                offsettingReversalEventConsumer = component "OffsettingReversalEventConsumer" "Receives OffsettingReversalEvent from P053. Guards against duplicate KorrektionspuljeEntry. Delegates to KorrektionspuljeService.processReversal()." "Java 21, Spring @Component, Event Consumer" "Component"
+
+                modregningService = component "ModregningService" "Orchestrates the complete three-tier modregning workflow (FR-1). Implements OffsettingService (replaces P007 stub). Handles idempotency, ledger posting via LedgerServiceClient, Digital Post outbox write, and tier-2 waiver re-run (FR-2)." "Java 21, Spring @Service, @Transactional" "Component"
+
+                modregningsRaekkefoeigenEngine = component "ModregningsRaekkefoeigenEngine" "Executes the GIL § 7, stk. 1 three-tier allocation algorithm. Delegates tier-2 partial allocation to DaekningsRaekkefoeigenServiceClient (P057) at most once per invocation. Queries fordringer via FordringQueryPort." "Java 21, Spring @Service" "Component"
+
+                korrektionspuljeService = component "KorrektionspuljeService" "Processes OffsettingReversalEvent: Step 1 same-fordring residual, Step 2 gendaenkning via P057, Step 3 KorrektionspuljeEntry creation. Settles pool entries by re-invoking ModregningService." "Java 21, Spring @Service, @Transactional" "Component"
+
+                renteGodtgoerelseService = component "RenteGodtgoerelseService" "Computes rentegodtgoerelse start date (5-banking-day exception, kildeskattelov § 62/62A exception) and effective rate from rentegodt_rate_entry table (GIL § 8b)." "Java 21, Spring @Service" "Component"
+
+                korrektionspuljeSettlementJob = component "KorrektionspuljeSettlementJob" "Scheduled monthly (3 AM, 1st of month) and annual (4 AM, 2 Jan) jobs. Queries unsettled PSRM-target pool entries and invokes KorrektionspuljeService.settleEntry() per entry. Each settlement is its own transaction." "Java 21, Spring @Scheduled" "Component"
+
+                daekningsRaekkefoeigenServiceClient = component "DaekningsRaekkefoeigenServiceClient" "HTTP client for P057 DaekningsRaekkefoeigenService in opendebt-payment-service. Invoked at most once per tier ordering run for tier-2 partial allocation and gendaenkning." "Java 21, Spring RestClient, HTTP/REST" "Component"
+
+                modregningController = component "ModregningController" "REST controller. Exposes POST tier2-waiver (scope modregning:waiver, FR-2) and GET modregning-events read model (scope modregning:read, FR-5). Enforces OAuth2 scopes via @PreAuthorize." "Java 21, Spring @RestController" "Component"
+
+                fordringQueryPort = component "FordringQueryPort" "Internal adapter for TB-040 active-fordringer queries within opendebt-debt-service (same-service, no inter-service HTTP). Exposes typed Java API getActiveFordringer(debtorPersonId, tier, payingAuthorityOrgId) backed by JPA repository. Consumed exclusively by ModregningsRaekkefoeigenEngine." "Java 21, Spring @Component, JPA" "Component"
+
+                ledgerServiceClient = component "LedgerServiceClient" "HTTP client for payment-service bookkeeping API (ADR-0018). Posts double-entry debit/credit ledger entries for each tier allocation. Each entry references ModregningEvent.id and the GIL § 7 tier applied. Called from ModregningService within the @Transactional boundary; failure propagates and triggers rollback." "Java 21, Spring RestClient, HTTP/REST" "Component"
+
+            }
 
             letterService = container "Letter Service" "Document generation and delivery. Produces legally required notices, decisions, and correspondence." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
@@ -124,6 +155,21 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         caseService -> personRegistry          "Resolves person data by UUID"               "HTTPS/REST"
 
         debtService            -> personRegistry  "Resolves person data by UUID"           "HTTPS/REST"
+
+        // ── P058: Modregning og Korrektionspulje — container-level relationships ──────────
+        // GOV-001: P057 delegation (DaekningsRaekkefoeigenServiceClient → payment-service)
+        debtService -> paymentService "Delegates tier-2 partial allocation to DaekningsRaekkefoeigenService (P057, ADR-0007)" "HTTPS/REST"
+        // GOV-002: ADR-0018 ledger posting (LedgerServiceClient → payment-service)
+        debtService -> paymentService "Posts double-entry ledger entries via LedgerServiceClient (ADR-0018)" "HTTPS/REST"
+        // GOV-003: ADR-0029 tamper-proof audit log (post-commit gRPC append)
+        debtService -> immudb "Appends ModregningEvent and SET_OFF CollectionMeasure records (post-commit, ADR-0029)" "gRPC"
+        // GOV-004: W-004 fix — use Async/Outbox label; PostgreSQL/JPA would violate ARCH-001/ARCH-009
+        debtService -> letterService "Sends notification outbox events to (Transactional Outbox, ADR-0019)" "Async/Outbox"
+        // GOV-007 / ARCH-011: All HTTP endpoints must validate tokens via Keycloak
+        debtService -> keycloak "Validates tokens via" "OAuth2/OIDC"
+        // GOV-005: caseworkerPortal now calls modregning endpoints (FR-2, FR-5)
+        caseworkerPortal -> debtService "Submits modregning tier-2 waivers and reads modregning events via" "HTTPS/REST"
+
         paymentService         -> personRegistry  "Resolves person data by UUID"           "HTTPS/REST"
         letterService          -> personRegistry  "Resolves person data for addressing"    "HTTPS/REST"
         wageGarnishmentService -> personRegistry  "Resolves person data by UUID"           "HTTPS/REST"
@@ -138,6 +184,10 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         integrationGateway -> psrm       "Exchanges debt data"                 "SOAP/HTTPS"
         integrationGateway -> edifact    "Receives creditor batch submissions" "EDIFACT/SFTP"
         caseService        -> integrationGateway "Routes external integrations through" "HTTPS/REST"
+
+        // GOV-009: Nemkonto routed via Integration Gateway (ARCH-003 trust-boundary-enforcement)
+        integrationGateway -> nemkonto    "Receives disbursement interception events from" "HTTPS/Event"
+        integrationGateway -> debtService "Forwards PublicDisbursementEvent for modregning processing" "Async/Messaging"
 
         // ---------------------------------------------------------------
         // Relationships — Cross-cutting Infrastructure
@@ -157,6 +207,37 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         // PostgreSQL is infrastructure — each service owns its own DB instance.
         // Modelled at deployment-view level (see stub below), not at system-context level.
         // See ADR 0007, ADR 0011.
+
+        // ── P058: Modregning og Korrektionspulje — component-level relationships (SA-058 §11 Section B) ─
+        // Event consumers → services
+        publicDisbursementEventConsumer -> modregningService "Delegates PublicDisbursementEvent to" "Java method call"
+        offsettingReversalEventConsumer -> korrektionspuljeService "Delegates OffsettingReversalEvent to" "Java method call"
+
+        // ModregningService orchestration
+        modregningService -> modregningsRaekkefoeigenEngine "Delegates three-tier allocation to" "Java method call"
+        modregningService -> renteGodtgoerelseService "Computes rentegodtgoerelse start date via" "Java method call"
+        modregningService -> ledgerServiceClient "Posts SET_OFF ledger entries (ADR-0018)" "HTTPS/REST"
+        modregningService -> immudb "Appends ModregningEvent and SET_OFF CollectionMeasure records (post-commit, ADR-0029)" "gRPC"
+
+        // ModregningsRaekkefoeigenEngine — fordring query (same-service port, no self-ref) and P057 delegation
+        modregningsRaekkefoeigenEngine -> fordringQueryPort "Queries active fordringer by tier (TB-040)" "Java method call"
+        modregningsRaekkefoeigenEngine -> daekningsRaekkefoeigenServiceClient "Delegates tier-2 partial allocation (at most once per run)" "Java method call"
+
+        // HTTP clients → payment-service
+        daekningsRaekkefoeigenServiceClient -> paymentService "Calls DaekningsRaekkefoeigenService for GIL § 4 allocation (ADR-0007)" "HTTPS/REST"
+        ledgerServiceClient -> paymentService "Posts double-entry ledger entries" "HTTPS/REST"
+
+        // KorrektionspuljeService
+        korrektionspuljeService -> daekningsRaekkefoeigenServiceClient "Delegates gendaenkning Step 2 allocation to" "Java method call"
+        korrektionspuljeService -> modregningService "Re-enters initiateModregning for pool settlement" "Java method call"
+        korrektionspuljeService -> renteGodtgoerelseService "Computes accrued rentegodtgoerelse rate at settlement" "Java method call"
+
+        // KorrektionspuljeSettlementJob
+        korrektionspuljeSettlementJob -> korrektionspuljeService "Invokes settleEntry() per unsettled PSRM pool entry" "Java method call"
+
+        // ModregningController
+        modregningController -> modregningService "Invokes applyTier2Waiver() for FR-2 waiver" "Java method call"
+        caseworkerPortal -> modregningController "Reads modregning-events and submits tier-2 waiver via" "HTTPS/REST"
 
     }
 
@@ -185,6 +266,25 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         //         }
         //     }
         // }
+
+        // ── P058: Modregning og Korrektionspulje — component view (SA-058 §11 Section C) ──
+        component debtService "DebtService_P058_Components" "P058 component view — Modregning og Korrektionspulje. Shows all new components within opendebt-debt-service and their relationships to P057 (payment-service), immudb, and caseworkerPortal." {
+            include publicDisbursementEventConsumer
+            include offsettingReversalEventConsumer
+            include modregningService
+            include modregningsRaekkefoeigenEngine
+            include korrektionspuljeService
+            include renteGodtgoerelseService
+            include korrektionspuljeSettlementJob
+            include daekningsRaekkefoeigenServiceClient
+            include modregningController
+            include fordringQueryPort
+            include ledgerServiceClient
+            include paymentService
+            include immudb
+            include caseworkerPortal
+            autoLayout lr
+        }
 
         theme default
     }

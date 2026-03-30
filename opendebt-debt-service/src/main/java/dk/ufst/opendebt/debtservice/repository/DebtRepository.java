@@ -19,6 +19,15 @@ import dk.ufst.opendebt.debtservice.entity.DebtEntity.ReadinessStatus;
 @Repository
 public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
 
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.modregningTier = :tier "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.inceptionDate ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByTier(
+      @Param("debtorPersonId") UUID debtorPersonId, @Param("tier") int tier);
+
   @Query("SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId")
   List<DebtEntity> findByDebtorPersonId(UUID debtorPersonId);
 

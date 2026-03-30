@@ -186,6 +186,10 @@ public class DebtEntity {
   @Column(name = "lifecycle_state", length = 20)
   private ClaimLifecycleState lifecycleState;
 
+  /** Modregning tier (1=paying authority, 2=RIM inddrivelse, 3=other). Null if not assigned. */
+  @Column(name = "modregning_tier")
+  private Integer modregningTier;
+
   @Column(name = "received_at")
   private LocalDateTime receivedAt;
 

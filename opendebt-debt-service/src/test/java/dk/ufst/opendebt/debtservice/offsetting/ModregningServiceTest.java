@@ -568,8 +568,10 @@ class ModregningServiceTest {
     @Test
     @DisplayName("NFR-3: CLS audit log entry does not contain CPR/PII")
     void clsAuditEntry_doesNotContainCprOrPii() {
-      UUID debtorId = UUID.randomUUID();
-      UUID fordringId = UUID.randomUUID();
+      // Use fixed UUIDs guaranteed to have no 6-consecutive-digit run (avoids flaky CPR-pattern
+      // match)
+      UUID debtorId = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+      UUID fordringId = UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
       setupStandardMocks(fordringId, debtorId);
 
       underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
