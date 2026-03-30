@@ -2264,3 +2264,270 @@ program:
         explicit dependency needed in portal pom.xml files.
         Consider adding skat-design-system as a module to the parent POM so mvn install
         at the root builds and installs it automatically.
+
+    # -------------------------------------------------------------------------
+    # UFST Shared Library Extraction Backlog (TB-042 – TB-051)
+    # Source: module reuse analysis, March 2026
+    # Packaging target: Maven artifacts under groupId dk.ufst
+    # -------------------------------------------------------------------------
+
+    - id: TB-042
+      title: "Extract OCES3 Certificate Parser as standalone Maven library"
+      status: not_started
+      priority: high
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The OCES3 X.509 certificate parsing logic in opendebt-common is fully reusable
+        by any Danish e-government system using SOAP/mTLS. Handles RFC2253 DN parsing,
+        OCES3 identity extraction, and Spring-WS interceptor integration.
+
+        Extract to: dk.ufst:oces3-certificate-parser:1.0
+        Source: opendebt-common/src/main/java/dk/ufst/opendebt/common/soap/
+          - Oces3CertificateParser.java
+          - Oces3AuthContext.java
+
+        Changes required:
+        - New standalone Maven module: oces3-certificate-parser/
+        - Rename package: dk.ufst.opendebt.common.soap → dk.ufst.security.oces3
+        - Add configuration property docs for DN field extraction
+        - Publish to GitHub Packages or UFST internal Maven registry
+
+        Effort: SMALL (2-3 days). Reuse estimate: 5+ e-gov/tax projects.
+      implementation_notes: |
+        2 classes, zero cross-module dependencies beyond Spring Security and Java crypto.
+
+    - id: TB-043
+      title: "Extract Keycloak/OAuth2 Spring Boot Starter"
+      status: not_started
+      priority: high
+      created: 2026-03-30
+      petitions: []
+      description: |
+        Every OpenDebt service duplicates the same OAuth2 resource server configuration
+        (JWT validation, Keycloak realm setup, AuthContext claim extraction, dev/prod profiles).
+        Extract to a Spring Boot auto-configuration starter.
+
+        Extract to: dk.ufst:keycloak-oauth2-starter:1.0
+        Source: SecurityConfig pattern from each service + AuthContext from opendebt-common
+
+        Changes required:
+        - New standalone Maven module: keycloak-oauth2-starter/
+        - Create @AutoConfiguration class for Spring Boot 3.x
+        - Make JWT claim names configurable (spring.security.oauth2.claims.*)
+        - Provide @Profile("local") no-auth mode and @Profile("!local") full JWT mode
+        - Remove OpenDebt-specific role constants — define as configurable enum
+        - Add test configuration factory for integration tests
+
+        Effort: SMALL (3-4 days). Reuse estimate: 12+ UFST services.
+      implementation_notes: |
+        Pure Spring Security — zero OpenDebt domain concepts. Highest reuse potential.
+        All UFST services use Keycloak as identity provider.
+
+    - id: TB-044
+      title: "Extract SOAP PII Masking Utility into shared commons"
+      status: not_started
+      priority: medium
+      created: 2026-03-30
+      petitions: []
+      description: |
+        SoapPiiMaskingUtil in opendebt-common masks sensitive fields in SOAP
+        request/response logging to prevent PII leakage in audit logs.
+        Pure utility, ~150 lines, zero external dependencies.
+
+        Extract to: dk.ufst:audit-commons:1.0 (bundle with TB-045 Audit Trail)
+        Source: opendebt-common/src/main/java/dk/ufst/opendebt/common/soap/SoapPiiMaskingUtil.java
+
+        Changes required:
+        - Move to shared audit-commons module (or standalone if audit-commons not ready)
+        - Create pluggable MaskProvider interface for custom field patterns
+        - Add configuration for additional mask patterns beyond default CPR/name/phone/email
+
+        Effort: VERY SMALL (1-2 days). Reuse estimate: 8+ projects using SOAP logging.
+      implementation_notes: |
+        Bundle into TB-045 (Audit Trail Commons) to avoid a separate tiny artifact.
+
+    - id: TB-045
+      title: "Extract Audit Trail Commons (AuditableEntity + CLS client)"
+      status: not_started
+      priority: high
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The audit trail infrastructure in opendebt-common is 95% generic and satisfies
+        GDPR accountability requirements for any public-sector system.
+        Includes: AuditableEntity base class, AuditContextFilter (HTTP request filter),
+        AuditContextService (PostgreSQL session context variables), CLS event shipping,
+        and SoapPiiMaskingUtil (from TB-044).
+
+        Extract to: dk.ufst:audit-trail-commons:1.0
+        Source: opendebt-common/src/main/java/dk/ufst/opendebt/common/audit/
+
+        Changes required:
+        - New standalone Maven module: audit-trail-commons/
+        - Create AuditEventSink interface (replaces hardcoded CLS client)
+        - Provide NoOpAuditEventSink (testing) and ClsAuditEventSink (production)
+        - Create Spring Boot auto-configuration for AuditContextFilter
+        - Bundle SoapPiiMaskingUtil (TB-044)
+        - Add configuration docs (Jackson schema, CLS endpoint, PostgreSQL trigger setup)
+
+        Effort: MEDIUM (5-7 days). Reuse estimate: 8+ UFST systems.
+      implementation_notes: |
+        Core ~400 lines. CLS adapter pattern makes it easy to swap logging backend.
+
+    - id: TB-046
+      title: "Extract GDPR PII Registry pattern as reusable library"
+      status: not_started
+      priority: medium
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The person-registry service implements a GDPR-compliant PII isolation pattern:
+        all personal data encrypted at rest, other services hold only UUID references,
+        hash-based lookup without decryption, and right-to-erasure workflows.
+        Applicable to any EU public-sector system handling personal data.
+
+        Extract to: dk.ufst:pii-registry-commons:1.0
+        Source: opendebt-person-registry/src/main/java/dk/ufst/opendebt/personregistry/
+
+        Changes required:
+        - Generalize PersonEntity → PiiRecordEntity<T> (template type for identifier)
+        - Externalize identifier type: configuration enum (CPR, PHONE, EMAIL, CVR, etc.)
+        - Create abstract EncryptionService interface with pluggable crypto provider
+        - Separate Danish CPR-specific logic into optional extension module
+        - Flyway migration template for pii_records table
+
+        Effort: MEDIUM (6-8 days). Reuse estimate: 6+ public-sector projects.
+      implementation_notes: |
+        Core: PersonEntity + EncryptionService + PersonRepository (~500 lines).
+        GDPR deletion workflows tie to application-specific retention policies.
+
+    - id: TB-047
+      title: "Extract Drools Rule Engine as Spring Boot Starter"
+      status: not_started
+      priority: medium
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The rules-engine module is 70% generic Drools orchestration (KIE container init,
+        rule loading from .drl + .xlsx decision tables, evaluation endpoints) and 30%
+        OpenDebt-specific rule definitions. The generic orchestration layer can be extracted
+        as a Spring Boot starter; rule definitions stay in the consuming project.
+
+        Extract to: dk.ufst:drools-rule-engine-starter:1.0
+        Source: opendebt-rules-engine/src/main/java/dk/ufst/opendebt/rules/
+
+        Changes required:
+        - New standalone Maven module: drools-rule-engine-starter/
+        - Create generic RuleRequest<T>, RuleResult<T> interfaces
+        - Move debt-specific .drl files to separate resource directory in OpenDebt
+        - Provide Spring Boot auto-configuration for KIE container
+        - Document Drools + Excel decision table authoring pattern
+
+        Effort: MEDIUM (6-8 days). Reuse estimate: 3-5 rules-heavy systems.
+      implementation_notes: |
+        Drools 9.44.0.Final — pin version carefully. Debt-specific rule files remain
+        in opendebt-rules-engine after extraction.
+
+    - id: TB-048
+      title: "Extract SKB EDIFACT Parser (CREMUL/DEBMUL) as standalone library"
+      status: not_started
+      priority: low
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The integration-gateway contains a Smooks-based EDIFACT parser for Danish
+        banking payment files (CREMUL = credit advice, DEBMUL = debit advice).
+        Niche audience (SKB ecosystem participants) but complete reuse for that group.
+
+        Extract to: dk.ufst:skb-edifact-parser:1.0
+        Source: opendebt-integration-gateway/src/main/java/dk/ufst/opendebt/gateway/skb/
+
+        Changes required:
+        - New standalone Maven module: skb-edifact-parser/
+        - Decouple from PaymentRepository — create PaymentEventSink interface
+        - Move Smooks config to resource files + externalize schema paths
+        - Generalize message model: EdiMessage<T extends EdiAdvice>
+        - Create test fixtures with real EDIFACT sample files
+
+        Effort: MEDIUM (5-6 days). Reuse estimate: 2-3 SKB ecosystem participants.
+      implementation_notes: |
+        Uses Smooks 2.0.0. CREMUL/DEBMUL are Danish banking standards.
+
+    - id: TB-049
+      title: "Extract BDD/Cucumber Test Infrastructure as shared test commons"
+      status: not_started
+      priority: low
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The BDD test infrastructure (Cucumber 7.18.0 + Testcontainers + WireMock +
+        Spring Boot test slice recipes) is 95% generic and duplicated across modules.
+        Extracting it reduces test configuration boilerplate across all UFST projects.
+
+        Extract to: dk.ufst:bdd-test-commons:1.0 (test-scoped dependency)
+        Source: test configuration classes across opendebt-*-service/src/test/
+
+        Changes required:
+        - New standalone Maven module: bdd-test-commons/
+        - Create abstract BddScenarioContext<T> base class
+        - Provide CucumberSpringBootTestBase auto-configuration
+        - Bundle WireMock + Testcontainers + Spring test slice recipes
+        - Document step definition naming conventions
+
+        Effort: SMALL-MEDIUM (4-5 days). Reuse estimate: 5-8 UFST projects.
+      implementation_notes: |
+        Step definitions remain domain-specific in consuming projects.
+        Only framework wiring is extracted (runner config, context sharing, container setup).
+
+    - id: TB-050
+      title: "Extract Timeline/Event Log Filtering as shared UI commons"
+      status: not_started
+      priority: low
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The timeline component in opendebt-common (TimelineEntry DTO, TimelineFilterDto,
+        role-based visibility rules, event deduplication) is a reusable pattern for
+        any portal showing audit logs or activity streams.
+
+        Extract to: dk.ufst:timeline-commons:1.0
+        Source: opendebt-common/src/main/java/dk/ufst/opendebt/common/timeline/
+        Note: timeline.css already extracted into skat-design-system WebJar (TB-041).
+
+        Changes required:
+        - New standalone Maven module: timeline-commons/
+        - Generalize EventCategory enum → Spring bean registry (plugin architecture)
+        - Create TimelineVisibilityFilter interface with permission-based implementations
+        - Externalize visibility rules to YAML configuration
+        - Bundle Thymeleaf fragment for the timeline card component
+
+        Effort: SMALL (3-4 days). Reuse estimate: 4-6 portal projects.
+      implementation_notes: |
+        CSS already in skat-design-system. Only Java/DTO layer remains.
+
+    - id: TB-051
+      title: "Document Double-Entry Bookkeeping module as reference implementation"
+      status: not_started
+      priority: low
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The bookkeeping implementation in opendebt-payment-service is deeply domain-specific
+        (Danish Debt Collection Act coverage priority rules, bi-temporal ledger, retroactive
+        correction). Not recommended for generic library extraction. Publish as a documented
+        reference implementation for similar debt-collection systems instead.
+
+        Actions:
+        - Add architecture note to docs/architecture-overview.md explaining the pattern
+        - Create docs/site/technical/bookkeeping-reference.md with design rationale
+        - Tag module in pom.xml with purpose metadata
+        - Future: separate generic yanimetaxas wrapper from Danish-law-specific coverage rules
+          as a potential FUTURE extraction candidate (separate TB)
+
+        Full extraction effort: LARGE (12-15 days) — not recommended.
+        Documentation only: SMALL (2-3 days).
+        Reuse estimate: 1-2 debt systems in similar jurisdictions.
+      implementation_notes: |
+        Uses yanimetaxas/bookkeeping 4.3.0 for core double-entry logic.
+        Coverage priority (DaekningsraekkefolgePosition) tied to Gaeldsbekendtgoerelsen § 4.
