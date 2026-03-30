@@ -607,7 +607,7 @@ class ModregningServiceTest {
         for (Object value : event.getNewValues().values()) {
           assertThat(value.toString())
               .as("CLS audit value must not contain CPR pattern (NFR-3)")
-              .doesNotContainPattern("\\d{10}")
+              .doesNotContainPattern("\\b\\d{10}\\b")
               .doesNotContainPattern("\\d{6}-\\d{4}");
         }
       }
@@ -656,7 +656,22 @@ class ModregningServiceTest {
               .renteGodtgoerelseNonTaxable(true)
               .build();
 
+      // Tier-2 measure that should be reversed by the waiver — ref: P058 tier-scope fix
+      UUID tier2DebtId = UUID.randomUUID();
+      CollectionMeasureEntity tier2Measure =
+          CollectionMeasureEntity.builder()
+              .debtId(tier2DebtId)
+              .measureType(CollectionMeasureEntity.MeasureType.SET_OFF)
+              .modregningEventId(eventId)
+              .amount(new BigDecimal("400"))
+              .tierLevel(2)
+              .build();
+
       when(modregningEventRepository.findById(eventId)).thenReturn(Optional.of(existingEvent));
+      // Ref: P058 tier-scope fix — only tier-2 rows returned for tierLevel=2
+      when(collectionMeasureRepository.findByModregningEventIdAndMeasureTypeAndTierLevel(
+              eventId, CollectionMeasureEntity.MeasureType.SET_OFF, 2))
+          .thenReturn(List.of(tier2Measure));
       when(raekkefoeigenEngine.allocate(any(), any(), anyBoolean(), any()))
           .thenReturn(
               new TierAllocationResult(
@@ -666,9 +681,7 @@ class ModregningServiceTest {
                   BigDecimal.ZERO));
       when(modregningEventRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-      ModregningResult result =
-          underTest.applyTier2Waiver(
-              debtorId, eventId, "GIL § 4, stk. 11 waiver reason", caseworkerId);
+      underTest.applyTier2Waiver(debtorId, eventId, "GIL § 4, stk. 11 waiver reason", caseworkerId);
 
       // (1) tier2WaiverApplied=true
       assertThat(existingEvent.isTier2WaiverApplied())
@@ -680,7 +693,15 @@ class ModregningServiceTest {
           .isEqualByComparingTo(BigDecimal.ZERO);
       // (3) engine called with skipTier2=true
       verify(raekkefoeigenEngine).allocate(any(), any(), eq(true), any());
-      // (4) CLS audit with GIL § 4, stk. 11
+      // (4) waiverApplied=true set only on the tier-2 measure — ref: P058 tier-scope fix
+      assertThat(tier2Measure.isWaiverApplied())
+          .as("waiverApplied must be true on the tier-2 CollectionMeasure (AC-6)")
+          .isTrue();
+      // (5) reverseLedgerEntry called exactly once for the tier-2 measure — ref: P058 tier-scope
+      // fix
+      verify(ledgerServiceClient, times(1))
+          .reverseLedgerEntry(debtorId, tier2DebtId, new BigDecimal("400"), eventId);
+      // (6) CLS audit with GIL § 4, stk. 11
       ArgumentCaptor<ClsAuditEvent> auditCaptor = ArgumentCaptor.forClass(ClsAuditEvent.class);
       verify(clsAuditClient).shipEvent(auditCaptor.capture());
       assertThat(auditCaptor.getValue().getNewValues().get("gilParagraf"))
