@@ -2353,9 +2353,11 @@ program:
 
     - id: TB-044
       title: "Extract SOAP PII Masking Utility into shared commons"
-      status: not_started
+      status: implemented
       priority: medium
       created: 2026-03-30
+      updated_at: 2026-03-30
+      updated_by: "copilot (TB-044/045 audit-trail-commons extraction)"
       petitions: []
       description: |
         SoapPiiMaskingUtil in opendebt-common masks sensitive fields in SOAP
@@ -2376,9 +2378,11 @@ program:
 
     - id: TB-045
       title: "Extract Audit Trail Commons (AuditableEntity + CLS client)"
-      status: not_started
+      status: implemented
       priority: high
       created: 2026-03-30
+      updated_at: 2026-03-30
+      updated_by: "copilot (TB-044/045 audit-trail-commons extraction)"
       petitions: []
       description: |
         The audit trail infrastructure in opendebt-common is 95% generic and satisfies
