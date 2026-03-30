@@ -28,6 +28,22 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
   List<DebtEntity> findActiveFordringerByTier(
       @Param("debtorPersonId") UUID debtorPersonId, @Param("tier") int tier);
 
+  /**
+   * Finds active fordringer for the given debtor, tier and paying-authority creditor. Used for
+   * tier-1 filtering by UBO per GIL § 7, stk. 1, nr. 1 (BUG-F / P058).
+   */
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.modregningTier = :tier "
+          + "AND d.creditorOrgId = :creditorOrgId "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.inceptionDate ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByTierAndCreditor(
+      @Param("debtorPersonId") UUID debtorPersonId,
+      @Param("tier") int tier,
+      @Param("creditorOrgId") UUID creditorOrgId);
+
   @Query("SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId")
   List<DebtEntity> findByDebtorPersonId(UUID debtorPersonId);
 

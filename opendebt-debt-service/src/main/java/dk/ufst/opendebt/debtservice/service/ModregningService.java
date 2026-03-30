@@ -114,12 +114,14 @@ public class ModregningService implements OffsettingService {
     LocalDate receiptDate;
     LocalDate decisionDate;
     Integer indkomstAar = null;
+    UUID payingAuthorityOrgId = null;
 
     if (sourceEvent instanceof PublicDisbursementEvent pde) {
       refId = pde.nemkontoReferenceId();
       receiptDate = pde.receiptDate();
       decisionDate = pde.decisionDate();
       indkomstAar = pde.indkomstAar();
+      payingAuthorityOrgId = pde.payingAuthorityOrgId(); // BUG-F: extract for tier-1 filtering
     } else {
       refId = (sourceEvent instanceof String s) ? s : UUID.randomUUID().toString();
       receiptDate = LocalDate.now();
@@ -137,9 +139,10 @@ public class ModregningService implements OffsettingService {
         renteGodtgoerelseService.computeDecision(
             receiptDate, decisionDate, paymentType, indkomstAar);
 
-    // 3-tier allocation
+    // 3-tier allocation — BUG-F: pass payingAuthorityOrgId for tier-1 creditor filtering (GIL § 7,
+    // stk. 1, nr. 1)
     TierAllocationResult allocation =
-        raekkefoeigenEngine.allocate(debtorPersonId, availableAmount, false, null);
+        raekkefoeigenEngine.allocate(debtorPersonId, availableAmount, false, payingAuthorityOrgId);
 
     // Build and persist ModregningEvent (renteGodtgoerelseNonTaxable ALWAYS true per GIL § 8b)
     ModregningEvent event =
@@ -254,12 +257,16 @@ public class ModregningService implements OffsettingService {
           resolvedDebtorPersonId, cm.getDebtId(), cm.getAmount(), modregningEventId);
     }
 
+    // BUG-B fix: re-run uses only the amount available after tier-1, not the full
+    // disbursementAmount.
+    // tier1Amount is already settled and must be preserved — only tier-3 and residual change.
+    BigDecimal waiverAvailableAmount =
+        event.getDisbursementAmount().subtract(event.getTier1Amount());
     TierAllocationResult newAllocation =
-        raekkefoeigenEngine.allocate(
-            resolvedDebtorPersonId, event.getDisbursementAmount(), true, null);
+        raekkefoeigenEngine.allocate(resolvedDebtorPersonId, waiverAvailableAmount, true, null);
 
-    // BUG-2: update all three amounts from newAllocation
-    event.setTier1Amount(sumTier(newAllocation.tier1Allocations()));
+    // BUG-B fix: do NOT call event.setTier1Amount(...) — tier1Amount is preserved unchanged.
+    // Only tier3Amount and residualPayoutAmount are updated by the waiver re-run.
     event.setTier3Amount(sumTier(newAllocation.tier3Allocations()));
     event.setResidualPayoutAmount(newAllocation.residualPayoutAmount());
 

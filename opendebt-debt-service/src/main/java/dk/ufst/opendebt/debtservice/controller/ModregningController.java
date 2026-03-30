@@ -81,6 +81,8 @@ public class ModregningController {
                         e.getTier1Amount(),
                         e.getTier2Amount(),
                         e.getTier3Amount(),
+                        e.getResidualPayoutAmount(),
+                        e.isNoticeDelivered(),
                         e.isTier2WaiverApplied(),
                         e.getKlageFristDato()))
             .toList();
@@ -96,6 +98,8 @@ public class ModregningController {
         result.tier1Amount(),
         result.tier2Amount(),
         result.tier3Amount(),
+        result.residualPayoutAmount(),
+        result.noticeDelivered(),
         result.tier2WaiverApplied(),
         result.klageFristDato());
   }
@@ -112,6 +116,8 @@ public class ModregningController {
       BigDecimal tier1Amount,
       BigDecimal tier2Amount,
       BigDecimal tier3Amount,
+      BigDecimal residualPayoutAmount,
+      boolean noticeDelivered,
       boolean tier2WaiverApplied,
       LocalDate klageFristDato) {}
 }

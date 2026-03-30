@@ -42,8 +42,10 @@ public class ModregningsRaekkefoeigenEngine {
     List<FordringAllocation> tier2 = new ArrayList<>();
     List<FordringAllocation> tier3 = new ArrayList<>();
 
-    // Tier 1: fordringer registered by the paying authority
-    for (FordringProjection f : fordringQueryPort.getActiveFordringer(debtorPersonId, 1, null)) {
+    // Tier 1: fordringer registered by the paying authority (filtered by UBO per GIL § 7, stk. 1,
+    // nr. 1)
+    for (FordringProjection f :
+        fordringQueryPort.getActiveFordringer(debtorPersonId, 1, payingAuthorityOrgId)) {
       if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
       BigDecimal covered =
           remaining.min(f.tilbaestaaendeBeloeb()).setScale(2, RoundingMode.HALF_UP);

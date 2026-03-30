@@ -42,6 +42,7 @@ import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.ModregningsRaekkefoeigenEngine;
 import dk.ufst.opendebt.debtservice.service.PaymentType;
+import dk.ufst.opendebt.debtservice.service.PublicDisbursementEvent;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseDecision;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseService;
 import dk.ufst.opendebt.debtservice.service.TierAllocationResult;
@@ -691,8 +692,18 @@ class ModregningServiceTest {
       assertThat(existingEvent.getTier2Amount())
           .as("tier2Amount must be 0 after waiver (AC-6)")
           .isEqualByComparingTo(BigDecimal.ZERO);
-      // (3) engine called with skipTier2=true
-      verify(raekkefoeigenEngine).allocate(any(), any(), eq(true), any());
+      // (3) engine called with skipTier2=true AND amount = disbursementAmount - tier1Amount (BUG-B
+      // fix)
+      ArgumentCaptor<BigDecimal> waiverAmountCaptor = ArgumentCaptor.forClass(BigDecimal.class);
+      verify(raekkefoeigenEngine).allocate(any(), waiverAmountCaptor.capture(), eq(true), any());
+      assertThat(waiverAmountCaptor.getValue())
+          .as(
+              "Engine re-run must use disbursementAmount - tier1Amount = 400.00 (BUG-B, SPEC-058 §3.1)")
+          .isEqualByComparingTo(new BigDecimal("400"));
+      // (3b) tier1Amount must be unchanged after waiver (BUG-B fix)
+      assertThat(existingEvent.getTier1Amount())
+          .as("tier1Amount must be preserved (600.00) after waiver re-run (BUG-B, SPEC-058 §3.1)")
+          .isEqualByComparingTo(new BigDecimal("600"));
       // (4) waiverApplied=true set only on the tier-2 measure — ref: P058 tier-scope fix
       assertThat(tier2Measure.isWaiverApplied())
           .as("waiverApplied must be true on the tier-2 CollectionMeasure (AC-6)")
@@ -761,6 +772,71 @@ class ModregningServiceTest {
               () -> underTest.applyTier2Waiver(debtorId, eventId, "reason", UUID.randomUUID()))
           .as("Double-waiver must throw WaiverAlreadyAppliedException (AC-7)")
           .isInstanceOf(dk.ufst.opendebt.debtservice.exception.WaiverAlreadyAppliedException.class);
+    }
+  }
+
+  // ── BUG-F: payingAuthorityOrgId passed to engine for tier-1 filtering ────────
+
+  @Nested
+  @DisplayName("BUG-F: payingAuthorityOrgId from PublicDisbursementEvent reaches engine tier-1")
+  class PayingAuthorityOrgIdPropagation {
+
+    /**
+     * BUG-F: When initiateModregning is called with a PublicDisbursementEvent carrying a
+     * payingAuthorityOrgId, the engine must receive that UUID so tier-1 can filter by paying
+     * authority (GIL § 7, stk. 1, nr. 1). Ref: SPEC-058 §3.1
+     */
+    @Test
+    @DisplayName(
+        "BUG-F: payingAuthorityOrgId from PublicDisbursementEvent is forwarded to engine tier-1")
+    void initiateModregning_forwardsPayingAuthorityOrgIdToEngine() {
+      UUID debtorId = UUID.randomUUID();
+      UUID fordringId = UUID.randomUUID();
+      UUID payingAuthorityOrgId = UUID.randomUUID();
+      setupStandardMocks(fordringId, debtorId);
+
+      PublicDisbursementEvent pde =
+          new PublicDisbursementEvent(
+              "REF-BUG-F-001",
+              debtorId,
+              new BigDecimal("1000"),
+              PaymentType.STANDARD_PAYMENT.name(),
+              null,
+              payingAuthorityOrgId,
+              LocalDate.now(),
+              LocalDate.now());
+
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, pde, false);
+
+      ArgumentCaptor<UUID> orgIdCaptor = ArgumentCaptor.forClass(UUID.class);
+      verify(raekkefoeigenEngine).allocate(any(), any(), anyBoolean(), orgIdCaptor.capture());
+      assertThat(orgIdCaptor.getValue())
+          .as(
+              "payingAuthorityOrgId from PublicDisbursementEvent must be passed to engine (BUG-F,"
+                  + " GIL § 7, stk. 1, nr. 1)")
+          .isEqualTo(payingAuthorityOrgId);
+    }
+
+    /**
+     * BUG-F: When no PublicDisbursementEvent is present (null sourceEvent), payingAuthorityOrgId
+     * must be null — engine falls back to unfiltered tier-1 query. Ref: SPEC-058 §3.1
+     */
+    @Test
+    @DisplayName("BUG-F: null sourceEvent → payingAuthorityOrgId null in engine call")
+    void initiateModregning_withNullSourceEvent_passesNullOrgIdToEngine() {
+      UUID debtorId = UUID.randomUUID();
+      UUID fordringId = UUID.randomUUID();
+      setupStandardMocks(fordringId, debtorId);
+
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("500"), PaymentType.STANDARD_PAYMENT, null, false);
+
+      ArgumentCaptor<UUID> orgIdCaptor = ArgumentCaptor.forClass(UUID.class);
+      verify(raekkefoeigenEngine).allocate(any(), any(), anyBoolean(), orgIdCaptor.capture());
+      assertThat(orgIdCaptor.getValue())
+          .as("payingAuthorityOrgId must be null when no PublicDisbursementEvent present (BUG-F)")
+          .isNull();
     }
   }
 }

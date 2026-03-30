@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import dk.ufst.opendebt.debtservice.client.DaekningsRaekkefoeigenServiceClient;
 import dk.ufst.opendebt.debtservice.entity.KorrektionspuljeEntry;
 import dk.ufst.opendebt.debtservice.repository.KorrektionspuljeEntryRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
+import dk.ufst.opendebt.debtservice.service.FordringQueryPort;
 import dk.ufst.opendebt.debtservice.service.KorrektionspuljeResult;
 import dk.ufst.opendebt.debtservice.service.KorrektionspuljeService;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
@@ -59,6 +61,7 @@ class KorrektionspuljeServiceTest {
   @Mock private DaekningsRaekkefoeigenServiceClient daekningsRaekkefoeigenService;
   @Mock private ModregningService modregningService;
   @Mock private RenteGodtgoerelseService renteGodtgoerelseService;
+  @Mock private FordringQueryPort fordringQueryPort;
 
   private KorrektionspuljeService underTest;
 
@@ -70,7 +73,11 @@ class KorrektionspuljeServiceTest {
             modregningEventRepository,
             daekningsRaekkefoeigenService,
             modregningService,
-            renteGodtgoerelseService);
+            renteGodtgoerelseService,
+            fordringQueryPort);
+    // Lenient default: reversed fordring has no uncovered renter (step1Consumed = 0).
+    // Individual tests that require step1Consumed > 0 override this stub.
+    lenient().when(fordringQueryPort.getOutstandingAmount(any())).thenReturn(BigDecimal.ZERO);
   }
 
   private OffsettingReversalEvent buildReversalEvent(
@@ -121,10 +128,50 @@ class KorrektionspuljeServiceTest {
 
       KorrektionspuljeResult result = underTest.processReversal(reversalEvent);
 
-      // Simplified: step1Consumed=0 per SPEC-058 §3.3
+      // fordringQueryPort returns 0 (lenient default) → step1Consumed=0
       assertThat(result.step1Consumed())
-          .as("step1Consumed must be 0 (simplified renter tracking, SPEC-058 §3.3)")
+          .as(
+              "step1Consumed must be 0 when reversed fordring has no uncovered renter (SPEC-058 §3.3)")
           .isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    /**
+     * BUG-A fix: step1Consumed > 0 when the reversed fordring has an uncovered renter balance. Ref:
+     * Gæld.bekendtg. § 7, stk. 4; SPEC-058 §3.3 Step 1
+     */
+    @Test
+    @DisplayName(
+        "BUG-A: step1Consumed > 0 when reversedFordring has uncovered renter (Gæld.bekendtg. § 7, stk. 4)")
+    void step1_consumesSurplusWhenUncoveredRenterExists() {
+      setupEntryRepositorySave();
+      when(daekningsRaekkefoeigenService.allocate(any(), any())).thenReturn(List.of());
+
+      UUID reversedFordringId = UUID.randomUUID();
+      // Override lenient default: this fordring has 200.00 uncovered renter
+      when(fordringQueryPort.getOutstandingAmount(reversedFordringId))
+          .thenReturn(new BigDecimal("200.00"));
+
+      OffsettingReversalEvent reversalEvent =
+          new OffsettingReversalEvent(
+              UUID.randomUUID(),
+              reversedFordringId,
+              new BigDecimal("1500.00"),
+              UUID.randomUUID(),
+              "PSRM",
+              "STANDARD",
+              false,
+              false);
+
+      KorrektionspuljeResult result = underTest.processReversal(reversalEvent);
+
+      assertThat(result.step1Consumed())
+          .as(
+              "step1Consumed must equal uncovered renter amount 200.00 (BUG-A, Gæld.bekendtg. § 7, stk. 4)")
+          .isEqualByComparingTo(new BigDecimal("200.00"));
+      // Remaining after step1 = 1500 - 200 = 1300 → enters gendækning and pool
+      assertThat(result.poolAmount())
+          .as("poolAmount must equal surplus minus step1Consumed when gendækning returns nothing")
+          .isEqualByComparingTo(new BigDecimal("1300.00"));
     }
 
     /**

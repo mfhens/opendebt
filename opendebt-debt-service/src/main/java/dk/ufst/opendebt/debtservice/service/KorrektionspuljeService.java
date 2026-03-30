@@ -27,26 +27,29 @@ public class KorrektionspuljeService {
   private final DaekningsRaekkefoeigenServiceClient daekningsRaekkefoeigenServiceClient;
   private final ModregningService modregningService;
   private final RenteGodtgoerelseService renteGodtgoerelseService;
+  private final FordringQueryPort fordringQueryPort;
 
   public KorrektionspuljeService(
       KorrektionspuljeEntryRepository entryRepository,
       ModregningEventRepository modregningEventRepository,
       DaekningsRaekkefoeigenServiceClient daekningsRaekkefoeigenServiceClient,
       ModregningService modregningService,
-      RenteGodtgoerelseService renteGodtgoerelseService) {
+      RenteGodtgoerelseService renteGodtgoerelseService,
+      FordringQueryPort fordringQueryPort) {
     this.entryRepository = entryRepository;
     this.modregningEventRepository = modregningEventRepository;
     this.daekningsRaekkefoeigenServiceClient = daekningsRaekkefoeigenServiceClient;
     this.modregningService = modregningService;
     this.renteGodtgoerelseService = renteGodtgoerelseService;
+    this.fordringQueryPort = fordringQueryPort;
   }
 
   /**
    * Processes an offsetting reversal event via the 3-step gendækning algorithm (SPEC-058 §3.3).
    *
-   * <p>Step 1: Apply surplus to same-fordring uncovered renter (simplified: 0 consumed here). Step
-   * 2: If not opted out, delegate remaining to DaekningsRaekkefoeigenService. Step 3: Persist any
-   * remaining surplus as KorrektionspuljeEntry.
+   * <p>Step 1: Apply surplus to same-fordring uncovered renter via {@link FordringQueryPort}
+   * (Gæld.bekendtg. § 7, stk. 4). Step 2: If not opted out, delegate remaining to
+   * DaekningsRaekkefoeigenService. Step 3: Persist any remaining surplus as KorrektionspuljeEntry.
    *
    * @return KorrektionspuljeResult with consumed amounts and pool entry details
    */
@@ -54,8 +57,11 @@ public class KorrektionspuljeService {
   public KorrektionspuljeResult processReversal(OffsettingReversalEvent reversalEvent) {
     BigDecimal surplus = reversalEvent.surplusAmount();
 
-    // Step 1: Apply to same-fordring uncovered renter (simplified: 0 consumed)
-    BigDecimal step1Consumed = BigDecimal.ZERO;
+    // Step 1: Apply to same-fordring uncovered renter (Gæld.bekendtg. § 7, stk. 4; SPEC-058 §3.3)
+    // Query the outstanding balance of the reversed fordring to cover its uncovered renter first.
+    BigDecimal uncoveredRenter =
+        fordringQueryPort.getOutstandingAmount(reversalEvent.reversedFordringId());
+    BigDecimal step1Consumed = surplus.min(uncoveredRenter).max(BigDecimal.ZERO);
     BigDecimal remaining = surplus.subtract(step1Consumed);
 
     // Step 2: Gendækning via DaekningsRaekkefoeigenService (unless opted out)
