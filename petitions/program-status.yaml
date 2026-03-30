@@ -2225,3 +2225,42 @@ program:
         - InternalDebtorController: GET /internal/debtors/{debtorId}/fordringer/active,
           secured with hasRole('SERVICE'), hidden from public OpenAPI spec.
         - 376 tests pass, Spotless clean.
+
+    - id: TB-041
+      title: "Refactor all portals to consume skat-design-system WebJar"
+      status: not_started
+      priority: medium
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The SKAT design tokens (skat-tokens.css), Academy Sans + Republic fonts, DAP ikon
+        font, timeline CSS, and HTMX a11y helper are currently duplicated as static files
+        in three portal modules (creditor-portal, caseworker-portal, citizen-portal) and
+        opendebt-common. A standalone Maven WebJar (skat-design-system 1.0.0) was extracted
+        in commit 511250e and packages all assets in one canonical location.
+
+        Each portal must be refactored to:
+        1. Remove duplicated static assets from src/main/resources/static/ (CSS, fonts, JS).
+        2. Add dk.ufst.opendebt:skat-design-system:1.0.0 as a compile-time dependency.
+        3. Update Thymeleaf layout templates to reference /webjars/skat-design-system/... URLs.
+        4. Remove timeline.css duplication from opendebt-common/src/main/resources/static/.
+        5. Verify all portal UIs render correctly after the change (visual regression check).
+
+        Affected modules:
+        - opendebt-creditor-portal (28 font files + skat-tokens.css + a11y.js)
+        - opendebt-caseworker-portal (28 font files + skat-tokens.css + a11y.js)
+        - opendebt-citizen-portal (skat-tokens.css)
+        - opendebt-common (timeline.css)
+
+        Also install the WebJar to the local Maven repository (or publish to GitHub Packages)
+        so that mvn install on the parent POM resolves the dependency without a separate step.
+
+        Unblocks: consistent versioning of design assets across all portals; eliminates
+        56 duplicate font files from the repository.
+      implementation_notes: |
+        Reference: skat-design-system/README.md for integration instructions.
+        WebJar path pattern: /webjars/skat-design-system/css/skat-tokens.css
+        webjars-locator-core is transitively available via spring-boot-starter-web — no
+        explicit dependency needed in portal pom.xml files.
+        Consider adding skat-design-system as a module to the parent POM so mvn install
+        at the root builds and installs it automatically.
