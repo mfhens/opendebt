@@ -59,6 +59,9 @@ The following are **operational configuration** (per-creditor, DB-stored, `Credi
 The following are **statutory codes** (enum-only):
 - `WriteDownReasonCode` — NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET as defined in gæld.bekendtg. § 7 stk. 2 (portal and debt-service; introduced petition053)
 - `ClaimAdjustmentType` — adjustment operation types tied to PSRM transaction semantics
+- `PrioritetKategori` — 5 GIL § 4 priority categories (INDDRIVELSESRENTER, OPKRAEVNINGSRENTER, GEBYRER, AFDRAG, ANDRE) as defined in GIL § 4 stk. 1–4 (payment-service; introduced petition057)
+- `RenteKomponent` — 6 interest sub-position codes (INDDRIVELSESRENTER_STK1, INDDRIVELSESRENTER_FORDRINGSHAVER, INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL, OPKRAEVNINGSRENTER, OEVRIGE_RENTER_PSRM, INGEN) as defined in GIL § 4 stk. 1–4 (payment-service; introduced petition057)
+- `InddrivelsesindsatsType` — 4 collection effort types (LOENINDEHOLDELSE, UDLAEG, BEGGE, INGEN) determining stk. 3 surplus routing under GIL § 10b and Retsplejelovens § 507 (payment-service; introduced petition057)
 
 **Note (P054 Catala spike):** The P054 Catala compliance spike (branch `feature/p054-catala-spike`)
 confirmed that the `WriteDownReasonCode` enum approach aligns naturally with Catala's enumeration

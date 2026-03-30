@@ -1,6 +1,6 @@
 package dk.ufst.opendebt.payment.controller;
 
-import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +22,7 @@ import dk.ufst.opendebt.payment.daekning.dto.DaekningsraekkefoelgePositionDto;
 import dk.ufst.opendebt.payment.daekning.dto.SimulatePositionDto;
 import dk.ufst.opendebt.payment.daekning.dto.SimulateRequestDto;
 import dk.ufst.opendebt.payment.daekning.service.DaekningsRaekkefoeigenService;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -32,28 +33,24 @@ import lombok.RequiredArgsConstructor;
 public class DaekningsRaekkefoeigenController {
 
   private final DaekningsRaekkefoeigenService service;
+  private final Clock clock;
 
   @GetMapping
   @PreAuthorize("hasRole('SAGSBEHANDLER') or hasRole('ADMIN') or hasRole('SERVICE')")
   public ResponseEntity<List<DaekningsraekkefoelgePositionDto>> getOrdering(
       @PathVariable String debtorId,
-      @RequestParam(required = false)
-          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
           LocalDate asOf) {
     List<DaekningsraekkefoelgePositionDto> result = service.getOrdering(debtorId, asOf);
-    if (result.isEmpty()) {
-      return ResponseEntity.notFound().build();
-    }
     return ResponseEntity.ok(result);
   }
 
   @PostMapping("/simulate")
   @PreAuthorize("hasRole('SAGSBEHANDLER') or hasRole('ADMIN') or hasRole('SERVICE')")
   public ResponseEntity<List<SimulatePositionDto>> simulate(
-      @PathVariable String debtorId,
-      @Valid @RequestBody SimulateRequestDto request) {
+      @PathVariable String debtorId, @Valid @RequestBody SimulateRequestDto request) {
     return ResponseEntity.ok(
         service.simulate(
-            debtorId, request.beloeb(), request.inddrivelsesindsatsType(), Instant.now()));
+            debtorId, request.beloeb(), request.inddrivelsesindsatsType(), Instant.now(clock)));
   }
 }

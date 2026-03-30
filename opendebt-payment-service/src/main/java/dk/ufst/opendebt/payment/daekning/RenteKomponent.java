@@ -17,6 +17,6 @@ public enum RenteKomponent {
   /** Sub-position 5 — øvrige renter i PSRM. */
   OEVRIGE_RENTER_PSRM,
 
-  /** Sub-position 6 — hauptfordring (principal, covered last). */
+  /** Sub-position 6 — Hoofdfordring (principal, covered last). */
   HOOFDFORDRING
 }

@@ -187,7 +187,7 @@ lønindeholdelse or udlæg realisation), the following special ordering applies:
 cover fordringer that are part of the udlægsforretning. They shall not flow to other
 fordringer, even if surplus remains after the udlægs-fordringer are fully covered.
 
-The payment record shall carry the inddrivelsesindsats type (`UDLAEG`, `LOENNINDEHOLDELSE`,
+The payment record shall carry the inddrivelsesindsats type (`UDLAEG`, `LOENINDEHOLDELSE`,
 `MODREGNING`, or `FRIVILLIG`) to enable correct rule branching at application time.
 
 ### FR-5: Opskrivningsfordring positioning

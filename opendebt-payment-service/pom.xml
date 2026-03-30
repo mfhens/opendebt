@@ -155,6 +155,11 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- Pin error_prone_annotations to resolve convergence across immudb4j gRPC transitive deps -->

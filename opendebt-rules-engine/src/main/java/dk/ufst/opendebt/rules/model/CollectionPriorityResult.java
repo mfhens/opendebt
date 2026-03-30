@@ -21,4 +21,8 @@ public class CollectionPriorityResult {
   public static final int PRIORITY_COURT_ORDERED = 4;
   public static final int PRIORITY_OTHER_PUBLIC = 5;
   public static final int PRIORITY_DEFAULT = 10;
+
+  /** ADR-0031: use this constant instead of the raw string literal in DRL rules. */
+  public static final String CATEGORY_BOEDER_TVANGSBOEEDER_TILBAGEBETALING =
+      "BOEDER_TVANGSBOEEDER_TILBAGEBETALING";
 }

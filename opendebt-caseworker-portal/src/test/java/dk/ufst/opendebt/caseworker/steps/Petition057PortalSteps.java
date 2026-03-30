@@ -129,17 +129,21 @@ public class Petition057PortalSteps {
         List.of(
             new DaekningsraekkefoelgePositionDto(
                 "FDR-001",
+                null,
                 category1,
                 "GIL \u00a7 4, stk. 1, nr. 3",
                 "HOOFDFORDRING",
+                "2024-01-01",
                 "2024-01-01",
                 "100.00",
                 null),
             new DaekningsraekkefoelgePositionDto(
                 "FDR-002",
+                null,
                 category2,
                 "GIL \u00a7 4, stk. 1, nr. 4",
                 "HOOFDFORDRING",
+                "2024-02-01",
                 "2024-02-01",
                 "200.00",
                 null));
@@ -217,17 +221,21 @@ public class Petition057PortalSteps {
         List.of(
             new DaekningsraekkefoelgePositionDto(
                 stamFordringId,
+                null,
                 "ANDRE_FORDRINGER",
                 "GIL \u00a7 4, stk. 1, nr. 4",
                 "HOOFDFORDRING",
+                "2024-01-01",
                 "2024-01-01",
                 "300.00",
                 null),
             new DaekningsraekkefoelgePositionDto(
                 opskrivningsFordringId,
+                null,
                 "ANDRE_FORDRINGER",
                 "GIL \u00a7 4, stk. 1, nr. 4",
                 "HOOFDFORDRING",
+                "2024-02-01",
                 "2024-02-01",
                 "100.00",
                 stamFordringId));

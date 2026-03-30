@@ -122,6 +122,31 @@ Known config keys:
 | `POST` | `/api/v1/creditors/access/resolve` | Resolve channel access for M2M/portal |
 | `POST` | `/api/v1/creditors/{id}/validate-action` | Validate creditor permission for action |
 
+### payment-service (`:8083`)
+
+#### Payment matching
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/v1/payments/incoming` | Process incoming CREMUL payment (OCR-based matching, write-down, overpayment rules) |
+
+#### Timeline (petition 050)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/v1/events/case/{caseId}` | Debt events by case for BFF timeline aggregation (roles: CASEWORKER, CREDITOR, CITIZEN, SERVICE) |
+
+#### Dækningsrækkefølge — GIL § 4 payment application order (petition 057)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/v1/debtors/{debtorId}/daekningsraekkefoelge` | Get GIL § 4 payment application order for a debtor — returns ordered list of `DaekningsraekkefoelgePositionDto` (fordring_id, komponent, daekning_beloeb, prioritet_kategori) |
+| `POST` | `/api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate` | Simulate payment application against a debtor's fordringer — dry-run only, no `DaekningRecord` written; request body is `SimulateRequestDto` (amount + debtor context) |
+
+The 8-step GIL § 4 algorithm sorts fordringer by `PrioritetKategori` (INDDRIVELSESRENTER → OPKRAEVNINGSRENTER → GEBYRER → AFDRAG → ANDRE) and by FIFO sort key within each category. The `RenteKomponent` sub-position resolves the 6-tier interest allocation for inddrivelsesrenter (GIL § 4 stk. 1–4). Actual application writes an immutable `daekning_record` row per component. The simulate endpoint returns the same ordering without persisting any records.
+
+Legal basis: GIL § 4 stk. 1–4, GIL § 10b, Gæld.bekendtg. § 4 stk. 3, Retsplejelovens § 507, Lov nr. 288/2022.
+
 ### case-service (`:8081`)
 
 | Method | Endpoint | Purpose |

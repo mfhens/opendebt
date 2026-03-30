@@ -84,9 +84,11 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order — rule-e
   Scenario: Pre-2013 fordring — legacyModtagelsesdato bruges som FIFO-nøgle
     Given debtor "SKY-3006" has the following active fordringer:
       # Note: modtagelsesdato is the overdragelse API timestamp ("opret" date).
+      # FDR-30061 was registered before the 2013-09-01 migration cutoff (modtagelsesdato is pre-cutoff)
+      # so its legacyModtagelsesdato is used as FIFO sort key (AC-4).
       # FDR-30062 has no legacyModtagelsesdato (received after the 2013-09-01 migration cutoff).
       | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | legacyModtagelsesdato |
-      | FDR-30061  | ANDRE_FORDRINGER | 500.00               | 2024-05-01      | 2012-08-15            |
+      | FDR-30061  | ANDRE_FORDRINGER | 500.00               | 2012-05-01      | 2012-08-15            |
       | FDR-30062  | ANDRE_FORDRINGER | 400.00               | 2024-04-01      |                       |
     And fordring "FDR-30061" has a legacyModtagelsesdato of "2012-08-15" (before 1 September 2013)
     When a payment of 600.00 DKK is received for debtor "SKY-3006"
@@ -326,6 +328,6 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order — rule-e
     When a caller without payment-service:read scope calls GET "/debtors/SKY-3021/daekningsraekkefoelge"
     Then the response status is 403
 
-  Scenario: GET /daekningsraekkefoelge returnerer HTTP 404 for ukendt debtor
+  Scenario: GET /daekningsraekkefoelge returnerer HTTP 200 med tom liste for ukendt debtor
     When an authenticated sagsbehandler calls GET "/debtors/UNKNOWN-9999/daekningsraekkefoelge"
-    Then the response status is 404
+    Then the response status is 200

@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import dk.ufst.opendebt.payment.daekning.InddrivelsesindsatsType;
 import dk.ufst.opendebt.payment.daekning.PrioritetKategori;
 import dk.ufst.opendebt.payment.daekning.RenteKomponent;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

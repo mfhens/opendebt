@@ -210,6 +210,17 @@ dk.ufst.opendebt.payment.daekning/
         └── DaekningsRaekkefoeigenServiceImpl.java  # 8-step GIL § 4 algorithm
 ```
 
+`caseworker-portal` additionally contains a `daekning/` view sub-package for the GIL § 4 view (petition057):
+
+```
+dk.ufst.opendebt.caseworkerportal.daekning/
+└── DaekningsRaekkefoeigenViewController.java   # GET /debtors/{debtorId}/daekningsraekkefoelge
+                                                 # — calls PaymentServiceClient.getDaekningsraekkefoelge()
+                                                 #   and renders daekningsraakkefoelge.html
+```
+
+The `PaymentServiceClient` in `caseworker-portal` was extended with `getDaekningsraekkefoelge(UUID debtorId)` that calls `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057). i18n: 12 new keys per locale (5 priority category labels, 6 interest component labels, 1 view title).
+
 Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
 
 ```

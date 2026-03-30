@@ -12,6 +12,4 @@ public interface DaekningRecordRepository extends JpaRepository<DaekningRecord, 
   List<DaekningRecord> findByDebtorId(String debtorId);
 
   List<DaekningRecord> findByFordringId(String fordringId);
-
-  List<DaekningRecord> findByDebtorIdOrderByCreatedAtAsc(String debtorId);
 }

@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import dk.ufst.opendebt.payment.daekning.PrioritetKategori;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,6 +37,9 @@ public class DaekningFordringEntity {
 
   @Column(name = "fordring_id", length = 100, nullable = false)
   private String fordringId;
+
+  @Column(name = "fordringshaver_id", length = 100)
+  private String fordringshaverId;
 
   @Column(name = "debtor_id", length = 100, nullable = false)
   private String debtorId;

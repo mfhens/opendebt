@@ -1082,10 +1082,16 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | PaymentServiceClient (extended) | Done | `getDebtEventsByCase(caseId)` — REST client for payment-service (ADR-0024 trace propagation, petition050) |
 | bffFetchExecutor | Done | Fixed thread pool bean for parallel upstream fetches via CompletableFuture (petition050) |
 | TimelineVisibilityProperties | Done | @ConfigurationProperties (all categories enabled for caseworker role) (petition050) |
+| **Dækningsrækkefølge view (petition057)** | **Done** | |
+| DaekningsRaekkefoeigenViewController | Done | `GET /debtors/{debtorId}/daekningsraekkefoelge` — view controller that fetches GIL § 4 priority order from payment-service and renders `daekningsraakkefoelge.html` |
+| PaymentServiceClient (extended) | Done | Added `getDaekningsraekkefoelge(debtorId)` — calls `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057) |
+| daekningsraakkefoelge.html | Done | Thymeleaf template — tabular display of GIL § 4 priority position (PrioritetKategori, RenteKomponent, fordring_id, daekning_beloeb) |
+| i18n DA + EN (extended) | Done | 12 new keys per locale: priority category labels (5), interest component labels (6), view title/header (1) |
 
 **Page routes include:**
 - `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, all categories, petition050)
 - `GET /cases/{caseId}/tidslinje/entries` - Timeline entries, load-more (HTMX, petition050)
+- `GET /debtors/{debtorId}/daekningsraekkefoelge` - GIL § 4 payment application order view (petition057)
 
 ---
 

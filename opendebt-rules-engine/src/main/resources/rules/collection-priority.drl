@@ -25,18 +25,20 @@ rule "Tax Debt Priority"
         result.setLegalBasis("Skattegaeld - anden prioritet efter boernebidrag");
 end
 
-// Priority 3: Fines (boeder)
+// Priority 3: Fines and enforcement fines (boeder og tvangsbøder)
+// P057: tvangsbøder → category BOEDER_TVANGSBOEEDER_TILBAGEBETALING per lov nr. 288/2022 (GIL § 10b)
 rule "Fine Priority"
     when
         $request : CollectionPriorityRequest(
-            isFine == true, 
-            isChildSupport == false, 
+            isFine == true,
+            isChildSupport == false,
             isTaxDebt == false
         )
     then
         result.setPriorityRank(CollectionPriorityResult.PRIORITY_FINES);
-        result.setPriorityCategory("FINE");
-        result.setLegalBasis("Boeder og afgifter - tredje prioritet");
+        // ADR-0031: use typed constant — not a raw string literal
+        result.setPriorityCategory(CollectionPriorityResult.CATEGORY_BOEDER_TVANGSBOEEDER_TILBAGEBETALING);
+        result.setLegalBasis("Boeder, tvangsboeder og tilbagebetaling - kategori 2 (GIL § 4, stk. 1, nr. 2; lov nr. 288/2022)");
 end
 
 // Priority 4: Court ordered debts

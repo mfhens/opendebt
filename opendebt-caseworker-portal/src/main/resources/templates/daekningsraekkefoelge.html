@@ -21,9 +21,12 @@
           <thead>
             <tr>
               <th>#</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.fordringId}">Fordring</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.fordringshaverId}">Fordringshaver</th>
               <th th:text="#{daekningsraekkefoelge.tabel.kategori}">Kategori</th>
               <th th:text="#{daekningsraekkefoelge.tabel.komponent}">Komponent</th>
-              <th th:text="#{daekningsraekkefoelge.tabel.dato}">Dato</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.modtagelsesdato}">Modtagelsesdato</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.dato}">FIFO-dato</th>
               <th th:text="#{daekningsraekkefoelge.tabel.beloeb}">Tilbageståend beløb</th>
             </tr>
           </thead>
@@ -32,6 +35,8 @@
                 th:classappend="${pos.opskrivningAfFordringId != null ? 'opskrivningsfordring' : ''}"
                 th:attr="data-fordring-id=${pos.fordringId}">
               <td th:text="${stat.count}">1</td>
+              <td th:text="${pos.fordringId}">FDR-001</td>
+              <td th:text="${pos.fordringshaverId}">FH-001</td>
               <td th:text="${#messages.msg('daekningsraekkefoelge.kategori.' + pos.prioritetKategori)}">Kategori</td>
               <td>
                 <span th:text="${#messages.msg('daekningsraekkefoelge.komponent.' + pos.komponent)}">Komponent</span>
@@ -39,6 +44,7 @@
                       class="opskrivning-reference"
                       th:text="'Opskrivning af ' + ${pos.opskrivningAfFordringId}">Opskrivning af FDR-001</span>
               </td>
+              <td th:text="${pos.modtagelsesdato}">2024-01-01</td>
               <td th:text="${pos.fifoSortKey}">2024-01-01</td>
               <td th:text="${pos.tilbaestaaendeBeloeb}">0.00</td>
             </tr>

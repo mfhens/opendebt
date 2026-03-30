@@ -1,6 +1,7 @@
 package dk.ufst.opendebt.payment.daekning.service.impl;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import dk.ufst.opendebt.payment.daekning.entity.DaekningRecord;
 import dk.ufst.opendebt.payment.daekning.repository.DaekningFordringRepository;
 import dk.ufst.opendebt.payment.daekning.repository.DaekningRecordRepository;
 import dk.ufst.opendebt.payment.daekning.service.DaekningsRaekkefoeigenService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -33,6 +35,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
 
   private final DaekningFordringRepository fordringRepository;
   private final DaekningRecordRepository daekningRecordRepository;
+  private final Clock clock;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Public API
@@ -41,13 +44,13 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
   @Override
   @Transactional(readOnly = true)
   public List<DaekningsraekkefoelgePositionDto> getOrdering(String debtorId, LocalDate asOf) {
-    Instant cutoff = asOf != null
-        ? asOf.plusDays(1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
-        : Instant.now().plusSeconds(5); // generous: include entities seeded in same test step
+    Instant cutoff =
+        asOf != null
+            ? asOf.plusDays(1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+            : Instant.now(clock);
     List<DaekningFordringEntity> all = fordringRepository.findByDebtorId(debtorId);
-    List<DaekningFordringEntity> filtered = all.stream()
-        .filter(f -> !f.getReceivedAt().isAfter(cutoff))
-        .toList();
+    List<DaekningFordringEntity> filtered =
+        all.stream().filter(f -> !f.getReceivedAt().isAfter(cutoff)).toList();
 
     List<DaekningFordringEntity> ordered = buildOrderedFordringList(filtered, null);
 
@@ -55,14 +58,17 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     for (DaekningFordringEntity e : ordered) {
       List<SubPosition> subs = expandSubPositions(e);
       for (SubPosition sub : subs) {
-        positions.add(new DaekningsraekkefoelgePositionDto(
-            e.getFordringId(),
-            e.getPrioritetKategori(),
-            e.getPrioritetKategori().gilParagraf,
-            sub.komponent(),
-            computeFifoSortKey(e),
-            sub.beloeb(),
-            e.getOpskrivningAfFordringId()));
+        positions.add(
+            new DaekningsraekkefoelgePositionDto(
+                e.getFordringId(),
+                e.getFordringshaverId(),
+                e.getPrioritetKategori(),
+                e.getPrioritetKategori().gilParagraf,
+                sub.komponent(),
+                computeFifoSortKey(e),
+                e.getModtagelsesdato(),
+                sub.beloeb(),
+                e.getOpskrivningAfFordringId()));
       }
     }
     return positions;
@@ -94,32 +100,31 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     List<DaekningFordringEntity> all = fordringRepository.findByDebtorId(debtorId);
     List<DaekningFordringEntity> filtered = filterByTimestamp(all, applicationTimestamp);
 
-    List<AllocationEntry> allocations =
-        buildAllocations(filtered, beloeb, inddrivelsesindsatsType);
-
-    String gilParagraf = resolveGilParagraf(inddrivelsesindsatsType, null);
+    List<AllocationEntry> allocations = buildAllocations(filtered, beloeb, inddrivelsesindsatsType);
 
     List<DaekningRecord> records = new ArrayList<>();
     for (AllocationEntry a : allocations) {
       if (a.daekningBeloeb().compareTo(BigDecimal.ZERO) <= 0) {
         continue;
       }
-      DaekningRecord r = DaekningRecord.builder()
-          .fordringId(a.entity().getFordringId())
-          .debtorId(debtorId)
-          .komponent(a.komponent())
-          .daekningBeloeb(a.daekningBeloeb())
-          .betalingstidspunkt(betalingstidspunkt)
-          .applicationTimestamp(applicationTimestamp)
-          .gilParagraf(resolveGilParagraf(inddrivelsesindsatsType, a.entity().getPrioritetKategori()))
-          .prioritetKategori(a.entity().getPrioritetKategori())
-          .fifoSortKey(computeFifoSortKey(a.entity()))
-          .udlaegSurplus(a.isUdlaegSurplus())
-          .inddrivelsesindsatsType(inddrivelsesindsatsType)
-          .opskrivningAfFordringId(a.entity().getOpskrivningAfFordringId())
-          .createdBy("system")
-          .createdAt(Instant.now())
-          .build();
+      DaekningRecord r =
+          DaekningRecord.builder()
+              .fordringId(a.entity().getFordringId())
+              .debtorId(debtorId)
+              .komponent(a.komponent())
+              .daekningBeloeb(a.daekningBeloeb())
+              .betalingstidspunkt(betalingstidspunkt)
+              .applicationTimestamp(applicationTimestamp)
+              .gilParagraf(
+                  resolveGilParagraf(inddrivelsesindsatsType, a.entity().getPrioritetKategori()))
+              .prioritetKategori(a.entity().getPrioritetKategori())
+              .fifoSortKey(computeFifoSortKey(a.entity()))
+              .udlaegSurplus(a.isUdlaegSurplus())
+              .inddrivelsesindsatsType(inddrivelsesindsatsType)
+              .opskrivningAfFordringId(a.entity().getOpskrivningAfFordringId())
+              .createdBy("system")
+              .createdAt(Instant.now(clock))
+              .build();
       records.add(r);
     }
 
@@ -136,9 +141,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     if (applicationTimestamp == null) {
       return all;
     }
-    return all.stream()
-        .filter(f -> !f.getReceivedAt().isAfter(applicationTimestamp))
-        .toList();
+    return all.stream().filter(f -> !f.getReceivedAt().isAfter(applicationTimestamp)).toList();
   }
 
   /**
@@ -146,24 +149,26 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
    * opskrivningsfordringer.
    */
   private List<DaekningFordringEntity> buildOrderedFordringList(
-      List<DaekningFordringEntity> fordringer,
-      InddrivelsesindsatsType inddrivelsesindsatsType) {
+      List<DaekningFordringEntity> fordringer, InddrivelsesindsatsType inddrivelsesindsatsType) {
 
     // Step 2: filter by indsats
     List<DaekningFordringEntity> primary;
     if (inddrivelsesindsatsType == InddrivelsesindsatsType.UDLAEG) {
-      primary = fordringer.stream()
-          .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
-          .collect(Collectors.toCollection(ArrayList::new));
+      primary =
+          fordringer.stream()
+              .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
+              .collect(Collectors.toCollection(ArrayList::new));
     } else if (inddrivelsesindsatsType == InddrivelsesindsatsType.LOENINDEHOLDELSE
         || inddrivelsesindsatsType == InddrivelsesindsatsType.MODREGNING) {
       // indsats-fordringer first, then eligible surplus fordringer
-      List<DaekningFordringEntity> indsats = fordringer.stream()
-          .filter(f -> Boolean.TRUE.equals(f.getInLoenindeholdelsesIndsats()))
-          .collect(Collectors.toCollection(ArrayList::new));
-      List<DaekningFordringEntity> surplus = fordringer.stream()
-          .filter(f -> !Boolean.TRUE.equals(f.getInLoenindeholdelsesIndsats()))
-          .collect(Collectors.toCollection(ArrayList::new));
+      List<DaekningFordringEntity> indsats =
+          fordringer.stream()
+              .filter(f -> Boolean.TRUE.equals(f.getInLoenindeholdelsesIndsats()))
+              .collect(Collectors.toCollection(ArrayList::new));
+      List<DaekningFordringEntity> surplus =
+          fordringer.stream()
+              .filter(f -> !Boolean.TRUE.equals(f.getInLoenindeholdelsesIndsats()))
+              .collect(Collectors.toCollection(ArrayList::new));
       primary = new ArrayList<>();
       primary.addAll(indsats);
       primary.addAll(surplus);
@@ -173,11 +178,12 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
 
     // Step 3+4: sort by PrioritetKategori ordinal, then FIFO sort key, then sekvensNummer, then
     // fordringId for deterministic stable ordering (test reproducibility)
-    primary.sort(Comparator
-        .comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
-        .thenComparing(this::computeFifoSortKey, Comparator.naturalOrder())
-        .thenComparingInt(e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE)
-        .thenComparing(DaekningFordringEntity::getFordringId));
+    primary.sort(
+        Comparator.comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
+            .thenComparing(this::computeFifoSortKey, Comparator.naturalOrder())
+            .thenComparingInt(
+                e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE)
+            .thenComparing(DaekningFordringEntity::getFordringId));
 
     // Step 5: reposition opskrivningsfordringer
     return repositionOpskrivningsfordringer(primary);
@@ -188,16 +194,22 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
       List<DaekningFordringEntity> sorted) {
 
     // Separate stamfordringer from opskrivningsfordringer
-    List<DaekningFordringEntity> stamfordringer = sorted.stream()
-        .filter(e -> e.getOpskrivningAfFordringId() == null
-            || e.getOpskrivningAfFordringId().isBlank())
-        .collect(Collectors.toCollection(LinkedList::new));
+    List<DaekningFordringEntity> stamfordringer =
+        sorted.stream()
+            .filter(
+                e ->
+                    e.getOpskrivningAfFordringId() == null
+                        || e.getOpskrivningAfFordringId().isBlank())
+            .collect(Collectors.toCollection(LinkedList::new));
 
-    Map<String, List<DaekningFordringEntity>> opskriv = sorted.stream()
-        .filter(e -> e.getOpskrivningAfFordringId() != null
-            && !e.getOpskrivningAfFordringId().isBlank())
-        .sorted(Comparator.comparing(DaekningFordringEntity::getModtagelsesdato))
-        .collect(Collectors.groupingBy(DaekningFordringEntity::getOpskrivningAfFordringId));
+    Map<String, List<DaekningFordringEntity>> opskriv =
+        sorted.stream()
+            .filter(
+                e ->
+                    e.getOpskrivningAfFordringId() != null
+                        && !e.getOpskrivningAfFordringId().isBlank())
+            .sorted(Comparator.comparing(DaekningFordringEntity::getModtagelsesdato))
+            .collect(Collectors.groupingBy(DaekningFordringEntity::getOpskrivningAfFordringId));
 
     if (opskriv.isEmpty()) {
       return stamfordringer;
@@ -213,15 +225,15 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     }
 
     // Handle opskrivningsfordringer whose parent has tilbaestaaendeBeloeb == 0 (not in stamlist)
-    Map<String, DaekningFordringEntity> allById = sorted.stream()
-        .collect(Collectors.toMap(DaekningFordringEntity::getFordringId, e -> e, (a, b) -> a));
+    Map<String, DaekningFordringEntity> allById =
+        sorted.stream()
+            .collect(Collectors.toMap(DaekningFordringEntity::getFordringId, e -> e, (a, b) -> a));
 
     for (Map.Entry<String, List<DaekningFordringEntity>> entry : opskriv.entrySet()) {
       String parentId = entry.getKey();
       List<DaekningFordringEntity> children = entry.getValue();
       // If parent is not in result, insert children at their natural position
-      boolean parentInResult = result.stream()
-          .anyMatch(e -> e.getFordringId().equals(parentId));
+      boolean parentInResult = result.stream().anyMatch(e -> e.getFordringId().equals(parentId));
       if (parentInResult) {
         continue; // already inserted after parent in the main loop
       }
@@ -233,8 +245,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
         PrioritetKategori parentKat = allById.get(parentId).getPrioritetKategori();
         for (int i = 0; i < result.size(); i++) {
           DaekningFordringEntity r = result.get(i);
-          if (r.getPrioritetKategori() == parentKat
-              && !computeFifoSortKey(r).isAfter(parentFifo)) {
+          if (r.getPrioritetKategori() == parentKat && !computeFifoSortKey(r).isAfter(parentFifo)) {
             insertAt = i + 1;
           }
         }
@@ -244,8 +255,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
         PrioritetKategori childKat = children.get(0).getPrioritetKategori();
         for (int i = 0; i < result.size(); i++) {
           DaekningFordringEntity r = result.get(i);
-          if (r.getPrioritetKategori() == childKat
-              && !computeFifoSortKey(r).isAfter(childFifo)) {
+          if (r.getPrioritetKategori() == childKat && !computeFifoSortKey(r).isAfter(childFifo)) {
             insertAt = i + 1;
           }
         }
@@ -259,7 +269,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
   /** Step 4: compute FIFO sort key for a fordring. */
   private LocalDate computeFifoSortKey(DaekningFordringEntity e) {
     LocalDate legacy = e.getLegacyModtagelsesdato();
-    if (legacy != null && legacy.isBefore(LEGACY_CUTOFF)) {
+    if (legacy != null && e.getModtagelsesdato().isBefore(LEGACY_CUTOFF)) {
       return legacy;
     }
     return e.getModtagelsesdato();
@@ -321,13 +331,15 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
 
     if (inddrivelsesindsatsType == InddrivelsesindsatsType.UDLAEG) {
       // Only udlaeg fordringer; surplus flagged but not applied
-      List<DaekningFordringEntity> udlaeg = fordringer.stream()
-          .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
-          .collect(Collectors.toCollection(ArrayList::new));
-      udlaeg.sort(Comparator
-          .comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
-          .thenComparing(this::computeFifoSortKey)
-          .thenComparingInt(e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE));
+      List<DaekningFordringEntity> udlaeg =
+          fordringer.stream()
+              .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
+              .collect(Collectors.toCollection(ArrayList::new));
+      udlaeg.sort(
+          Comparator.comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
+              .thenComparing(this::computeFifoSortKey)
+              .thenComparingInt(
+                  e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE));
       udlaeg = repositionOpskrivningsfordringer(udlaeg);
 
       BigDecimal remaining = totalBeloeb;
@@ -346,7 +358,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
         result.add(new AllocationEntry(last, RenteKomponent.HOOFDFORDRING, remaining, true));
       }
     } else {
-      // FRIVOLLIG / LOENINDEHOLDELSE / MODREGNING
+      // FRIVILLIG / LOENINDEHOLDELSE / MODREGNING
       List<DaekningFordringEntity> ordered =
           buildOrderedFordringList(fordringer, inddrivelsesindsatsType);
       BigDecimal remaining = totalBeloeb;
@@ -369,20 +381,22 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
       BigDecimal beloeb,
       InddrivelsesindsatsType inddrivelsesindsatsType) {
 
-    List<AllocationEntry> allocations = buildAllocations(fordringer, beloeb, inddrivelsesindsatsType);
+    List<AllocationEntry> allocations =
+        buildAllocations(fordringer, beloeb, inddrivelsesindsatsType);
     List<SimulatePositionDto> result = new ArrayList<>();
     for (AllocationEntry a : allocations) {
       if (a.isUdlaegSurplus()) continue;
-      result.add(new SimulatePositionDto(
-          a.entity().getFordringId(),
-          a.entity().getPrioritetKategori(),
-          a.entity().getPrioritetKategori().gilParagraf,
-          a.komponent(),
-          computeFifoSortKey(a.entity()),
-          getSubBeloeb(a.entity(), a.komponent()),
-          a.entity().getOpskrivningAfFordringId(),
-          a.daekningBeloeb(),
-          a.daekningBeloeb().compareTo(getSubBeloeb(a.entity(), a.komponent())) >= 0));
+      result.add(
+          new SimulatePositionDto(
+              a.entity().getFordringId(),
+              a.entity().getPrioritetKategori(),
+              a.entity().getPrioritetKategori().gilParagraf,
+              a.komponent(),
+              computeFifoSortKey(a.entity()),
+              getSubBeloeb(a.entity(), a.komponent()),
+              a.entity().getOpskrivningAfFordringId(),
+              a.daekningBeloeb(),
+              a.daekningBeloeb().compareTo(getSubBeloeb(a.entity(), a.komponent())) >= 0));
     }
     return result;
   }
@@ -391,7 +405,8 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     return switch (k) {
       case OPKRAEVNINGSRENTER -> e.getBeloebOpkraevningsrenter();
       case INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 -> e.getBeloebInddrivelsesrenterFordringshaver();
-      case INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL -> e.getBeloebInddrivelsesrenterFoerTilbagefoersel();
+      case INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL ->
+          e.getBeloebInddrivelsesrenterFoerTilbagefoersel();
       case INDDRIVELSESRENTER_STK1 -> e.getBeloebInddrivelsesrenterStk1();
       case OEVRIGE_RENTER_PSRM -> e.getBeloebOevrigeRenterPsrm();
       case HOOFDFORDRING -> {

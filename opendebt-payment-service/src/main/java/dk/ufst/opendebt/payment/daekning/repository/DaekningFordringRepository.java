@@ -10,6 +10,4 @@ import dk.ufst.opendebt.payment.daekning.entity.DaekningFordringEntity;
 public interface DaekningFordringRepository extends JpaRepository<DaekningFordringEntity, UUID> {
 
   List<DaekningFordringEntity> findByDebtorId(String debtorId);
-
-  void deleteByDebtorId(String debtorId);
 }

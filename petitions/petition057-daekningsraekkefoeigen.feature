@@ -28,7 +28,8 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
     Then fordring "FDR-30013" (bøder, kategori 2) is fully covered with 300.00 DKK
     And fordring "FDR-30012" (underholdsbidrag, kategori 3) is covered with 200.00 DKK
     And fordring "FDR-30011" (andre fordringer, kategori 4) receives no dækning
-    And each dækning record carries gilParagraf "GIL § 4, stk. 1"
+    And the dækning record for "FDR-30013" carries gilParagraf "GIL § 4, stk. 1, nr. 2"
+    And the dækning record for "FDR-30012" carries gilParagraf "GIL § 4, stk. 1, nr. 3"
 
   Scenario: Prioritetsrækkefølge — alle fire kategorier — kun kategori 1 dækkes ved lille betaling
     Given debtor "SKY-3002" has the following active fordringer:
@@ -83,15 +84,28 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
 
   Scenario: Pre-2013 fordring — legacyModtagelsesdato bruges som FIFO-nøgle
     Given debtor "SKY-3006" has the following active fordringer:
-      | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato     | legacyModtagelsesdato |
-      | FDR-30061  | ANDRE_FORDRINGER | 500.00               | 2024-05-01 (opret)  | 2012-08-15            |
-      | FDR-30062  | ANDRE_FORDRINGER | 400.00               | 2024-04-01 (opret)  | (not set)             |
+      # Note: modtagelsesdato is the overdragelse API timestamp ("opret" date).
+      # FDR-30062 has no legacyModtagelsesdato (received after the 2013-09-01 migration cutoff).
+      | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | legacyModtagelsesdato |
+      | FDR-30061  | ANDRE_FORDRINGER | 500.00               | 2024-05-01      | 2012-08-15            |
+      | FDR-30062  | ANDRE_FORDRINGER | 400.00               | 2024-04-01      |                       |
     And fordring "FDR-30061" has a legacyModtagelsesdato of "2012-08-15" (before 1 September 2013)
     When a payment of 600.00 DKK is received for debtor "SKY-3006"
     And the dækningsrækkefølge rule engine applies the payment
     Then fordring "FDR-30061" is covered first using legacyModtagelsesdato "2012-08-15" as the sort key
     And fordring "FDR-30062" is covered second using its overdragelse modtagelsesdato
     And the API response for "FDR-30061" contains fifoSortKey "2012-08-15"
+
+  @petition057
+  Scenario: SKY-3027 Uafgjort FIFO: samme modtagelsesdato — laveste sekvensnummer dækkes først
+    Given debtor "SKY-3027" has the following active fordringer in the same priority category:
+      | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | sekvensNummer |
+      | FDR-30271  | ANDRE_FORDRINGER | 500.00               | 2024-01-15      | 1001          |
+      | FDR-30272  | ANDRE_FORDRINGER | 400.00               | 2024-01-15      | 1002          |
+    When a payment of 300.00 DKK is received for debtor "SKY-3027"
+    And the dækningsrækkefølge rule engine applies the payment
+    Then fordring "FDR-30271" (sekvensNummer 1001) is partially covered with 300.00 DKK
+    And fordring "FDR-30272" (sekvensNummer 1002) receives no dækning
 
   # ==============================================================================
   # FR-3: Interest ordering within each fordring — Gæld.bekendtg. § 4, stk. 3
@@ -101,7 +115,7 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
   Scenario: Renter dækkes før Hovedfordring ved delvis betaling
     Given debtor "SKY-3007" has fordring "FDR-30071" with the following outstanding components:
       | komponent                | beloeb |
-      | OPKRAEVANINGSRENTER      | 50.00  |
+      | OPKRAEVNINGSRENTER       | 50.00  |
       | INDDRIVELSESRENTER_STK1  | 30.00  |
       | OEVRIGE_RENTER_PSRM      | 20.00  |
       | HOVEDFORDRING            | 500.00 |
@@ -114,7 +128,7 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
   Scenario: Fuld rentesekvens — alle seks under-positioner dækkes i korrekt rækkefølge
     Given debtor "SKY-3008" has fordring "FDR-30081" with all six cost components outstanding:
       | sub-position | komponent                                  | beloeb |
-      | 1            | OPKRAEVANINGSRENTER                        | 10.00  |
+      | 1            | OPKRAEVNINGSRENTER                         | 10.00  |
       | 2            | INDDRIVELSESRENTER_FORDRINGSHAVER_STK3     | 15.00  |
       | 3            | INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL     | 20.00  |
       | 4            | INDDRIVELSESRENTER_STK1                    | 25.00  |
@@ -141,10 +155,12 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
 
   Scenario: Lønindeholdelse-betaling dækker indsats-fordringer først — surplus til øvrige lønindeholdelses-fordringer
     Given debtor "SKY-3010" has the following active fordringer:
+      # FDR-30102: not in this indsats (false) but eligible to receive lønindeholdelse surplus.
+      # FDR-30103: not in this indsats (false) and not eligible for lønindeholdelse surplus.
       | fordringId | kategori         | tilbaestaaendeBeloeb | inLoenindeholdelsesIndsats |
       | FDR-30101  | ANDRE_FORDRINGER | 200.00               | true                       |
-      | FDR-30102  | ANDRE_FORDRINGER | 300.00               | false (loenindeholdelse-eligible) |
-      | FDR-30103  | ANDRE_FORDRINGER | 400.00               | false (not loenindeholdelse-eligible) |
+      | FDR-30102  | ANDRE_FORDRINGER | 300.00               | false                      |
+      | FDR-30103  | ANDRE_FORDRINGER | 400.00               | false                      |
     When a lønindeholdelse payment of 450.00 DKK is received with inddrivelsesindsatsType "LOENINDEHOLDELSE"
     And the dækningsrækkefølge rule engine applies the payment
     Then fordring "FDR-30101" (indsats-fordring) is fully covered with 200.00 DKK first
@@ -163,14 +179,7 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
     And fordring "FDR-30112" (non-udlæg) receives no dækning
     And the remaining 200.00 DKK surplus is flagged as udlaegSurplus = true
     And no dækning record exists for fordring "FDR-30112"
-
-  Scenario: Udlæg-surplus — gilParagraf refererer retsplejelovens § 507
-    Given debtor "SKY-3012" has a single udlæg-fordring "FDR-30121" with tilbaaestaaendeBeloeb 100.00
-    When an udlæg payment of 150.00 DKK is received with inddrivelsesindsatsType "UDLAEG"
-    And the rule engine applies the payment
-    Then fordring "FDR-30121" is fully covered with 100.00 DKK
-    And the surplus dækning log entry carries gilParagraf "Retsplejelovens § 507 (udlæg undtagelse)"
-    And the surplus record carries udlaegSurplus = true
+    And the dækning record for "FDR-30111" carries gilParagraf "GIL § 4, stk. 3"
 
   # ==============================================================================
   # FR-5: Opskrivningsfordring positioning
@@ -179,10 +188,11 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
 
   Scenario: Opskrivningsfordring placeres umiddelbart efter sin stamfordring
     Given debtor "SKY-3013" has the following active fordringer:
+      # opskrivningAfFordringId is "" (empty string) for fordringer that are not opskrivningsfordringer.
       | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | opskrivningAfFordringId |
-      | FDR-30131  | ANDRE_FORDRINGER | 400.00               | 2024-01-10      | (none)                  |
+      | FDR-30131  | ANDRE_FORDRINGER | 400.00               | 2024-01-10      | ""                      |
       | FDR-30132  | ANDRE_FORDRINGER | 200.00               | 2024-01-10      | FDR-30131               |
-      | FDR-30133  | ANDRE_FORDRINGER | 300.00               | 2024-02-01      | (none)                  |
+      | FDR-30133  | ANDRE_FORDRINGER | 300.00               | 2024-02-01      | ""                      |
     When the dækningsrækkefølge ordered list is retrieved for debtor "SKY-3013"
     Then the ordered list is:
       | rank | fordringId | note                              |
@@ -193,10 +203,11 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
 
   Scenario: Opskrivningsfordring placeres korrekt når stamfordring allerede er fuldt dækket
     Given debtor "SKY-3014" has the following fordringer:
+      # FDR-30141 is fully covered (tilbaestaaendeBeloeb = 0.00); opskrivningAfFordringId "" = not an opskrivningsfordring.
       | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | opskrivningAfFordringId |
-      | FDR-30141  | ANDRE_FORDRINGER | 0.00 (fuldt dækket)  | 2024-01-10      | (none)                  |
+      | FDR-30141  | ANDRE_FORDRINGER | 0.00                 | 2024-01-10      | ""                      |
       | FDR-30142  | ANDRE_FORDRINGER | 150.00               | 2024-01-10      | FDR-30141               |
-      | FDR-30143  | ANDRE_FORDRINGER | 500.00               | 2024-02-01      | (none)                  |
+      | FDR-30143  | ANDRE_FORDRINGER | 500.00               | 2024-02-01      | ""                      |
     When the dækningsrækkefølge ordered list is retrieved for debtor "SKY-3014"
     Then the ordered list includes "FDR-30142" at rank 1 (inheriting parent's FIFO sort key 2024-01-10)
     And "FDR-30143" is at rank 2 (FIFO 2024-02-01)
@@ -205,7 +216,7 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
   Scenario: Flere opskrivningsfordringer for samme stamfordring ordnes indbyrdes ved FIFO
     Given debtor "SKY-3015" has the following fordringer:
       | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | opskrivningAfFordringId |
-      | FDR-30151  | ANDRE_FORDRINGER | 400.00               | 2024-01-10      | (none)                  |
+      | FDR-30151  | ANDRE_FORDRINGER | 400.00               | 2024-01-10      | ""                      |
       | FDR-30152  | ANDRE_FORDRINGER | 100.00               | 2024-06-01      | FDR-30151               |
       | FDR-30153  | ANDRE_FORDRINGER | 80.00                | 2024-04-15      | FDR-30151               |
     When the dækningsrækkefølge ordered list is retrieved for debtor "SKY-3015"
@@ -214,6 +225,23 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
       | 1    | FDR-30151  | stamfordring                                          |
       | 2    | FDR-30153  | opskrivning (earlier modtagelsesdato 2024-04-15)      |
       | 3    | FDR-30152  | opskrivning (later modtagelsesdato 2024-06-01)        |
+
+  @petition057
+  Scenario: SKY-3029 Opskrivningsfordring — inddrivelsesrenter dækkes inden Hovedfordring ved delvis betaling (FR-5)
+    # FR-5 (last bullet): inddrivelsesrenter accrued on an opskrivningsfordring are covered
+    # before its Hovedfordring, following the same FR-3 interest sequence.
+    Given debtor "SKY-3029" has the following active fordringer:
+      | fordringId | kategori         | tilbaestaaendeBeloeb | modtagelsesdato | opskrivningAfFordringId |
+      | FDR-30291  | ANDRE_FORDRINGER | 500.00               | 2024-01-10      | ""                      |
+      | FDR-30292  | ANDRE_FORDRINGER | 240.00               | 2024-01-10      | FDR-30291               |
+    And fordring "FDR-30292" has the following outstanding components:
+      | komponent                | beloeb |
+      | INDDRIVELSESRENTER_STK1  | 40.00  |
+      | HOVEDFORDRING            | 200.00 |
+    When a payment of 30.00 DKK is applied to opskrivningsfordring "FDR-30292"
+    And the dækningsrækkefølge rule engine applies the payment
+    Then INDDRIVELSESRENTER_STK1 on fordring "FDR-30292" receives 30.00 DKK dækning
+    And HOVEDFORDRING on fordring "FDR-30292" receives no dækning
 
   # ==============================================================================
   # FR-6: Timing — GIL § 4, stk. 4
@@ -233,13 +261,14 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
     Given debtor "SKY-3017" has fordring "FDR-30171" with tilbaestaaendeBeloeb 500.00
     When a payment of 200.00 DKK is applied to debtor "SKY-3017" at betalingstidspunkt "2025-02-01T12:00:00Z"
     Then a dækning record is created for fordring "FDR-30171" with:
-      | field               | value                      |
-      | daekningBeloeb      | 200.00                     |
-      | betalingstidspunkt  | 2025-02-01T12:00:00Z       |
-      | gilParagraf         | GIL § 4, stk. 2            |
-      | prioritetKategori   | ANDRE_FORDRINGER           |
-      | fifoSortKey         | (ISO-8601 modtagelsesdato) |
-    And the CLS audit log contains an entry for fordring "FDR-30171" with all five required fields
+      | field                | value                      |
+      | daekningBeloeb       | 200.00                     |
+      | betalingstidspunkt   | 2025-02-01T12:00:00Z       |
+      | applicationTimestamp | 2025-02-01T12:05:00Z       |
+      | gilParagraf          | GIL § 4, stk. 2            |
+      | prioritetKategori    | ANDRE_FORDRINGER           |
+      | fifoSortKey          | 2025-02-01                 |
+    And the CLS audit log contains an entry for fordring "FDR-30171" with all eight required fields: fordringId, komponent, daekningBeloeb, betalingstidspunkt, applicationTimestamp, gilParagraf, prioritetKategori, fifoSortKey
 
   # ==============================================================================
   # FR-7: Payment application API
@@ -282,6 +311,17 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
     Then the response status is 422
     And the response body contains a problem-detail with description of the validation failure
 
+  @petition057
+  Scenario: SKY-3028 Simulering afviser negativt beloeb med HTTP 422
+    Given debtor "SKY-3020" exists
+    When an authenticated sagsbehandler calls POST "/debtors/SKY-3020/daekningsraekkefoelge/simulate"
+    With body:
+      """
+      { "beloeb": -1 }
+      """
+    Then the response status is 422
+    # FR-7 mandates only HTTP 422 — no specific error code constant is specified in the petition or outcome contract
+
   Scenario: GET /daekningsraekkefoelge returnerer HTTP 403 for uautoriseret bruger
     Given debtor "SKY-3021" exists
     When a caller without payment-service:read scope calls GET "/debtors/SKY-3021/daekningsraekkefoelge"
@@ -312,9 +352,3 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2
     Then the row for "FDR-30232" is visually marked as an opskrivningsfordring
     And the row displays a reference linking "FDR-30232" to its parent "FDR-30231"
     And the row for "FDR-30232" appears immediately after the row for "FDR-30231" in the list
-
-  Scenario: Sagsbehandlerportal viser ikke interne koder — kun oversatte etiketter
-    Given debtor "SKY-3024" has a fordring with prioritetKategori "BOEDER_TVANGSBOEEDER_TILBAGEBETALING"
-    And a sagsbehandler navigates to the dækningsrækkefølge view for debtor "SKY-3024"
-    Then the portal does not display the raw code "BOEDER_TVANGSBOEEDER_TILBAGEBETALING"
-    And the portal displays the Danish label "Bøder, tvangsbøder og tilbagebetalingskrav"

@@ -73,7 +73,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
 
             letterService = container "Letter Service" "Document generation and delivery. Produces legally required notices, decisions, and correspondence." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
-            paymentService = container "Payment Service" "Payment processing and reconciliation. Tracks incoming payments, distributes to claims, and posts to financial audit ledger." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
+            paymentService = container "Payment Service" "Payment processing, reconciliation, and GIL § 4 payment application order (dækningsrækkefølge). Tracks incoming payments, applies them sequentially by PrioritetKategori and FIFO sort key, and posts to financial audit ledger. Owns DaekningRecord persistence and immudb audit appends (P057)." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
             wageGarnishmentService = container "Wage Garnishment Service" "Lønindeholdelse processing. Calculates and issues wage garnishment orders to employers and the courts." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
@@ -138,6 +138,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         // ---------------------------------------------------------------
         // Relationships — Cross-cutting Infrastructure
         // ---------------------------------------------------------------
+        caseworkerPortal -> paymentService  "Reads daekningsraekkefoelge (GIL § 4 P057) via" "HTTPS/REST"
         caseworkerPortal -> keycloak "Authenticates users via"  "OAuth2/OIDC"
         citizenPortal    -> keycloak "Authenticates users via"  "OAuth2/OIDC"
         creditorPortal   -> keycloak "Authenticates users via"  "OAuth2/OIDC"

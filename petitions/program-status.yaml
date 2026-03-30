@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-29
-  updated_by: copilot (P054 Phase 9 sprint-tracker — pipeline complete, BDD+review results recorded)
+  updated_at: 2026-03-30
+  updated_by: copilot (P057 sprint-tracker — full delivery pipeline complete, DEP-1 backlog item noted)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1176,14 +1176,33 @@ program:
         a fixed hierarchy defined in GIL § 4. Discrepancies between PSRM's implementation and
         the G.A. text are likely — Catala spike recommended.
         Tier A + Catala companion spike.
-        Implemented in opendebt-payment-service: 8-step GIL § 4 algorithm
+        Full delivery pipeline completed 2026-03-30.
+        Phase 1 (Requirements): PASSED — gherkin-minimality-reviewer + petition-translator-reviewer.
+        Phase 2 (Component assignment): PASSED — payment-service owns FR-1..FR-7,
+        caseworker-portal owns FR-8.
+        Phase 3 (Architecture): APPROVED — solution-architecture-p057-daekningsraekkefoeigen.md created.
+        Phase 4 (Specs): APPROVED — specs-p057-daekningsraekkefoeigen.md created.
+        Phase 5 (BDD tests): PASSED — 103 step definitions generated, 5 coverage defects fixed,
+        all scenarios GREEN.
+        Phase 6 (Implementation): COMPLETE — 186 tests GREEN in payment-service, 737 total tests
+        GREEN across all services after all fixes applied.
+        Phase 7 (Documentation): COMPLETE — 7 docs updated, 5 docs checked (no update needed),
+        architecture/workspace.dsl updated.
+        Phase 8 (Code review): PASSED — all 8 blocking issues resolved, dead code removed for minimality.
+        Key implementation artefacts in opendebt-payment-service: 8-step GIL § 4 algorithm
         (DaekningsRaekkefoeigenServiceImpl), 3 enums (PrioritetKategori, RenteKomponent,
         InddrivelsesindsatsType), 2 JPA entities (DaekningFordringEntity, DaekningRecord),
         2 repositories, 3 DTOs, REST controller with GET and POST simulate endpoints,
-        2 Flyway migrations (V2 daekning_fordring, V3 daekning_record). 103 tests pass.
+        2 Flyway migrations (V2 daekning_fordring, V3 daekning_record).
+        DEP-1 identified: debt-service endpoint GET /internal/debtors/{debtorId}/fordringer/active
+        is required by the payment-service dækningsrækkefølge flow but does not yet exist.
+        Must be tracked as a separate technical backlog item (TB-*) and resolved before
+        end-to-end integration testing of petition057 with live debt data.
       next_step: >
-        Proceed to petition058 (modregning + korrektionspulje) which depends on this
-        ordering model. Resolve Catala spike AC-18 (petition069) in a CI environment.
+        Register DEP-1 (debt-service GET /internal/debtors/{debtorId}/fordringer/active) as a
+        technical backlog item (TB-*) in the technical_backlog section so it can be picked up by
+        tech-debt-executor. Proceed to petition058 (modregning + korrektionspulje) which depends
+        on this ordering model. Resolve Catala spike AC-18 (petition069) in a CI environment.
 
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
@@ -1463,7 +1482,7 @@ program:
         Draft petition document after P062 petition is approved.
 
   # ===========================================================================
-  # STATUS SUMMARY (2026-03-29, 72 petitions tracked)
+  # STATUS SUMMARY (2026-03-30, 72 petitions tracked)
   # ===========================================================================
   # validated:    petition009, petition012, petition013, petition014, petition020, petition021
   # implemented:  petition001, petition003, petition004, petition005, petition006, petition007,
@@ -1491,11 +1510,13 @@ program:
   # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
   # PLANNED: Phase 16 (petition052 manual Nemkonto payout with 4-eyes approval)
   # PLANNED: Phase 17 (petition055-056 G.A.1 lifecycle gaps)
-  # PLANNED: Phase 18 (petition057-060 G.A.2 payment + prescription rules + P069/P070 Catala spikes)
+  # IN PROGRESS: Phase 18 (petition057 DONE; petition058-060 G.A.2 payment + prescription rules + P069/P070 Catala spikes)
   # PLANNED: Phase 19 (petition061-065 G.A.3 enkel inddrivelse + P071/P072 Catala spikes)
   # PLANNED: Phase 20 (petition066-068 G.A.3 skærpet inddrivelse + special types)
   # READY TO START: Phase 8 (citizen self-service 026-028, unblocked)
   # NOT STARTED: petition042 (OIO Sag case model), petition049 (case handler assignment)
+  # DEP-1 PENDING: debt-service GET /internal/debtors/{debtorId}/fordringer/active — to be
+  #               registered as TB-* technical backlog item (blocks P057 live integration)
   #
   # G.A. COVERAGE ROADMAP (juridisk vejledning G.A.1-G.A.3):
   #   Catala Tier A targets:

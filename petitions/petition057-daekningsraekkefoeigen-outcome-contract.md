@@ -96,7 +96,7 @@ GIL § 10b, Gæld.bekendtg. § 4 stk. 3, Retsplejelovens § 507, Lov nr. 288/202
 **Expected API response**
 - The simulation endpoint (`POST .../simulate`) returns one line item per cost component
   that would receive dækning, with `komponent` set to one of:
-  `OPKRAEVANINGSRENTER`, `INDDRIVELSESRENTER_FORDRINGSHAVER_STK3`,
+  `OPKRAEVNINGSRENTER`, `INDDRIVELSESRENTER_FORDRINGSHAVER_STK3`,
   `INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL`, `INDDRIVELSESRENTER_STK1`,
   `OEVRIGE_RENTER_PSRM`, `HOVEDFORDRING`.
 
