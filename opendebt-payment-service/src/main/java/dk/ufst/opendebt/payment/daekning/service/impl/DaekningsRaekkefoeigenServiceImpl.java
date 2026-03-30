@@ -296,7 +296,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     }
 
     addIfPositive(subs, RenteKomponent.OPKRAEVNINGSRENTER, opkr);
-    addIfPositive(subs, RenteKomponent.INDDRIVELSESRENTER_FORDRINGSHAVER_STK3, inddrFord);
+    addIfPositive(subs, RenteKomponent.INDDRIVELSESRENTER_FORDRINGSHAVER, inddrFord);
     addIfPositive(subs, RenteKomponent.INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL, inddrFoer);
     addIfPositive(subs, RenteKomponent.INDDRIVELSESRENTER_STK1, inddrStk1);
     addIfPositive(subs, RenteKomponent.OEVRIGE_RENTER_PSRM, oevrige);
@@ -404,7 +404,7 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
   private BigDecimal getSubBeloeb(DaekningFordringEntity e, RenteKomponent k) {
     return switch (k) {
       case OPKRAEVNINGSRENTER -> e.getBeloebOpkraevningsrenter();
-      case INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 -> e.getBeloebInddrivelsesrenterFordringshaver();
+      case INDDRIVELSESRENTER_FORDRINGSHAVER -> e.getBeloebInddrivelsesrenterFordringshaver();
       case INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL ->
           e.getBeloebInddrivelsesrenterFoerTilbagefoersel();
       case INDDRIVELSESRENTER_STK1 -> e.getBeloebInddrivelsesrenterStk1();

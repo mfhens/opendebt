@@ -130,7 +130,7 @@ Feature: Dækningsrækkefølge — GIL § 4 payment application order — rule-e
     Given debtor "SKY-3008" has fordring "FDR-30081" with all six cost components outstanding:
       | sub-position | komponent                                  | beloeb |
       | 1            | OPKRAEVNINGSRENTER                         | 10.00  |
-      | 2            | INDDRIVELSESRENTER_FORDRINGSHAVER_STK3     | 15.00  |
+      | 2            | INDDRIVELSESRENTER_FORDRINGSHAVER          | 15.00  |
       | 3            | INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL     | 20.00  |
       | 4            | INDDRIVELSESRENTER_STK1                    | 25.00  |
       | 5            | OEVRIGE_RENTER_PSRM                        | 30.00  |

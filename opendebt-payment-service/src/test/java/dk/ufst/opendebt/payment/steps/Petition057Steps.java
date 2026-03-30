@@ -413,7 +413,7 @@ public class Petition057Steps {
     BigDecimal sum =
         List.of(
                 RenteKomponent.OPKRAEVNINGSRENTER,
-                RenteKomponent.INDDRIVELSESRENTER_FORDRINGSHAVER_STK3,
+                RenteKomponent.INDDRIVELSESRENTER_FORDRINGSHAVER,
                 RenteKomponent.INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL,
                 RenteKomponent.INDDRIVELSESRENTER_STK1,
                 RenteKomponent.OEVRIGE_RENTER_PSRM)
@@ -1067,7 +1067,7 @@ public class Petition057Steps {
           BigDecimal val = new BigDecimal(v);
           switch (k) {
             case "OPKRAEVNINGSRENTER" -> b.beloebOpkraevningsrenter(val);
-            case "INDDRIVELSESRENTER_FORDRINGSHAVER_STK3" ->
+            case "INDDRIVELSESRENTER_FORDRINGSHAVER" ->
                 b.beloebInddrivelsesrenterFordringshaver(val);
             case "INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL" ->
                 b.beloebInddrivelsesrenterFoerTilbagefoersel(val);
@@ -1084,7 +1084,7 @@ public class Petition057Steps {
       BigDecimal v = new BigDecimal(row.get("beloeb"));
       switch (row.get("komponent")) {
         case "OPKRAEVNINGSRENTER" -> entity.setBeloebOpkraevningsrenter(v);
-        case "INDDRIVELSESRENTER_FORDRINGSHAVER_STK3" ->
+        case "INDDRIVELSESRENTER_FORDRINGSHAVER" ->
             entity.setBeloebInddrivelsesrenterFordringshaver(v);
         case "INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL" ->
             entity.setBeloebInddrivelsesrenterFoerTilbagefoersel(v);

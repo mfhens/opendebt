@@ -2134,3 +2134,18 @@ program:
         a replacement; implementation should follow TB-038 completion.
         Requires: a caseworker decision step (caseworker-portal), a new RENTEGODTGOERELSE
         CollectionMeasure type, and an outbound payment to the debtor via NemKonto.
+
+    - id: TB-040
+      title: "Implement GET /internal/debtors/{debtorId}/fordringer/active in debt-service (DEP-1)"
+      status: open
+      priority: high
+      created: 2026-03-29
+      petitions: [petition057]
+      description: |
+        P057 (dækningsrækkefølge) requires the active fordringer list for a debtor at payment
+        time. The endpoint GET /internal/debtors/{debtorId}/fordringer/active does not yet
+        exist in debt-service. Interim workaround: DaekningFordringRepository cache in
+        payment-service (populated by the creditor portal's opret-fordring flow).
+        This interim pattern must be replaced once TB-040 is delivered. Blocks live
+        integration testing of the full P057 payment application flow end-to-end.
+        Unblocks: P057 integration tests, P058, P059, P060 payment-chain petitions.

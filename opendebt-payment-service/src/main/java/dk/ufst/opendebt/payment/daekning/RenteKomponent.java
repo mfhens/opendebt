@@ -5,8 +5,8 @@ public enum RenteKomponent {
   /** Sub-position 1 — opkrævningsrenter. */
   OPKRAEVNINGSRENTER,
 
-  /** Sub-position 2 — inddrivelsesrenter fordringshaver (GIL § 9, stk. 3). */
-  INDDRIVELSESRENTER_FORDRINGSHAVER_STK3,
+  /** Sub-position 2 — inddrivelsesrenter fordringshaver (Gæld.bekendtg. § 9). */
+  INDDRIVELSESRENTER_FORDRINGSHAVER,
 
   /** Sub-position 3 — inddrivelsesrenter opstået før tilbageførselsperiode. */
   INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL,
