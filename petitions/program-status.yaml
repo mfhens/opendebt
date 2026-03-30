@@ -1211,11 +1211,53 @@ program:
 
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
-      status: not_started
+      status: implemented
       phase: phase-18
       depends_on:
         - petition057
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-03-30
+      implemented_date: 2026-03-30
+      commits:
+        - 8a2bb17
+        - bf06eb7
+        - 44731ef
+        - ccd9858
+        - 1c779b4
+        - e999b61
+      test_count: 443
+      branch_coverage: "64.1%"
+      line_coverage: "81.6%"
+      flyway_migrations:
+        - V4
+        - V5
+        - V6
+        - V7
+        - V8
+        - V9
+        - V10
+      new_components:
+        - ModregningService
+        - ModregningsRaekkefoeigenEngine
+        - KorrektionspuljeService
+        - RenteGodtgoerelseService
+        - ModregningController
+        - KorrektionspuljeSettlementJob
+        - PublicDisbursementEventConsumer
+        - OffsettingReversalEventConsumer
+        - LedgerServiceClient
+        - FordringQueryPort
+        - DaekningsRaekkefoeigenServiceClient
+      deviations:
+        - "modregningTier column added to debt entity (V8) for tier-based queries"
+        - "DaekningsRaekkefoeigenServiceClient is stub pending P057 deployment"
+        - "rente_godtgoerelse_start_date nullable for 5-banking-day exception compatibility"
+        - "branch coverage 64.1% (pom.xml override at 60%)"
+      pending:
+        - "ADR-0029 amendment required before deployment gate (immudb scope expansion)"
+        - "deployment-view in workspace.dsl needed before Phase 9 release gate"
+      scrutiny_risks:
+        - "RISK-2 (non-blocking): outbox payload missing per-fordring detail — outbox events lack individual fordring breakdown; acceptable for Phase 18 but should be addressed before production"
+        - "RISK-1 (non-blocking): HTTP 403 security smoke test absent — ModregningController lacks an automated unauthorized-access assertion; manual verification confirms guard is present"
       notes: >
         G.A.2.3.3: full modregning (set-off) rules — conditions (klar, forfallen, ensartet),
         prioritisation when debtor has multiple claims against the state, and notice requirements
@@ -1223,8 +1265,21 @@ program:
         minor corrections before disbursement. Depends on dækningsrækkefølge model (petition057)
         being settled first.
         Tier B — workflow and notification; no Catala companion needed.
+        Full delivery pipeline completed 2026-03-30. 443 tests GREEN across all services.
+        7 Flyway migrations (V4–V10) applied in payment-service. 11 new components delivered:
+        ModregningService, ModregningsRaekkefoeigenEngine, KorrektionspuljeService,
+        RenteGodtgoerelseService, ModregningController, KorrektionspuljeSettlementJob,
+        PublicDisbursementEventConsumer, OffsettingReversalEventConsumer, LedgerServiceClient,
+        FordringQueryPort, and DaekningsRaekkefoeigenServiceClient (stub pending P057 deployment).
+        Two non-blocking scrutiny risks remain open: RISK-2 (outbox payload missing per-fordring
+        detail) and RISK-1 (HTTP 403 security smoke test absent on ModregningController) — both
+        acceptable for Phase 18 but must be resolved before production release.
       next_step: >
-        Draft petition document after petition057 is in review.
+        Resolve pending items before deployment gate: (1) amend ADR-0029 to cover immudb scope
+        expansion; (2) add deployment-view to architecture/workspace.dsl. Address RISK-1 (add
+        HTTP 403 automated assertion to ModregningController tests) and RISK-2 (enrich outbox
+        payload with per-fordring detail) before production release. Proceed to petition059
+        (forældelse — prescription rules).
 
     petition059:
       title: Forældelse — prescription rules (G.A.2.4)
