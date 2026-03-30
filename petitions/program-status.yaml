@@ -2558,3 +2558,46 @@ program:
       implementation_notes: |
         Uses yanimetaxas/bookkeeping 4.3.0 for core double-entry logic.
         Coverage priority (DaekningsraekkefolgePosition) tied to Gaeldsbekendtgoerelsen § 4.
+
+    - id: TB-052
+      title: "OAuth2 token relay in caseworker portal WebClient"
+      status: not_started
+      priority: high
+      created: 2026-03-30
+      petitions: []
+      description: |
+        The caseworker portal makes server-to-server calls to payment-service and other
+        backend services via a plain WebClient with no Authorization header. In dev mode
+        this is acceptable (method security is profile-gated to non-dev). In production
+        (Keycloak active) backend services enforce @PreAuthorize — the unauthenticated calls
+        will return 403 causing the Posteringslog and other data panels to appear empty.
+
+        The fix is OAuth2 token relay ("token propagation"): configure the caseworker portal's
+        WebClient.Builder to attach the current user's Keycloak access token to all outgoing
+        backend requests. Only active in non-dev profiles (dev has no real token to relay).
+
+        Pattern: ServletOAuth2AuthorizedClientExchangeFilterFunction with
+        setDefaultOAuth2AuthorizedClient(true) — Spring Security provides this out of the box
+        for servlet OAuth2 clients.
+
+        Implementation steps:
+        - Add profile-gated WebClient.Builder bean in WebClientConfig: dev/local/test uses
+          plain builder; prod uses builder + OAuth2 filter function
+        - Add OAuth2AuthorizedClientManager bean (Spring Boot auto-configures the dependencies
+          when spring.security.oauth2.client.registration is present)
+        - Ensure the filter function propagates the current user token (not a client_credentials
+          service account) since the backend audit trail records who performed the action
+        - Add integration test or curl sequence verifying that in demo-auth profile (Keycloak
+          running) the Posteringslog populates for an authenticated CASEWORKER user
+
+        Root cause analysis: TB-043 created MethodSecurityConfig for payment-service without
+        the profile restriction that creditor-service already had. Fixed in TB-043 follow-up
+        commit 077b769 (profile-gate for dev/local/test). Token relay is the complementary
+        production-side fix.
+
+        Effort: SMALL (1-2 days). Risk: LOW — Spring Security provides first-class support.
+        Prerequisite: Keycloak running (demo-auth profile) for end-to-end verification.
+      implementation_notes: |
+        See WebClientConfig.java in opendebt-caseworker-portal. The bean is injected into
+        PaymentServiceClient, CaseServiceClient, DebtServiceClient, PersonServiceClient.
+        All four clients must receive the token-relaying builder in production.
