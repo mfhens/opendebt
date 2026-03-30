@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{daekningsraekkefoelge.title}">Dækningsrækkefølge</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/cases}" th:text="#{cases.title}">Sager</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{daekningsraekkefoelge.title}">Dækningsrækkefølge</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{daekningsraekkefoelge.title}">Dækningsrækkefølge — GIL § 4</h1>
+
+    <div class="skat-card" style="margin-top: 1rem;">
+      <div class="skat-card__body">
+        <table class="skat-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.kategori}">Kategori</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.komponent}">Komponent</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.dato}">Dato</th>
+              <th th:text="#{daekningsraekkefoelge.tabel.beloeb}">Tilbageståend beløb</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="pos, stat : ${positions}"
+                th:classappend="${pos.opskrivningAfFordringId != null ? 'opskrivningsfordring' : ''}"
+                th:attr="data-fordring-id=${pos.fordringId}">
+              <td th:text="${stat.count}">1</td>
+              <td th:text="${#messages.msg('daekningsraekkefoelge.kategori.' + pos.prioritetKategori)}">Kategori</td>
+              <td>
+                <span th:text="${#messages.msg('daekningsraekkefoelge.komponent.' + pos.komponent)}">Komponent</span>
+                <span th:if="${pos.opskrivningAfFordringId != null}"
+                      class="opskrivning-reference"
+                      th:text="'Opskrivning af ' + ${pos.opskrivningAfFordringId}">Opskrivning af FDR-001</span>
+              </td>
+              <td th:text="${pos.fifoSortKey}">2024-01-01</td>
+              <td th:text="${pos.tilbaestaaendeBeloeb}">0.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p th:if="${#lists.isEmpty(positions)}" class="skat-empty-state">
+          Ingen fordringer i dækningsrækkefølge.
+        </p>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/cases}">&#8592; <span th:text="#{cases.title}">Sager</span></a>
+    </p>
+  </section>
+</body>
+</html>

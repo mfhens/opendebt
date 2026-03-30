@@ -20,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@Profile("dev")
+@Profile({"dev", "test"})
 public class SecurityConfig {
 
   @Bean
