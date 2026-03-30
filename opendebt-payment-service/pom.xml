@@ -100,8 +100,8 @@
 
         <!-- immudb tamper-evidence layer (ADR-0029, TB-028-b) -->
         <!-- Confirmed on Maven Central: io.codenotary:immudb4j:1.0.1 (repositoryId=central) -->
-        <!-- grpc-netty excluded: Spring Boot 3.5 manages Netty to 4.1.131 which breaks gRPC 1.44.1's -->
-        <!-- AbstractHttp2Headers.iterator(). grpc-netty-shaded bundles its own Netty to avoid conflict. -->
+        <!-- grpc-netty excluded: grpc-netty-shaded bundles its own Netty to avoid Spring Boot -->
+        <!-- Netty version conflict. grpc upgraded to 1.68.1 to address CVE-2023-44487. -->
         <dependency>
             <groupId>io.codenotary</groupId>
             <artifactId>immudb4j</artifactId>
@@ -114,10 +114,11 @@
             </exclusions>
         </dependency>
         <!-- grpc-netty-shaded bundles Netty internally, avoiding version conflict with Spring Boot -->
+        <!-- Version upgraded from 1.44.1 to 1.68.1 to fix CVE-2023-44487 (HTTP/2 Rapid Reset) -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.44.1</version>
+            <version>1.68.1</version>
         </dependency>
 
         <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
@@ -163,21 +164,47 @@
         </dependency>
     </dependencies>
 
-    <!-- Pin error_prone_annotations to resolve convergence across immudb4j gRPC transitive deps -->
-    <!-- immudb4j 1.0.1 → grpc-netty 1.44.1 pulls 2.9.0; gson 2.13.2 pulls 2.41.0; Boot pulls 2.5.1 -->
-    <!-- Pin protobuf-java: grpc-protobuf 1.44.1 directly uses 3.19.2; proto-google-common-protos 2.0.1 -->
-    <!-- (a transitive dep of grpc-protobuf) declares 3.13.0 — enforcer requires convergence -->
+    <!-- Pin transitive deps from immudb4j gRPC stack to safe, convergence-resolved versions.    -->
+    <!-- gRPC upgraded from 1.44.1 to 1.68.1: fixes CVE-2023-44487 (HTTP/2 Rapid Reset, CVSS 7.5) -->
+    <!-- protobuf-java upgraded from 3.19.2 to 3.25.5: fixes CVE-2022-3171, CVE-2022-3509,        -->
+    <!--   CVE-2022-3510, CVE-2024-7254 (CVSS 7.5–8.7)                                            -->
+    <!-- guava pinned to 33.4.0-jre: fixes CVE-2023-2976 (temp file world-readable, CVSS 7.1)     -->
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_annotations</artifactId>
-                <version>2.41.0</version>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-core</artifactId>
+                <version>1.68.1</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>1.68.1</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>1.68.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>3.19.2</version>
+                <version>3.25.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.4.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.43.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.41.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
