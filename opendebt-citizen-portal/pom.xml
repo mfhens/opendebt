@@ -108,6 +108,17 @@
             <version>${okhttp3.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- SKAT Design System WebJar (TB-041) -->
+        <dependency>
+            <groupId>dk.ufst.opendebt</groupId>
+            <artifactId>skat-design-system</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>webjars-locator-core</artifactId>
+        </dependency>
     </dependencies>
 
     <!-- AIDEV-TODO: Add unit tests and remove coverage override -->

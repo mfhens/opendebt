@@ -2228,7 +2228,7 @@ program:
 
     - id: TB-041
       title: "Refactor all portals to consume skat-design-system WebJar"
-      status: not_started
+      status: done
       priority: medium
       created: 2026-03-30
       petitions: []
@@ -2258,12 +2258,12 @@ program:
         Unblocks: consistent versioning of design assets across all portals; eliminates
         56 duplicate font files from the repository.
       implementation_notes: |
-        Reference: skat-design-system/README.md for integration instructions.
-        WebJar path pattern: /webjars/skat-design-system/css/skat-tokens.css
-        webjars-locator-core is transitively available via spring-boot-starter-web — no
-        explicit dependency needed in portal pom.xml files.
-        Consider adding skat-design-system as a module to the parent POM so mvn install
-        at the root builds and installs it automatically.
+        Deleted 56 font files + 2 CSS + 2 JS from portals and opendebt-common.
+        All three portal layout templates updated to /webjars/skat-design-system/* URLs.
+        skat-design-system:1.0.0 added to creditor-portal, caseworker-portal, citizen-portal pom.xml.
+        webjars-locator-core added where missing (version from Spring Boot BOM).
+        All three portals compile clean against the WebJar.
+        Note: timeline.css was absent from caseworker-portal static (already not duplicated there).
 
     # -------------------------------------------------------------------------
     # UFST Shared Library Extraction Backlog (TB-042 – TB-051)
