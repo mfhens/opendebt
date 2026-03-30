@@ -28,6 +28,7 @@ import dk.ufst.opendebt.debtservice.service.KorrektionspuljeService;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.OffsettingReversalEvent;
+import dk.ufst.opendebt.debtservice.service.PaymentType;
 import dk.ufst.opendebt.debtservice.service.PublicDisbursementEvent;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseService;
 
@@ -296,7 +297,7 @@ public class Petition058Steps {
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
-            .paymentType("STANDARD_PAYMENT")
+            .paymentType(PaymentType.STANDARD_PAYMENT)
             .disbursementAmount(new BigDecimal("100.00"))
             .klageFristDato(LocalDate.now().plusYears(1))
             .renteGodtgoerelseNonTaxable(true)
@@ -345,7 +346,7 @@ public class Petition058Steps {
           .findById(currentModregningEventId)
           .ifPresent(
               me -> {
-                me.setPaymentType(paymentType);
+                me.setPaymentType(PaymentType.valueOf(paymentType));
                 modregningEventRepository.save(me);
               });
     }
@@ -462,7 +463,7 @@ public class Petition058Steps {
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
-            .paymentType("STANDARD_PAYMENT")
+            .paymentType(PaymentType.STANDARD_PAYMENT)
             .disbursementAmount(new BigDecimal("4000.00"))
             .tier1Amount(new BigDecimal("1000.00"))
             .tier2Amount(new BigDecimal("3000.00"))
@@ -483,7 +484,7 @@ public class Petition058Steps {
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
-            .paymentType("STANDARD_PAYMENT")
+            .paymentType(PaymentType.STANDARD_PAYMENT)
             .disbursementAmount(new BigDecimal("1000.00"))
             .klageFristDato(LocalDate.now().plusYears(1))
             .renteGodtgoerelseNonTaxable(true)
@@ -621,7 +622,11 @@ public class Petition058Steps {
             currentDecisionDate);
     ModregningResult result =
         modregningService.initiateModregning(
-            currentDebtorPersonId, currentDisbursementAmount, currentPaymentType, event, false);
+            currentDebtorPersonId,
+            currentDisbursementAmount,
+            PaymentType.valueOf(currentPaymentType),
+            event,
+            false);
     modregningEventIndex.put(currentNemkontoReferenceId, result.eventId());
   }
 
@@ -648,7 +653,11 @@ public class Petition058Steps {
             currentDecisionDate);
     ModregningResult result =
         modregningService.initiateModregning(
-            debtorId, new BigDecimal(String.valueOf(amount)), currentPaymentType, event, false);
+            debtorId,
+            new BigDecimal(String.valueOf(amount)),
+            PaymentType.valueOf(currentPaymentType),
+            event,
+            false);
     modregningEventIndex.put(nemkontoRef, result.eventId());
   }
 
@@ -691,7 +700,7 @@ public class Petition058Steps {
             decisionDate);
     ModregningResult result =
         modregningService.initiateModregning(
-            debtorId, new BigDecimal("2000.00"), "STANDARD_PAYMENT", event, false);
+            debtorId, new BigDecimal("2000.00"), PaymentType.STANDARD_PAYMENT, event, false);
     modregningEventIndex.put(nemkontoRef, result.eventId());
   }
 
@@ -1070,7 +1079,11 @@ public class Petition058Steps {
             LocalDate.now());
     ModregningResult result =
         modregningService.initiateModregning(
-            currentDebtorPersonId, event.disbursementAmount(), currentPaymentType, event, false);
+            currentDebtorPersonId,
+            event.disbursementAmount(),
+            PaymentType.valueOf(currentPaymentType),
+            event,
+            false);
     assertThat(result.eventId()).isEqualTo(modregningEventIndex.get(currentNemkontoReferenceId));
   }
 
@@ -1424,7 +1437,7 @@ public class Petition058Steps {
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now().minusDays(5))
             .decisionDate(LocalDate.now().minusDays(5))
-            .paymentType("STANDARD_PAYMENT")
+            .paymentType(PaymentType.STANDARD_PAYMENT)
             .disbursementAmount(amount)
             .tier2Amount(amount)
             .klageFristDato(LocalDate.now().plusYears(1))

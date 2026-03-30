@@ -20,17 +20,4 @@ public class DanishBankingCalendar {
     }
     return count;
   }
-
-  public LocalDate addBankingDays(LocalDate start, int days) {
-    LocalDate current = start;
-    int added = 0;
-    while (added < days) {
-      current = current.plusDays(1);
-      DayOfWeek day = current.getDayOfWeek();
-      if (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY) {
-        added++;
-      }
-    }
-    return current;
-  }
 }

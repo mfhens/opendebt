@@ -33,7 +33,7 @@ public class RenteGodtgoerelseService {
    * {startDate=receiptDate.plusMonths(1).withDayOfMonth(1), NONE}
    */
   public RenteGodtgoerelseDecision computeDecision(
-      LocalDate receiptDate, LocalDate decisionDate, String paymentType, Integer indkomstAar) {
+      LocalDate receiptDate, LocalDate decisionDate, PaymentType paymentType, Integer indkomstAar) {
 
     int bankingDays = bankingCalendar.bankingDaysBetween(receiptDate, decisionDate);
     if (bankingDays <= 5) {
@@ -43,7 +43,7 @@ public class RenteGodtgoerelseService {
 
     LocalDate standard = receiptDate.plusMonths(1).withDayOfMonth(1);
 
-    if ("OVERSKYDENDE_SKAT".equals(paymentType) && indkomstAar != null) {
+    if (PaymentType.OVERSKYDENDE_SKAT == paymentType && indkomstAar != null) {
       LocalDate candidate = LocalDate.of(indkomstAar + 1, 9, 1);
       if (candidate.isAfter(standard)) {
         return new RenteGodtgoerelseDecision(
@@ -68,22 +68,5 @@ public class RenteGodtgoerelseService {
         .findFirstByEffectiveDateLessThanEqualOrderByEffectiveDateDesc(referenceDate)
         .map(RenteGodtgoerelseRateEntry::getGodtgoerelseRatePercent)
         .orElseThrow(() -> new NoRenteGodtgoerelseRateException(referenceDate));
-  }
-
-  /**
-   * Creates a RenteGodtgoerelseRateEntry with effectiveDate = publicationDate + 5 banking days and
-   * godtgoerelseRatePercent = MAX(0, referenceRatePercent - 4.0).
-   */
-  public RenteGodtgoerelseRateEntry createRateEntry(
-      LocalDate publicationDate, BigDecimal referenceRatePercent) {
-    LocalDate effectiveDate = bankingCalendar.addBankingDays(publicationDate, 5);
-    BigDecimal godtgoerelseRatePercent =
-        referenceRatePercent.subtract(BigDecimal.valueOf(4.0)).max(BigDecimal.ZERO);
-    return RenteGodtgoerelseRateEntry.builder()
-        .publicationDate(publicationDate)
-        .effectiveDate(effectiveDate)
-        .referenceRatePercent(referenceRatePercent)
-        .godtgoerelseRatePercent(godtgoerelseRatePercent)
-        .build();
   }
 }

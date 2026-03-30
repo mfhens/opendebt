@@ -32,6 +32,7 @@ import dk.ufst.opendebt.debtservice.service.KorrektionspuljeService;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.OffsettingReversalEvent;
+import dk.ufst.opendebt.debtservice.service.PaymentType;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseService;
 
 /**
@@ -361,7 +362,7 @@ class KorrektionspuljeServiceTest {
           .initiateModregning(
               any(),
               amountCaptor.capture(),
-              eq("KORREKTIONSPULJE_SETTLEMENT"),
+              eq(PaymentType.KORREKTIONSPULJE_SETTLEMENT),
               any(),
               anyBoolean());
 

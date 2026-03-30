@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
+import dk.ufst.opendebt.debtservice.service.PaymentType;
+
 import lombok.*;
 
 @Entity
@@ -38,8 +40,9 @@ public class ModregningEvent {
   @Column(name = "decision_date", nullable = false)
   private LocalDate decisionDate;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "payment_type", nullable = false, length = 50)
-  private String paymentType;
+  private PaymentType paymentType;
 
   @Column(name = "indkomst_aar")
   private Integer indkomstAar;

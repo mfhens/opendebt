@@ -2,56 +2,89 @@ package dk.ufst.opendebt.debtservice.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dk.ufst.opendebt.debtservice.entity.ModregningEvent;
+import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 
 /** REST controller for modregning (offsetting) operations — petition P058. */
 @RestController
-@RequestMapping("/api/v1/modregning")
+@RequestMapping("/api/v1/debtors")
 public class ModregningController {
 
   private final ModregningService modregningService;
+  private final ModregningEventRepository modregningEventRepository;
 
-  public ModregningController(ModregningService modregningService) {
+  public ModregningController(
+      ModregningService modregningService, ModregningEventRepository modregningEventRepository) {
     this.modregningService = modregningService;
+    this.modregningEventRepository = modregningEventRepository;
   }
 
-  /** Applies a tier-2 waiver (GIL § 4, stk. 11). Requires modregning:waiver scope (AC-7). */
-  @PostMapping("/{modregningEventId}/waiver")
-  @PreAuthorize("hasAuthority('modregning:waiver')")
+  /**
+   * Applies a tier-2 waiver (GIL § 4, stk. 11). Spec §5.1.
+   *
+   * <p>SEC-1: caseworkerId extracted from JWT sub claim. SEC-1: SCOPE_modregning:waiver per
+   * SecurityConfig pattern.
+   */
+  @PostMapping("/{debtorId}/modregning-events/{eventId}/tier2-waiver")
+  @PreAuthorize("hasAuthority('SCOPE_modregning:waiver')")
   public ResponseEntity<ModregningEventSummary> postTier2Waiver(
-      @PathVariable UUID modregningEventId, @RequestBody WaiverRequest request) {
-    // In a real implementation, debtorPersonId and caseworkerId would come from security context
-    UUID caseworkerId = UUID.randomUUID(); // Placeholder — real impl reads from JWT
+      @PathVariable UUID debtorId,
+      @PathVariable UUID eventId,
+      @RequestBody @Valid WaiverRequest request,
+      Authentication authentication) {
+    // SEC-1: extract caseworkerId from JWT sub claim
+    UUID caseworkerId = UUID.fromString(authentication.getName());
     ModregningResult result =
-        modregningService.applyTier2Waiver(
-            null, modregningEventId, request.waiverReason(), caseworkerId);
+        modregningService.applyTier2Waiver(debtorId, eventId, request.waiverReason(), caseworkerId);
     return ResponseEntity.ok(toSummary(result));
   }
 
-  /** Initiates a modregning cycle for a debtor. */
-  @PostMapping("/{modregningEventId}/initiate")
-  @PreAuthorize("hasAuthority('modregning:write')")
-  public ResponseEntity<ModregningEventSummary> initiateModregning(
-      @PathVariable UUID modregningEventId, @RequestBody InitiateRequest request) {
-    ModregningResult result =
-        modregningService.initiateModregning(
-            request.debtorPersonId(),
-            request.availableAmount(),
-            request.paymentType(),
-            request.nemkontoReferenceId(),
-            false);
-    return ResponseEntity.ok(toSummary(result));
+  /**
+   * Returns paginated list of modregning events for a debtor. Spec §5.2.
+   *
+   * <p>Requires SCOPE_modregning:read.
+   */
+  @GetMapping("/{debtorId}/modregning-events")
+  @PreAuthorize("hasAuthority('SCOPE_modregning:read')")
+  public ResponseEntity<List<ModregningEventSummary>> getModregningEvents(
+      @PathVariable UUID debtorId) {
+    List<ModregningEvent> events =
+        modregningEventRepository.findByDebtorPersonId(debtorId, PageRequest.of(0, 100));
+    List<ModregningEventSummary> summaries =
+        events.stream()
+            .map(
+                e ->
+                    new ModregningEventSummary(
+                        e.getId(),
+                        e.getDebtorPersonId(),
+                        e.getDecisionDate(),
+                        e.getDisbursementAmount(),
+                        e.getTier1Amount(),
+                        e.getTier2Amount(),
+                        e.getTier3Amount(),
+                        e.isTier2WaiverApplied(),
+                        e.getKlageFristDato()))
+            .toList();
+    return ResponseEntity.ok(summaries);
   }
 
   private ModregningEventSummary toSummary(ModregningResult result) {
@@ -69,13 +102,7 @@ public class ModregningController {
 
   // ── DTOs ──────────────────────────────────────────────────────────────────────
 
-  public record WaiverRequest(String waiverReason) {}
-
-  public record InitiateRequest(
-      UUID debtorPersonId,
-      BigDecimal availableAmount,
-      String paymentType,
-      String nemkontoReferenceId) {}
+  public record WaiverRequest(@NotNull String waiverReason) {}
 
   public record ModregningEventSummary(
       UUID id,

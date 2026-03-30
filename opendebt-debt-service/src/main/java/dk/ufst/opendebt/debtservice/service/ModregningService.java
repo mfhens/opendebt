@@ -9,19 +9,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
+import dk.ufst.opendebt.debtservice.client.LedgerServiceClient;
 import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity;
 import dk.ufst.opendebt.debtservice.entity.ModregningEvent;
+import dk.ufst.opendebt.debtservice.entity.NotificationOutboxEntity;
 import dk.ufst.opendebt.debtservice.exception.ModregningEventNotFoundException;
 import dk.ufst.opendebt.debtservice.exception.WaiverAlreadyAppliedException;
 import dk.ufst.opendebt.debtservice.offsetting.OffsettingResult;
 import dk.ufst.opendebt.debtservice.offsetting.OffsettingService;
 import dk.ufst.opendebt.debtservice.repository.CollectionMeasureRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
+import dk.ufst.opendebt.debtservice.repository.NotificationOutboxRepository;
 
 /**
  * Primary implementation of {@link OffsettingService} for petition P058.
@@ -37,24 +44,33 @@ public class ModregningService implements OffsettingService {
   private final ModregningsRaekkefoeigenEngine raekkefoeigenEngine;
   private final RenteGodtgoerelseService renteGodtgoerelseService;
   private final ClsAuditClient clsAuditClient;
+  private final LedgerServiceClient ledgerServiceClient;
+  private final NotificationOutboxRepository notificationOutboxRepository;
+  private final ObjectMapper objectMapper;
 
   public ModregningService(
       ModregningEventRepository modregningEventRepository,
       CollectionMeasureRepository collectionMeasureRepository,
       ModregningsRaekkefoeigenEngine raekkefoeigenEngine,
       RenteGodtgoerelseService renteGodtgoerelseService,
-      ClsAuditClient clsAuditClient) {
+      ClsAuditClient clsAuditClient,
+      LedgerServiceClient ledgerServiceClient,
+      NotificationOutboxRepository notificationOutboxRepository,
+      ObjectMapper objectMapper) {
     this.modregningEventRepository = modregningEventRepository;
     this.collectionMeasureRepository = collectionMeasureRepository;
     this.raekkefoeigenEngine = raekkefoeigenEngine;
     this.renteGodtgoerelseService = renteGodtgoerelseService;
     this.clsAuditClient = clsAuditClient;
+    this.ledgerServiceClient = ledgerServiceClient;
+    this.notificationOutboxRepository = notificationOutboxRepository;
+    this.objectMapper = objectMapper;
   }
 
   /** Implements {@link OffsettingService#initiateOffsetting}. */
   @Override
   public OffsettingResult initiateOffsetting(
-      UUID debtorPersonId, BigDecimal availableAmount, String paymentType) {
+      UUID debtorPersonId, BigDecimal availableAmount, PaymentType paymentType) {
     ModregningResult result =
         initiateModregning(debtorPersonId, availableAmount, paymentType, null, false);
     List<OffsettingResult.OffsetAllocation> applied =
@@ -74,14 +90,14 @@ public class ModregningService implements OffsettingService {
    *
    * <p>Implements the full FR-1 workflow: 1. Idempotency check via nemkontoReferenceId 2.
    * RenteGodtgørelse decision 3. 3-tier allocation via ModregningsRaekkefoeigenEngine 4. Persist
-   * ModregningEvent 5. Persist SET_OFF CollectionMeasureEntity per allocation 6. CLS audit per
-   * allocation (NFR-2)
+   * ModregningEvent 5. Persist SET_OFF CollectionMeasureEntity per allocation 6. Post double-entry
+   * ledger entries per allocation (ADR-0018) 7. Write notification outbox entry (MISSING-1) 8. CLS
+   * audit per allocation (NFR-2)
    *
    * @param debtorPersonId the debtor UUID (never CPR — NFR-3/ADR-0014)
    * @param availableAmount gross amount available for offsetting
-   * @param paymentType payment type code
-   * @param sourceEvent optional nemkontoReferenceId (String) for idempotency; null generates new
-   *     UUID
+   * @param paymentType payment type code (ADR-0031)
+   * @param sourceEvent optional PublicDisbursementEvent for idempotency; null generates new UUID
    * @param restrictedPayment true if børne-og-ungeydelse restrictions apply
    * @return ModregningResult summary
    */
@@ -89,7 +105,7 @@ public class ModregningService implements OffsettingService {
   public ModregningResult initiateModregning(
       UUID debtorPersonId,
       BigDecimal availableAmount,
-      String paymentType,
+      PaymentType paymentType,
       Object sourceEvent,
       boolean restrictedPayment) {
 
@@ -142,9 +158,16 @@ public class ModregningService implements OffsettingService {
             .renteGodtgoerelseStartDate(rg.startDate())
             .renteGodtgoerelseNonTaxable(true)
             .build();
-    event = modregningEventRepository.save(event);
+    try {
+      event = modregningEventRepository.save(event);
+    } catch (DataIntegrityViolationException ex) {
+      // BUG-4: race condition on nemkonto_reference_id unique constraint — return existing
+      return toResult(
+          modregningEventRepository.findByNemkontoReferenceId(refId).orElseThrow(() -> ex),
+          List.of());
+    }
 
-    // Persist SET_OFF measures and build coverages
+    // Persist SET_OFF measures, post ledger entries, build coverages
     List<FordringCoverageDto> coverages = new ArrayList<>();
     for (FordringAllocation alloc : getAllAllocations(allocation)) {
       CollectionMeasureEntity measure =
@@ -155,6 +178,11 @@ public class ModregningService implements OffsettingService {
               .amount(alloc.amountCovered())
               .build();
       collectionMeasureRepository.save(measure);
+
+      // ADR-0018: double-entry ledger entry per allocation
+      ledgerServiceClient.postLedgerEntry(
+          debtorPersonId, alloc.fordringId(), alloc.amountCovered(), event.getId());
+
       coverages.add(
           new FordringCoverageDto(alloc.fordringId(), alloc.amountCovered(), alloc.tier()));
 
@@ -176,6 +204,9 @@ public class ModregningService implements OffsettingService {
               .build());
     }
 
+    // MISSING-1: Write notification outbox entry within @Transactional boundary
+    writeNotificationOutbox(event, coverages);
+
     return toResult(event, coverages);
   }
 
@@ -183,8 +214,11 @@ public class ModregningService implements OffsettingService {
    * Applies a tier-2 waiver per GIL § 4, stk. 11.
    *
    * <p>Steps: 1. Load ModregningEvent 2. Guard against double-waiver 3. Set
-   * tier2WaiverApplied=true, tier2Amount=0 4. Re-run engine with skipTier2=true to compute new
-   * tier-3 5. Persist updated event 6. CLS audit
+   * tier2WaiverApplied=true, tier2Amount=0 4. Mark existing tier-2 CollectionMeasure rows as
+   * waiver_applied (MISSING-2) 5. Re-run engine with skipTier2=true to compute new tier-3 6. Update
+   * tier1Amount, tier3Amount, residualPayoutAmount (BUG-2) 7. Create new tier-3
+   * CollectionMeasureEntity rows (MISSING-2) 8. Reverse ledger entries for original tier-2 measures
+   * (ADR-0018) 9. Persist updated event 10. CLS audit
    */
   @Transactional
   public ModregningResult applyTier2Waiver(
@@ -199,12 +233,47 @@ public class ModregningService implements OffsettingService {
       throw new WaiverAlreadyAppliedException(modregningEventId);
     }
 
+    // BUG-1 fix: use event's own debtorPersonId, not the (possibly null) parameter
+    UUID resolvedDebtorPersonId = event.getDebtorPersonId();
+
     event.setTier2WaiverApplied(true);
     event.setTier2Amount(BigDecimal.ZERO);
 
+    // MISSING-2: Mark existing tier-2 CollectionMeasure rows as waiver_applied
+    List<CollectionMeasureEntity> tier2Measures =
+        collectionMeasureRepository.findByModregningEventIdAndMeasureType(
+            modregningEventId, CollectionMeasureEntity.MeasureType.SET_OFF);
+    for (CollectionMeasureEntity cm : tier2Measures) {
+      cm.setWaiverApplied(true);
+      cm.setCaseworkerId(caseworkerId);
+      collectionMeasureRepository.save(cm);
+
+      // ADR-0018: reverse ledger entries for original tier-2 measures
+      ledgerServiceClient.reverseLedgerEntry(
+          resolvedDebtorPersonId, cm.getDebtId(), cm.getAmount(), modregningEventId);
+    }
+
     TierAllocationResult newAllocation =
-        raekkefoeigenEngine.allocate(debtorPersonId, event.getDisbursementAmount(), true, null);
+        raekkefoeigenEngine.allocate(
+            resolvedDebtorPersonId, event.getDisbursementAmount(), true, null);
+
+    // BUG-2: update all three amounts from newAllocation
+    event.setTier1Amount(sumTier(newAllocation.tier1Allocations()));
     event.setTier3Amount(sumTier(newAllocation.tier3Allocations()));
+    event.setResidualPayoutAmount(newAllocation.residualPayoutAmount());
+
+    // MISSING-2: Create new tier-3 CollectionMeasureEntity rows from the re-run
+    for (FordringAllocation alloc : newAllocation.tier3Allocations()) {
+      CollectionMeasureEntity newMeasure =
+          CollectionMeasureEntity.builder()
+              .debtId(alloc.fordringId())
+              .measureType(CollectionMeasureEntity.MeasureType.SET_OFF)
+              .modregningEventId(modregningEventId)
+              .amount(alloc.amountCovered())
+              .caseworkerId(caseworkerId)
+              .build();
+      collectionMeasureRepository.save(newMeasure);
+    }
 
     modregningEventRepository.save(event);
 
@@ -217,13 +286,70 @@ public class ModregningService implements OffsettingService {
             .resourceType("modregning_event")
             .resourceId(modregningEventId)
             .newValues(
-                Map.of("gilParagraf", "GIL § 4, stk. 11", "caseworkerId", caseworkerId.toString()))
+                Map.of(
+                    "gilParagraf",
+                    "GIL § 4, stk. 11",
+                    "caseworkerId",
+                    caseworkerId.toString(),
+                    "waiverReason",
+                    waiverReason))
             .build());
 
     return toResult(event, List.of());
   }
 
+  /**
+   * Handles Digital Post notice delivery callback — BUG-5/SPEC-058 §4.5.
+   *
+   * <p>When notice is delivered, recomputes klageFristDato = deliveryDate + 3 months.
+   *
+   * @param eventId the modregning event UUID
+   * @param success true if notice was delivered successfully
+   * @param deliveryDate the date notice was delivered (only used when success=true)
+   */
+  @Transactional
+  public void handleNoticeDelivery(UUID eventId, boolean success, LocalDate deliveryDate) {
+    ModregningEvent event =
+        modregningEventRepository
+            .findById(eventId)
+            .orElseThrow(() -> new ModregningEventNotFoundException(eventId));
+    if (success && deliveryDate != null) {
+      event.setNoticeDelivered(true);
+      event.setNoticeDeliveryDate(deliveryDate);
+      event.setKlageFristDato(deliveryDate.plusMonths(3));
+    }
+    modregningEventRepository.save(event);
+  }
+
   // ── helpers ──────────────────────────────────────────────────────────────────
+
+  private void writeNotificationOutbox(ModregningEvent event, List<FordringCoverageDto> coverages) {
+    String payload;
+    try {
+      payload =
+          objectMapper.writeValueAsString(
+              Map.of(
+                  "debtorPersonId",
+                  event.getDebtorPersonId().toString(),
+                  "eventId",
+                  event.getId().toString(),
+                  "decisionDate",
+                  event.getDecisionDate().toString(),
+                  "tierBreakdown",
+                  Map.of(
+                      "tier1Amount", event.getTier1Amount(),
+                      "tier2Amount", event.getTier2Amount(),
+                      "tier3Amount", event.getTier3Amount())));
+    } catch (JsonProcessingException e) {
+      payload = "{\"eventId\":\"" + event.getId() + "\"}";
+    }
+    notificationOutboxRepository.save(
+        NotificationOutboxEntity.builder()
+            .modregningEventId(event.getId())
+            .debtorPersonId(event.getDebtorPersonId())
+            .payload(payload)
+            .build());
+  }
 
   private BigDecimal sumTier(List<FordringAllocation> allocations) {
     return allocations.stream()

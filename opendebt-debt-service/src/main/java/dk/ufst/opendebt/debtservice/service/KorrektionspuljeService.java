@@ -76,6 +76,20 @@ public class KorrektionspuljeService {
       remaining = remaining.subtract(gendaekketAmount);
     }
 
+    // BUG-3: Look up origin ModregningEvent to get renteGodtgoerelseStartDate
+    LocalDate renteGodtgoerelseStartDate = null;
+    if (reversalEvent.originModregningEventId() != null) {
+      renteGodtgoerelseStartDate =
+          modregningEventRepository
+              .findById(reversalEvent.originModregningEventId())
+              .map(originEvent -> originEvent.getDecisionDate().plusDays(1))
+              .orElse(null);
+    }
+
+    // OTHER: Set boerneYdelseRestriction from originalPaymentType
+    boolean boerneYdelseRestriction =
+        PaymentType.BOERNE_OG_UNGEYDELSE.name().equals(reversalEvent.originalPaymentType());
+
     // Step 3: Persist remaining as KorrektionspuljeEntry
     boolean annualOnly = remaining.compareTo(ANNUAL_ONLY_THRESHOLD) < 0;
     KorrektionspuljeEntry entry =
@@ -85,6 +99,8 @@ public class KorrektionspuljeService {
             .surplusAmount(remaining)
             .correctionPoolTarget(reversalEvent.correctionPoolTarget())
             .annualOnlySettlement(annualOnly)
+            .renteGodtgoerelseStartDate(renteGodtgoerelseStartDate)
+            .boerneYdelseRestriction(boerneYdelseRestriction)
             .build();
     entry = entryRepository.save(entry);
 
@@ -124,7 +140,7 @@ public class KorrektionspuljeService {
     modregningService.initiateModregning(
         entry.getDebtorPersonId(),
         total,
-        "KORREKTIONSPULJE_SETTLEMENT",
+        PaymentType.KORREKTIONSPULJE_SETTLEMENT,
         null,
         entry.isBoerneYdelseRestriction());
 

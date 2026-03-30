@@ -50,12 +50,11 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
 | **person-registry** | 8090 | **GDPR data store** — single source of truth for all PII (CPR/CVR encrypted) |
 | **rules-engine** | 8091 | **Business rules** — Drools-based rule evaluation |
 | case-service | 8081 | Case management and workflow (Flowable BPMN) |
-| debt-service | 8082 | Debt registration, lifecycle management, readiness validation |
+| debt-service | 8082 | Debt registration, lifecycle management, readiness validation, **offsetting/modregning** (ADR-0027, P058) |
 | payment-service | 8083 | Payment processing, double-entry bookkeeping, tamper-evidence ledger |
 | letter-service | 8084 | Letter generation, Digital Post |
 | creditor-portal | 8085 | Portal for fordringshavere |
 | citizen-portal | 8086 | Portal for borgere |
-| offsetting-service | 8087 | Modregning (set-off) processing |
 | wage-garnishment-service | 8088 | Loenindeholdelse processing |
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, legacy SOAP (OIO/SKAT) |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |

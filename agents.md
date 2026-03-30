@@ -210,6 +210,42 @@ dk.ufst.opendebt.payment.daekning/
         └── DaekningsRaekkefoeigenServiceImpl.java  # 8-step GIL § 4 algorithm
 ```
 
+`debt-service` additionally contains an `offsetting/` domain sub-package for the Modregning og Korrektionspulje module (petition058, ADR-0027):
+
+```
+dk.ufst.opendebt.debtservice.offsetting/
+├── batch/
+│   └── KorrektionspuljeSettlementJob.java  # @Scheduled monthly + annual settlement sweep
+├── client/
+│   └── DaekningsRaekkefoeigenServiceClient.java  # HTTP stub for P057 in payment-service
+├── controller/
+│   └── ModregningController.java           # POST tier2-waiver, GET modregning-events
+├── entity/
+│   ├── ModregningEvent.java                # GIL § 16 stk. 1 set-off decision; written to immudb (ADR-0029)
+│   ├── KorrektionspuljeEntry.java          # Pool entry for reversal/gendaenkning credit
+│   └── RenteGodtgoerelseRateEntry.java     # Rate table for GIL § 8b computation
+├── repository/
+│   ├── ModregningEventRepository.java
+│   ├── KorrektionspuljeEntryRepository.java
+│   └── RenteGodtgoerelseRateEntryRepository.java
+└── service/
+    ├── FordringQueryPort.java                     # Internal JPA adapter for active-fordringer queries
+    ├── ModregningService.java                     # @Service, @Transactional — three-tier orchestrator
+    ├── ModregningsRaekkefoeigenEngine.java        # GIL § 7 stk. 1 allocation algorithm
+    ├── KorrektionspuljeService.java               # @Service, @Transactional — reversal/pool processor
+    ├── RenteGodtgoerelseService.java              # GIL § 8b rate + start-date calculator
+    ├── DanishBankingCalendar.java                 # 5-banking-day utility
+    ├── PublicDisbursementEvent.java               # Inbound DTO from integration-gateway (Nemkonto)
+    └── [result/decision records]                  # ModregningResult, KorrektionspuljeResult, etc.
+```
+
+Key invariants enforced in `offsetting/`:
+- `renteGodtgoerelseNonTaxable` is ALWAYS `true` (GIL SS 8b; hardcoded, never configurable)
+- No CPR/PII in entities — `UUID debtorPersonId` only (ADR-0014)
+- Idempotency via `nemkontoReferenceId` unique constraint (AC-5)
+- `@Transactional` on `initiateModregning` and `settleEntry` (NFR-1)
+- CLS audit per allocation with `gilParagraf` annotation (NFR-2)
+
 `caseworker-portal` additionally contains a `daekning/` view sub-package for the GIL § 4 view (petition057):
 
 ```
@@ -453,6 +489,10 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0026: Inter-Service Resilience (Resilience4j Circuit Breaker + Retry)
 - ADR-0027: Offsetting merged into debt-service
 - ADR-0028: Backup and Disaster Recovery Strategy (RTO 4h / RPO 4h)
+- ADR-0029: immudb for Financial Ledger Integrity (payment-service + debt-service offsetting records; see P058 amendment)
+- ADR-0030: SOAP Legacy Gateway (OIO/SKAT endpoints, petition019)
+- ADR-0031: Statutory Codes as Enums not Configuration
+- ADR-0032: Catala Formal Compliance Layer
 
 ## Standard Components
 

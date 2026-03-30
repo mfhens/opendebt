@@ -3,7 +3,6 @@ package dk.ufst.opendebt.debtservice.offsetting;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -22,6 +21,7 @@ import dk.ufst.opendebt.debtservice.entity.RenteGodtgoerelseRateEntry;
 import dk.ufst.opendebt.debtservice.exception.NoRenteGodtgoerelseRateException;
 import dk.ufst.opendebt.debtservice.repository.RenteGodtgoerelseRateEntryRepository;
 import dk.ufst.opendebt.debtservice.service.DanishBankingCalendar;
+import dk.ufst.opendebt.debtservice.service.PaymentType;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseDecision;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseService;
 
@@ -61,29 +61,6 @@ class RenteGodtgoerelseServiceTest {
   @DisplayName(
       "FR-4.1: Rate-change effective-date — new rate takes effect 5 banking days after publication")
   class RateChangeEffectiveDate {
-
-    /**
-     * FR-4.1: effectiveDate = publicationDate + 5 banking days. publicationDate=2025-01-01
-     * (Wednesday), effectiveDate=2025-01-08 (Wednesday). Ref: SPEC-058 §2.1.3
-     */
-    @Test
-    @DisplayName(
-        "FR-4.1: RenteGodtgoerelseRateEntry.effectiveDate = publicationDate + 5 banking days")
-    void rateEntry_effectiveDateIsFiveBankingDaysAfterPublication() {
-      // 2025-01-01 is Wednesday. 5 banking days: Thu 1/2, Fri 1/3, Mon 1/6, Tue 1/7, Wed 1/8
-      LocalDate publicationDate = LocalDate.of(2025, 1, 1);
-      LocalDate expectedEffectiveDate = LocalDate.of(2025, 1, 8);
-
-      when(bankingCalendar.addBankingDays(publicationDate, 5)).thenReturn(expectedEffectiveDate);
-
-      RenteGodtgoerelseRateEntry entry =
-          underTest.createRateEntry(publicationDate, new BigDecimal("5.00"));
-
-      assertThat(entry.getEffectiveDate())
-          .as("effectiveDate must be exactly publicationDate + 5 banking days (SPEC-058 §2.1.3)")
-          .isEqualTo(expectedEffectiveDate);
-      assertThat(entry.getPublicationDate()).isEqualTo(publicationDate);
-    }
 
     /**
      * FR-4.1: computeRate must return the rate whose effectiveDate ≤ referenceDate. A rate
@@ -130,31 +107,6 @@ class RenteGodtgoerelseServiceTest {
     }
 
     /**
-     * FR-4.1: godtgoerelseRatePercent = MAX(0, referenceRatePercent - 4.0). referenceRate <= 4.0%
-     * yields godtgoerelseRate = 0.0%. Ref: SPEC-058 §2.1.3
-     */
-    @Test
-    @DisplayName("FR-4.1: godtgoerelseRatePercent = MAX(0, refRate - 4.0) — zero floor enforced")
-    void godtgoerelseRate_isMaxZeroRefRateMinusFour() {
-      when(bankingCalendar.addBankingDays(any(LocalDate.class), anyInt()))
-          .thenReturn(LocalDate.now().plusDays(7));
-
-      // referenceRate=2.0% → godtgoerelseRate = MAX(0, 2.0 - 4.0) = 0.0%
-      RenteGodtgoerelseRateEntry lowRate =
-          underTest.createRateEntry(LocalDate.now(), new BigDecimal("2.00"));
-      assertThat(lowRate.getGodtgoerelseRatePercent())
-          .as("referenceRate=2.0% yields godtgoerelseRate=0.0% (floor at zero)")
-          .isEqualByComparingTo(BigDecimal.ZERO);
-
-      // referenceRate=9.0% → godtgoerelseRate = MAX(0, 9.0 - 4.0) = 5.0%
-      RenteGodtgoerelseRateEntry highRate =
-          underTest.createRateEntry(LocalDate.now().minusDays(10), new BigDecimal("9.00"));
-      assertThat(highRate.getGodtgoerelseRatePercent())
-          .as("referenceRate=9.0% yields godtgoerelseRate=5.0%")
-          .isEqualByComparingTo(new BigDecimal("5.00"));
-    }
-
-    /**
      * FR-4.1: computeRate throws NoRenteGodtgoerelseRateException when no entry covers
      * referenceDate. Ref: SPEC-058 §3.4 computeRate error contract
      */
@@ -190,7 +142,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 10), LocalDate.of(2025, 3, 13), "OVERSKYDENDE_SKAT", null);
+              LocalDate.of(2025, 3, 10),
+              LocalDate.of(2025, 3, 13),
+              PaymentType.OVERSKYDENDE_SKAT,
+              null);
 
       assertThat(decision.startDate())
           .as("startDate must be null when banking days ≤ 5 (SPEC-058 §3.4)")
@@ -212,7 +167,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 10), LocalDate.of(2025, 3, 17), "STANDARD_PAYMENT", null);
+              LocalDate.of(2025, 3, 10),
+              LocalDate.of(2025, 3, 17),
+              PaymentType.STANDARD_PAYMENT,
+              null);
 
       assertThat(decision.startDate())
           .as("Exactly 5 banking days must still trigger 5-banking-day exception (boundary)")
@@ -230,7 +188,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 10), LocalDate.of(2025, 3, 24), "STANDARD_PAYMENT", null);
+              LocalDate.of(2025, 3, 10),
+              LocalDate.of(2025, 3, 24),
+              PaymentType.STANDARD_PAYMENT,
+              null);
 
       // standard = receiptDate.plusMonths(1).withDayOfMonth(1) = 2025-04-01
       assertThat(decision.startDate())
@@ -260,7 +221,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 4, 1), LocalDate.of(2025, 4, 20), "OVERSKYDENDE_SKAT", 2024);
+              LocalDate.of(2025, 4, 1),
+              LocalDate.of(2025, 4, 20),
+              PaymentType.OVERSKYDENDE_SKAT,
+              2024);
 
       // candidate=2025-09-01 > standard=2025-05-01 → KILDESKATTELOV exception
       assertThat(decision.startDate())
@@ -284,7 +248,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 20), "OVERSKYDENDE_SKAT", 2025);
+              LocalDate.of(2026, 10, 1),
+              LocalDate.of(2026, 10, 20),
+              PaymentType.OVERSKYDENDE_SKAT,
+              2025);
 
       // candidate=2026-09-01 < standard=2026-11-01 → standard wins, no KILDESKATTELOV
       assertThat(decision.startDate())
@@ -306,7 +273,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 10), LocalDate.of(2025, 4, 1), "BOERNE_OG_UNGEYDELSE", null);
+              LocalDate.of(2025, 3, 10),
+              LocalDate.of(2025, 4, 1),
+              PaymentType.BOERNE_OG_UNGEYDELSE,
+              null);
 
       assertThat(decision.startDate())
           .as("Non-OVERSKYDENDE_SKAT must use standard date 2025-04-01")
@@ -334,7 +304,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 10), LocalDate.of(2025, 3, 24), "STANDARD_PAYMENT", null);
+              LocalDate.of(2025, 3, 10),
+              LocalDate.of(2025, 3, 24),
+              PaymentType.STANDARD_PAYMENT,
+              null);
 
       assertThat(decision.startDate())
           .as("Standard startDate must be 2025-04-01 (1st of month after 2025-03-10)")
@@ -356,7 +329,10 @@ class RenteGodtgoerelseServiceTest {
 
       RenteGodtgoerelseDecision decision =
           underTest.computeDecision(
-              LocalDate.of(2025, 3, 31), LocalDate.of(2025, 4, 20), "STANDARD_PAYMENT", null);
+              LocalDate.of(2025, 3, 31),
+              LocalDate.of(2025, 4, 20),
+              PaymentType.STANDARD_PAYMENT,
+              null);
 
       // 2025-03-31.plusMonths(1) = 2025-04-30 → .withDayOfMonth(1) = 2025-04-01
       assertThat(decision.startDate())

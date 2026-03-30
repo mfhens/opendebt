@@ -31,14 +31,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
 import dk.ufst.opendebt.debtservice.client.DaekningsRaekkefoeigenServiceClient;
+import dk.ufst.opendebt.debtservice.client.LedgerServiceClient;
 import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity;
 import dk.ufst.opendebt.debtservice.entity.ModregningEvent;
 import dk.ufst.opendebt.debtservice.repository.CollectionMeasureRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
+import dk.ufst.opendebt.debtservice.repository.NotificationOutboxRepository;
 import dk.ufst.opendebt.debtservice.service.FordringAllocation;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.ModregningsRaekkefoeigenEngine;
+import dk.ufst.opendebt.debtservice.service.PaymentType;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseDecision;
 import dk.ufst.opendebt.debtservice.service.RenteGodtgoerelseService;
 import dk.ufst.opendebt.debtservice.service.TierAllocationResult;
@@ -72,6 +75,11 @@ class ModregningServiceTest {
   @Mock private RenteGodtgoerelseService renteGodtgoerelseService;
   @Mock private DaekningsRaekkefoeigenServiceClient daekningsRaekkefoeigenService;
   @Mock private ClsAuditClient clsAuditClient;
+  @Mock private LedgerServiceClient ledgerServiceClient;
+  @Mock private NotificationOutboxRepository notificationOutboxRepository;
+
+  private final com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+      new com.fasterxml.jackson.databind.ObjectMapper();
 
   private ModregningService underTest;
 
@@ -83,7 +91,10 @@ class ModregningServiceTest {
             collectionMeasureRepository,
             raekkefoeigenEngine,
             renteGodtgoerelseService,
-            clsAuditClient);
+            clsAuditClient,
+            ledgerServiceClient,
+            notificationOutboxRepository,
+            objectMapper);
   }
 
   /** Common setup: mocks raekkefoeigenEngine + renteGodtgoerelseService + repos. */
@@ -132,7 +143,8 @@ class ModregningServiceTest {
       UUID fordringId = UUID.randomUUID();
       setupStandardMocks(fordringId, debtorId);
 
-      underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);
 
       // Verify persisted event has tier1Amount > 0 and tier2Amount = 0
       verify(modregningEventRepository)
@@ -157,7 +169,8 @@ class ModregningServiceTest {
       UUID fordringId = UUID.randomUUID();
       UUID eventId = setupStandardMocks(fordringId, debtorId);
 
-      underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);
 
       ArgumentCaptor<CollectionMeasureEntity> captor =
           ArgumentCaptor.forClass(CollectionMeasureEntity.class);
@@ -214,7 +227,8 @@ class ModregningServiceTest {
               });
       when(collectionMeasureRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-      underTest.initiateModregning(debtorId, new BigDecimal("800"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("800"), PaymentType.STANDARD_PAYMENT, null, false);
 
       // Verify engine called exactly once (AC-3)
       verify(raekkefoeigenEngine, times(1)).allocate(any(), any(), anyBoolean(), any());
@@ -262,7 +276,8 @@ class ModregningServiceTest {
               });
       when(collectionMeasureRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-      underTest.initiateModregning(debtorId, new BigDecimal("900"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("900"), PaymentType.STANDARD_PAYMENT, null, false);
 
       verify(modregningEventRepository)
           .save(
@@ -299,7 +314,7 @@ class ModregningServiceTest {
               .tier2Amount(BigDecimal.ZERO)
               .tier3Amount(BigDecimal.ZERO)
               .residualPayoutAmount(BigDecimal.ZERO)
-              .paymentType("STANDARD")
+              .paymentType(PaymentType.STANDARD_PAYMENT)
               .receiptDate(LocalDate.now())
               .decisionDate(LocalDate.now())
               .klageFristDato(LocalDate.now().plusYears(1))
@@ -312,7 +327,11 @@ class ModregningServiceTest {
       // Call with String sourceEvent = "REF-001" (the ref ID for idempotency)
       ModregningResult result =
           underTest.initiateModregning(
-              existingDebtorId, new BigDecimal("1000"), "STANDARD", "REF-001", false);
+              existingDebtorId,
+              new BigDecimal("1000"),
+              PaymentType.STANDARD_PAYMENT,
+              "REF-001",
+              false);
 
       // Must return existing result without calling engine or saving
       verify(raekkefoeigenEngine, never()).allocate(any(), any(), anyBoolean(), any());
@@ -341,7 +360,7 @@ class ModregningServiceTest {
       setupStandardMocks(fordringId, debtorId);
 
       underTest.initiateModregning(
-          debtorId, new BigDecimal("500"), "BOERNE_OG_UNGEYDELSE", null, false);
+          debtorId, new BigDecimal("500"), PaymentType.BOERNE_OG_UNGEYDELSE, null, false);
 
       ArgumentCaptor<ModregningEvent> captor = ArgumentCaptor.forClass(ModregningEvent.class);
       verify(modregningEventRepository).save(captor.capture());
@@ -394,7 +413,7 @@ class ModregningServiceTest {
       assertThatThrownBy(
               () ->
                   underTest.initiateModregning(
-                      debtorId, new BigDecimal("500"), "STANDARD", null, false))
+                      debtorId, new BigDecimal("500"), PaymentType.STANDARD_PAYMENT, null, false))
           .as(
               "Exception from CollectionMeasure save must propagate for @Transactional rollback (NFR-1)")
           .isInstanceOf(RuntimeException.class);
@@ -436,7 +455,7 @@ class ModregningServiceTest {
       assertThatThrownBy(
               () ->
                   underTest.initiateModregning(
-                      debtorId, new BigDecimal("750"), "STANDARD", null, false))
+                      debtorId, new BigDecimal("750"), PaymentType.STANDARD_PAYMENT, null, false))
           .isInstanceOf(RuntimeException.class)
           .as("CollectionMeasure save failure must propagate for @Transactional atomicity (NFR-1)");
     }
@@ -460,7 +479,8 @@ class ModregningServiceTest {
       UUID fordringId = UUID.randomUUID();
       UUID eventId = setupStandardMocks(fordringId, debtorId);
 
-      underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);
 
       ArgumentCaptor<ClsAuditEvent> auditCaptor = ArgumentCaptor.forClass(ClsAuditEvent.class);
       verify(clsAuditClient).shipEvent(auditCaptor.capture());
@@ -516,7 +536,8 @@ class ModregningServiceTest {
               });
       when(collectionMeasureRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-      underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);
 
       // 2 fordringer → 2 CLS audit entries
       verify(clsAuditClient, times(2)).shipEvent(any());
@@ -574,7 +595,8 @@ class ModregningServiceTest {
       UUID fordringId = UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
       setupStandardMocks(fordringId, debtorId);
 
-      underTest.initiateModregning(debtorId, new BigDecimal("1000"), "STANDARD", null, false);
+      underTest.initiateModregning(
+          debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);
 
       ArgumentCaptor<ClsAuditEvent> captor = ArgumentCaptor.forClass(ClsAuditEvent.class);
       verify(clsAuditClient).shipEvent(captor.capture());
@@ -626,7 +648,7 @@ class ModregningServiceTest {
               .tier2Amount(new BigDecimal("400"))
               .tier3Amount(BigDecimal.ZERO)
               .residualPayoutAmount(BigDecimal.ZERO)
-              .paymentType("STANDARD")
+              .paymentType(PaymentType.STANDARD_PAYMENT)
               .receiptDate(LocalDate.now())
               .decisionDate(LocalDate.now())
               .klageFristDato(LocalDate.now().plusYears(1))
@@ -704,7 +726,7 @@ class ModregningServiceTest {
               .tier2Amount(BigDecimal.ZERO)
               .tier3Amount(BigDecimal.ZERO)
               .residualPayoutAmount(BigDecimal.ZERO)
-              .paymentType("STANDARD")
+              .paymentType(PaymentType.STANDARD_PAYMENT)
               .receiptDate(LocalDate.now())
               .decisionDate(LocalDate.now())
               .klageFristDato(LocalDate.now().plusYears(1))

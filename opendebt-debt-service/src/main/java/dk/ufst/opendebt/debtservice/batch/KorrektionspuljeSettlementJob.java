@@ -51,7 +51,7 @@ public class KorrektionspuljeSettlementJob {
   }
 
   /** Runs annually — settles ALL PSRM entries including annualOnlySettlement=true. */
-  @Scheduled(cron = "0 0 3 1 1 ?")
+  @Scheduled(cron = "0 0 4 2 1 ?")
   public void runAnnualSettlement() {
     LocalDate today = LocalDate.now();
     List<KorrektionspuljeEntry> entries =

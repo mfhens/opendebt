@@ -4,6 +4,40 @@
 
 Accepted — conditionally pending UFST HDP platform validation (TB-028-a)
 
+---
+
+## Amendment — P058 (2026-03-30): Scope expanded to debt-service
+
+**Trigger:** P058 (Modregning og Korrektionspulje) implementation added immudb writes from
+`opendebt-debt-service` for offsetting records. The original ADR scoped immudb exclusively to
+`opendebt-payment-service`. This amendment records the approved scope expansion.
+
+**Additional tables / records now written to immudb:**
+
+| Record | Service | Rationale |
+|---|---|---|
+| `ModregningEvent` | debt-service | Each set-off decision against a public disbursement (Nemkonto / GIL § 16 stk. 1) has legal standing. The decision amount, tier allocation, and klage-frist must be cryptographically non-repudiable for use in Rigsrevisionen audits and appeal proceedings. |
+| `CollectionMeasure` (SET_OFF type) | debt-service | The SET_OFF collection-measure record links the legal collection step to the ledger posting in payment-service. Tamper-evidence is required for cross-service reconciliation auditability. |
+
+**Integration pattern:** Same dual-write as payment-service.
+`ModregningService.initiateModregning()` is annotated `@Transactional`. After the PostgreSQL
+commit, `ModregningService` calls `ImmuLedgerClient.appendAsync()` with the `ModregningEvent`
+record. The immudb key is the `ModregningEvent.id` (UUID bytes); the value is a
+JSON-serialised record. PostgreSQL is never rolled back if the immudb write fails.
+
+**"Where immudb is NOT used" — correction:** The catch-all "All other entities" row in
+the original decision table no longer covers `ModregningEvent` and SET_OFF
+`CollectionMeasure` records in debt-service. All other debt-service entities remain
+outside immudb scope.
+
+**Deployment prerequisite unchanged:** Full acceptance of this ADR remains conditional on
+TB-028-a (UFST HDP platform validation). This amendment does not change that condition.
+
+**Related artefacts:** `petitions/petition058-modregning-korrektionspulje-solution-architecture.md`
+(§ NFR-3), `architecture/workspace.dsl` (GOV-003 relationship comment).
+
+---
+
 **Spike outcome (TB-028, 2026-03-26):** All implementable sub-tasks completed on
 branch `spike/TB-028-immudb-financial-ledger-integrity`. Key findings:
 
@@ -63,12 +97,14 @@ and integration cost.
 
 ### Where immudb IS used
 
-**Financial ledger entries only** — specifically the following tables in payment-service:
+**Financial ledger entries and legally significant offsetting records** — specifically:
 
-| Table | Rationale |
-|---|---|
-| `ledger_entries` | Every financial posting; legal record of monetary movements |
-| `debt_events` | Immutable event timeline; source of truth for debt state |
+| Table / Record | Service | Rationale |
+|---|---|---|
+| `ledger_entries` | payment-service | Every financial posting; legal record of monetary movements |
+| `debt_events` | payment-service | Immutable event timeline; source of truth for debt state |
+| `ModregningEvent` | debt-service | Set-off decision against Nemkonto disbursement (GIL § 16 stk. 1); legally binding, Rigsrevisionen-auditable. See P058 amendment above. |
+| `CollectionMeasure` (SET_OFF) | debt-service | Collection-measure record linking the legal step to the ledger posting. See P058 amendment above. |
 
 The integration pattern is **dual-write**:
 
@@ -103,7 +139,10 @@ rolled back. This preserves eventual integrity without degrading ledger availabi
 | Person registry | GDPR PII — must not be replicated to additional stores |
 | Keycloak / config data | Not financial records; no legal standing requirement |
 | Case events | Operational workflow history; CLS covers this |
-| All other entities | Application-level immutability (storno, history tables, sys_period) is sufficient |
+| `KorrektionspuljeEntry` (debt-service) | Pool accounting state; not a final legal determination — settlement re-enters `ModregningEvent` which is in scope |
+| `RenteGodtgoerelseRateEntry` (debt-service) | Reference / configuration data; no individual legal standing |
+| All other debt-service entities | Application-level immutability (storno, history tables, sys_period) is sufficient |
+| All other entities (other services) | Application-level immutability (storno, history tables, sys_period) is sufficient |
 
 The guiding principle: **immudb is reserved for records where cryptographic non-repudiation
 has legal or regulatory significance.** It is not a general-purpose audit store.
@@ -212,6 +251,7 @@ Spike outcome determines whether this ADR moves to **Accepted** or **Rejected**.
 - ADR-0013: Enterprise PostgreSQL with Audit and History
 - ADR-0018: Double-Entry Bookkeeping
 - ADR-0022: Shared Audit Infrastructure
+- ADR-0027: Offsetting merged into debt-service (context for the debt-service scope expansion)
 - ADR-0028: Backup and Disaster Recovery
 
 ## References

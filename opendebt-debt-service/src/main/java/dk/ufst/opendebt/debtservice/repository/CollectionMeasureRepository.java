@@ -16,6 +16,9 @@ public interface CollectionMeasureRepository extends JpaRepository<CollectionMea
 
   List<CollectionMeasureEntity> findByDebtIdOrderByInitiatedAtDesc(UUID debtId);
 
+  List<CollectionMeasureEntity> findByModregningEventIdAndMeasureType(
+      UUID modregningEventId, CollectionMeasureEntity.MeasureType measureType);
+
   /**
    * Returns the subset of the supplied {@code debtIds} that have at least one active
    * WAGE_GARNISHMENT (lønindeholdelse) measure in progress. Used by {@code

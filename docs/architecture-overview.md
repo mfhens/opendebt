@@ -11,6 +11,7 @@ graph TB
         DigitalPost["Digital Post<br/>(e-Boks)"]
         SKB["Statens Koncernbetalinger<br/>(CREMUL/DEBMUL)"]
         ES["Creditor systems<br/>(OCES3 / DUPLA / SOAP)"]
+        NK["Nemkonto<br/>(NETS disbursements)"]
     end
 
     subgraph Gateway["Integration Layer"]
@@ -44,6 +45,7 @@ graph TB
     DigitalPost --> IG
     SKB --> IG
     ES --> IG
+    NK --> IG
 
     IG --> PS
     IG --> DS
@@ -171,6 +173,9 @@ erDiagram
     DEBTS ||--o{ OBJECTIONS : "debt_id"
     DEBTS ||--o{ COLLECTION_MEASURES : "debt_id"
     DEBTS ||--o{ INTEREST_JOURNAL : "debt_id"
+    MODREGNING_EVENTS ||--o{ COLLECTION_MEASURES : "modregning_event_id"
+    MODREGNING_EVENTS ||--o{ KORREKTIONSPULJE_ENTRIES : "originating_event_id"
+    PERSON_REGISTRY ||--o{ MODREGNING_EVENTS : "debtor_person_id"
 
     PERSON_REGISTRY {
         uuid id PK
@@ -195,6 +200,7 @@ erDiagram
         date due_date
         varchar status
         varchar readiness_status
+        varchar modregning_tier "P058: GIL § 7 tier (1/2/3)"
     }
 
     CREDITORS {
@@ -308,6 +314,48 @@ erDiagram
         varchar status
         numeric amount
         timestamp completed_at
+        uuid modregning_event_id FK "P058"
+        boolean waiver_applied "P058"
+        varchar caseworker_id "P058"
+    }
+
+    MODREGNING_EVENTS {
+        uuid id PK
+        varchar nemkonto_reference_id UK
+        uuid debtor_person_id FK
+        date receipt_date
+        date decision_date
+        varchar payment_type
+        integer indkomst_aar
+        numeric disbursement_amount
+        numeric tier1_amount
+        numeric tier2_amount
+        numeric tier3_amount
+        numeric residual_payout_amount
+        boolean tier2_waiver_applied
+        boolean notice_delivered
+        date klage_frist_dato
+        date rente_godtgoerelse_start_date
+        boolean rente_godtgoerelse_non_taxable
+    }
+
+    KORREKTIONSPULJE_ENTRIES {
+        uuid id PK
+        uuid originating_event_id FK
+        uuid debtor_person_id FK
+        numeric pool_amount
+        varchar status
+        varchar settlement_strategy
+        timestamp created_at
+        timestamp settled_at
+    }
+
+    RENTEGODT_RATE_ENTRIES {
+        uuid id PK
+        date effective_from
+        date effective_to
+        numeric annual_rate
+        varchar source_reference
     }
 
     INTEREST_JOURNAL {
@@ -381,7 +429,11 @@ sequenceDiagram
 
 ### Tamper-Evidence Ledger (TB-028 / ADR-0029)
 
-immudb runs as a sidecar to `payment-service` and receives an asynchronous copy of every `LedgerEntryEntity` written by `BookkeepingService`. The PostgreSQL ledger is the operational source of truth; immudb provides cryptographic proof that entries have not been altered after the fact.
+immudb runs alongside `payment-service` and `debt-service` and receives asynchronous copies of financially and legally significant records. The PostgreSQL databases are the operational sources of truth; immudb provides cryptographic proof that records have not been altered after the fact.
+
+**Writers:**
+- `payment-service` (`BookkeepingService`) — every `LedgerEntryEntity` written by the double-entry bookkeeper.
+- `debt-service` (`ModregningService`) — every `ModregningEvent` and the associated SET_OFF `CollectionMeasure` record (P058, GIL § 16 stk. 1). See ADR-0029 amendment.
 
 ```mermaid
 sequenceDiagram
@@ -564,7 +616,7 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 
 **Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, and batch processing. Also owns the **offsetting (modregning)** domain (ADR-0027).
 
-**Implementation status:** IMPLEMENTED (88 Java files, 7 migrations)
+**Implementation status:** IMPLEMENTED (~125 Java files, 8 migrations)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -611,6 +663,24 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | ClaimAdjustmentService / Impl | Done | FR-1 write-down reason required, AC-12 RENTE rejection, AC-13/FR-7 RIM-internal code (DINDB/OMPL/AFSK) rejection, FR-3 høring timing rule, FR-4 retroactive WARN log marker, AC-16 CLS audit all outcomes |
 | ClaimAdjustmentRequestDto / ResponseDto | Done | Request: adjustmentType, writeDownReasonCode, amount, effectiveDate, notes; Response: includes crossSystemRetroactiveApplies flag (GIL § 18 k) |
 | WriteDownReasonCode | Done | NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET (gæld.bekendtg. § 7 stk. 2) |
+| **Modregning og Korrektionspulje (petition058)** | | |
+| ModregningEvent | Done | JPA entity — table `modregning_event`; stores GIL § 16 stk. 1 set-off decision with three-tier allocation, klage-frist, rentegodtgoerelse metadata. Idempotency via `nemkontoReferenceId`. Written to immudb (ADR-0029 amendment). |
+| KorrektionspuljeEntry | Done | JPA entity — table `korrektionspulje_entry`; pool entry for reversal/gendaenkning credit pending re-application. Links to originating `ModregningEvent`. |
+| RenteGodtgoerelseRateEntry | Done | JPA entity — table `rentegodt_rate_entry`; effective-date-bounded rate table for GIL § 8b rentegodtgoerelse computation. |
+| CollectionMeasureEntity (extended) | Done | New columns: `modregning_event_id` (FK to modregning_event), `waiver_applied` (tier-2 waiver flag), `caseworker_id`. Written to immudb (ADR-0029 amendment). |
+| DebtEntity (extended) | Done | New column: `modregning_tier` — tier assigned by `ModregningsRaekkefoeigenEngine` during allocation. |
+| ModregningService | Done | Orchestrates three-tier GIL § 7 stk. 1 workflow (FR-1). Implements `OffsettingService` (replaces P007 stub). `@Transactional`. Handles idempotency, ledger posting via `LedgerServiceClient`, Digital Post outbox write, and tier-2 waiver re-run (FR-2). |
+| ModregningsRaekkefoeigenEngine | Done | GIL § 7 stk. 1 three-tier allocation algorithm. Delegates tier-2 partial allocation to `DaekningsRaekkefoeigenServiceClient` (P057) at most once per run. Queries fordringer via `FordringQueryPort`. |
+| KorrektionspuljeService | Done | Processes `OffsettingReversalEvent`: Step 1 same-fordring residual, Step 2 gendaenkning via P057, Step 3 `KorrektionspuljeEntry` creation. Settles pool entries by re-invoking `ModregningService`. `@Transactional`. |
+| RenteGodtgoerelseService | Done | Computes rentegodtgoerelse start date (5-banking-day exception, kildeskattelov § 62/62A exception) and effective rate from `rentegodt_rate_entry` table (GIL § 8b). `renteGodtgoerelseNonTaxable` ALWAYS true (GIL SS 8b invariant). |
+| KorrektionspuljeSettlementJob | Done | `@Scheduled` monthly (3 AM, 1st of month) and annual (4 AM, 2 Jan). Queries unsettled PSRM-target pool entries; invokes `KorrektionspuljeService.settleEntry()` per entry in individual transactions. |
+| DanishBankingCalendar | Done | Banking day utility for 5-banking-day rentegodtgoerelse start-date computation. |
+| DaekningsRaekkefoeigenServiceClient | Done | HTTP stub client for P057 `DaekningsRaekkefoeigenService` in payment-service. Invoked at most once per tier ordering run. |
+| FordringQueryPort | Done | Internal JPA adapter for TB-040 active-fordringer queries (same-service, no inter-service HTTP). Consumed exclusively by `ModregningsRaekkefoeigenEngine`. |
+| ModregningController | Done | REST controller. `POST /api/v1/modregning/tier2-waiver` (scope `modregning:waiver`, FR-2) and `GET /api/v1/modregning/events` read model (scope `modregning:read`, FR-5). `@PreAuthorize` enforces OAuth2 scopes. |
+| PublicDisbursementEvent | Done | Inbound DTO from integration-gateway (Nemkonto interception events, GIL § 16 stk. 1). |
+| OpenAPI spec | Done | `opendebt-debt-service/src/main/resources/openapi/modregning-api-v1.yaml` — 2 endpoints, 3 schemas. |
+| Unit tests | Done | 42 unit tests: `ModregningServiceTest` (16), `KorrektionspuljeServiceTest` (14), `RenteGodtgoerelseServiceTest` (12). |
 | **Foundation** | | |
 | DebtController | Done | Full CRUD + readiness + lifecycle + submit |
 | DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown; `scrubCprFromDescription()` strips CPR patterns (`\d{6}-?\d{4}`) from Beskrivelse on claim creation (P002 GDPR defense) |
@@ -622,13 +692,14 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 | DebtRepository | Done | JPA with batch queries for lifecycle and interest |
 | FordringMetrics | Done | `fordring_submissions_total` counter (ADR-0024) |
 | logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
-| Flyway V1 | Done | Baseline: debts, debt_types, claim_lifecycle_events, hoering, audit |
-| Flyway V2 | Done | Demo seed data |
-| Flyway V3 | Done | Notifications table |
-| Flyway V4 | Done | Liabilities table |
-| Flyway V5 | Done | Objections table |
-| Flyway V6 | Done | Collection measures table |
-| Flyway V7 | Done | Batch job executions + interest journal entries |
+| Flyway V1 | Done | Consolidated baseline (squash of V1-V7 archive): debts, debt_types, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries, audit_log, history triggers |
+| Flyway V2 | Done | Legal compliance corrections (G.A. Inddrivelse audit, 2026-03-28); fee amounts, claim type constraints |
+| Flyway V3 | Done | PSRM interest-breakdown and dækningsrækkefølge fields on `debts` (TB-040 / P057 prerequisite) |
+| Flyway V4 (P058) | Done | `modregning_event` table |
+| Flyway V5 (P058) | Done | `korrektionspulje_entry` table |
+| Flyway V6 (P058) | Done | `rentegodt_rate_entry` table |
+| Flyway V7 (P058) | Done | `collection_measure` extended: `modregning_event_id`, `waiver_applied`, `caseworker_id` |
+| Flyway V8 (P058) | Done | `debt.modregning_tier` column |
 
 **API endpoints (29):**
 - `GET/POST /api/v1/debts` - List/create debts
@@ -643,6 +714,8 @@ See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural d
 - `POST /api/v1/debts/{id}/transfer-for-collection` - Transfer for collection (RESTANCE->OVERDRAGET)
 - `POST /api/v1/debts/{id}/write-down?amount={amount}` - Write down outstanding balance
 - `POST /api/v1/debts/{id}/adjustments` - Submit claim adjustment (write-up/write-down with full G.A. validation; petition053)
+- `POST /api/v1/modregning/tier2-waiver` - Apply tier-2 waiver to a modregning event (scope `modregning:waiver`; petition058)
+- `GET /api/v1/modregning/events` - Read modregning event log, filterable by debtor/date (scope `modregning:read`; petition058)
 - `DELETE /api/v1/debts/{id}` - Cancel (soft delete)
 - `POST /api/v1/debts/{debtId}/demand-for-payment` - Issue paakrav notification
 - `POST /api/v1/debts/{debtId}/reminder` - Issue rykker notification

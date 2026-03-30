@@ -36,7 +36,7 @@ public class ModregningsRaekkefoeigenEngine {
    * @return a TierAllocationResult with tier-level allocations and residual
    */
   public TierAllocationResult allocate(
-      UUID debtorPersonId, BigDecimal amount, boolean skipTier2, Object context) {
+      UUID debtorPersonId, BigDecimal amount, boolean skipTier2, UUID payingAuthorityOrgId) {
     BigDecimal remaining = amount;
     List<FordringAllocation> tier1 = new ArrayList<>();
     List<FordringAllocation> tier2 = new ArrayList<>();
