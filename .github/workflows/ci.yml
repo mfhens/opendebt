@@ -54,13 +54,11 @@ jobs:
         run: opam install catala.1.1.0 -y
 
       - name: Typecheck Catala compliance files
-        # catala test-doc was removed in Catala 1.1.0. The replacement is 'clerk test'
-        # which requires a Dune/Makefile project setup. Until that setup is in place,
-        # we typecheck the main source files to validate syntax and type correctness.
-        # TODO: Migrate to 'clerk test catala/' once project-level clerk integration is added.
+        # catala typecheck accepts exactly one file per invocation.
         run: |
           eval $(opam env)
-          catala typecheck catala/ga_1_4_3_opskrivning.catala_da catala/ga_1_4_4_nedskrivning.catala_da
+          catala typecheck catala/ga_1_4_3_opskrivning.catala_da
+          catala typecheck catala/ga_1_4_4_nedskrivning.catala_da
           catala typecheck catala/ga_2_4_foraeldelse.catala_da
           catala typecheck catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
 
