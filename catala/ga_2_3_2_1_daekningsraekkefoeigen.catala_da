@@ -1,13 +1,5 @@
 # G.A.2.3.2.1 — Dækningsrækkefølge — GIL § 4
 
-(* Catala kildedialekt: catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Juridisk grundlag: GIL § 4 stk. 1–4, GIL § 6a, GIL § 10b, Gæld.bekendtg. § 4 stk. 3,
-                      Gæld.bekendtg. § 7, Retsplejelovens § 507, Lov nr. 288/2022
-   Formål: Formalisering af dækningsrækkefølge-reglerne i GIL § 4, stk. 1–4, jf. G.A.2.3.2.1.
-   Petition: P069 — Catala Compliance Spike — Dækningsrækkefølge
-   Status: Research spike — ingen produktionskode. *)
-
 ---
 
 ## Artikel: G.A.2.3.2.1 — Dækningsrækkefølge ved betaling
@@ -81,9 +73,9 @@ forud for offentligretlige (kategori 3b).
 
 ```catala
 declaration scope PrioritetKategoriRang:
-  context kategori content PrioritetKategori           (* input *)
-  context prioritetRang content integer                (* output: 1–4 *)
-  context underholdsbidragOrdning content integer      (* output: 1=privatretlig, 2=offentlig; 0 for non-kat3 *)
+  context kategori content PrioritetKategori
+  context prioritetRang content integer
+  context underholdsbidragOrdning content integer
 ```
 
 ---
@@ -195,11 +187,11 @@ en overgangsregel for fordringer overdraget inden 1. september 2013.
 
 ```catala
 declaration scope FifoSortNøgle:
-  context modtagelsesdato content date                  (* input *)
-  context harLegacyModtagelsesdato content boolean      (* input *)
-  context legacyModtagelsesdato content date            (* input — betinget: kun relevant når harLegacyModtagelsesdato = true *)
-  context erFoerSeptember2013 content boolean           (* afledt: legacyModtagelsesdato < |2013-09-01| *)
-  context fifoSortKey content date                      (* output *)
+  context modtagelsesdato content date
+  context harLegacyModtagelsesdato content boolean
+  context legacyModtagelsesdato content date
+  context erFoerSeptember2013 content boolean
+  context fifoSortKey content date
 ```
 
 ---
@@ -252,9 +244,9 @@ rentekomponenter dækkes i en fastsat orden.
 
 ```catala
 declaration scope RenteKomponentRang:
-  context komponent content RenteKomponent     (* input *)
-  context subPositionRang content integer      (* output: 1–6 *)
-  context erRente content boolean              (* output: true for positionerne 1–5, false for HOVEDFORDRING *)
+  context komponent content RenteKomponent
+  context subPositionRang content integer
+  context erRente content boolean
 ```
 
 ---
@@ -334,13 +326,13 @@ reglen om, at overskud kan omfordeles til andre fordringer.
 
 ```catala
 declaration scope InddrivelsesindsatsAnvendelse:
-  context inddrivelsesindsatsType content InddrivelsesindsatsType  (* input *)
-  context fordringErIndsatsFordring content boolean                 (* input *)
-  context erUdlaeg content boolean                                  (* afledt: inddrivelsesindsatsType = UDLAEG *)
-  context gaelderGIL4Stk3 content boolean                          (* output: default true; false ved udlæg *)
-  context modtagerIndsatsDaekning content boolean                   (* output *)
-  context modtagerOverskudsDaekning content boolean                 (* output *)
-  context udlaegSurplus content boolean                             (* output: true ved udlæg *)
+  context inddrivelsesindsatsType content InddrivelsesindsatsType
+  context fordringErIndsatsFordring content boolean
+  context erUdlaeg content boolean
+  context gaelderGIL4Stk3 content boolean
+  context modtagerIndsatsDaekning content boolean
+  context modtagerOverskudsDaekning content boolean
+  context udlaegSurplus content boolean
 ```
 
 ---
@@ -412,10 +404,10 @@ GIL § 4, stk. 4 præciserer to tidspunkter: det tidspunkt rækkefølgen fastlæ
 
 ```catala
 declaration scope TimingRegel:
-  context applikationstidspunkt content date    (* input *)
-  context betalingstidspunkt content date       (* input *)
-  context raekkefoelgeFastlagtVed content date  (* output = applikationstidspunkt *)
-  context daekningVirkerFra content date        (* output = betalingstidspunkt *)
+  context applikationstidspunkt content date
+  context betalingstidspunkt content date
+  context raekkefoelgeFastlagtVed content date
+  context daekningVirkerFra content date
 ```
 
 ---
@@ -454,10 +446,10 @@ baseret på sin egen modtagelsesdato.
 
 ```catala
 declaration scope OpskrivningFifoNøgle:
-  context erOpskrivningsfordring content boolean    (* input *)
-  context egnModtagelsesdato content date           (* input — opskrivningsfordringens eget modtagelsesdato *)
-  context stamfordringFifoNoegle content date       (* input — stamfordringens effektive FIFO-nøgle *)
-  context fifoSortKey content date                  (* output *)
+  context erOpskrivningsfordring content boolean
+  context egnModtagelsesdato content date
+  context stamfordringFifoNoegle content date
+  context fifoSortKey content date
 ```
 
 ---
@@ -491,12 +483,3 @@ scope OpskrivningFifoNøgle:
 ```
 
 ---
-
-(* Filende: ga_2_3_2_1_daekningsraekkefoeigen.catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Dialect: catala_da
-   6 scopes: PrioritetKategoriRang, FifoSortNøgle, RenteKomponentRang,
-             InddrivelsesindsatsAnvendelse, TimingRegel, OpskrivningFifoNøgle
-   3 enumerationer: PrioritetKategori (5 varianter), RenteKomponent (6 varianter),
-                    InddrivelsesindsatsType (4 varianter)
-   Petition: P069 — Catala Compliance Spike — Dækningsrækkefølge *)

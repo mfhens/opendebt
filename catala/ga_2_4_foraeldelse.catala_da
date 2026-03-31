@@ -1,13 +1,5 @@
 # G.A.2.4 — Forældelse — GIL §§ 18, 18a; Forældelsesl. §§ 3, 5, 18–19
 
-(* Catala kildedialekt: catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Juridisk grundlag: GIL § 18 stk. 4, GIL § 18a stk. 1–8,
-                      Forældelsesl. §§ 3, 5, 18–19, SKM2015.718.ØLR
-   Formål: Formalisering af forældelses-reglerne i G.A.2.4.1–G.A.2.4.4.2.
-   Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4
-   Status: Research spike — ingen produktionskode. *)
-
 ---
 
 ## Artikel: G.A.2.4.1 — Udskydelse (GIL § 18a, stk. 1)
@@ -98,12 +90,12 @@ overskrive udskydelseDato-outputtet fra dette scope.
 
 ```catala
 declaration scope UdskydelsesBeregning:
-  context kildesystem content KildesystemType        (* input: PSRM eller DMI_SAP38 *)
-  context registreringsDato content date             (* input: dato for registrering i kildesystem *)
-  context inddrivelsesdato content date              (* input: dato for overdragelse til inddrivelse i PSRM *)
-  context udskydelseDato content date                (* output: udskydelsesdato jf. GIL § 18a, stk. 1 *)
-  context psrmUdskydelseDato content date            (* output: PSRM-specifik udskydelsesdato *)
-  context dmiUdskydelseDato content date             (* output: DMI_SAP38-specifik udskydelsesdato *)
+  context kildesystem content KildesystemType
+  context registreringsDato content date
+  context inddrivelsesdato content date
+  context udskydelseDato content date
+  context psrmUdskydelseDato content date
+  context dmiUdskydelseDato content date
 ```
 
 ---
@@ -185,13 +177,13 @@ dette sikrer at udskydelsen respekteres uanset afbrydelsesstidspunktet.
 
 ```catala
 declaration scope ForaeldelseFristBeregning:
-  context udskydelseDato content date                (* input: fra UdskydelsesBeregning *)
-  context afbrydelseDato content date                (* input: dato for afbrydelseshændelse *)
-  context retsgrundlag content RetsgrundlagType      (* input: ORDINARY eller SAERLIGT_RETSGRUNDLAG *)
-  context erUdlaeg content boolean                   (* input: true hvis afbrydelse er udlæg *)
-  context fristStartDato content date                (* output: startdato for ny frist *)
-  context fristVarighed content integer              (* output: fristens varighed i år (3 eller 10) *)
-  context nyFristUdloeber content date               (* output: ny forældelsesfristudløbsdato *)
+  context udskydelseDato content date
+  context afbrydelseDato content date
+  context retsgrundlag content RetsgrundlagType
+  context erUdlaeg content boolean
+  context fristStartDato content date
+  context fristVarighed content integer
+  context nyFristUdloeber content date
 ```
 
 ---
@@ -276,17 +268,17 @@ og underretning til debitor.
 
 ```catala
 declaration scope AfbrydelseValidering:
-  context afbrydelseType content AfbrydelseType      (* input: type af afbrydelseshændelse *)
-  context eventDate content date                     (* input: dato for hændelsen *)
-  context afgoerelseRegistreret content boolean      (* input: true hvis afgørelse er formelt registreret *)
-  context underretningsDato content date             (* input: dato debitor underrettes ved lønindeholdelse *)
-  context kildesystem content KildesystemType        (* input: kildesystem for fordringen *)
-  context retsgrundlag content RetsgrundlagType      (* input: fordringens retsgrundlag *)
-  context inaktivSiden content date                  (* input: dato lønindeholdelse ophørte med aktivitet *)
-  context harInaktivSiden content boolean            (* input: true hvis lønindeholdelse har været inaktiv *)
-  context afbrydelseResultat content AfbrydelseResultat  (* output: klassifikation af afbrydelsesresultat *)
-  context nyAfbrydelseDato content date              (* output: effektiv dato for ny afbrydelsesfrist *)
-  context nyFristUdloeber content date               (* output: ny forældelsesfristudløbsdato *)
+  context afbrydelseType content AfbrydelseType
+  context eventDate content date
+  context afgoerelseRegistreret content boolean
+  context underretningsDato content date
+  context kildesystem content KildesystemType
+  context retsgrundlag content RetsgrundlagType
+  context inaktivSiden content date
+  context harInaktivSiden content boolean
+  context afbrydelseResultat content AfbrydelseResultat
+  context nyAfbrydelseDato content date
+  context nyFristUdloeber content date
 ```
 
 ---
@@ -483,11 +475,11 @@ K-3-assertionen formaliserer dette atomicitetskrav direkte i Catala.
 
 ```catala
 declaration scope Fordringskompleks:
-  context antalMedlemmer content integer                  (* input: antal fordringer i komplekset (= length of fordringIds) *)
-  context sharedNyFrist content date                      (* input: fælles ny frist fra afbrydelseValidering *)
-  context harAfbrydelse content boolean                   (* input: true hvis én eller flere fordringer afbrydes *)
-  context propagationFuldstaendig content boolean         (* output: true kun hvis ALLE fordringer har fået ny frist *)
-  context kompleksNyFristUdloeber content date            (* output: fælles ny forældelsesfrist for hele komplekset *)
+  context antalMedlemmer content integer
+  context sharedNyFrist content date
+  context harAfbrydelse content boolean
+  context propagationFuldstaendig content boolean
+  context kompleksNyFristUdloeber content date
 ```
 
 ---
@@ -576,12 +568,12 @@ fordringskompleks (GIL § 18a, stk. 7).
 
 ```catala
 declaration scope TillaegsfristBeregning:
-  context currentFristExpires content date           (* input: nuværende forældelsesfristudløb *)
-  context eventDate content date                     (* input: dato for intern opskrivning *)
-  context udskydelseDato content date                (* input: udskydelsesdato — floor-grænse *)
-  context erTomt content boolean                     (* input: true hvis fordringskompleks er tomt *)
-  context afbrydelseResultat content AfbrydelseResultat  (* output: klassifikation *)
-  context nyFristUdloeber content date               (* output: ny tillægsfristudløbsdato *)
+  context currentFristExpires content date
+  context eventDate content date
+  context udskydelseDato content date
+  context erTomt content boolean
+  context afbrydelseResultat content AfbrydelseResultat
+  context nyFristUdloeber content date
 ```
 
 ---
@@ -664,12 +656,3 @@ inden udskydelsesdatoen giver stadig fristStartDato = udskydelseDato.
 ```
 
 ---
-
-(* Filende: ga_2_4_foraeldelse.catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Dialect: catala_da
-   5 scopes: UdskydelsesBeregning, ForaeldelseFristBeregning, AfbrydelseValidering,
-             Fordringskompleks, TillaegsfristBeregning
-   4 enumerationer: KildesystemType (2 varianter), RetsgrundlagType (2 varianter),
-                    AfbrydelseType (4 varianter), AfbrydelseResultat (4 varianter)
-   Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4 *)
