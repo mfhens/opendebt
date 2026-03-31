@@ -100,7 +100,8 @@ class ModregningServiceTest {
 
   /** Common setup: mocks raekkefoeigenEngine + renteGodtgoerelseService + repos. */
   private UUID setupStandardMocks(UUID fordringId, UUID debtorId) {
-    UUID eventId = UUID.randomUUID();
+    // Fixed UUID: all-hex-letter segments → cannot match \d{6}-\d{4} or \b\d{10}\b CPR patterns
+    UUID eventId = UUID.fromString("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
 
     when(raekkefoeigenEngine.allocate(any(), any(), anyBoolean(), any()))
         .thenReturn(
