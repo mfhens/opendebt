@@ -64,9 +64,9 @@ scope OpskrivningsfordringModtagelse:
   # FR-1.2: høring-undtagelse — modtagelse ved høringens afslutning
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 4. pkt.
   exception
-  rule modtagelsestidspunkt
+  definition modtagelsestidspunkt
     under condition erFordringIHøring
-    consequence equals modtagelseISystemet
+    equals modtagelseISystemet
 ```
 
 ---
@@ -84,11 +84,11 @@ scope OpskrivningsfordringModtagelse:
   # FR-1.3: annulleret nedskrivning, samme system — modtagelse lig den originale fordrings tidspunkt
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 5. pkt.
   exception
-  rule modtagelsestidspunkt
+  definition modtagelsestidspunkt
     under condition
       erAnnulleretNedskrivning and
       not erKrydssystemNedskrivning
-    consequence equals originalFordringModtagelsestidspunkt
+    equals originalFordringModtagelsestidspunkt
 ```
 
 ---
@@ -107,11 +107,11 @@ scope OpskrivningsfordringModtagelse:
   # FR-1.4: annulleret nedskrivning, krydssystem — altid ved modtagelsessystem-registrering
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 6. pkt.
   exception
-  rule modtagelsestidspunkt
+  definition modtagelsestidspunkt
     under condition
       erAnnulleretNedskrivning and
       erKrydssystemNedskrivning
-    consequence equals modtagelseISystemet
+    equals modtagelseISystemet
 ```
 
 ---

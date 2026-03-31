@@ -60,7 +60,7 @@ scope Nedskrivning:
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 1
   rule grundErGyldig
     under condition nedskrivningsGrund = NED_INDBETALING
-    consequence equals true
+    consequence fulfilled
 ```
 
 ---
@@ -78,7 +78,7 @@ scope Nedskrivning:
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 2
   rule grundErGyldig
     under condition nedskrivningsGrund = NED_FEJL_OVERSENDELSE
-    consequence equals true
+    consequence fulfilled
 ```
 
 ---
@@ -96,7 +96,7 @@ scope Nedskrivning:
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 2, nr. 3
   rule grundErGyldig
     under condition nedskrivningsGrund = NED_GRUNDLAG_AENDRET
-    consequence equals true
+    consequence fulfilled
 ```
 
 ---
@@ -115,11 +115,11 @@ scope Nedskrivning:
   # virkningsdato < fordringModtagelsestidspunkt => erRetroaktiv = true
   rule erRetroaktiv
     under condition virkningsdato < fordringModtagelsestidspunkt
-    consequence equals true
+    consequence fulfilled
 
   rule erRetroaktiv
     under condition not (virkningsdato < fordringModtagelsestidspunkt)
-    consequence equals false
+    consequence not fulfilled
 ```
 
 ---
@@ -140,11 +140,11 @@ scope Nedskrivning:
   # Ankerpunkt: GIL § 18 k
   rule erGIL18kSuspenderet
     under condition erRetroaktiv
-    consequence equals true
+    consequence fulfilled
 
   rule erGIL18kSuspenderet
     under condition not erRetroaktiv
-    consequence equals false
+    consequence not fulfilled
 ```
 
 ---
@@ -165,12 +165,12 @@ scope Nedskrivning:
 
   rule grundErGyldig
     under condition nedskrivningsGrund = UGYLDIG_GRUND
-    consequence equals false
+    consequence not fulfilled
 
   # BLOCKER-2 fix: nedskrivningGodkendt er output-flagget der afspejler grundErGyldig
   # Spec SPEC-P054 §3.7: nedskrivningGodkendt equals grundErGyldig
-  rule nedskrivningGodkendt
-    consequence equals grundErGyldig
+  definition nedskrivningGodkendt
+    equals grundErGyldig
 ```
 
 ---
