@@ -8,11 +8,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
  * Enables method-level {@code @PreAuthorize} / {@code @PostAuthorize} security. The filter chain
  * itself is provided by the keycloak-oauth2-starter auto-configuration.
  *
- * <p>Excluded from dev/local/test profiles where the permissive filter chain is active and
- * server-to-server calls from portals carry no auth token. Mirrors the profile-gating applied to
- * the caseworker portal's own {@code SecurityConfig}.
+ * <p>Excluded from dev/local profiles where the permissive filter chain is active and
+ * server-to-server calls from portals carry no auth token. Active in the test profile so that
+ * role-based access control is verified by Cucumber security scenarios.
  */
 @Configuration
 @EnableMethodSecurity
-@Profile("!dev & !local & !test")
+@Profile("!dev & !local")
 public class MethodSecurityConfig {}

@@ -214,7 +214,7 @@ FIFO-sorteringsnøgle jf. GIL § 4, stk. 2, 1. pkt.
 ```catala
 scope FifoSortNøgle:
   # FR-2.1: FIFO-grundregel — fifoSortKey = modtagelsesdato — Ankerpunkt: GIL § 4, stk. 2, 1. pkt.
-  rule fifoSortKey equals modtagelsesdato
+  definition fifoSortKey equals modtagelsesdato
 ```
 
 ---
@@ -360,7 +360,7 @@ scope InddrivelsesindsatsAnvendelse:
     consequence equals inddrivelsesindsatsType = UDLAEG
 
   # FR-3.1: gaelderGIL4Stk3 = true som grundregel — Ankerpunkt: GIL § 4, stk. 3, 1. pkt.
-  rule gaelderGIL4Stk3 equals true
+  definition gaelderGIL4Stk3 equals true
 ```
 
 ---
@@ -440,10 +440,10 @@ GIL § 4, stk. 4, 2. pkt.: Dækningen har virkning fra betalingstidspunktet.
 ```catala
 scope TimingRegel:
   # FR-4.1: rækkefølgeFastlagtVed = applikationstidspunkt — Ankerpunkt: GIL § 4, stk. 4, 1. pkt.
-  rule raekkefoelgeFastlagtVed equals applikationstidspunkt
+  definition raekkefoelgeFastlagtVed equals applikationstidspunkt
 
   # FR-4.2: daekningVirkerFra = betalingstidspunkt — Ankerpunkt: GIL § 4, stk. 4, 2. pkt.
-  rule daekningVirkerFra equals betalingstidspunkt
+  definition daekningVirkerFra equals betalingstidspunkt
 ```
 
 ---
@@ -478,7 +478,7 @@ bruger IKKE sin egnModtagelsesdato som FIFO-nøgle (undtagelse til FR-2.1).
 ```catala
 scope OpskrivningFifoNøgle:
   # FR-5.default: standardregel — fifoSortKey = egnModtagelsesdato (for ikke-opskrivnings-fordringer)
-  rule fifoSortKey equals egnModtagelsesdato
+  definition fifoSortKey equals egnModtagelsesdato
 
   # FR-5.1+5.2: undtagelse til FR-5.default og undtagelse til FR-2.1
   # opskrivningsfordring arver stamfordringens FIFO-nøgle

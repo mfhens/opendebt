@@ -120,7 +120,7 @@ den 20. november 2021. Grænseværdidatoen er inklusiv (>=).
 scope UdskydelsesBeregning:
   # U-1: PSRM + inddrivelsesdato >= |2015-11-19| → udskydelseDato = |2021-11-20|
   # Ankerpunkt: GIL § 18a, stk. 1, 1. pkt.
-  rule psrmUdskydelseDato equals |2021-11-20|
+  definition psrmUdskydelseDato equals |2021-11-20|
 
   rule udskydelseDato
     under condition kildesystem = PSRM
@@ -142,7 +142,7 @@ den 20. november 2027.
 scope UdskydelsesBeregning:
   # U-2: DMI_SAP38 + registreringsDato >= |2024-01-01| → udskydelseDato = |2027-11-20|
   # Ankerpunkt: GIL § 18a, stk. 1, 2. pkt.
-  rule dmiUdskydelseDato equals |2027-11-20|
+  definition dmiUdskydelseDato equals |2027-11-20|
 
   exception
   rule udskydelseDato
@@ -208,7 +208,7 @@ Denne grundregel finder anvendelse for alle fordringer medmindre den særlige
 scope ForaeldelseFristBeregning:
   # F-1: grundregel — fristVarighed = 3 år
   # Ankerpunkt: GIL § 18a, stk. 4
-  rule fristVarighed equals 3
+  definition fristVarighed equals 3
 ```
 
 ---
@@ -248,13 +248,13 @@ Den nye forældelsesfrists udløbsdato beregnes som fristStartDato plus fristVar
 scope ForaeldelseFristBeregning:
   # F-3: fristStartDato = maximum af afbrydelseDato og udskydelseDato
   # Ankerpunkt: GIL § 18a, stk. 1 (udskydelse) + GIL § 18a, stk. 4 (friststartdato)
-  rule fristStartDato equals
+  definition fristStartDato equals
     if afbrydelseDato >= udskydelseDato
     then afbrydelseDato
     else udskydelseDato
 
   # F-3b: nyFristUdloeber = fristStartDato + fristVarighed år
-  rule nyFristUdloeber equals
+  definition nyFristUdloeber equals
     fristStartDato +@ duration of (fristVarighed * 365) days
 ```
 

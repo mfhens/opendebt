@@ -45,7 +45,7 @@ undtagelserne i 4.–6. pkt. gælder.
 scope OpskrivningsfordringModtagelse:
   # FR-1.1: standardregel — modtagelse ved registrering i modtagelsessystemet
   # Ankerpunkt: Gæld.bekendtg. § 7, stk. 1, 3. pkt.
-  rule modtagelsestidspunkt equals modtagelseISystemet
+  definition modtagelsestidspunkt equals modtagelseISystemet
 ```
 
 ---

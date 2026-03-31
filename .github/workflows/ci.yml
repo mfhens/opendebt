@@ -55,14 +55,17 @@ jobs:
 
       - name: Typecheck Catala compliance files
         # catala typecheck accepts exactly one file per invocation.
-        # --language en is required: the .catala_da extension is not a recognized language variant;
-        # all files use English syntax (declaration scope, rule, content boolean, etc.).
+        # --language en: .catala_da extension is not a recognized language variant;
+        #   all files use English surface syntax.
+        # --no-stdlib: the files use only built-in Catala types (boolean, date, integer);
+        #   the English standard library (Stdlib_en) is not part of the default opam install path
+        #   and is not needed here.
         run: |
           eval $(opam env)
-          catala typecheck --language en catala/ga_1_4_3_opskrivning.catala_da
-          catala typecheck --language en catala/ga_1_4_4_nedskrivning.catala_da
-          catala typecheck --language en catala/ga_2_4_foraeldelse.catala_da
-          catala typecheck --language en catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
+          catala typecheck --language en --no-stdlib catala/ga_1_4_3_opskrivning.catala_da
+          catala typecheck --language en --no-stdlib catala/ga_1_4_4_nedskrivning.catala_da
+          catala typecheck --language en --no-stdlib catala/ga_2_4_foraeldelse.catala_da
+          catala typecheck --language en --no-stdlib catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
 
   dependency-review:
     name: Dependency Review
