@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-03-31
-  updated_by: copilot (TB-052 — OAuth2 token relay in caseworker portal WebClient)
+  updated_by: copilot (TB-034 — Fix inter-claim daekningsraekkefoeige in collection-priority.drl)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -2098,7 +2098,7 @@ program:
 
     - id: TB-034
       title: "Fix inter-claim dækningsrækkefølge in collection-priority.drl (GIL § 4)"
-      status: open
+      status: implemented
       priority: high
       created: 2026-03-28
       petitions: [petition001, petition007]

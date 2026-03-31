@@ -95,7 +95,7 @@ class RulesControllerTest {
     CollectionPriorityResult result =
         CollectionPriorityResult.builder()
             .debtId(DEBT_ID)
-            .priorityRank(CollectionPriorityResult.PRIORITY_TAX)
+            .priorityRank(CollectionPriorityResult.GIL4_BOEDER_TVANGSBOEEDER_TILBAGEBETALING)
             .build();
     when(rulesService.determineCollectionPriority(any())).thenReturn(result);
 
@@ -123,7 +123,7 @@ class RulesControllerTest {
         List.of(
             CollectionPriorityResult.builder()
                 .debtId(DEBT_ID)
-                .priorityRank(CollectionPriorityResult.PRIORITY_TAX)
+                .priorityRank(CollectionPriorityResult.GIL4_BOEDER_TVANGSBOEEDER_TILBAGEBETALING)
                 .build());
     when(rulesService.sortByCollectionPriority(anyList())).thenReturn(results);
 
