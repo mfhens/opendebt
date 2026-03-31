@@ -11,15 +11,14 @@ Part <|-- Fordringshaver
 Part <|-- Skyldner
 Part <|-- Restanceinddrivelsesmyndighed
 
-%% === Krav, klassifikation og status ===
+%% === Krav og status ===
+class Kravgrundlag["Kravgrundlag"]
 class Fordring["Fordring"]
 class Restance["Restance"]
-class Kravgrundlag["Kravgrundlag"]
 class Betalingsfrist["Betalingsfrist"]
 class Foraeldelse["Forældelse"]
 class Fordringsart["Fordringsart"]
 class Fordringstype["Fordringstype"]
-class Fordringskompleks["Fordringskompleks"]
 
 Fordring <|-- Restance
 
@@ -30,6 +29,11 @@ Fordring --> Foraeldelse : har
 Fordring --> Fordringsart : er klassificeret som
 Fordring --> Fordringstype : har
 Fordring --> Fordring : er underfordring af
+
+%% === Kravstruktur ===
+class Fordringskompleks["Fordringskompleks"]
+
+Fordringskompleks --> Fordring : består af
 
 %% === Hæftelse ===
 class Haeftelse["Hæftelse"]
@@ -104,7 +108,7 @@ Inddrivelsesskridt --> Restance : vedrører
 class Underretning["Underretning (abstrakt)"]
 class SkyldnerUnderretning["Skyldnerunderretning (abstrakt)"]
 class Underretningsmeddelelse["Underretningsmeddelelse (abstrakt)"]
-class PaaKrav["Påkrav"]
+class Paakrav["Påkrav"]
 class Rykker["Rykker"]
 class AfregningsUnderretning["Afregningsunderretning"]
 class UdligningsUnderretning["Udligningsunderretning"]
@@ -117,7 +121,7 @@ class ReturneringsUnderretning["Returneringsunderretning"]
 
 Underretning <|-- SkyldnerUnderretning
 Underretning <|-- Underretningsmeddelelse
-SkyldnerUnderretning <|-- PaaKrav
+SkyldnerUnderretning <|-- Paakrav
 SkyldnerUnderretning <|-- Rykker
 Underretningsmeddelelse <|-- AfregningsUnderretning
 Underretningsmeddelelse <|-- UdligningsUnderretning
