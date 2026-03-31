@@ -1,12 +1,8 @@
 package dk.ufst.opendebt.debtservice.entity;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CurrentTimestamp;
-import org.hibernate.annotations.SourceType;
-import org.hibernate.generator.EventType;
+import dk.ufst.opendebt.common.audit.AuditableEntity;
 
 import lombok.*;
 
@@ -17,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DebtTypeEntity {
+public class DebtTypeEntity extends AuditableEntity {
 
   @Id
   @Column(name = "code", length = 20)
@@ -54,11 +50,6 @@ public class DebtTypeEntity {
   @Column(name = "claim_type_code", length = 20)
   private String claimTypeCode;
 
-  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
-  @CurrentTimestamp(source = SourceType.VM)
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
+  // Audit fields inherited from AuditableEntity (createdAt, updatedAt, createdBy, updatedBy,
+  // version)
 }

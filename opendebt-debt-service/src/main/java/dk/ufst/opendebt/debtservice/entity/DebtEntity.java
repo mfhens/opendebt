@@ -7,9 +7,7 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CurrentTimestamp;
-import org.hibernate.annotations.SourceType;
-import org.hibernate.generator.EventType;
+import dk.ufst.opendebt.common.audit.AuditableEntity;
 
 import lombok.*;
 
@@ -30,7 +28,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DebtEntity {
+public class DebtEntity extends AuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -210,18 +208,8 @@ public class DebtEntity {
   @Column(name = "readiness_validated_by", length = 100)
   private String readinessValidatedBy;
 
-  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
-  @CurrentTimestamp(source = SourceType.VM)
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
-
-  @Column(name = "created_by", length = 100)
-  private String createdBy;
-
-  @Version private Long version;
+  // Audit fields inherited from AuditableEntity (createdAt, updatedAt, createdBy, updatedBy,
+  // version)
 
   public enum DebtStatus {
     PENDING,

@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-30
-  updated_by: copilot (P057 sprint-tracker — full delivery pipeline complete, DEP-1 backlog item noted)
+  updated_at: 2026-03-31
+  updated_by: copilot (TB-001 — DebtEntity and DebtTypeEntity migrated to AuditableEntity)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1601,9 +1601,10 @@ program:
   technical_backlog:
     - id: TB-001
       title: Migrate remaining entities to AuditableEntity base class
-      status: in_progress
+      status: implemented
       priority: medium
       created: 2026-03-14
+      completed: 2026-03-31
       description: |
         ADR-0022 established shared audit infrastructure in opendebt-common.
         CreditorEntity and ChannelBindingEntity are migrated. Remaining entities
@@ -1611,9 +1612,9 @@ program:
       entities_migrated:
         - CreditorEntity (creditor-service)
         - ChannelBindingEntity (creditor-service)
-      entities_pending:
         - DebtEntity (debt-service)
         - DebtTypeEntity (debt-service)
+      entities_pending:
         - CaseEntity (case-service)
         - PaymentEntity (payment-service)
         - LedgerEntryEntity (payment-service)
