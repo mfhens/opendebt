@@ -14,6 +14,9 @@
 
     <modules>
         <module>audit-trail-commons</module>
+        <module>keycloak-oauth2-starter</module>
+        <module>oces3-certificate-parser</module>
+        <module>skat-design-system</module>
         <module>opendebt-common</module>
         <module>opendebt-person-registry</module>
         <module>opendebt-rules-engine</module>
