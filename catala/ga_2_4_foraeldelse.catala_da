@@ -247,7 +247,7 @@ scope ForaeldelseFristBeregning:
 
   # F-3b: nyFristUdloeber = fristStartDato + fristVarighed år
   definition nyFristUdloeber equals
-    fristStartDato +@ duration of (fristVarighed * 365) days
+    fristStartDato +@ fristVarighed * 365 day
 ```
 
 ---
@@ -309,7 +309,7 @@ scope AfbrydelseValidering:
   definition nyFristUdloeber
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 ```
 
 ---
@@ -370,7 +370,7 @@ scope AfbrydelseValidering:
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
-    consequence equals underretningsDato +@ duration of (3 * 365) days
+    consequence equals underretningsDato +@ 3 * 365 day
 ```
 
 ---
@@ -392,22 +392,22 @@ scope AfbrydelseValidering:
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
+      and (eventDate - inaktivSiden) >= 365 day
     consequence equals NY_FRIST_3_AAR
 
   exception
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
+      and (eventDate - inaktivSiden) >= 365 day
     consequence equals inaktivSiden
 
   exception
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
-    consequence equals inaktivSiden +@ duration of (3 * 365) days
+      and (eventDate - inaktivSiden) >= 365 day
+    consequence equals inaktivSiden +@ 3 * 365 day
 ```
 
 ---
@@ -441,7 +441,7 @@ scope AfbrydelseValidering:
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 
   # A-5b: UDLAEG + SAERLIGT_RETSGRUNDLAG → NY_FRIST_10_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + Forældelsesl. § 5, stk. 1
@@ -455,7 +455,7 @@ scope AfbrydelseValidering:
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
-    consequence equals eventDate +@ duration of (10 * 365) days
+    consequence equals eventDate +@ 10 * 365 day
 ```
 
 ---
@@ -602,11 +602,11 @@ scope TillaegsfristBeregning:
   # Ankerpunkt: G.A.2.4.4.2 + GIL § 18a, stk. 1 (floor-grænse T-4)
   definition nyFristUdloeber
     under condition not erTomt
-    equals
+    consequence equals
       (if (if currentFristExpires >= eventDate then currentFristExpires else eventDate) >= udskydelseDato
        then (if currentFristExpires >= eventDate then currentFristExpires else eventDate)
        else udskydelseDato)
-      +@ duration of (2 * 365) days
+      +@ 2 * 365 day
 ```
 
 ---
@@ -633,7 +633,7 @@ scope TillaegsfristBeregning:
   exception
   definition nyFristUdloeber
     under condition erTomt
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 ```
 
 ---
