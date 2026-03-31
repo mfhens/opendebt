@@ -162,7 +162,7 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          mvn dependency-check:check -P security-scan -B \
+          mvn org.owasp:dependency-check-maven:check -P security-scan -B \
             -DnvdApiKey="$NVD_API_KEY" \
             -DnvdApiDelay=4000
 
