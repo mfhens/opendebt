@@ -39,6 +39,35 @@ jobs:
             -v ${{ github.workspace }}/architecture:/usr/local/structurizr \
             structurizr/cli validate --workspace workspace.dsl
 
+  catala-tests:
+    name: Catala Compliance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Run Catala compliance tests
+        # Runs all three test suites (opskrivning/nedskrivning, forældelse, dækningsrækkefølge)
+        # using the verification commands documented in each test file header.
+        # Source files are passed alongside each test file so the compiler can resolve scope rules.
+        # Pin ghcr.io/catala-lang/catala to a specific digest when a stable release is tagged.
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workdir \
+            -w /workdir \
+            ghcr.io/catala-lang/catala:latest \
+            sh -c " \
+              catala test-doc \
+                catala/tests/ga_opskrivning_nedskrivning_tests.catala_da \
+                catala/ga_1_4_3_opskrivning.catala_da \
+                catala/ga_1_4_4_nedskrivning.catala_da \
+              && catala test-doc \
+                catala/tests/ga_foraeldelse_tests.catala_da \
+                catala/ga_2_4_foraeldelse.catala_da \
+              && catala test-doc \
+                catala/tests/ga_daekningsraekkefoeigen_tests.catala_da \
+                catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da \
+            "
+
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
