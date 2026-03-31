@@ -28,10 +28,12 @@ jobs:
           cache: maven
 
       - name: Check code formatting (Spotless)
-        run: mvn spotless:check -B
+        # audit-trail-commons uses spring-boot-starter-parent (not the OpenDebt root pom)
+        # and does not inherit the Spotless plugin — exclude it from the check.
+        run: mvn spotless:check -B -pl '!audit-trail-commons'
 
       - name: Validate Maven project
-        run: mvn validate -B
+        run: mvn validate -B -pl '!audit-trail-commons'
 
       - name: Validate C4 architecture model
         run: |
@@ -45,18 +47,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "4.14.2"
+
       - name: Install Catala 1.1.0
-        run: |
-          curl -fsSL -o catala.deb \
-            https://github.com/CatalaLang/catala/releases/download/1.1.0/catala_1.1.0.deb
-          sudo apt-get update -qq
-          sudo apt-get install -y ./catala.deb
-          catala --version
+        run: opam install catala.1.1.0 -y
 
       - name: Run Catala compliance tests
         # Runs all three test suites using the verification commands documented in each test file.
         # Source files are passed alongside each test file so the compiler can resolve scope rules.
         run: |
+          eval $(opam env)
           catala test-doc \
             catala/tests/ga_opskrivning_nedskrivning_tests.catala_da \
             catala/ga_1_4_3_opskrivning.catala_da \
