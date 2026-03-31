@@ -61,7 +61,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         openDebt = softwareSystem "OpenDebt" "Open-source debt collection platform for Danish public institutions. Manages case lifecycle, debt claims, payments, enforcement, and creditor/debtor communication." {
 
             !docs docs
-            !adrs docs/adr
+            !adrs adr
 
             // --- Portals (user-facing web applications) ---
             caseworkerPortal = container "Caseworker Portal" "Web UI for UFST caseworkers (sagsbehandlere). Case overview, manual interventions, document management." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application"

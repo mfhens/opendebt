@@ -25,7 +25,7 @@
 - OpenTelemetry Collector is deployed and operational in Docker Compose and K8s configurations.
 - Trace, log, and metrics backends are operational and accessible via their respective UIs.
 - At least one custom business metric is demonstrated end-to-end.
-- ADR for backend selection is written and referenced in `docs/architecture-overview.md`.
+- ADR for backend selection is written and referenced in `architecture/overview.md`.
 - Every acceptance criterion is covered by at least one Gherkin scenario.
 
 ## Failure conditions

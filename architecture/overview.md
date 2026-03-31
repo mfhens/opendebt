@@ -580,7 +580,7 @@ flowchart LR
 - **Backup monitoring**: Prometheus alerts on backup staleness and WAL archiving lag
 
 See `docs/dr-runbook.md` for the step-by-step DR execution procedure.
-See `docs/adr/0028-backup-and-disaster-recovery.md` for the full architectural decision.
+See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full architectural decision.
 
 ## Services
 

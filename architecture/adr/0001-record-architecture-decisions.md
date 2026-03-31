@@ -7,7 +7,7 @@ Accepted
 We need to record the architectural decisions made on this project for future reference and to maintain institutional knowledge as team members change.
 
 ## Decision
-We will use Architecture Decision Records (ADRs) as described by Michael Nygard in his article "Documenting Architecture Decisions". ADRs will be stored in the `docs/adr` directory.
+We will use Architecture Decision Records (ADRs) as described by Michael Nygard in his article "Documenting Architecture Decisions". ADRs will be stored in the `architecture/adr` directory.
 
 Each ADR will contain:
 - **Title**: A short noun phrase

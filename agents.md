@@ -40,10 +40,10 @@ The Snyk MCP server is configured in `.mcp.json` at the repo root.
 
 ### Documentation Maintenance (CRITICAL)
 **Every time source code is changed, check and update the following documentation if affected:**
-- `docs/architecture-overview.md` - Service inventory, implementation status, diagrams, endpoint lists
+- `architecture/overview.md` - Service inventory, implementation status, diagrams, endpoint lists
 - `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
 - `agents.md` - ADR references, package structure, patterns
-- Relevant ADR in `docs/adr/` if an architectural decision is affected
+- Relevant ADR in `architecture/adr/` if an architectural decision is affected
 - `docs/site/technical/` - Developer guide, architecture, API reference, domain model (English)
 - `docs/site/fordringshaver/` - Creditor user guide (Danish) if creditor-facing features change
 - `docs/site/skyldner/` - Citizen user guide (Danish) if citizen-facing features change
@@ -52,7 +52,7 @@ The Snyk MCP server is configured in `.mcp.json` at the repo root.
 The documentation site is built with MkDocs (`mkdocs.yml` at repo root). Run `mkdocs serve` to preview locally.
 
 ### Memory MCP Synchronisation
-**When `petitions/program-status.yaml` or `docs/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
+**When `petitions/program-status.yaml` or `architecture/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
 
 Update memory when:
 - A new ADR is added or its status changes → create or update an entity for the ADR
@@ -541,7 +541,7 @@ workflowService.completeTask(taskId, variables);
 - Use Mermaid for all diagrams in documentation
 - Store PII only in Person Registry
 - Use technical UUIDs to reference persons/organizations
-- Update `docs/architecture-overview.md` when adding/changing services, endpoints, entities, or migrations
+- Update `architecture/overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
 - Store CPR, CVR, names, addresses outside Person Registry
@@ -592,4 +592,4 @@ Architecture is governed using Structurizr DSL. Key files:
 | `architecture/workspace.dsl` | Canonical C4 model — updated by `solution-architect`, maintained by `implementation-doc-sync` |
 | `architecture/policies.yaml` | Architecture policy set — evaluated by `c4-model-validator` and `c4-architecture-governor` |
 
-Architectural decisions are recorded in `docs/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.
+Architectural decisions are recorded in `architecture/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.

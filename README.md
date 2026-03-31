@@ -215,15 +215,15 @@ Each service exposes OpenAPI documentation:
 
 ## Architecture Decision Records
 
-Key architectural decisions are documented in [docs/adr/](docs/adr/):
+Key architectural decisions are documented in [architecture/adr/](architecture/adr/):
 
-- [ADR-0002: Microservices Architecture](docs/adr/0002-microservices-architecture.md)
-- [ADR-0003: Java/Spring Boot Stack](docs/adr/0003-java-spring-boot-technology-stack.md)
-- [ADR-0007: No Direct Database Connections](docs/adr/0007-no-direct-database-connections.md)
-- [ADR-0010: Faellesoffentlige Arkitekturprincipper](docs/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
-- [ADR-0018: Double-Entry Bookkeeping](docs/adr/0018-double-entry-bookkeeping-for-payment-service.md)
-- [ADR-0029: immudb for Financial Ledger Integrity](docs/adr/0029-immudb-for-financial-ledger-integrity.md)
-- [ADR-0032: Catala Formal Compliance Verification Layer](docs/adr/0032-catala-formal-compliance-layer.md)
+- [ADR-0002: Microservices Architecture](architecture/adr/0002-microservices-architecture.md)
+- [ADR-0003: Java/Spring Boot Stack](architecture/adr/0003-java-spring-boot-technology-stack.md)
+- [ADR-0007: No Direct Database Connections](architecture/adr/0007-no-direct-database-connections.md)
+- [ADR-0010: Faellesoffentlige Arkitekturprincipper](architecture/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
+- [ADR-0018: Double-Entry Bookkeeping](architecture/adr/0018-double-entry-bookkeeping-for-payment-service.md)
+- [ADR-0029: immudb for Financial Ledger Integrity](architecture/adr/0029-immudb-for-financial-ledger-integrity.md)
+- [ADR-0032: Catala Formal Compliance Verification Layer](architecture/adr/0032-catala-formal-compliance-layer.md)
 
 ## Compliance
 
@@ -238,7 +238,7 @@ OpenDebt complies with:
 High-risk G.A. Inddrivelse rules are formally encoded in [Catala](https://catala-lang.org/)
 before implementation. Catala source files under `catala/` act as an executable oracle that
 validates Gherkin scenarios against the juridisk vejledning text. See
-[ADR-0032](docs/adr/0032-catala-formal-compliance-layer.md) for the full rationale and tier
+[ADR-0032](architecture/adr/0032-catala-formal-compliance-layer.md) for the full rationale and tier
 classification.
 
 Completed spikes:

@@ -34,4 +34,4 @@
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
 | 0031 | Statutory codes as enums | Values defined by statute (e.g., `WriteDownReasonCode`) are Java enums, not DB configuration; confirmed compatible with Catala's enumeration model (P054 spike) |
 
-ADR source files are in `docs/adr/` in the repository.
+ADR source files are in `architecture/adr/` in the repository.

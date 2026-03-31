@@ -220,7 +220,7 @@ program:
       depends_on: []
       last_reviewed: 2026-03-17
       evidence:
-        - opendebt-payment-service payment matching module is marked Done in docs/architecture-overview.md
+        - opendebt-payment-service payment matching module is marked Done in architecture/overview.md
         - debt-service exposes OCR lookup and write-down endpoints
       next_step: Revalidate against petition outcome contract during broader program review.
 
@@ -1778,7 +1778,7 @@ program:
       status: not_started
       priority: critical
       created: 2026-03-25
-      adr: docs/adr/0028-backup-and-disaster-recovery.md
+      adr: architecture/adr/0028-backup-and-disaster-recovery.md
       description: |
         ADR-0028 defines the backup and DR strategy (RTO 4h / RPO 4h). The architecture
         and k8s manifests are complete. The following infrastructure must be provisioned
@@ -1951,7 +1951,7 @@ program:
       created: 2026-03-25
       resolved: 2026-03-26
       branch: spike/TB-028-immudb-financial-ledger-integrity
-      adr: docs/adr/0029-immudb-for-financial-ledger-integrity.md
+      adr: architecture/adr/0029-immudb-for-financial-ledger-integrity.md
       type: spike
       description: |
         ADR-0029 proposes immudb as a cryptographic tamper-evidence layer for the
@@ -2285,7 +2285,7 @@ program:
         Spring Boot auto-configuration via META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports.
         Only Oces3SoapSecurityInterceptor.java in integration-gateway needed import updates.
         All 59 integration-gateway tests pass (29 scenarios).
-        References: ADR-0030, docs/architecture-overview.md (TB-042 note).
+        References: ADR-0030, architecture/overview.md (TB-042 note).
       description: |
         The OCES3 X.509 certificate parsing logic in opendebt-common is fully reusable
         by any Danish e-government system using SOAP/mTLS. Handles RFC2253 DN parsing,
@@ -2550,7 +2550,7 @@ program:
         reference implementation for similar debt-collection systems instead.
 
         Actions:
-        - Add architecture note to docs/architecture-overview.md explaining the pattern
+        - Add architecture note to architecture/overview.md explaining the pattern
         - Create docs/site/technical/bookkeeping-reference.md with design rationale
         - Tag module in pom.xml with purpose metadata
         - Future: separate generic yanimetaxas wrapper from Danish-law-specific coverage rules
