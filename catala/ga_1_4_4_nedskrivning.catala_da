@@ -169,8 +169,7 @@ scope Nedskrivning:
 
   # BLOCKER-2 fix: nedskrivningGodkendt er output-flagget der afspejler grundErGyldig
   # Spec SPEC-P054 §3.7: nedskrivningGodkendt equals grundErGyldig
-  definition nedskrivningGodkendt
-    equals grundErGyldig
+  definition nedskrivningGodkendt equals grundErGyldig
 ```
 
 ---

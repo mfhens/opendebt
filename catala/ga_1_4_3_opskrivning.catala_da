@@ -66,7 +66,7 @@ scope OpskrivningsfordringModtagelse:
   exception
   definition modtagelsestidspunkt
     under condition erFordringIHøring
-    equals modtagelseISystemet
+    consequence equals modtagelseISystemet
 ```
 
 ---
@@ -88,7 +88,7 @@ scope OpskrivningsfordringModtagelse:
     under condition
       erAnnulleretNedskrivning and
       not erKrydssystemNedskrivning
-    equals originalFordringModtagelsestidspunkt
+    consequence equals originalFordringModtagelsestidspunkt
 ```
 
 ---
@@ -111,7 +111,7 @@ scope OpskrivningsfordringModtagelse:
     under condition
       erAnnulleretNedskrivning and
       erKrydssystemNedskrivning
-    equals modtagelseISystemet
+    consequence equals modtagelseISystemet
 ```
 
 ---

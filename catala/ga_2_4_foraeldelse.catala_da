@@ -125,7 +125,7 @@ scope UdskydelsesBeregning:
   definition udskydelseDato
     under condition kildesystem = PSRM
       and inddrivelsesdato >= |2015-11-19|
-    equals |2021-11-20|
+    consequence equals |2021-11-20|
 ```
 
 ---
@@ -148,7 +148,7 @@ scope UdskydelsesBeregning:
   definition udskydelseDato
     under condition kildesystem = DMI_SAP38
       and registreringsDato >= |2024-01-01|
-    equals |2027-11-20|
+    consequence equals |2027-11-20|
 ```
 
 ---
@@ -230,7 +230,7 @@ scope ForaeldelseFristBeregning:
   definition fristVarighed
     under condition erUdlaeg
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
-    equals 10
+    consequence equals 10
 ```
 
 ---
@@ -307,17 +307,17 @@ scope AfbrydelseValidering:
   definition afbrydelseResultat
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
-    equals NY_FRIST_3_AAR
+    consequence equals NY_FRIST_3_AAR
 
   definition nyAfbrydelseDato
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
-    equals eventDate
+    consequence equals eventDate
 
   definition nyFristUdloeber
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
-    equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ duration of (3 * 365) days
 ```
 
 ---
@@ -338,13 +338,13 @@ scope AfbrydelseValidering:
   # Ankerpunkt: GIL § 18, stk. 4; SKM2015.718.ØLR
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_VARSEL
-    equals AFVIST_VARSEL_ALENE
+    consequence equals AFVIST_VARSEL_ALENE
 
   exception
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and not afgoerelseRegistreret
-    equals AFVIST_VARSEL_ALENE
+    consequence equals AFVIST_VARSEL_ALENE
 ```
 
 ---
@@ -366,19 +366,19 @@ scope AfbrydelseValidering:
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
-    equals NY_FRIST_3_AAR
+    consequence equals NY_FRIST_3_AAR
 
   exception
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
-    equals underretningsDato
+    consequence equals underretningsDato
 
   exception
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
-    equals underretningsDato +@ duration of (3 * 365) days
+    consequence equals underretningsDato +@ duration of (3 * 365) days
 ```
 
 ---
@@ -401,21 +401,21 @@ scope AfbrydelseValidering:
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
       and (eventDate - inaktivSiden) >= duration of 365 days
-    equals NY_FRIST_3_AAR
+    consequence equals NY_FRIST_3_AAR
 
   exception
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
       and (eventDate - inaktivSiden) >= duration of 365 days
-    equals inaktivSiden
+    consequence equals inaktivSiden
 
   exception
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
       and (eventDate - inaktivSiden) >= duration of 365 days
-    equals inaktivSiden +@ duration of (3 * 365) days
+    consequence equals inaktivSiden +@ duration of (3 * 365) days
 ```
 
 ---
@@ -438,18 +438,18 @@ scope AfbrydelseValidering:
   definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
-    equals NY_FRIST_3_AAR
+    consequence equals NY_FRIST_3_AAR
 
   exception
   definition nyAfbrydelseDato
     under condition afbrydelseType = UDLAEG
-    equals eventDate
+    consequence equals eventDate
 
   exception
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
-    equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ duration of (3 * 365) days
 
   # A-5b: UDLAEG + SAERLIGT_RETSGRUNDLAG → NY_FRIST_10_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + Forældelsesl. § 5, stk. 1
@@ -457,13 +457,13 @@ scope AfbrydelseValidering:
   definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
-    equals NY_FRIST_10_AAR
+    consequence equals NY_FRIST_10_AAR
 
   exception
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
-    equals eventDate +@ duration of (10 * 365) days
+    consequence equals eventDate +@ duration of (10 * 365) days
 ```
 
 ---
@@ -506,7 +506,7 @@ scope Fordringskompleks:
   # Ankerpunkt: GIL § 18a, stk. 2
   definition kompleksNyFristUdloeber
     under condition harAfbrydelse
-    equals sharedNyFrist
+    consequence equals sharedNyFrist
 ```
 
 ---
@@ -602,7 +602,7 @@ scope TillaegsfristBeregning:
   # Ankerpunkt: G.A.2.4.4.2.1
   definition afbrydelseResultat
     under condition not erTomt
-    equals NY_FRIST_3_AAR
+    consequence equals NY_FRIST_3_AAR
 
   # T-2: nyFristUdloeber = max(max(currentFristExpires, eventDate), udskydelseDato) + 2 år
   # ALTID tre-vejs max() — inkluderer udskydelseDato som floor-grænse (T-4, GIL § 18a, stk. 1).
@@ -636,12 +636,12 @@ scope TillaegsfristBeregning:
   exception
   definition afbrydelseResultat
     under condition erTomt
-    equals FORELOEBIG_AFBRYDELSE
+    consequence equals FORELOEBIG_AFBRYDELSE
 
   exception
   definition nyFristUdloeber
     under condition erTomt
-    equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ duration of (3 * 365) days
 ```
 
 ---
