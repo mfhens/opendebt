@@ -328,11 +328,12 @@ scope AfbrydelseValidering:
   # A-2: LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE (ingen ny frist)
   # A-2b: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = false → AFVIST_VARSEL_ALENE
   # Ankerpunkt: GIL § 18, stk. 4; SKM2015.718.ØLR
+  label a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_VARSEL
     consequence equals AFVIST_VARSEL_ALENE
 
-  exception
+  exception a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and not afgoerelseRegistreret
@@ -354,7 +355,7 @@ scope AfbrydelseValidering:
   # A-3: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = true → NY_FRIST_3_AAR
   # nyAfbrydelseDato = underretningsDato; nyFristUdloeber = underretningsDato + 3 år
   # Ankerpunkt: GIL § 18, stk. 4
-  exception
+  exception a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
@@ -388,7 +389,7 @@ scope AfbrydelseValidering:
   # A-4: LOENINDEHOLDELSE_AFGOERELSE + harInaktivSiden = true
   #      + (eventDate - inaktivSiden) >= 365 dage → NY_FRIST_3_AAR fra inaktivSiden
   # Ankerpunkt: GIL § 18, stk. 4
-  exception
+  exception a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
@@ -426,7 +427,7 @@ SAERLIGT_RETSGRUNDLAG giver 10 år (A-5b).
 scope AfbrydelseValidering:
   # A-5a: UDLAEG + ORDINARY → NY_FRIST_3_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + GIL § 18a, stk. 4
-  exception
+  exception a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
