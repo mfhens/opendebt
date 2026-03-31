@@ -446,7 +446,7 @@ scope AfbrydelseValidering:
 
   # A-5b: UDLAEG + SAERLIGT_RETSGRUNDLAG → NY_FRIST_10_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + Forældelsesl. § 5, stk. 1
-  exception
+  exception a2_base
   definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
