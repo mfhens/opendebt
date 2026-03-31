@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-03-31
-  updated_by: copilot (TB-001 — DebtEntity and DebtTypeEntity migrated to AuditableEntity)
+  updated_by: copilot (TB-052 — OAuth2 token relay in caseworker portal WebClient)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -2566,9 +2566,10 @@ program:
 
     - id: TB-052
       title: "OAuth2 token relay in caseworker portal WebClient"
-      status: not_started
+      status: implemented
       priority: high
       created: 2026-03-30
+      completed: 2026-03-31
       petitions: []
       description: |
         The caseworker portal makes server-to-server calls to payment-service and other
