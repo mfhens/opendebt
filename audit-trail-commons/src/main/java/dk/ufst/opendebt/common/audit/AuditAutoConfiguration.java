@@ -3,7 +3,7 @@ package dk.ufst.opendebt.common.audit;
 import javax.sql.DataSource;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.AuditorAware;
@@ -11,15 +11,16 @@ import org.springframework.data.domain.AuditorAware;
 /**
  * Spring Boot auto-configuration for audit trail commons.
  *
- * <p>Activates when a {@link DataSource} is present on the classpath (i.e., any service with JPA).
- * All beans are guarded by {@link ConditionalOnMissingBean} so services that already register these
+ * <p>Activates when a {@link DataSource} bean is present in the application context (i.e., any
+ * service with JPA). Services without a database (e.g., BFF portals) are not affected. All beans
+ * are guarded by {@link ConditionalOnMissingBean} so services that already register these
  * components via component-scan (e.g., opendebt-integration-gateway) are not affected.
  *
  * <p>Registered via
  * META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
  */
 @AutoConfiguration
-@ConditionalOnClass(DataSource.class)
+@ConditionalOnBean(DataSource.class)
 public class AuditAutoConfiguration {
 
   @Bean
