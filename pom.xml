@@ -413,6 +413,7 @@
                 <version>${owasp.version}</version>
                 <configuration>
                     <failBuildOnCVSS>7</failBuildOnCVSS>
+                    <suppressionFile>${maven.multiModuleProjectDirectory}/owasp-suppressions.xml</suppressionFile>
                 </configuration>
             </plugin>
 
