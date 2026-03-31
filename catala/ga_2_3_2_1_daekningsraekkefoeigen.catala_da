@@ -419,10 +419,10 @@ declaration scope TimingRegel:
 GIL § 4, stk. 4, 1. pkt.: Rækkefølgen fastlægges ved applikationstidspunktet.
 GIL § 4, stk. 4, 2. pkt.: Dækningen har virkning fra betalingstidspunktet.
 
-> FLAG-D — Catala date type limitation: Catala's native `date` type lacks time-of-day
-> precision. FR-4 timestamps from P057 Gherkin are ISO-8601 datetimes (e.g.
-> `2025-01-10T09:00:00Z`). The Catala encoding uses `date`. This scope limitation is
-> evaluated in SPIKE-REPORT-069.md under No-Go trigger N-1.
+**FLAG-D** — Catala date type limitation: Catala's native `date` type lacks time-of-day
+precision. FR-4 timestamps from P057 Gherkin are ISO-8601 datetimes (e.g.
+`2025-01-10T09:00:00Z`). The Catala encoding uses `date`. This scope limitation is
+evaluated in SPIKE-REPORT-069.md under No-Go trigger N-1.
 
 ```catala
 scope TimingRegel:
