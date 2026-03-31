@@ -13,6 +13,7 @@
     <description>Open source debt collection system for Danish public institutions</description>
 
     <modules>
+        <module>audit-trail-commons</module>
         <module>opendebt-common</module>
         <module>opendebt-person-registry</module>
         <module>opendebt-rules-engine</module>

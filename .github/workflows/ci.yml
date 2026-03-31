@@ -49,7 +49,8 @@ jobs:
         run: |
           curl -fsSL -o catala.deb \
             https://github.com/CatalaLang/catala/releases/download/1.1.0/catala_1.1.0.deb
-          sudo dpkg -i catala.deb
+          sudo apt-get update -qq
+          sudo apt-get install -y ./catala.deb
           catala --version
 
       - name: Run Catala compliance tests
