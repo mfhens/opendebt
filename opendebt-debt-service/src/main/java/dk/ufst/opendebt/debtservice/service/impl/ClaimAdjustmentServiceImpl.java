@@ -152,47 +152,9 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
     // indicate the opskrivningsfordring receipt time is the høring resolution time.
     // For OPSKRIVNING_REGULERING specifically, the actual høring resolution timestamp is fetched
     // and used as the authoritative receipt time. (G.A.1.4.3, Gæld.bekendtg. § 7 stk. 1, 4. pkt.)
-    Instant receiptTimestamp = Instant.now();
-    String status = "ACCEPTED";
-    if (ClaimLifecycleState.HOERING == debt.getLifecycleState()) {
-      // All HOERING claims return PENDING_HOERING to signal the timing rule is active
-      status = "PENDING_HOERING";
-      if (OPSKRIVNING_REGULERING.equals(adjustmentType)) {
-        // B1: Fetch the actual resolution timestamp for OPSKRIVNING_REGULERING
-        HoeringEntity hoering =
-            hoeringRepository
-                .findTopByDebtIdOrderByResolvedAtDesc(claimId)
-                .orElseThrow(
-                    () -> {
-                      shipAuditFailure(claimId, adjustmentType, "HOERING_RECORD_MISSING");
-                      return new CreditorValidationException(
-                          "Claim is in HOERING state but no høring record exists for claim: "
-                              + claimId,
-                          "HOERING_RECORD_MISSING");
-                    });
-        LocalDateTime resolvedAt = hoering.getResolvedAt();
-        boolean statusIsResolved =
-            hoering.getHoeringStatus() != HoeringStatus.AFVENTER_FORDRINGSHAVER
-                && hoering.getHoeringStatus() != HoeringStatus.AFVENTER_RIM;
-        if (resolvedAt == null || !statusIsResolved) {
-          // Høring not yet resolved — reject per FR-3
-          shipAuditFailure(claimId, adjustmentType, "HOERING_NOT_YET_RESOLVED");
-          throw new CreditorValidationException(
-              "Cannot process OPSKRIVNING_REGULERING: høring for claim "
-                  + claimId
-                  + " has not yet been resolved (Gæld.bekendtg. § 7 stk. 1, 4. pkt.).",
-              "HOERING_NOT_YET_RESOLVED");
-        }
-        receiptTimestamp = resolvedAt.atZone(java.time.ZoneOffset.UTC).toInstant();
-        log.info(
-            "HOERING_TIMING_RULE claimId={} adjustmentType={}: receipt timestamp set to"
-                + " høring resolution time {} (not portal submission time) (G.A.1.4.3,"
-                + " Gæld.bekendtg. § 7 stk. 1, 4. pkt.)",
-            claimId,
-            adjustmentType,
-            receiptTimestamp);
-      }
-    }
+    ReceiptState receiptState = computeReceiptState(claimId, adjustmentType, debt);
+    Instant receiptTimestamp = receiptState.timestamp();
+    String status = receiptState.status();
 
     // --- FR-4: Retroactive nedskrivning log marker ---
     if (isWriteDown
@@ -223,6 +185,62 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
         .crossSystemRetroactiveApplies(crossSystemRetroactiveApplies)
         .receiptTimestamp(receiptTimestamp)
         .build();
+  }
+
+  private record ReceiptState(Instant timestamp, String status) {}
+
+  /**
+   * Determines the receipt timestamp and status string for the FR-3 høring timing rule. Returns
+   * PENDING_HOERING for any adjustment on a HOERING claim, using the actual høring resolution time
+   * when the type is OPSKRIVNING_REGULERING.
+   */
+  private ReceiptState computeReceiptState(UUID claimId, String adjustmentType, DebtEntity debt) {
+    if (ClaimLifecycleState.HOERING != debt.getLifecycleState()) {
+      return new ReceiptState(Instant.now(), "ACCEPTED");
+    }
+    if (OPSKRIVNING_REGULERING.equals(adjustmentType)) {
+      return new ReceiptState(
+          fetchHoeringReceiptTimestamp(claimId, adjustmentType), "PENDING_HOERING");
+    }
+    return new ReceiptState(Instant.now(), "PENDING_HOERING");
+  }
+
+  /**
+   * Fetches the authoritative receipt timestamp from the resolved høring record for
+   * OPSKRIVNING_REGULERING adjustments (Gæld.bekendtg. § 7 stk. 1, 4. pkt.).
+   */
+  private Instant fetchHoeringReceiptTimestamp(UUID claimId, String adjustmentType) {
+    HoeringEntity hoering =
+        hoeringRepository
+            .findTopByDebtIdOrderByResolvedAtDesc(claimId)
+            .orElseThrow(
+                () -> {
+                  shipAuditFailure(claimId, adjustmentType, "HOERING_RECORD_MISSING");
+                  return new CreditorValidationException(
+                      "Claim is in HOERING state but no høring record exists for claim: " + claimId,
+                      "HOERING_RECORD_MISSING");
+                });
+    LocalDateTime resolvedAt = hoering.getResolvedAt();
+    boolean statusIsResolved =
+        hoering.getHoeringStatus() != HoeringStatus.AFVENTER_FORDRINGSHAVER
+            && hoering.getHoeringStatus() != HoeringStatus.AFVENTER_RIM;
+    if (resolvedAt == null || !statusIsResolved) {
+      shipAuditFailure(claimId, adjustmentType, "HOERING_NOT_YET_RESOLVED");
+      throw new CreditorValidationException(
+          "Cannot process OPSKRIVNING_REGULERING: høring for claim "
+              + claimId
+              + " has not yet been resolved (Gæld.bekendtg. § 7 stk. 1, 4. pkt.).",
+          "HOERING_NOT_YET_RESOLVED");
+    }
+    Instant receiptTimestamp = resolvedAt.atZone(java.time.ZoneOffset.UTC).toInstant();
+    log.info(
+        "HOERING_TIMING_RULE claimId={} adjustmentType={}: receipt timestamp set to"
+            + " høring resolution time {} (not portal submission time) (G.A.1.4.3,"
+            + " Gæld.bekendtg. § 7 stk. 1, 4. pkt.)",
+        claimId,
+        adjustmentType,
+        receiptTimestamp);
+    return receiptTimestamp;
   }
 
   /**
