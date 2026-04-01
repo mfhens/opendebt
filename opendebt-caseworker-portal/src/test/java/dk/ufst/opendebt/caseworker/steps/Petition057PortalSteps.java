@@ -52,8 +52,6 @@ public class Petition057PortalSteps {
   // Per-scenario mutable state
   // ─────────────────────────────────────────────────────────────────────────────
 
-  private String currentDebtorId;
-
   /**
    * Rendered HTML content of the dækningsrækkefølge view (populated by navigation steps).
    * Assertions inspect this to verify markup presence.
@@ -62,7 +60,6 @@ public class Petition057PortalSteps {
 
   @Before("@petition057")
   public void resetScenarioState() {
-    currentDebtorId = null;
     renderedViewHtml = null;
     reset(paymentServiceClient);
   }
@@ -94,7 +91,6 @@ public class Petition057PortalSteps {
             .andExpect(status().isOk())
             .andReturn();
     this.renderedViewHtml = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-    this.currentDebtorId = debtorId;
   }
 
   // =========================================================================
@@ -148,13 +144,12 @@ public class Petition057PortalSteps {
                 "200.00",
                 null));
     when(paymentServiceClient.getDaekningsraekkefoelge(debtorId)).thenReturn(positions);
-    this.currentDebtorId = debtorId;
   }
 
   /** Establishes an authenticated sagsbehandler session (session handled via MockHttpSession). */
   @And("a sagsbehandler is authenticated with access to debtor {string}")
   public void aSagsbehandlerIsAuthenticatedWithAccessToDebtor(String debtorId) {
-    this.currentDebtorId = debtorId;
+    // no-op: debtorId is passed directly to MockHttpSession via navigateTo
   }
 
   /** Navigates to the dækningsrækkefølge view and captures the rendered HTML. */
@@ -240,7 +235,6 @@ public class Petition057PortalSteps {
                 "100.00",
                 stamFordringId));
     when(paymentServiceClient.getDaekningsraekkefoelge(debtorId)).thenReturn(positions);
-    this.currentDebtorId = debtorId;
   }
 
   /** Asserts the opskrivningsfordring row carries the CSS class {@code opskrivningsfordring}. */

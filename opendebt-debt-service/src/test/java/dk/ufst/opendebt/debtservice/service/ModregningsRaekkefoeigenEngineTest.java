@@ -103,7 +103,6 @@ class ModregningsRaekkefoeigenEngineTest {
     @Test
     @DisplayName("full tier-2 coverage — P057 not called")
     void tier2FullCoverage() {
-      UUID t1f = UUID.randomUUID();
       UUID t2f = UUID.randomUUID();
       when(fordringQueryPort.getActiveFordringer(DEBTOR, 1, null)).thenReturn(List.of());
       when(fordringQueryPort.getActiveFordringer(DEBTOR, 2, null))
@@ -154,7 +153,6 @@ class ModregningsRaekkefoeigenEngineTest {
     @Test
     @DisplayName("skipTier2=true — tier-2 not allocated, P057 not called")
     void skipTier2() {
-      UUID t1f = UUID.randomUUID();
       UUID t3f = UUID.randomUUID();
       when(fordringQueryPort.getActiveFordringer(DEBTOR, 1, null)).thenReturn(List.of());
       when(fordringQueryPort.getActiveFordringer(DEBTOR, 3, null))

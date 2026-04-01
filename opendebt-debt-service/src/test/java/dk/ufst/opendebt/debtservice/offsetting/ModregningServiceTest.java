@@ -479,7 +479,7 @@ class ModregningServiceTest {
     void everyTierDecision_logsRequiredAuditFields() {
       UUID debtorId = UUID.randomUUID();
       UUID fordringId = UUID.randomUUID();
-      UUID eventId = setupStandardMocks(fordringId, debtorId);
+      setupStandardMocks(fordringId, debtorId);
 
       underTest.initiateModregning(
           debtorId, new BigDecimal("1000"), PaymentType.STANDARD_PAYMENT, null, false);

@@ -64,7 +64,6 @@ public final class SharedArchRules {
    *     "debtservice", "payment"
    */
   public static ArchRule noAccessToOtherServiceRepositories(String serviceBasePackage) {
-    String ownRepoPackage = "dk.ufst.opendebt." + serviceBasePackage + "..repository..";
     String[] forbidden =
         java.util.Arrays.stream(ALL_SERVICE_REPO_PACKAGES)
             .filter(pkg -> !pkg.startsWith("dk.ufst.opendebt." + serviceBasePackage))

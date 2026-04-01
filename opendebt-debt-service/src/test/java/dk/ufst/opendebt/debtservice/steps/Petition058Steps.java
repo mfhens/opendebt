@@ -70,7 +70,6 @@ public class Petition058Steps {
 
   private int lastHttpStatus;
   private UUID activeCaseworkerId;
-  private boolean waiverOutcome;
 
   private UUID currentDebtorPersonId;
   private BigDecimal currentDisbursementAmount;
@@ -104,7 +103,6 @@ public class Petition058Steps {
     eventKeyIndex.clear();
     lastHttpStatus = 0;
     activeCaseworkerId = null;
-    waiverOutcome = false;
     currentDebtorPersonId = null;
     currentDisbursementAmount = null;
     currentNemkontoReferenceId = null;

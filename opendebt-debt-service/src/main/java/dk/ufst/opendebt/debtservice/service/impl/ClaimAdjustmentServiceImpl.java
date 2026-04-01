@@ -51,24 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
 
-  /** RIM-internal write-up reason codes that must not be submitted by fordringshavere (FR-7). */
-  private static final Set<String> RIM_INTERNAL_CODES = Set.of("DINDB", "OMPL", "AFSK");
-
-  /** All legal adjustment type values (SPEC-P053 §9.3 / B4 validation). */
-  private static final Set<String> LEGAL_ADJUSTMENT_TYPES =
-      Set.of(
-          "NEDSKRIV",
-          "NEDSKRIVNING",
-          "NEDSKRIVNING_INDBETALING",
-          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_REGULERING",
-          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_INDBETALING",
-          "WRITE_DOWN",
-          "OPSKRIVNING_REGULERING",
-          "OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING",
-          "OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING",
-          "FEJLAGTIG_HOVEDSTOL_INDBERETNING",
-          "WRITE_UP");
-
   /** Prefix used by write-down adjustment types (for direction detection). */
   private static final String WRITE_DOWN_TYPE_PREFIX = "NEDSKRIVNING";
 
@@ -77,6 +59,24 @@ public class ClaimAdjustmentServiceImpl implements ClaimAdjustmentService {
 
   /** Type name for the opskrivning regulering path that is disallowed for RENTE claims (FR-2). */
   private static final String OPSKRIVNING_REGULERING = "OPSKRIVNING_REGULERING";
+
+  /** RIM-internal write-up reason codes that must not be submitted by fordringshavere (FR-7). */
+  private static final Set<String> RIM_INTERNAL_CODES = Set.of("DINDB", "OMPL", "AFSK");
+
+  /** All legal adjustment type values (SPEC-P053 §9.3 / B4 validation). */
+  private static final Set<String> LEGAL_ADJUSTMENT_TYPES =
+      Set.of(
+          WRITE_DOWN_SIMPLE,
+          WRITE_DOWN_TYPE_PREFIX,
+          "NEDSKRIVNING_INDBETALING",
+          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_REGULERING",
+          "NEDSKRIVNING_ANNULLERET_OPSKRIVNING_INDBETALING",
+          "WRITE_DOWN",
+          OPSKRIVNING_REGULERING,
+          "OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING",
+          "OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING",
+          "FEJLAGTIG_HOVEDSTOL_INDBERETNING",
+          "WRITE_UP");
 
   private final DebtRepository debtRepository;
   private final HoeringRepository hoeringRepository;
