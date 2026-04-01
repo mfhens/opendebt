@@ -26,6 +26,7 @@
         <module>opendebt-creditor-portal</module>
         <module>opendebt-caseworker-portal</module>
         <module>opendebt-citizen-portal</module>
+        <module>ufst-bookkeeping-core</module>
         <module>opendebt-payment-service</module>
         <module>opendebt-letter-service</module>
         <module>opendebt-wage-garnishment-service</module>
@@ -60,7 +61,7 @@
         <drools.version>9.44.0.Final</drools.version>
         <flowable.version>7.0.1</flowable.version>
         <smooks.version>2.0.0</smooks.version>
-        <bookkeeping.version>4.3.0</bookkeeping.version>
+
         <cucumber.version>7.18.0</cucumber.version>
         <junit-platform.version>1.12.2</junit-platform.version>
         <scala.version>2.12.19</scala.version>
@@ -81,6 +82,11 @@
     <dependencyManagement>
         <dependencies>
             <!-- Internal modules -->
+            <dependency>
+                <groupId>dk.ufst</groupId>
+                <artifactId>ufst-bookkeeping-core</artifactId>
+                <version>1.0.0</version>
+            </dependency>
             <dependency>
                 <groupId>dk.ufst.opendebt</groupId>
                 <artifactId>opendebt-common</artifactId>
@@ -154,13 +160,6 @@
                 <groupId>org.smooks.cartridges</groupId>
                 <artifactId>smooks-javabean-cartridge</artifactId>
                 <version>${smooks.version}</version>
-            </dependency>
-
-            <!-- Double-Entry Bookkeeping -->
-            <dependency>
-                <groupId>com.yanimetaxas</groupId>
-                <artifactId>bookkeeping</artifactId>
-                <version>${bookkeeping.version}</version>
             </dependency>
 
             <!-- Mapping -->

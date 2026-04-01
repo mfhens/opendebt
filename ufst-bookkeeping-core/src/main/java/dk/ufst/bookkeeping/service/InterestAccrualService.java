@@ -1,11 +1,11 @@
-package dk.ufst.opendebt.payment.bookkeeping.service;
+package dk.ufst.bookkeeping.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dk.ufst.opendebt.payment.bookkeeping.model.InterestPeriod;
+import dk.ufst.bookkeeping.model.InterestPeriod;
 
 /**
  * Period-based interest calculation service. Calculates interest across multiple periods where the

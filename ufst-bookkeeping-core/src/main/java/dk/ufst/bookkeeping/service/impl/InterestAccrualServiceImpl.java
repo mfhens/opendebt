@@ -1,4 +1,4 @@
-package dk.ufst.opendebt.payment.bookkeeping.service.impl;
+package dk.ufst.bookkeeping.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -8,25 +8,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.stereotype.Service;
-
-import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
-import dk.ufst.opendebt.payment.bookkeeping.model.InterestPeriod;
-import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
-import dk.ufst.opendebt.payment.bookkeeping.service.InterestAccrualService;
+import dk.ufst.bookkeeping.domain.FinancialEvent;
+import dk.ufst.bookkeeping.model.InterestPeriod;
+import dk.ufst.bookkeeping.port.FinancialEventStore;
+import dk.ufst.bookkeeping.service.InterestAccrualService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class InterestAccrualServiceImpl implements InterestAccrualService {
 
   private static final BigDecimal DAYS_PER_YEAR = new BigDecimal("365");
   private static final int CALCULATION_SCALE = 10;
 
-  private final DebtEventRepository debtEventRepository;
+  private final FinancialEventStore financialEventStore;
 
   @Override
   public List<InterestPeriod> calculatePeriodicInterest(
@@ -39,18 +36,18 @@ public class InterestAccrualServiceImpl implements InterestAccrualService {
         toDate,
         annualRate);
 
-    List<DebtEventEntity> events = debtEventRepository.findPrincipalAffectingEvents(debtId);
+    List<FinancialEvent> events = financialEventStore.findPrincipalAffectingEvents(debtId);
     List<BalanceChange> balanceTimeline = buildBalanceTimeline(events, fromDate);
     return calculateInterestPerPeriod(balanceTimeline, fromDate, toDate, annualRate);
   }
 
   private List<BalanceChange> buildBalanceTimeline(
-      List<DebtEventEntity> events, LocalDate fromDate) {
+      List<FinancialEvent> events, LocalDate fromDate) {
 
     List<BalanceChange> timeline = new ArrayList<>();
     BigDecimal runningBalance = BigDecimal.ZERO;
 
-    for (DebtEventEntity event : events) {
+    for (FinancialEvent event : events) {
       switch (event.getEventType()) {
         case DEBT_REGISTERED, UDLAEG_REGISTERED:
           runningBalance = runningBalance.add(event.getAmount());
@@ -74,7 +71,6 @@ public class InterestAccrualServiceImpl implements InterestAccrualService {
       }
     }
 
-    // If no events from fromDate, add initial balance
     if (timeline.isEmpty() || timeline.get(0).date().isAfter(fromDate)) {
       timeline.add(0, new BalanceChange(fromDate, getBalanceAtDate(events, fromDate)));
     }
@@ -82,9 +78,9 @@ public class InterestAccrualServiceImpl implements InterestAccrualService {
     return timeline;
   }
 
-  private BigDecimal getBalanceAtDate(List<DebtEventEntity> events, LocalDate date) {
+  private BigDecimal getBalanceAtDate(List<FinancialEvent> events, LocalDate date) {
     BigDecimal balance = BigDecimal.ZERO;
-    for (DebtEventEntity event : events) {
+    for (FinancialEvent event : events) {
       if (event.getEffectiveDate().isAfter(date)) {
         break;
       }

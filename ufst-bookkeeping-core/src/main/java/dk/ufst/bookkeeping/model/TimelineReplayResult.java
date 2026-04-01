@@ -1,11 +1,15 @@
-package dk.ufst.opendebt.payment.bookkeeping.model;
+package dk.ufst.bookkeeping.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Result of a full timeline replay triggered by a crossing transaction. Contains all storno

@@ -1,41 +1,47 @@
-package dk.ufst.opendebt.payment.bookkeeping.service.impl;
+package dk.ufst.bookkeeping.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import dk.ufst.opendebt.payment.bookkeeping.AccountCode;
-import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
-import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
-import dk.ufst.opendebt.payment.bookkeeping.model.*;
-import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
-import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
-import dk.ufst.opendebt.payment.bookkeeping.service.CoveragePriorityService;
-import dk.ufst.opendebt.payment.bookkeeping.service.EventOrderComparator;
-import dk.ufst.opendebt.payment.bookkeeping.service.TimelineReplayService;
+import dk.ufst.bookkeeping.domain.EntryCategory;
+import dk.ufst.bookkeeping.domain.EntryType;
+import dk.ufst.bookkeeping.domain.EventType;
+import dk.ufst.bookkeeping.domain.FinancialEvent;
+import dk.ufst.bookkeeping.domain.LedgerEntry;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.CoverageReversal;
+import dk.ufst.bookkeeping.model.InterestPeriod;
+import dk.ufst.bookkeeping.model.TimelineReplayResult;
+import dk.ufst.bookkeeping.port.CoveragePriorityPort;
+import dk.ufst.bookkeeping.port.FinancialEventStore;
+import dk.ufst.bookkeeping.port.LedgerEntryStore;
+import dk.ufst.bookkeeping.service.EventOrderComparator;
+import dk.ufst.bookkeeping.service.TimelineReplayService;
+import dk.ufst.bookkeeping.spi.Kontoplan;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class TimelineReplayServiceImpl implements TimelineReplayService {
 
   private static final BigDecimal DAYS_PER_YEAR = new BigDecimal("365");
   private static final int CALC_SCALE = 10;
 
-  private final DebtEventRepository debtEventRepository;
-  private final LedgerEntryRepository ledgerEntryRepository;
-  private final CoveragePriorityService coveragePriorityService;
+  private final FinancialEventStore financialEventStore;
+  private final LedgerEntryStore ledgerEntryStore;
+  private final CoveragePriorityPort coveragePriorityPort;
+  private final Kontoplan kontoplan;
 
   @Override
-  @Transactional
   public TimelineReplayResult replayTimeline(
       UUID debtId,
       LocalDate crossingPoint,
@@ -52,9 +58,9 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     int stornoCount = stornoEntriesFromDate(debtId, crossingPoint, triggeringReference);
 
     // 2. Load all events and sort deterministically
-    List<DebtEventEntity> allEvents =
+    List<FinancialEvent> allEvents =
         new ArrayList<>(
-            debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(debtId));
+            financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(debtId));
     allEvents.sort(EventOrderComparator.INSTANCE);
 
     // 3. Replay: walk the timeline computing balances and interest periods
@@ -65,28 +71,28 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     List<CoverageReversal> reversals = new ArrayList<>();
 
     // Build balance up to crossing point first
-    for (DebtEventEntity event : allEvents) {
+    for (FinancialEvent event : allEvents) {
       if (event.getEffectiveDate().isBefore(crossingPoint)) {
         applyEventToState(event, state);
       }
     }
 
     // Collect events from crossing point, grouped by date for interest calculation
-    List<DebtEventEntity> replayEvents =
+    List<FinancialEvent> replayEvents =
         allEvents.stream()
             .filter(
                 e ->
                     !e.getEffectiveDate().isBefore(crossingPoint)
                         && !e.getEffectiveDate().isAfter(replayEnd))
-            .filter(e -> e.getEventType() != DebtEventEntity.EventType.INTEREST_ACCRUED)
-            .filter(e -> e.getEventType() != DebtEventEntity.EventType.COVERAGE_REVERSED)
+            .filter(e -> e.getEventType() != EventType.INTEREST_ACCRUED)
+            .filter(e -> e.getEventType() != EventType.COVERAGE_REVERSED)
             .toList();
 
     // 4. Walk timeline: for each event, compute interest from previous point, then apply event
     LocalDate previousDate = crossingPoint;
     int newEntryCount = 0;
 
-    for (DebtEventEntity event : replayEvents) {
+    for (FinancialEvent event : replayEvents) {
       LocalDate eventDate = event.getEffectiveDate();
 
       // Calculate interest for the gap between previous date and this event
@@ -105,7 +111,7 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
       // Apply the event with coverage priority if it is a payment/recovery
       if (isRecoveryEvent(event)) {
         CoverageAllocation allocation =
-            coveragePriorityService.allocatePayment(
+            coveragePriorityPort.allocatePayment(
                 debtId,
                 event.getAmount(),
                 state.accruedInterest,
@@ -174,13 +180,13 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
   }
 
   private int stornoEntriesFromDate(UUID debtId, LocalDate fromDate, String reason) {
-    List<LedgerEntryEntity> activeEntries =
-        ledgerEntryRepository.findActiveEntriesByDebtId(debtId).stream()
+    List<LedgerEntry> activeEntries =
+        ledgerEntryStore.findActiveEntriesByDebtId(debtId).stream()
             .filter(e -> !e.getEffectiveDate().isBefore(fromDate))
             .toList();
 
     Set<UUID> transactionIds = new LinkedHashSet<>();
-    for (LedgerEntryEntity entry : activeEntries) {
+    for (LedgerEntry entry : activeEntries) {
       transactionIds.add(entry.getTransactionId());
     }
 
@@ -188,21 +194,19 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     LocalDate today = LocalDate.now();
 
     for (UUID originalTxnId : transactionIds) {
-      if (ledgerEntryRepository.existsByReversalOfTransactionId(originalTxnId)) {
+      if (ledgerEntryStore.existsByReversalOfTransactionId(originalTxnId)) {
         continue;
       }
 
-      List<LedgerEntryEntity> txnEntries = ledgerEntryRepository.findByTransactionId(originalTxnId);
+      List<LedgerEntry> txnEntries = ledgerEntryStore.findByTransactionId(originalTxnId);
       UUID stornoTxnId = UUID.randomUUID();
 
-      for (LedgerEntryEntity original : txnEntries) {
-        LedgerEntryEntity.EntryType reversedType =
-            original.getEntryType() == LedgerEntryEntity.EntryType.DEBIT
-                ? LedgerEntryEntity.EntryType.CREDIT
-                : LedgerEntryEntity.EntryType.DEBIT;
+      for (LedgerEntry original : txnEntries) {
+        EntryType reversedType =
+            original.getEntryType() == EntryType.DEBIT ? EntryType.CREDIT : EntryType.DEBIT;
 
-        LedgerEntryEntity stornoEntry =
-            LedgerEntryEntity.builder()
+        LedgerEntry stornoEntry =
+            LedgerEntry.builder()
                 .transactionId(stornoTxnId)
                 .debtId(debtId)
                 .accountCode(original.getAccountCode())
@@ -214,10 +218,10 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
                 .reference(original.getReference())
                 .description("STORNO (crossing): " + reason)
                 .reversalOfTransactionId(originalTxnId)
-                .entryCategory(LedgerEntryEntity.EntryCategory.STORNO)
+                .entryCategory(EntryCategory.STORNO)
                 .build();
 
-        ledgerEntryRepository.save(stornoEntry);
+        ledgerEntryStore.saveSingle(stornoEntry);
         count++;
       }
     }
@@ -263,34 +267,34 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
             period.getPrincipalBalance().toPlainString(),
             period.getDays());
 
-    ledgerEntryRepository.save(
-        LedgerEntryEntity.builder()
+    ledgerEntryStore.saveSingle(
+        LedgerEntry.builder()
             .transactionId(txnId)
             .debtId(debtId)
-            .accountCode(AccountCode.INTEREST_RECEIVABLE.getCode())
-            .accountName(AccountCode.INTEREST_RECEIVABLE.getName())
-            .entryType(LedgerEntryEntity.EntryType.DEBIT)
+            .accountCode(kontoplan.interestReceivable().getCode())
+            .accountName(kontoplan.interestReceivable().getName())
+            .entryType(EntryType.DEBIT)
             .amount(period.getInterestAmount())
             .effectiveDate(period.getPeriodStart())
             .postingDate(today)
             .reference(reference)
             .description(desc)
-            .entryCategory(LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL)
+            .entryCategory(EntryCategory.INTEREST_ACCRUAL)
             .build());
 
-    ledgerEntryRepository.save(
-        LedgerEntryEntity.builder()
+    ledgerEntryStore.saveSingle(
+        LedgerEntry.builder()
             .transactionId(txnId)
             .debtId(debtId)
-            .accountCode(AccountCode.INTEREST_REVENUE.getCode())
-            .accountName(AccountCode.INTEREST_REVENUE.getName())
-            .entryType(LedgerEntryEntity.EntryType.CREDIT)
+            .accountCode(kontoplan.interestRevenue().getCode())
+            .accountName(kontoplan.interestRevenue().getName())
+            .entryType(EntryType.CREDIT)
             .amount(period.getInterestAmount())
             .effectiveDate(period.getPeriodStart())
             .postingDate(today)
             .reference(reference)
             .description(desc)
-            .entryCategory(LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL)
+            .entryCategory(EntryCategory.INTEREST_ACCRUAL)
             .build());
 
     return 2;
@@ -305,33 +309,33 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
 
     // Interest portion: debit bank, credit interest receivable
     if (allocation.getInterestPortion().compareTo(BigDecimal.ZERO) > 0) {
-      ledgerEntryRepository.save(
-          LedgerEntryEntity.builder()
+      ledgerEntryStore.saveSingle(
+          LedgerEntry.builder()
               .transactionId(txnId)
               .debtId(debtId)
-              .accountCode(AccountCode.SKB_BANK.getCode())
-              .accountName(AccountCode.SKB_BANK.getName())
-              .entryType(LedgerEntryEntity.EntryType.DEBIT)
+              .accountCode(kontoplan.bank().getCode())
+              .accountName(kontoplan.bank().getName())
+              .entryType(EntryType.DEBIT)
               .amount(allocation.getInterestPortion())
               .effectiveDate(effectiveDate)
               .postingDate(today)
               .reference(reference)
               .description("Daekning: rente")
-              .entryCategory(LedgerEntryEntity.EntryCategory.PAYMENT)
+              .entryCategory(EntryCategory.PAYMENT)
               .build());
-      ledgerEntryRepository.save(
-          LedgerEntryEntity.builder()
+      ledgerEntryStore.saveSingle(
+          LedgerEntry.builder()
               .transactionId(txnId)
               .debtId(debtId)
-              .accountCode(AccountCode.INTEREST_RECEIVABLE.getCode())
-              .accountName(AccountCode.INTEREST_RECEIVABLE.getName())
-              .entryType(LedgerEntryEntity.EntryType.CREDIT)
+              .accountCode(kontoplan.interestReceivable().getCode())
+              .accountName(kontoplan.interestReceivable().getName())
+              .entryType(EntryType.CREDIT)
               .amount(allocation.getInterestPortion())
               .effectiveDate(effectiveDate)
               .postingDate(today)
               .reference(reference)
               .description("Daekning: rente")
-              .entryCategory(LedgerEntryEntity.EntryCategory.PAYMENT)
+              .entryCategory(EntryCategory.PAYMENT)
               .build());
       count += 2;
     }
@@ -339,33 +343,33 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     // Principal portion: debit bank, credit receivables
     if (allocation.getPrincipalPortion().compareTo(BigDecimal.ZERO) > 0) {
       UUID txnId2 = UUID.randomUUID();
-      ledgerEntryRepository.save(
-          LedgerEntryEntity.builder()
+      ledgerEntryStore.saveSingle(
+          LedgerEntry.builder()
               .transactionId(txnId2)
               .debtId(debtId)
-              .accountCode(AccountCode.SKB_BANK.getCode())
-              .accountName(AccountCode.SKB_BANK.getName())
-              .entryType(LedgerEntryEntity.EntryType.DEBIT)
+              .accountCode(kontoplan.bank().getCode())
+              .accountName(kontoplan.bank().getName())
+              .entryType(EntryType.DEBIT)
               .amount(allocation.getPrincipalPortion())
               .effectiveDate(effectiveDate)
               .postingDate(today)
               .reference(reference)
               .description("Daekning: hovedstol")
-              .entryCategory(LedgerEntryEntity.EntryCategory.PAYMENT)
+              .entryCategory(EntryCategory.PAYMENT)
               .build());
-      ledgerEntryRepository.save(
-          LedgerEntryEntity.builder()
+      ledgerEntryStore.saveSingle(
+          LedgerEntry.builder()
               .transactionId(txnId2)
               .debtId(debtId)
-              .accountCode(AccountCode.RECEIVABLES.getCode())
-              .accountName(AccountCode.RECEIVABLES.getName())
-              .entryType(LedgerEntryEntity.EntryType.CREDIT)
+              .accountCode(kontoplan.receivables().getCode())
+              .accountName(kontoplan.receivables().getName())
+              .entryType(EntryType.CREDIT)
               .amount(allocation.getPrincipalPortion())
               .effectiveDate(effectiveDate)
               .postingDate(today)
               .reference(reference)
               .description("Daekning: hovedstol")
-              .entryCategory(LedgerEntryEntity.EntryCategory.PAYMENT)
+              .entryCategory(EntryCategory.PAYMENT)
               .build());
       count += 2;
     }
@@ -373,60 +377,73 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     return count;
   }
 
-  private int repostEventEntries(UUID debtId, DebtEventEntity event) {
+  private int repostEventEntries(UUID debtId, FinancialEvent event) {
     UUID txnId = UUID.randomUUID();
     LocalDate today = LocalDate.now();
 
-    AccountCode debitAccount;
-    AccountCode creditAccount;
-    LedgerEntryEntity.EntryCategory category;
+    String debitCode;
+    String debitName;
+    String creditCode;
+    String creditName;
+    EntryCategory category;
 
     switch (event.getEventType()) {
-      case DEBT_REGISTERED:
-      case UDLAEG_REGISTERED:
-        debitAccount = AccountCode.RECEIVABLES;
-        creditAccount = AccountCode.COLLECTION_REVENUE;
-        category = LedgerEntryEntity.EntryCategory.DEBT_REGISTRATION;
-        break;
-      case OFFSETTING_EXECUTED:
-        debitAccount = AccountCode.OFFSETTING_CLEARING;
-        creditAccount = AccountCode.RECEIVABLES;
-        category = LedgerEntryEntity.EntryCategory.OFFSETTING;
-        break;
-      case WRITE_OFF:
-        debitAccount = AccountCode.WRITE_OFF_EXPENSE;
-        creditAccount = AccountCode.RECEIVABLES;
-        category = LedgerEntryEntity.EntryCategory.WRITE_OFF;
-        break;
-      case REFUND:
-        debitAccount = AccountCode.RECEIVABLES;
-        creditAccount = AccountCode.SKB_BANK;
-        category = LedgerEntryEntity.EntryCategory.REFUND;
-        break;
-      case UDLAEG_CORRECTED:
-      case CORRECTION:
+      case DEBT_REGISTERED, UDLAEG_REGISTERED -> {
+        debitCode = kontoplan.receivables().getCode();
+        debitName = kontoplan.receivables().getName();
+        creditCode = kontoplan.collectionRevenue().getCode();
+        creditName = kontoplan.collectionRevenue().getName();
+        category = EntryCategory.DEBT_REGISTRATION;
+      }
+      case OFFSETTING_EXECUTED -> {
+        debitCode = kontoplan.offsettingClearing().getCode();
+        debitName = kontoplan.offsettingClearing().getName();
+        creditCode = kontoplan.receivables().getCode();
+        creditName = kontoplan.receivables().getName();
+        category = EntryCategory.OFFSETTING;
+      }
+      case WRITE_OFF -> {
+        debitCode = kontoplan.writeOffExpense().getCode();
+        debitName = kontoplan.writeOffExpense().getName();
+        creditCode = kontoplan.receivables().getCode();
+        creditName = kontoplan.receivables().getName();
+        category = EntryCategory.WRITE_OFF;
+      }
+      case REFUND -> {
+        debitCode = kontoplan.receivables().getCode();
+        debitName = kontoplan.receivables().getName();
+        creditCode = kontoplan.bank().getCode();
+        creditName = kontoplan.bank().getName();
+        category = EntryCategory.REFUND;
+      }
+      case UDLAEG_CORRECTED, CORRECTION -> {
         if (event.getAmount().compareTo(BigDecimal.ZERO) >= 0) {
-          debitAccount = AccountCode.RECEIVABLES;
-          creditAccount = AccountCode.COLLECTION_REVENUE;
+          debitCode = kontoplan.receivables().getCode();
+          debitName = kontoplan.receivables().getName();
+          creditCode = kontoplan.collectionRevenue().getCode();
+          creditName = kontoplan.collectionRevenue().getName();
         } else {
-          debitAccount = AccountCode.COLLECTION_REVENUE;
-          creditAccount = AccountCode.RECEIVABLES;
+          debitCode = kontoplan.collectionRevenue().getCode();
+          debitName = kontoplan.collectionRevenue().getName();
+          creditCode = kontoplan.receivables().getCode();
+          creditName = kontoplan.receivables().getName();
         }
-        category = LedgerEntryEntity.EntryCategory.CORRECTION;
-        break;
-      default:
+        category = EntryCategory.CORRECTION;
+      }
+      default -> {
         return 0;
+      }
     }
 
     BigDecimal amount = event.getAmount().abs();
 
-    ledgerEntryRepository.save(
-        LedgerEntryEntity.builder()
+    ledgerEntryStore.saveSingle(
+        LedgerEntry.builder()
             .transactionId(txnId)
             .debtId(debtId)
-            .accountCode(debitAccount.getCode())
-            .accountName(debitAccount.getName())
-            .entryType(LedgerEntryEntity.EntryType.DEBIT)
+            .accountCode(debitCode)
+            .accountName(debitName)
+            .entryType(EntryType.DEBIT)
             .amount(amount)
             .effectiveDate(event.getEffectiveDate())
             .postingDate(today)
@@ -435,13 +452,13 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
             .entryCategory(category)
             .build());
 
-    ledgerEntryRepository.save(
-        LedgerEntryEntity.builder()
+    ledgerEntryStore.saveSingle(
+        LedgerEntry.builder()
             .transactionId(txnId)
             .debtId(debtId)
-            .accountCode(creditAccount.getCode())
-            .accountName(creditAccount.getName())
-            .entryType(LedgerEntryEntity.EntryType.CREDIT)
+            .accountCode(creditCode)
+            .accountName(creditName)
+            .entryType(EntryType.CREDIT)
             .amount(amount)
             .effectiveDate(event.getEffectiveDate())
             .postingDate(today)
@@ -453,22 +470,20 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     return 2;
   }
 
-  private boolean isRecoveryEvent(DebtEventEntity event) {
-    return event.getEventType() == DebtEventEntity.EventType.PAYMENT_RECEIVED
-        || event.getEventType() == DebtEventEntity.EventType.OFFSETTING_EXECUTED;
+  private boolean isRecoveryEvent(FinancialEvent event) {
+    return event.getEventType() == EventType.PAYMENT_RECEIVED
+        || event.getEventType() == EventType.OFFSETTING_EXECUTED;
   }
 
-  private void applyEventToState(DebtEventEntity event, ReplayState state) {
+  private void applyEventToState(FinancialEvent event, ReplayState state) {
     switch (event.getEventType()) {
-      case DEBT_REGISTERED:
-      case UDLAEG_REGISTERED:
+      case DEBT_REGISTERED, UDLAEG_REGISTERED:
         state.principalBalance = state.principalBalance.add(event.getAmount());
         break;
       case WRITE_OFF:
         state.principalBalance = state.principalBalance.subtract(event.getAmount());
         break;
-      case UDLAEG_CORRECTED:
-      case CORRECTION:
+      case UDLAEG_CORRECTED, CORRECTION:
         state.principalBalance = state.principalBalance.add(event.getAmount());
         break;
       case REFUND:
@@ -480,16 +495,15 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
   }
 
   private void checkForCoverageReversal(
-      DebtEventEntity event,
+      FinancialEvent event,
       CoverageAllocation newAllocation,
       ReplayState state,
       List<CoverageReversal> reversals,
       String triggeringReference) {
 
-    // If the event had a previous ledger transaction, compare old vs new allocation
     if (event.getLedgerTransactionId() != null) {
-      List<LedgerEntryEntity> originalEntries =
-          ledgerEntryRepository.findByTransactionId(event.getLedgerTransactionId());
+      List<LedgerEntry> originalEntries =
+          ledgerEntryStore.findByTransactionId(event.getLedgerTransactionId());
 
       if (!originalEntries.isEmpty()) {
         OriginalPortions portions = computeOriginalPortions(originalEntries);
@@ -571,14 +585,14 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
    * Sums CREDIT ledger entries into interest and principal portions for dækningsophævelse
    * detection.
    */
-  private OriginalPortions computeOriginalPortions(List<LedgerEntryEntity> entries) {
+  private OriginalPortions computeOriginalPortions(List<LedgerEntry> entries) {
     BigDecimal interest = BigDecimal.ZERO;
     BigDecimal principal = BigDecimal.ZERO;
-    for (LedgerEntryEntity entry : entries) {
-      if (entry.getEntryType() == LedgerEntryEntity.EntryType.CREDIT) {
-        if (AccountCode.INTEREST_RECEIVABLE.getCode().equals(entry.getAccountCode())) {
+    for (LedgerEntry entry : entries) {
+      if (entry.getEntryType() == EntryType.CREDIT) {
+        if (kontoplan.interestReceivable().getCode().equals(entry.getAccountCode())) {
           interest = interest.add(entry.getAmount());
-        } else if (AccountCode.RECEIVABLES.getCode().equals(entry.getAccountCode())) {
+        } else if (kontoplan.receivables().getCode().equals(entry.getAccountCode())) {
           principal = principal.add(entry.getAmount());
         }
       }

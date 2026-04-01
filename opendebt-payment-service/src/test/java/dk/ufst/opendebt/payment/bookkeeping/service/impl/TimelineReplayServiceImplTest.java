@@ -16,21 +16,31 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
-import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
-import dk.ufst.opendebt.payment.bookkeeping.model.CoverageAllocation;
-import dk.ufst.opendebt.payment.bookkeeping.model.TimelineReplayResult;
-import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
-import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
-import dk.ufst.opendebt.payment.bookkeeping.service.CoveragePriorityService;
+import dk.ufst.bookkeeping.domain.EntryCategory;
+import dk.ufst.bookkeeping.domain.EntryType;
+import dk.ufst.bookkeeping.domain.EventType;
+import dk.ufst.bookkeeping.domain.FinancialEvent;
+import dk.ufst.bookkeeping.domain.LedgerEntry;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.TimelineReplayResult;
+import dk.ufst.bookkeeping.port.CoveragePriorityPort;
+import dk.ufst.bookkeeping.port.FinancialEventStore;
+import dk.ufst.bookkeeping.port.LedgerEntryStore;
+import dk.ufst.bookkeeping.service.impl.TimelineReplayServiceImpl;
+import dk.ufst.bookkeeping.spi.Kontoplan;
+import dk.ufst.opendebt.payment.bookkeeping.AccountCode;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TimelineReplayServiceImplTest {
 
-  @Mock private DebtEventRepository debtEventRepository;
-  @Mock private LedgerEntryRepository ledgerEntryRepository;
-  @Mock private CoveragePriorityService coveragePriorityService;
+  @Mock private FinancialEventStore financialEventStore;
+  @Mock private LedgerEntryStore ledgerEntryStore;
+  @Mock private CoveragePriorityPort coveragePriorityPort;
+  @Mock private Kontoplan kontoplan;
 
   private TimelineReplayServiceImpl service;
 
@@ -40,21 +50,27 @@ class TimelineReplayServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    when(kontoplan.receivables()).thenReturn(AccountCode.RECEIVABLES);
+    when(kontoplan.interestReceivable()).thenReturn(AccountCode.INTEREST_RECEIVABLE);
+    when(kontoplan.bank()).thenReturn(AccountCode.SKB_BANK);
+    when(kontoplan.collectionRevenue()).thenReturn(AccountCode.COLLECTION_REVENUE);
+    when(kontoplan.interestRevenue()).thenReturn(AccountCode.INTEREST_REVENUE);
+    when(kontoplan.writeOffExpense()).thenReturn(AccountCode.WRITE_OFF_EXPENSE);
+    when(kontoplan.offsettingClearing()).thenReturn(AccountCode.OFFSETTING_CLEARING);
+
     service =
         new TimelineReplayServiceImpl(
-            debtEventRepository, ledgerEntryRepository, coveragePriorityService);
+            financialEventStore, ledgerEntryStore, coveragePriorityPort, kontoplan);
   }
 
   @Test
   void replayTimeline_withDebtRegistrationOnly_calculatesInterestToToday() {
-    DebtEventEntity registration =
-        buildEvent(
-            CROSSING_POINT, DebtEventEntity.EventType.DEBT_REGISTERED, new BigDecimal("50000"));
+    FinancialEvent registration =
+        buildEvent(CROSSING_POINT, EventType.DEBT_REGISTERED, new BigDecimal("50000"));
 
-    when(debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
+    when(financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
         .thenReturn(List.of(registration));
-    when(ledgerEntryRepository.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
-    when(ledgerEntryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(ledgerEntryStore.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
 
     TimelineReplayResult result = service.replayTimeline(DEBT_ID, CROSSING_POINT, RATE, "TEST-REF");
 
@@ -70,15 +86,14 @@ class TimelineReplayServiceImplTest {
     LocalDate regDate = LocalDate.of(2026, 1, 1);
     LocalDate payDate = LocalDate.of(2026, 1, 5);
 
-    DebtEventEntity registration =
-        buildEvent(regDate, DebtEventEntity.EventType.DEBT_REGISTERED, new BigDecimal("50000"));
-    DebtEventEntity payment =
-        buildEvent(payDate, DebtEventEntity.EventType.PAYMENT_RECEIVED, new BigDecimal("10000"));
+    FinancialEvent registration =
+        buildEvent(regDate, EventType.DEBT_REGISTERED, new BigDecimal("50000"));
+    FinancialEvent payment =
+        buildEvent(payDate, EventType.PAYMENT_RECEIVED, new BigDecimal("10000"));
 
-    when(debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
+    when(financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
         .thenReturn(List.of(registration, payment));
-    when(ledgerEntryRepository.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
-    when(ledgerEntryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(ledgerEntryStore.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
 
     CoverageAllocation allocation =
         CoverageAllocation.builder()
@@ -89,7 +104,7 @@ class TimelineReplayServiceImplTest {
             .accruedInterestAtDate(BigDecimal.ZERO)
             .principalBalanceAtDate(new BigDecimal("50000"))
             .build();
-    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
+    when(coveragePriorityPort.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
         .thenReturn(allocation);
 
     TimelineReplayResult result =
@@ -105,15 +120,14 @@ class TimelineReplayServiceImplTest {
     LocalDate regDate = LocalDate.of(2026, 2, 1);
     LocalDate payDate = LocalDate.of(2026, 2, 15);
 
-    DebtEventEntity registration =
-        buildEvent(regDate, DebtEventEntity.EventType.DEBT_REGISTERED, new BigDecimal("100000"));
-    DebtEventEntity payment =
-        buildEvent(payDate, DebtEventEntity.EventType.PAYMENT_RECEIVED, new BigDecimal("20000"));
+    FinancialEvent registration =
+        buildEvent(regDate, EventType.DEBT_REGISTERED, new BigDecimal("100000"));
+    FinancialEvent payment =
+        buildEvent(payDate, EventType.PAYMENT_RECEIVED, new BigDecimal("20000"));
 
-    when(debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
+    when(financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
         .thenReturn(List.of(registration, payment));
-    when(ledgerEntryRepository.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
-    when(ledgerEntryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(ledgerEntryStore.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
 
     BigDecimal interestBeforePayment = new BigDecimal("220.55");
     CoverageAllocation allocation =
@@ -125,7 +139,7 @@ class TimelineReplayServiceImplTest {
             .accruedInterestAtDate(interestBeforePayment)
             .principalBalanceAtDate(new BigDecimal("100000"))
             .build();
-    when(coveragePriorityService.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
+    when(coveragePriorityPort.allocatePayment(eq(DEBT_ID), any(), any(), any(), any()))
         .thenReturn(allocation);
 
     TimelineReplayResult result = service.replayTimeline(DEBT_ID, regDate, RATE, "CROSSING-002");
@@ -139,47 +153,43 @@ class TimelineReplayServiceImplTest {
   @Test
   void replayTimeline_stornosExistingEntriesFromCrossingPoint() {
     UUID existingTxnId = UUID.randomUUID();
-    LedgerEntryEntity existingDebit =
-        LedgerEntryEntity.builder()
-            .id(UUID.randomUUID())
+    LedgerEntry existingDebit =
+        LedgerEntry.builder()
             .transactionId(existingTxnId)
             .debtId(DEBT_ID)
             .accountCode("1100")
             .accountName("Renter tilgodehavende")
-            .entryType(LedgerEntryEntity.EntryType.DEBIT)
+            .entryType(EntryType.DEBIT)
             .amount(new BigDecimal("500"))
             .effectiveDate(CROSSING_POINT.plusDays(5))
             .postingDate(CROSSING_POINT.plusDays(10))
             .reference("OLD-REF")
-            .entryCategory(LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL)
+            .entryCategory(EntryCategory.INTEREST_ACCRUAL)
             .build();
-    LedgerEntryEntity existingCredit =
-        LedgerEntryEntity.builder()
-            .id(UUID.randomUUID())
+    LedgerEntry existingCredit =
+        LedgerEntry.builder()
             .transactionId(existingTxnId)
             .debtId(DEBT_ID)
             .accountCode("3100")
             .accountName("Renteindtaegter")
-            .entryType(LedgerEntryEntity.EntryType.CREDIT)
+            .entryType(EntryType.CREDIT)
             .amount(new BigDecimal("500"))
             .effectiveDate(CROSSING_POINT.plusDays(5))
             .postingDate(CROSSING_POINT.plusDays(10))
             .reference("OLD-REF")
-            .entryCategory(LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL)
+            .entryCategory(EntryCategory.INTEREST_ACCRUAL)
             .build();
 
-    DebtEventEntity registration =
-        buildEvent(
-            CROSSING_POINT, DebtEventEntity.EventType.DEBT_REGISTERED, new BigDecimal("50000"));
+    FinancialEvent registration =
+        buildEvent(CROSSING_POINT, EventType.DEBT_REGISTERED, new BigDecimal("50000"));
 
-    when(ledgerEntryRepository.findActiveEntriesByDebtId(DEBT_ID))
+    when(ledgerEntryStore.findActiveEntriesByDebtId(DEBT_ID))
         .thenReturn(List.of(existingDebit, existingCredit));
-    when(ledgerEntryRepository.existsByReversalOfTransactionId(existingTxnId)).thenReturn(false);
-    when(ledgerEntryRepository.findByTransactionId(existingTxnId))
+    when(ledgerEntryStore.existsByReversalOfTransactionId(existingTxnId)).thenReturn(false);
+    when(ledgerEntryStore.findByTransactionId(existingTxnId))
         .thenReturn(List.of(existingDebit, existingCredit));
-    when(debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
+    when(financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
         .thenReturn(List.of(registration));
-    when(ledgerEntryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
     TimelineReplayResult result =
         service.replayTimeline(DEBT_ID, CROSSING_POINT, RATE, "CROSSING-003");
@@ -189,14 +199,12 @@ class TimelineReplayServiceImplTest {
 
   @Test
   void replayTimeline_isIdempotent_producesConsistentResults() {
-    DebtEventEntity registration =
-        buildEvent(
-            CROSSING_POINT, DebtEventEntity.EventType.DEBT_REGISTERED, new BigDecimal("50000"));
+    FinancialEvent registration =
+        buildEvent(CROSSING_POINT, EventType.DEBT_REGISTERED, new BigDecimal("50000"));
 
-    when(debtEventRepository.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
+    when(financialEventStore.findByDebtIdOrderByEffectiveDateAscCreatedAtAsc(DEBT_ID))
         .thenReturn(List.of(registration));
-    when(ledgerEntryRepository.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
-    when(ledgerEntryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(ledgerEntryStore.findActiveEntriesByDebtId(DEBT_ID)).thenReturn(List.of());
 
     TimelineReplayResult result1 = service.replayTimeline(DEBT_ID, CROSSING_POINT, RATE, "REF");
     TimelineReplayResult result2 = service.replayTimeline(DEBT_ID, CROSSING_POINT, RATE, "REF");
@@ -208,23 +216,22 @@ class TimelineReplayServiceImplTest {
         .isEqualTo(result2.getRecalculatedInterestPeriods().size());
   }
 
-  private DebtEventEntity buildEvent(
-      LocalDate effectiveDate, DebtEventEntity.EventType type, BigDecimal amount) {
-    DebtEventEntity event = new DebtEventEntity();
-    event.setId(UUID.randomUUID());
-    event.setDebtId(DEBT_ID);
-    event.setEffectiveDate(effectiveDate);
-    event.setEventType(type);
-    event.setAmount(amount);
-    event.setReference("REF-" + type.name());
-    event.setDescription("Test " + type.name());
-    event.setCreatedAt(
-        LocalDateTime.of(
-            effectiveDate.getYear(),
-            effectiveDate.getMonthValue(),
-            effectiveDate.getDayOfMonth(),
-            12,
-            0));
-    return event;
+  private FinancialEvent buildEvent(LocalDate effectiveDate, EventType type, BigDecimal amount) {
+    return FinancialEvent.builder()
+        .id(UUID.randomUUID())
+        .debtId(DEBT_ID)
+        .effectiveDate(effectiveDate)
+        .eventType(type)
+        .amount(amount)
+        .reference("REF-" + type.name())
+        .description("Test " + type.name())
+        .createdAt(
+            LocalDateTime.of(
+                effectiveDate.getYear(),
+                effectiveDate.getMonthValue(),
+                effectiveDate.getDayOfMonth(),
+                12,
+                0))
+        .build();
   }
 }

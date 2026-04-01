@@ -1,10 +1,14 @@
-package dk.ufst.opendebt.payment.bookkeeping.model;
+package dk.ufst.bookkeeping.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Represents a dækningsophævelse: the reversal of a previously applied coverage allocation due to a

@@ -1,7 +1,7 @@
 # ADR 0018: Double-Entry Bookkeeping for Financial Accounting
 
 ## Status
-Accepted
+Accepted — amended (see amendment below)
 
 ## Context
 Debt collection involves financial transactions that must be accounted for correctly:
@@ -25,8 +25,24 @@ Requirements:
 - Spring Boot integration
 - Reconciliation support (afstemning) against SKB bank statements
 
+## Amendment (2026-04-01, #2): Implementation is seed for shared UFST library
+
+**Decision:** The custom implementation in `opendebt-payment-service` will be extracted into a shared `dk.ufst:ufst-bookkeeping-core` library (see ADR-0033). OpenDebt remains the initial home of the module. The architecture and interface contracts described below are the basis for that library.
+
+---
+
+## Amendment (2026-04-01, #1): Library replaced by custom implementation
+
+**Finding:** `com.yanimetaxas:bookkeeping` is only available at version `0.1.0` (the `4.3.0` version referenced here does not exist on Maven Central). The library has been unmaintained for ~9 years with no active community.
+
+**Revised decision:** The bookkeeping module is implemented as a **bespoke in-house component** within `opendebt-payment-service` under the package `dk.ufst.opendebt.payment.bookkeeping`. No third-party bookkeeping library is used. Double-entry invariants (debit/credit balance enforcement, immutability, bi-temporal model, storno pattern) are enforced directly in `BookkeepingServiceImpl`. The `com.yanimetaxas:bookkeeping` dependency has been removed from the root `pom.xml`.
+
+All architectural decisions below (account structure, bi-temporal model, storno pattern, interest calculation) remain in effect — only the implementation vehicle changed.
+
+---
+
 ## Decision
-We adopt **double-entry-bookkeeping-api** by imetaxas as the foundation for the bookkeeping module, embedded in the payment-service.
+We implement a **bespoke double-entry bookkeeping module** within `opendebt-payment-service`, under `dk.ufst.opendebt.payment.bookkeeping`.
 
 ### Architecture
 ```
@@ -55,15 +71,6 @@ We adopt **double-entry-bookkeeping-api** by imetaxas as the foundation for the 
 └──────────────────────────────────────────────────────────┘
          │                    │                    │
     debt-service     integration-gateway    case-service
-```
-
-### Dependencies
-```xml
-<dependency>
-    <groupId>com.yanimetaxas</groupId>
-    <artifactId>bookkeeping</artifactId>
-    <version>4.3.0</version>
-</dependency>
 ```
 
 ### Account Structure (Kontoplan)
@@ -201,10 +208,9 @@ public class RetroactiveCorrectionService {
 ## Consequences
 
 ### Positive
-- **Spring + PostgreSQL**: Matches OpenDebt's existing stack exactly
-- **Maven Central**: Easy dependency management, no custom repository needed
-- **MIT license**: Permissive, no restrictions for public sector use
-- **Double-entry guarantee**: Library enforces debit/credit balance at API level
+- **Spring + PostgreSQL**: Custom implementation uses the existing stack natively
+- **No external dependency**: Eliminates the stale/phantom `yanimetaxas` library risk
+- **Double-entry guarantee**: `BookkeepingServiceImpl` enforces debit/credit balance at service level
 - **Audit-ready**: All postings are immutable and timestamped
 - **Lightweight**: Focused library, not an entire ERP system
 - **Bi-temporal**: Supports retroactive corrections without breaking immutability
@@ -212,18 +218,12 @@ public class RetroactiveCorrectionService {
 - **Storno pattern**: Corrections are fully traceable and auditable
 
 ### Negative
-- **Limited community**: Smaller project compared to enterprise accounting platforms
-- **Customization needed**: Must extend for Statens Kontoplan structure and SKB reconciliation
-- **No built-in reporting**: Must build financial reports (balance, trial balance) ourselves
-- **No Danish localization**: Account names and reporting labels must be configured
-- **Recalculation complexity**: Period-based interest replay requires careful testing
+- **No off-the-shelf audit**: Must ensure double-entry invariants are covered by unit tests
+- **Maintenance burden**: Balance enforcement logic is owned by the team
 
 ### Mitigations
-- Wrap the library in an OpenDebt-specific `BookkeepingService` for domain-specific operations
-- Build reconciliation service that matches CREMUL/DEBMUL entries against ledger postings
-- Create reporting endpoints for balance and trial balance aligned with statsligt regnskab
-- Comprehensive unit tests for storno and interest recalculation scenarios
-- If the library proves too limited, the double-entry abstraction layer makes it replaceable without changing the rest of the system
+- Comprehensive unit tests for storno and interest recalculation scenarios (`BookkeepingServiceImplTest`, `RetroactiveCorrectionServiceImplTest`)
+- If the custom module proves insufficient, the `BookkeepingService` interface makes it replaceable without changing the rest of the system
 
 ## Alternatives Considered
 

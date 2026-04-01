@@ -2,8 +2,8 @@ package dk.ufst.opendebt.payment.bookkeeping.service;
 
 import java.util.UUID;
 
+import dk.ufst.bookkeeping.model.TimelineReplayResult;
 import dk.ufst.opendebt.payment.bookkeeping.model.AllocationNotification;
-import dk.ufst.opendebt.payment.bookkeeping.model.TimelineReplayResult;
 
 /**
  * Generates Allokeringsunderretning (Allocation Notification) content from a timeline replay

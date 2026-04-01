@@ -1,4 +1,4 @@
-package dk.ufst.opendebt.payment.bookkeeping.service.impl;
+package dk.ufst.bookkeeping.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -7,35 +7,34 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import dk.ufst.opendebt.payment.bookkeeping.AccountCode;
-import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
-import dk.ufst.opendebt.payment.bookkeeping.entity.LedgerEntryEntity;
-import dk.ufst.opendebt.payment.bookkeeping.model.CorrectionResult;
-import dk.ufst.opendebt.payment.bookkeeping.model.InterestPeriod;
-import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
-import dk.ufst.opendebt.payment.bookkeeping.repository.LedgerEntryRepository;
-import dk.ufst.opendebt.payment.bookkeeping.service.InterestAccrualService;
-import dk.ufst.opendebt.payment.bookkeeping.service.RetroactiveCorrectionService;
+import dk.ufst.bookkeeping.domain.EntryCategory;
+import dk.ufst.bookkeeping.domain.EntryType;
+import dk.ufst.bookkeeping.domain.EventType;
+import dk.ufst.bookkeeping.domain.FinancialEvent;
+import dk.ufst.bookkeeping.domain.LedgerEntry;
+import dk.ufst.bookkeeping.model.CorrectionResult;
+import dk.ufst.bookkeeping.model.InterestPeriod;
+import dk.ufst.bookkeeping.port.FinancialEventStore;
+import dk.ufst.bookkeeping.port.LedgerEntryStore;
+import dk.ufst.bookkeeping.service.InterestAccrualService;
+import dk.ufst.bookkeeping.service.RetroactiveCorrectionService;
+import dk.ufst.bookkeeping.spi.Kontoplan;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionService {
 
   private static final String CORRECTION_PREFIX = "KORREKTION: ";
 
-  private final LedgerEntryRepository ledgerEntryRepository;
-  private final DebtEventRepository debtEventRepository;
+  private final LedgerEntryStore ledgerEntryStore;
+  private final FinancialEventStore financialEventStore;
   private final InterestAccrualService interestAccrualService;
+  private final Kontoplan kontoplan;
 
   @Override
-  @Transactional
   public CorrectionResult applyRetroactiveCorrection(
       UUID debtId,
       LocalDate effectiveDate,
@@ -56,15 +55,15 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
     BigDecimal principalDelta = correctedAmount.subtract(originalAmount);
 
     // 1. Record correction event in timeline
-    DebtEventEntity correctionEvent =
+    FinancialEvent correctionEvent =
         recordCorrectionEvent(debtId, effectiveDate, principalDelta, reference, reason);
 
     // 2. Post the principal correction to the ledger
     postPrincipalCorrection(debtId, effectiveDate, principalDelta, reference, reason);
 
     // 3. Find and storno all interest accruals after the effective date
-    List<LedgerEntryEntity> affectedInterestEntries =
-        ledgerEntryRepository.findInterestAccrualsAfterDate(debtId, effectiveDate);
+    List<LedgerEntry> affectedInterestEntries =
+        ledgerEntryStore.findInterestAccrualsAfterDate(debtId, effectiveDate);
 
     BigDecimal oldInterestTotal = calculateInterestTotal(affectedInterestEntries);
     int stornoCount = stornoInterestEntries(debtId, affectedInterestEntries, reason);
@@ -109,20 +108,20 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
         .build();
   }
 
-  private DebtEventEntity recordCorrectionEvent(
+  private FinancialEvent recordCorrectionEvent(
       UUID debtId, LocalDate effectiveDate, BigDecimal delta, String reference, String reason) {
 
-    DebtEventEntity event =
-        DebtEventEntity.builder()
+    FinancialEvent event =
+        FinancialEvent.builder()
             .debtId(debtId)
-            .eventType(DebtEventEntity.EventType.UDLAEG_CORRECTED)
+            .eventType(EventType.UDLAEG_CORRECTED)
             .effectiveDate(effectiveDate)
             .amount(delta)
             .reference(reference)
             .description(reason)
             .build();
 
-    return debtEventRepository.save(event);
+    return financialEventStore.save(event);
   }
 
   private void postPrincipalCorrection(
@@ -132,95 +131,97 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
     LocalDate today = LocalDate.now();
 
     if (delta.compareTo(BigDecimal.ZERO) < 0) {
-      // Principal decreased (e.g., udlaeg reduced): reverse the receivable
+      // Principal decreased: reverse the receivable
       BigDecimal absDelta = delta.abs();
       saveLedgerEntry(
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.COLLECTION_REVENUE,
-              LedgerEntryEntity.EntryType.DEBIT,
+              kontoplan.collectionRevenue().getCode(),
+              kontoplan.collectionRevenue().getName(),
+              EntryType.DEBIT,
               absDelta,
               effectiveDate,
               today,
               reference,
               correctionDescription(reason),
               null,
-              LedgerEntryEntity.EntryCategory.CORRECTION));
+              EntryCategory.CORRECTION));
       saveLedgerEntry(
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.RECEIVABLES,
-              LedgerEntryEntity.EntryType.CREDIT,
+              kontoplan.receivables().getCode(),
+              kontoplan.receivables().getName(),
+              EntryType.CREDIT,
               absDelta,
               effectiveDate,
               today,
               reference,
               correctionDescription(reason),
               null,
-              LedgerEntryEntity.EntryCategory.CORRECTION));
+              EntryCategory.CORRECTION));
     } else if (delta.compareTo(BigDecimal.ZERO) > 0) {
       // Principal increased
       saveLedgerEntry(
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.RECEIVABLES,
-              LedgerEntryEntity.EntryType.DEBIT,
+              kontoplan.receivables().getCode(),
+              kontoplan.receivables().getName(),
+              EntryType.DEBIT,
               delta,
               effectiveDate,
               today,
               reference,
               correctionDescription(reason),
               null,
-              LedgerEntryEntity.EntryCategory.CORRECTION));
+              EntryCategory.CORRECTION));
       saveLedgerEntry(
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.COLLECTION_REVENUE,
-              LedgerEntryEntity.EntryType.CREDIT,
+              kontoplan.collectionRevenue().getCode(),
+              kontoplan.collectionRevenue().getName(),
+              EntryType.CREDIT,
               delta,
               effectiveDate,
               today,
               reference,
               correctionDescription(reason),
               null,
-              LedgerEntryEntity.EntryCategory.CORRECTION));
+              EntryCategory.CORRECTION));
     }
   }
 
-  private int stornoInterestEntries(UUID debtId, List<LedgerEntryEntity> entries, String reason) {
+  private int stornoInterestEntries(UUID debtId, List<LedgerEntry> entries, String reason) {
 
-    // Group by transaction ID to storno complete double-entry pairs
     Set<UUID> transactionIds =
-        entries.stream().map(LedgerEntryEntity::getTransactionId).collect(Collectors.toSet());
+        entries.stream().map(LedgerEntry::getTransactionId).collect(Collectors.toSet());
 
     int count = 0;
     LocalDate today = LocalDate.now();
 
     for (UUID originalTxnId : transactionIds) {
-      if (ledgerEntryRepository.existsByReversalOfTransactionId(originalTxnId)) {
+      if (ledgerEntryStore.existsByReversalOfTransactionId(originalTxnId)) {
         log.debug("Transaction {} already reversed, skipping", originalTxnId);
         continue;
       }
 
-      List<LedgerEntryEntity> txnEntries = ledgerEntryRepository.findByTransactionId(originalTxnId);
+      List<LedgerEntry> txnEntries = ledgerEntryStore.findByTransactionId(originalTxnId);
       UUID stornoTxnId = UUID.randomUUID();
 
-      for (LedgerEntryEntity original : txnEntries) {
-        // Reverse: swap debit/credit
-        LedgerEntryEntity.EntryType reversedType =
-            original.getEntryType() == LedgerEntryEntity.EntryType.DEBIT
-                ? LedgerEntryEntity.EntryType.CREDIT
-                : LedgerEntryEntity.EntryType.DEBIT;
+      for (LedgerEntry original : txnEntries) {
+        // Reverse: swap debit/credit; copy account code/name directly (no lookup needed)
+        EntryType reversedType =
+            original.getEntryType() == EntryType.DEBIT ? EntryType.CREDIT : EntryType.DEBIT;
 
         saveLedgerEntry(
             new LedgerEntryRequest(
                 stornoTxnId,
                 debtId,
-                findAccountCode(original.getAccountCode()),
+                original.getAccountCode(),
+                original.getAccountName(),
                 reversedType,
                 original.getAmount(),
                 original.getEffectiveDate(),
@@ -228,7 +229,7 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
                 original.getReference(),
                 "STORNO: " + reason,
                 originalTxnId,
-                LedgerEntryEntity.EntryCategory.STORNO));
+                EntryCategory.STORNO));
         count++;
       }
     }
@@ -261,50 +262,51 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.INTEREST_RECEIVABLE,
-              LedgerEntryEntity.EntryType.DEBIT,
+              kontoplan.interestReceivable().getCode(),
+              kontoplan.interestReceivable().getName(),
+              EntryType.DEBIT,
               period.getInterestAmount(),
               period.getPeriodStart(),
               today,
               reference,
               desc,
               null,
-              LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL));
+              EntryCategory.INTEREST_ACCRUAL));
       saveLedgerEntry(
           new LedgerEntryRequest(
               transactionId,
               debtId,
-              AccountCode.INTEREST_REVENUE,
-              LedgerEntryEntity.EntryType.CREDIT,
+              kontoplan.interestRevenue().getCode(),
+              kontoplan.interestRevenue().getName(),
+              EntryType.CREDIT,
               period.getInterestAmount(),
               period.getPeriodStart(),
               today,
               reference,
               desc,
               null,
-              LedgerEntryEntity.EntryCategory.INTEREST_ACCRUAL));
+              EntryCategory.INTEREST_ACCRUAL));
       count += 2;
     }
 
     return count;
   }
 
-  private BigDecimal calculateInterestTotal(List<LedgerEntryEntity> entries) {
+  private BigDecimal calculateInterestTotal(List<LedgerEntry> entries) {
     return entries.stream()
-        .filter(e -> e.getEntryType() == LedgerEntryEntity.EntryType.DEBIT)
-        .filter(e -> AccountCode.INTEREST_RECEIVABLE.getCode().equals(e.getAccountCode()))
-        .map(LedgerEntryEntity::getAmount)
+        .filter(e -> e.getEntryType() == EntryType.DEBIT)
+        .filter(e -> kontoplan.interestReceivable().getCode().equals(e.getAccountCode()))
+        .map(LedgerEntry::getAmount)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private void saveLedgerEntry(LedgerEntryRequest request) {
-
-    LedgerEntryEntity entry =
-        LedgerEntryEntity.builder()
+    LedgerEntry entry =
+        LedgerEntry.builder()
             .transactionId(request.transactionId())
             .debtId(request.debtId())
-            .accountCode(request.account().getCode())
-            .accountName(request.account().getName())
+            .accountCode(request.accountCode())
+            .accountName(request.accountName())
             .entryType(request.entryType())
             .amount(request.amount())
             .effectiveDate(request.effectiveDate())
@@ -315,32 +317,24 @@ public class RetroactiveCorrectionServiceImpl implements RetroactiveCorrectionSe
             .entryCategory(request.category())
             .build();
 
-    ledgerEntryRepository.save(entry);
+    ledgerEntryStore.saveSingle(entry);
   }
 
   private String correctionDescription(String reason) {
     return CORRECTION_PREFIX + reason;
   }
 
-  private AccountCode findAccountCode(String code) {
-    for (AccountCode ac : AccountCode.values()) {
-      if (ac.getCode().equals(code)) {
-        return ac;
-      }
-    }
-    throw new IllegalArgumentException("Unknown account code: " + code);
-  }
-
   private record LedgerEntryRequest(
       UUID transactionId,
       UUID debtId,
-      AccountCode account,
-      LedgerEntryEntity.EntryType entryType,
+      String accountCode,
+      String accountName,
+      EntryType entryType,
       BigDecimal amount,
       LocalDate effectiveDate,
       LocalDate postingDate,
       String reference,
       String description,
       UUID reversalOfTransactionId,
-      LedgerEntryEntity.EntryCategory category) {}
+      EntryCategory category) {}
 }

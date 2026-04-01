@@ -16,6 +16,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>dk.ufst</groupId>
+            <artifactId>ufst-bookkeeping-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>dk.ufst.opendebt</groupId>
             <artifactId>opendebt-common</artifactId>
         </dependency>

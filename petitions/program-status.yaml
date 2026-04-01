@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-31
-  updated_by: copilot (TB-034 — Fix inter-claim daekningsraekkefoeige in collection-priority.drl)
+  updated_at: 2026-04-01
+  updated_by: copilot (TB-054 — Extract ufst-bookkeeping-core as shared Maven module)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -2561,7 +2561,7 @@ program:
         Documentation only: SMALL (2-3 days).
         Reuse estimate: 1-2 debt systems in similar jurisdictions.
       implementation_notes: |
-        Uses yanimetaxas/bookkeeping 4.3.0 for core double-entry logic.
+        Double-entry bookkeeping engine is custom (see ADR-0018 amendment, ADR-0033).
         Coverage priority (DaekningsraekkefolgePosition) tied to Gaeldsbekendtgoerelsen § 4.
 
     - id: TB-052
@@ -2617,3 +2617,59 @@ program:
       Moved all scattered specs files (in design/, docs/specs/, and petitions/ root)
       into the canonical petitions/specs/ folder. Updated all references in
       program-status.yaml. Removed now-empty design/ and docs/specs/ directories.
+
+  - id: TB-054
+    title: "Extract ufst-bookkeeping-core as shared Maven module"
+    status: done
+    priority: high
+    effort: medium
+    created: 2026-04-01
+    completed: 2026-04-01
+    petitions: []
+    adr: ADR-0033
+    description: |
+      OSM2 (VAT modernisation) is in active development and requires identical double-entry
+      bookkeeping mechanics to OpenDebt (storno, bi-temporal, period-based interest,
+      retroactive corrections). Decision taken at UFST level to share a single library
+      rather than allow two diverging implementations.
+
+      Extract the generic bookkeeping engine from opendebt-payment-service into a new
+      sibling Maven module `ufst-bookkeeping-core` (groupId: dk.ufst, artifactId:
+      ufst-bookkeeping-core). The module will be hosted in the OpenDebt repo until a
+      dedicated UFST platform repo is established.
+
+      Scope of extraction (see ADR-0033 for full table):
+      - Double-entry posting engine (no JPA — pure domain logic)
+      - InterestAccrualService (period-based daily-rate calculation)
+      - TimelineReplayService
+      - RetroactiveCorrectionService (storno + interest recalculation orchestration)
+      - AccountCode SPI (interface; each system provides its own kontoplan enum)
+      - LedgerEntryStore and DebtEventStore port interfaces (no JPA dependency)
+      - Domain value objects: InterestPeriod, CorrectionResult, LedgerEntry, FinancialEvent
+
+      What stays in opendebt-payment-service:
+      - LedgerEntryEntity, DebtEventEntity (JPA entities)
+      - LedgerEntryRepository, DebtEventRepository (Spring Data)
+      - JPA adapter implementations of LedgerEntryStore / DebtEventStore
+      - ImmuLedgerAppender wiring
+      - AllocationNotificationService, CoveragePriorityService, CrossingTransactionDetector
+
+      Implementation steps:
+      1. Create ufst-bookkeeping-core/ Maven module with Java 21, no Spring dependency
+      2. Define AccountCodeProvider SPI and port interfaces (LedgerEntryStore, DebtEventStore)
+      3. Move/refactor the engine classes into the new module
+      4. Add JPA adapter implementations in opendebt-payment-service implementing the ports
+      5. Wire adapters via constructor injection in BookkeepingServiceImpl
+      6. Update opendebt-payment-service pom.xml to depend on ufst-bookkeeping-core
+      7. Add ufst-bookkeeping-core as a module in root pom.xml
+      8. Ensure all existing tests pass
+
+      Effort: MEDIUM (3-5 days). Risk: MEDIUM — financial logic must not regress.
+      Follow-up: tdd-enforcer pass on ufst-bookkeeping-core to harden test coverage
+      before OSM2 consumes it.
+    implementation_notes: |
+      Seed implementation is in opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/
+      Key classes: BookkeepingServiceImpl, InterestAccrualServiceImpl,
+      RetroactiveCorrectionServiceImpl, TimelineReplayServiceImpl, AccountCode.
+      AIDEV-TODO in BookkeepingServiceImpl: add balance validation (debit==credit per txnId)
+      should be addressed as part of this extraction.
