@@ -36,13 +36,13 @@
         with no direct internet exposure; Netty transport layer is not reachable externally.
     -->
     <suppress until="2026-07-01Z">
-        <notes>CVE-2026-33871 (CVSS 8.7) — netty-transport 4.1.131.Final. No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
-        <gav regex="true">io\.netty:netty-transport:.*</gav>
+        <notes>CVE-2026-33871 (CVSS 8.7) — netty-transport* 4.1.131.Final (includes netty-transport-classes-epoll). No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
+        <gav regex="true">io\.netty:netty-transport.*:.*</gav>
         <cve>CVE-2026-33871</cve>
     </suppress>
     <suppress until="2026-07-01Z">
-        <notes>CVE-2026-33870 (CVSS 7.5) — netty-transport 4.1.131.Final. No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
-        <gav regex="true">io\.netty:netty-transport:.*</gav>
+        <notes>CVE-2026-33870 (CVSS 7.5) — netty-transport* 4.1.131.Final (includes netty-transport-classes-epoll). No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
+        <gav regex="true">io\.netty:netty-transport.*:.*</gav>
         <cve>CVE-2026-33870</cve>
     </suppress>
 
