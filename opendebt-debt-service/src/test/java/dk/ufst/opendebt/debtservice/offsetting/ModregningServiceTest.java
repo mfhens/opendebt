@@ -458,8 +458,8 @@ class ModregningServiceTest {
               () ->
                   underTest.initiateModregning(
                       debtorId, new BigDecimal("750"), PaymentType.STANDARD_PAYMENT, null, false))
-          .isInstanceOf(RuntimeException.class)
-          .as("CollectionMeasure save failure must propagate for @Transactional atomicity (NFR-1)");
+          .as("CollectionMeasure save failure must propagate for @Transactional atomicity (NFR-1)")
+          .isInstanceOf(RuntimeException.class);
     }
   }
 
@@ -570,6 +570,7 @@ class ModregningServiceTest {
 
       assertThat(fieldNames)
           .as("ModregningEvent must have no CPR field (NFR-3/ADR-0014, SPEC-058 §2.1.1)")
+          .isNotEmpty()
           .doesNotContainAnyElementsOf(forbiddenFieldNames);
 
       // debtorPersonId must be UUID type

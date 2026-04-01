@@ -981,6 +981,8 @@ public class Petition058Steps {
       modregningEventRepository
           .findById(eventId)
           .ifPresent(me -> assertThat(me.isRenteGodtgoerelseNonTaxable()).isTrue());
+    }
+    if (!eventKeyIndex.isEmpty()) {
       return;
     }
     // For KPE scenarios, check any ModregningEvent for currentKpeDebtorId
@@ -1151,7 +1153,7 @@ public class Petition058Steps {
         korrektionspuljeEntryRepository.findAll().stream()
             .filter(e -> debtorId.equals(e.getDebtorPersonId()))
             .toList();
-    assertThat(entries).allMatch(e -> e.getSettledAt() == null);
+    assertThat(entries).isNotEmpty().allMatch(e -> e.getSettledAt() == null);
   }
 
   @Then("the entry is marked for annual-only settlement")
@@ -1161,7 +1163,7 @@ public class Petition058Steps {
           korrektionspuljeEntryRepository.findAll().stream()
               .filter(e -> currentKpeDebtorId.equals(e.getDebtorPersonId()))
               .toList();
-      assertThat(entries).allMatch(KorrektionspuljeEntry::isAnnualOnlySettlement);
+      assertThat(entries).isNotEmpty().allMatch(KorrektionspuljeEntry::isAnnualOnlySettlement);
     }
   }
 
