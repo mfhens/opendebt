@@ -90,17 +90,17 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
       LocalDate eventDate = event.getEffectiveDate();
 
       // Calculate interest for the gap between previous date and this event
-      if (eventDate.isAfter(previousDate)
-          && state.principalBalance.compareTo(BigDecimal.ZERO) > 0) {
-        InterestPeriod period =
-            calculateInterestForPeriod(
-                previousDate, eventDate, state.principalBalance, annualInterestRate);
-        if (period.getInterestAmount().compareTo(BigDecimal.ZERO) > 0) {
-          interestPeriods.add(period);
-          state.accruedInterest = state.accruedInterest.add(period.getInterestAmount());
-          newEntryCount += postInterestEntries(debtId, period, triggeringReference);
-        }
-      }
+      InterestAccrualResult gap =
+          accrueInterestForPeriod(
+              debtId,
+              previousDate,
+              eventDate,
+              state.principalBalance,
+              annualInterestRate,
+              interestPeriods,
+              triggeringReference);
+      state.accruedInterest = state.accruedInterest.add(gap.interestAccrued());
+      newEntryCount += gap.entriesPosted();
 
       // Apply the event with coverage priority if it is a payment/recovery
       if (isRecoveryEvent(event)) {
@@ -130,16 +130,17 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
     }
 
     // Final interest period from last event to today
-    if (replayEnd.isAfter(previousDate) && state.principalBalance.compareTo(BigDecimal.ZERO) > 0) {
-      InterestPeriod finalPeriod =
-          calculateInterestForPeriod(
-              previousDate, replayEnd, state.principalBalance, annualInterestRate);
-      if (finalPeriod.getInterestAmount().compareTo(BigDecimal.ZERO) > 0) {
-        interestPeriods.add(finalPeriod);
-        state.accruedInterest = state.accruedInterest.add(finalPeriod.getInterestAmount());
-        newEntryCount += postInterestEntries(debtId, finalPeriod, triggeringReference);
-      }
-    }
+    InterestAccrualResult finalGap =
+        accrueInterestForPeriod(
+            debtId,
+            previousDate,
+            replayEnd,
+            state.principalBalance,
+            annualInterestRate,
+            interestPeriods,
+            triggeringReference);
+    state.accruedInterest = state.accruedInterest.add(finalGap.interestAccrued());
+    newEntryCount += finalGap.entriesPosted();
 
     BigDecimal newInterestTotal =
         interestPeriods.stream()
@@ -491,19 +492,9 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
           ledgerEntryRepository.findByTransactionId(event.getLedgerTransactionId());
 
       if (!originalEntries.isEmpty()) {
-        BigDecimal originalInterestPortion = BigDecimal.ZERO;
-        BigDecimal originalPrincipalPortion = BigDecimal.ZERO;
-
-        for (LedgerEntryEntity entry : originalEntries) {
-          if (entry.getEntryType() == LedgerEntryEntity.EntryType.CREDIT) {
-            if (AccountCode.INTEREST_RECEIVABLE.getCode().equals(entry.getAccountCode())) {
-              originalInterestPortion = originalInterestPortion.add(entry.getAmount());
-            } else if (AccountCode.RECEIVABLES.getCode().equals(entry.getAccountCode())) {
-              originalPrincipalPortion = originalPrincipalPortion.add(entry.getAmount());
-            }
-          }
-        }
-
+        OriginalPortions portions = computeOriginalPortions(originalEntries);
+        BigDecimal originalInterestPortion = portions.interestPortion();
+        BigDecimal originalPrincipalPortion = portions.principalPortion();
         boolean allocationChanged =
             newAllocation.getInterestPortion().compareTo(originalInterestPortion) != 0
                 || newAllocation.getPrincipalPortion().compareTo(originalPrincipalPortion) != 0;
@@ -546,6 +537,53 @@ public class TimelineReplayServiceImpl implements TimelineReplayService {
         }
       }
     }
+  }
+
+  private record InterestAccrualResult(BigDecimal interestAccrued, int entriesPosted) {}
+
+  /**
+   * Accrues interest for a date gap if the period is positive and principal is non-zero. Appends
+   * the period to {@code interestPeriods} and posts ledger entries.
+   */
+  private InterestAccrualResult accrueInterestForPeriod(
+      UUID debtId,
+      LocalDate from,
+      LocalDate to,
+      BigDecimal principal,
+      BigDecimal annualRate,
+      List<InterestPeriod> interestPeriods,
+      String reference) {
+    if (!to.isAfter(from) || principal.compareTo(BigDecimal.ZERO) <= 0) {
+      return new InterestAccrualResult(BigDecimal.ZERO, 0);
+    }
+    InterestPeriod period = calculateInterestForPeriod(from, to, principal, annualRate);
+    if (period.getInterestAmount().compareTo(BigDecimal.ZERO) <= 0) {
+      return new InterestAccrualResult(BigDecimal.ZERO, 0);
+    }
+    interestPeriods.add(period);
+    return new InterestAccrualResult(
+        period.getInterestAmount(), postInterestEntries(debtId, period, reference));
+  }
+
+  private record OriginalPortions(BigDecimal interestPortion, BigDecimal principalPortion) {}
+
+  /**
+   * Sums CREDIT ledger entries into interest and principal portions for dækningsophævelse
+   * detection.
+   */
+  private OriginalPortions computeOriginalPortions(List<LedgerEntryEntity> entries) {
+    BigDecimal interest = BigDecimal.ZERO;
+    BigDecimal principal = BigDecimal.ZERO;
+    for (LedgerEntryEntity entry : entries) {
+      if (entry.getEntryType() == LedgerEntryEntity.EntryType.CREDIT) {
+        if (AccountCode.INTEREST_RECEIVABLE.getCode().equals(entry.getAccountCode())) {
+          interest = interest.add(entry.getAmount());
+        } else if (AccountCode.RECEIVABLES.getCode().equals(entry.getAccountCode())) {
+          principal = principal.add(entry.getAmount());
+        }
+      }
+    }
+    return new OriginalPortions(interest, principal);
   }
 
   private static class ReplayState {
