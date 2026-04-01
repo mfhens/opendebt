@@ -153,56 +153,14 @@ public class ClaimAdjustmentController {
       return VIEW_ADJUSTMENT_FORM;
     }
 
-    // Validate the selected adjustment type is permitted
-    if (adjustmentForm.getAdjustmentType() != null) {
-      Set<String> permissions = agreement.getGrantedAdjustmentPermissions();
-      if (!permissions.contains(adjustmentForm.getAdjustmentType().getRequiredPermission())) {
-        bindingResult.rejectValue(
-            "adjustmentType",
-            "adjustment.validation.type.notpermitted",
-            messageSource.getMessage(
-                "adjustment.validation.type.notpermitted", null, LocaleContextHolder.getLocale()));
-      }
-    }
-
-    // Validate write-down reason code is provided (FR-1 / SPEC-P053 §1.4)
     ClaimAdjustmentType.Direction dir = parseDirection(direction);
-    if (dir == ClaimAdjustmentType.Direction.WRITE_DOWN
-        && adjustmentForm.getWriteDownReasonCode() == null) {
-      bindingResult.rejectValue(
-          "writeDownReasonCode",
-          "adjustment.validation.reason.required",
-          new Object[] {},
-          "Vælg venligst en årsag til nedskrivningen");
-    }
 
-    // Validate debtor selection for payment-related types with multiple debtors
+    validateAdjustmentTypePermission(adjustmentForm, agreement, bindingResult);
+    validateWriteDownReason(dir, adjustmentForm, bindingResult);
+
     ClaimDetailDto claimDetail = loadClaimDetail(id, model);
-    if (claimDetail != null
-        && adjustmentForm.getAdjustmentType() != null
-        && adjustmentForm.getAdjustmentType().isPaymentRelated()
-        && claimDetail.getDebtorCount() > 1
-        && adjustmentForm.getDebtorIndex() == null) {
-      bindingResult.rejectValue(
-          "debtorIndex",
-          "adjustment.validation.debtor.required",
-          messageSource.getMessage(
-              "adjustment.validation.debtor.required", null, LocaleContextHolder.getLocale()));
-    }
-
-    // G.A.1.4.3 / P034-a: Write-up of opkrævningsrente must use a new rentefordring,
-    // not an opskrivningsfordring.
-    if (claimDetail != null
-        && "RENTE".equalsIgnoreCase(claimDetail.getClaimCategory())
-        && adjustmentForm.getAdjustmentType() != null
-        && adjustmentForm.getAdjustmentType().getDirection()
-            == ClaimAdjustmentType.Direction.WRITE_UP) {
-      bindingResult.rejectValue(
-          "adjustmentType",
-          "adjustment.validation.type.rentefordring",
-          messageSource.getMessage(
-              "adjustment.validation.type.rentefordring", null, LocaleContextHolder.getLocale()));
-    }
+    validateDebtorSelection(claimDetail, adjustmentForm, bindingResult);
+    validateRenteWriteUp(claimDetail, adjustmentForm, bindingResult);
 
     // FR-4 / SPEC-P053 §4.1: Retroactive advisory for write-down with past effectiveDate.
     // Set BEFORE bindingResult check so advisory is shown even when other errors exist.
@@ -216,17 +174,7 @@ public class ClaimAdjustmentController {
       return reloadFormWithErrors(id, direction, model, session, agreement);
     }
 
-    // Resolve debtor ID from haeftelsesstruktur for payment-related types
-    if (claimDetail != null
-        && adjustmentForm.getAdjustmentType() != null
-        && adjustmentForm.getAdjustmentType().isPaymentRelated()
-        && claimDetail.getDebtorCount() > 1
-        && adjustmentForm.getDebtorIndex() != null) {
-      int idx = adjustmentForm.getDebtorIndex();
-      if (idx >= 0 && claimDetail.getDebtors() != null && idx < claimDetail.getDebtors().size()) {
-        log.debug("Resolved debtor index {} for payment adjustment on claim {}", idx, id);
-      }
-    }
+    resolveDebtorForPaymentAdjustment(claimDetail, adjustmentForm, id);
 
     try {
       AdjustmentReceiptDto receipt = debtServiceClient.submitAdjustment(id, adjustmentForm);
@@ -277,6 +225,89 @@ public class ClaimAdjustmentController {
 
   private boolean isAdjustmentAllowed(CreditorAgreementDto agreement) {
     return agreement != null && agreement.isPortalActionsAllowed();
+  }
+
+  /** FR-9: Validates that the selected adjustment type is covered by the creditor's permissions. */
+  private void validateAdjustmentTypePermission(
+      ClaimAdjustmentRequestDto adjustmentForm,
+      CreditorAgreementDto agreement,
+      BindingResult bindingResult) {
+    if (adjustmentForm.getAdjustmentType() != null) {
+      Set<String> permissions = agreement.getGrantedAdjustmentPermissions();
+      if (!permissions.contains(adjustmentForm.getAdjustmentType().getRequiredPermission())) {
+        bindingResult.rejectValue(
+            "adjustmentType",
+            "adjustment.validation.type.notpermitted",
+            messageSource.getMessage(
+                "adjustment.validation.type.notpermitted", null, LocaleContextHolder.getLocale()));
+      }
+    }
+  }
+
+  /** FR-1 / SPEC-P053 §1.4: Write-down requires a reason code. */
+  private void validateWriteDownReason(
+      ClaimAdjustmentType.Direction dir,
+      ClaimAdjustmentRequestDto adjustmentForm,
+      BindingResult bindingResult) {
+    if (dir == ClaimAdjustmentType.Direction.WRITE_DOWN
+        && adjustmentForm.getWriteDownReasonCode() == null) {
+      bindingResult.rejectValue(
+          "writeDownReasonCode",
+          "adjustment.validation.reason.required",
+          new Object[] {},
+          "Vælg venligst en årsag til nedskrivningen");
+    }
+  }
+
+  /** Validates debtor selection for payment-related adjustment types with multiple debtors. */
+  private void validateDebtorSelection(
+      ClaimDetailDto claimDetail,
+      ClaimAdjustmentRequestDto adjustmentForm,
+      BindingResult bindingResult) {
+    if (claimDetail != null
+        && adjustmentForm.getAdjustmentType() != null
+        && adjustmentForm.getAdjustmentType().isPaymentRelated()
+        && claimDetail.getDebtorCount() > 1
+        && adjustmentForm.getDebtorIndex() == null) {
+      bindingResult.rejectValue(
+          "debtorIndex",
+          "adjustment.validation.debtor.required",
+          messageSource.getMessage(
+              "adjustment.validation.debtor.required", null, LocaleContextHolder.getLocale()));
+    }
+  }
+
+  /** G.A.1.4.3 / P034-a: Write-up of a rentefordring (opkrævningsrente) is not permitted. */
+  private void validateRenteWriteUp(
+      ClaimDetailDto claimDetail,
+      ClaimAdjustmentRequestDto adjustmentForm,
+      BindingResult bindingResult) {
+    if (claimDetail != null
+        && "RENTE".equalsIgnoreCase(claimDetail.getClaimCategory())
+        && adjustmentForm.getAdjustmentType() != null
+        && adjustmentForm.getAdjustmentType().getDirection()
+            == ClaimAdjustmentType.Direction.WRITE_UP) {
+      bindingResult.rejectValue(
+          "adjustmentType",
+          "adjustment.validation.type.rentefordring",
+          messageSource.getMessage(
+              "adjustment.validation.type.rentefordring", null, LocaleContextHolder.getLocale()));
+    }
+  }
+
+  /** Resolves and logs the debtor index for payment-related adjustments on multi-debtor claims. */
+  private void resolveDebtorForPaymentAdjustment(
+      ClaimDetailDto claimDetail, ClaimAdjustmentRequestDto adjustmentForm, UUID claimId) {
+    if (claimDetail != null
+        && adjustmentForm.getAdjustmentType() != null
+        && adjustmentForm.getAdjustmentType().isPaymentRelated()
+        && claimDetail.getDebtorCount() > 1
+        && adjustmentForm.getDebtorIndex() != null) {
+      int idx = adjustmentForm.getDebtorIndex();
+      if (idx >= 0 && claimDetail.getDebtors() != null && idx < claimDetail.getDebtors().size()) {
+        log.debug("Resolved debtor index {} for payment adjustment on claim {}", idx, claimId);
+      }
+    }
   }
 
   private ClaimAdjustmentType.Direction parseDirection(String direction) {
