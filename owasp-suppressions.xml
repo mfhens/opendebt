@@ -25,7 +25,8 @@
 
     <!--
         Temporary suppression: CVE-2026-33871 (CVSS 8.7) and CVE-2026-33870 (CVSS 7.5)
-        affect netty-transport 4.1.131.Final, pulled in transitively via
+        affect all netty-transport-* artifacts at 4.1.131.Final (including
+        netty-transport-classes-epoll), pulled in transitively via
         spring-boot-starter-webflux (Reactor Netty) in opendebt-debt-service.
 
         Spring Boot 3.5.12 manages Netty at 4.1.131.Final; no patched release exists
