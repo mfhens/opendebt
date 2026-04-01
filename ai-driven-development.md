@@ -152,7 +152,7 @@ An open-source debt collection platform for Danish public institutions
   Docs + Status     ◄── Auto-maintained · sprint tracker synced
 ```
 
-**9 specialised agents. 9 phases. Zero manual handoffs.**
+**9 specialised agents. 20 phases. Zero manual handoffs.**
 
 ---
 
@@ -168,20 +168,20 @@ petition001 · OCR Payment Matching
   phase: 0 — Existing Foundation
 
 petition019 · Legacy SOAP Endpoints (OCES3)
-  status: in_progress
+  status: implemented
   component: opendebt-integration-gateway
   rationale: Protocol adaptation — not an exception to REST,
              but additive SOAP capability for legacy creditors
 
 petition050 · Unified Case Timeline UI
-  status: planned
+  status: implemented
   personas: caseworker · citizen · creditor
   principle: one view, all history, role-filtered
 ```
 
 <br>
 
-50 petitions. 9 phases. Full traceability from business need → code → test.
+72 petitions. 20 phases. Full traceability from business need → code → test.
 
 ---
 
@@ -264,7 +264,7 @@ Red first. AI writes green. Human reviews.
 | 3 · Specify | `specs-translator` + `specs-reviewer` | Implementation specification |
 | 4 · Test | `bdd-test-generator` + coverage auditor | Failing BDD step definitions |
 | 5 · Implement | `tdd-enforcer` | Green implementation |
-| 6 · Review | `code-reviewer-strict` + `code-minimality-reviewer` | Review findings |
+| 6 · Review | `code-reviewer-strict` + `code-minimality-reviewer` | Review findings · Snyk + OWASP scan |
 | 7 · Fix | `tdd-enforcer` (rerun) | All findings resolved |
 | 8 · Track | `implementation-doc-sync` + `sprint-tracker` | Docs updated · status synced |
 
@@ -285,29 +285,30 @@ Red first. AI writes green. Human reviews.
 ```
   Juridisk Vejledning (G.A.)
         │
-        │  G.A.1.4.3 Opskrivning · G.A.1.4.4 Nedskrivning · GIL §18k
+        │  G.A.1.4.3 · G.A.1.4.4 · G.A.2.3.2 · G.A.2.4 · GIL §4 · §18k ...
         ▼
    Catala DSL           ◄── Formally typed, machine-checkable rules
         │                   Anchored to exact G.A. article citations
         ├──► Test suite ◄── Boundary conditions derived from legal text
         │
-        └──► Compare vs. PSRM implementation
+        ├──► Compare vs. PSRM implementation ◄── Discrepancies surfaced
+        │
+        └──► CI typecheck ◄── catala typecheck in GitHub Actions (ADR-0032)
 ```
 
 <br>
 
-**Spike result: 4 discrepancies found between G.A. prose and PSRM**
+**3 completed spikes, 3× Go verdict:**
 
-| # | Discrepancy | Impact |
+| Spike | Section | Key finding |
 |---|---|---|
-| 1 | Retroaktivitet: portal compares to *today*, G.A. compares to *fordring.receivedAt* | Differs for old debts |
-| 2 | GIL §18k: portal requires retroaktiv **AND** krydssystem; G.A. only requires retroaktiv | Under-application of rule |
-| 3 | §7 stk. 1 (6. pkt.) krydssystem case: no Gherkin scenario existed | Untested legal branch |
-| 4 | Høring banner (UI) conflated with modtagelsestidspunkt (legal timestamp) | Traceability gap |
+| P054 | G.A.1.4.3/1.4.4 (opskrivning/nedskrivning) | 4 discrepancies vs. PSRM — retroaktivitet, §18k under-application |
+| P069 | G.A.2.3.2 (dækningsrækkefølge GIL §4) | Token mismatch: INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 vs. G.A. text |
+| P070 | G.A.2.4 (forældelse — prescription) | SKM2015.718.ØLR varsel/afgørelse distinction; 2 P059 coverage gaps |
 
 <br>
 
-> **Go verdict.** Full G.A. Inddrivelse chapter: ~50 sections · ~1–2 person-days each.
+> **Roadmap: ~50 G.A. sections · ~1–2 person-days each.** Phases 18–20 fully planned.
 
 ---
 
@@ -347,28 +348,28 @@ private String cprNumber;      // ← never in this service
 <br>
 
 ```
-┌──────────────┐  ┌──────────────┐  ┌────────────────────┐
-│citizen-portal│  │creditor-portal│  │integration-gateway │
-│  (MitID/     │  │  (MitID      │  │  (OCES3 · SOAP ·   │
-│  TastSelv)   │  │   Erhverv)   │  │   DUPLA · REST)    │
-└──────┬───────┘  └──────┬───────┘  └─────────┬──────────┘
-       │                 │                     │
-       └─────────────────┴─────────────────────┘
+┌──────────────┐  ┌───────────────┐  ┌──────────────┐  ┌────────────────────┐
+│citizen-portal│  │creditor-portal│  │caseworker-   │  │integration-gateway │
+│  (MitID/     │  │  (MitID       │  │portal        │  │  (OCES3 · SOAP ·   │
+│  TastSelv)   │  │   Erhverv)    │  │  (Keycloak)  │  │   DUPLA · REST)    │
+└──────┬───────┘  └──────┬────────┘  └──────┬───────┘  └─────────┬──────────┘
+       └─────────────────┴───────────────────┴───────────────────┘
                          │
-    ┌────────┬────────────┼───────────┬──────────────┐
-    │        │            │           │              │
-debt-svc  case-svc  payment-svc  letter-svc  rules-engine
-(Fordring) (Flowable)  (OCR match) (DigPost)  (Drools)
-    │        │            │           │              │
-    └────────┴────────────┴───────────┴──────────────┘
+    ┌────────┬────────────┼──────────┬──────────────┬──────────────┐
+    │        │            │          │              │              │
+debt-svc  case-svc  payment-svc  letter-svc  rules-engine  wage-garnishment
+(Fordring) (Flowable) (OCR match) (DigPost)  (Drools)      (Lønindeholdelse)
+    │        │            │          │              │              │
+    └────────┴────────────┴──────────┴──────────────┴──────────────┘
                          │
-            ┌────────────┴────────────┐
-            │     person-registry     │
-            │    creditor-service     │
-            └─────────────────────────┘
+          ┌──────────────┴─────────────────┐
+          │  person-registry  (AES-256 PII) │
+          │  creditor-service               │
+          │  immudb  (cryptographic ledger) │  ◄── ADR-0029
+          └─────────────────────────────────┘
 ```
 
-PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
+PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkeeping (ADR-0018)
 
 ---
 
@@ -385,9 +386,10 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
 | AI writes fast, breaks silently | AI writes fast, tests catch regressions |
 | Requirements drift | Petitions + outcome contracts hold the line |
 | One model, one context | Specialised agents, clear handoffs |
-| "It works on my machine" | CI/CD · Snyk · automated docs |
+| "It works on my machine" | CI/CD · Snyk · OWASP · automated docs |
 | GDPR as an afterthought | GDPR enforced by architecture |
 | Law interpreted loosely | G.A. encoded in Catala · discrepancies surfaced |
+| Financial records on trust | Double-entry bookkeeping · immudb ledger integrity |
 
 <br>
 
@@ -427,6 +429,6 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
 
 <br>
 
-`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 50 petitions · 12 services
+`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 72 petitions · 12 services
 
 ---
