@@ -122,7 +122,7 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.68.1</version>
+            <version>1.80.0</version>
         </dependency>
 
         <!-- Spring Retry — used by ImmuLedgerClient @Retryable (ADR-0029, TB-028) -->
