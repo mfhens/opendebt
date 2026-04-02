@@ -96,3 +96,8 @@ architecture/.structurizr/
 
 # workspace.json is auto-exported by Structurizr Lite on save; workspace.dsl is canonical
 architecture/workspace.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
