@@ -168,9 +168,9 @@ scope DaekningTest6a:
 Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest6b
 Gæld.bekendtg. § 9, stk. 3, 2./4. pkt.: Inddrivelsesrenter (fordringshaver) er sub-position 2.
 
-> Diskrepans: P057 bruger token INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 i Scenario FR-3.
-> Catala-koden bruger INDDRIVELSESRENTER_FORDRINGSHAVER jf. Gæld.bekendtg. § 9, stk. 3.
-> Se SPIKE-REPORT-069.md, afsnit Discrepancies.
+NOTE: Diskrepans: P057 bruger token INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 i Scenario FR-3.
+NOTE: Catala-koden bruger INDDRIVELSESRENTER_FORDRINGSHAVER jf. Gæld.bekendtg. § 9, stk. 3.
+NOTE: Se SPIKE-REPORT-069.md, afsnit Discrepancies.
 
 ```catala
 declaration scope DaekningTest6b:
@@ -311,8 +311,8 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-10 / DaekningTes
 GIL § 4, stk. 4, 1. pkt.: raekkefoelgeFastlagtVed = applikationstidspunkt (2025-01-10).
 GIL § 4, stk. 4, 2. pkt.: daekningVirkerFra = betalingstidspunkt (2025-01-09).
 
-> FLAG-D: Catala date type mangler tidspræcision. P057 Gherkin bruger ISO-8601 datetime
-> (f.eks. "2025-01-10T09:00:00Z"). Catala-koden bruger date. Se SPIKE-REPORT-069.md, N-1.
+NOTE: FLAG-D: Catala date type mangler tidspræcision. P057 Gherkin bruger ISO-8601 datetime
+NOTE: (f.eks. "2025-01-10T09:00:00Z"). Catala-koden bruger date. Se SPIKE-REPORT-069.md, N-1.
 
 ```catala
 declaration scope DaekningTest9:
