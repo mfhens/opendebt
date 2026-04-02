@@ -78,9 +78,9 @@ declaration scope TabeltræksBeregning:
   context output råydelseMåned content integer
   context output afrundingsEnhed content integer
   context output månedligYdelse content integer
-  context betalingsevneÅrDecimal content decimal
-  context råydelseMånedDecimal content decimal
-  context gulvKvotient content decimal
+  context output betalingsevneÅrDecimal content decimal
+  context output råydelseMånedDecimal content decimal
+  context output gulvKvotient content decimal
   context output gulvKvotientInt content integer
 ```
 
