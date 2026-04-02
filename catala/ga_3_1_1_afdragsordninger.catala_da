@@ -78,6 +78,9 @@ declaration scope TabeltræksBeregning:
   context output råydelseMåned content integer
   context output afrundingsEnhed content integer
   context output månedligYdelse content integer
+  context betalingsevneÅrDecimal content decimal
+  context råydelseMånedDecimal content decimal
+  context gulvKvotient content decimal
 ```
 
 ---
@@ -146,18 +149,28 @@ tal er identisk med floor-division.
 
 ```catala
 scope TabeltræksBeregning:
-  # FR-2.1: årlig betalingsevne = afdragsProcent% af nettoindkomst
+  # FR-2.1a: betalingsevneÅrDecimal (hjælpevariabel) — decimal grundlag for floor-konvertering
+  # integer_of_decimal kræver et simpelt variabelnavn som argument i Catala 1.1.0
   # Ankerpunkt: GIL § 11, stk. 1
-  # integer_of_decimal giver floor-division (truncerer mod nul = floor for positive tal)
-  definition betalingsevneÅr equals
+  definition betalingsevneÅrDecimal equals
     if tabeltrækkMulig then
-      integer_of_decimal (decimal of nettoindkomst * decimal of afdragsProcent / decimal of 100)
-    else 0
+      decimal of nettoindkomst * decimal of afdragsProcent / decimal of 100
+    else 0.00
 
-  # FR-2.2: månedlig råydelse (uafrundet); floor-division via integer_of_decimal
+  # FR-2.1b: betalingsevneÅr = floor(betalingsevneÅrDecimal)
+  # Ankerpunkt: GIL § 11, stk. 1
+  definition betalingsevneÅr equals
+    integer_of_decimal betalingsevneÅrDecimal
+
+  # FR-2.2a: råydelseMånedDecimal (hjælpevariabel) — decimal månedlig råydelse
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition råydelseMånedDecimal equals
+    betalingsevneÅrDecimal / decimal of 12
+
+  # FR-2.2b: råydelseMåned = floor(råydelseMånedDecimal)
   # Ankerpunkt: GIL § 11, stk. 2
   definition råydelseMåned equals
-    integer_of_decimal (decimal of betalingsevneÅr / decimal of 12)
+    integer_of_decimal råydelseMånedDecimal
 
   # FR-2.3: afrundingsenhed — 50 kr under grænsebeløbet, 100 kr ved/over
   # Ankerpunkt: GIL § 11, stk. 2
@@ -166,13 +179,17 @@ scope TabeltræksBeregning:
     if råydelseMåned < afrundingsGrænsebeløb then 50
     else 100
 
-  # FR-2.4: floor-afrunding til nærmeste multiplum af afrundingsEnhed
-  # Formel: floor(råydelseMåned / afrundingsEnhed) * afrundingsEnhed
-  # integer_of_decimal floor-runder divisionsresultatet → altid ned, aldrig op
+  # FR-2.4a: gulvKvotient (hjælpevariabel) — decimal kvotient til floor-afrunding
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition gulvKvotient equals
+    råydelseMånedDecimal / decimal of afrundingsEnhed
+
+  # FR-2.4b: månedligYdelse = floor(gulvKvotient) * afrundingsEnhed
+  # integer_of_decimal floor-runder → altid ned, aldrig op
   # Ankerpunkt: GIL § 11, stk. 2
   definition månedligYdelse equals
     if tabeltrækkMulig then
-      integer_of_decimal (decimal of råydelseMåned / decimal of afrundingsEnhed) * afrundingsEnhed
+      integer_of_decimal gulvKvotient * afrundingsEnhed
     else 0
 ```
 
