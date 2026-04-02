@@ -1,0 +1,444 @@
+# Testfil — G.A.3.1.1 Catala-testpakke
+
+> Include: ../ga_3_1_1_afdragsordninger.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Testpakke for: ga_3_1_1_afdragsordninger.catala_da
+   Petition: P071 — Catala Compliance Spike — Afdragsordninger GIL § 11
+   Status: Research spike — ingen produktionskode.
+
+   Denne fil indeholder 15 testtilfælde der dækker:
+   - FR-1.1 lavindkomstgrænse-guard:   Test 1 (under), Test 2 (grænse=), Test 3 (grænse-1)
+   - FR-1.4 minimum 4% u/forsørgerpligt: Test 7
+   - FR-1.5 minimum 3% m/forsørgerpligt: Test 6
+   - FR-2.5 reference u/forsørgerpligt:  Test 4  (250.000 kr → 2.700 kr)
+   - FR-2.6 reference m/forsørgerpligt:  Test 5  (250.000 kr → 2.050 kr)
+   - FR-2.3 100 kr afrundingsenhed:      Test 8
+   - FR-2.4 floor-afrunding aldrig op:   Test 9
+   - FR-3.1 konkret afvist u/indkomst:   Test 10
+   - FR-3.2 konkret afvist u/budgetskema:Test 11
+   - FR-3.3 konkret accepteret:          Test 12
+   - AfdragsordningInteraktion aktiv:    Test 13
+   - AfdragsordningInteraktion inaktiv:  Test 14
+   - TabeltræksOpslagDemo 13% u/forsørgerpligt: Test 15-a (Test 15)
+   - TabeltræksOpslagDemo 10% m/forsørgerpligt: Test 15-b (inkluderet i Test 15-sektion)
+
+   Grænseværdier for lavindkomstGrænse = 138500 kr (2026-parameter):
+     138499 kr (én under → tabeltræk IKKE mulig)
+     138500 kr (præcis på grænsen → tabeltræk mulig)
+     250000 kr (over grænsen → tabeltræk mulig, referencetilfælde)
+
+   Verifikation af referencetilfælde (AC-6):
+     250.000 kr × 13 % = 32.500 kr/år; 32.500 / 12 = 2.708 kr (floor); 2.708 / 50 × 50 = 2.700 kr ✓
+     250.000 kr × 10 % = 25.000 kr/år; 25.000 / 12 = 2.083 kr (floor); 2.083 / 50 × 50 = 2.050 kr ✓ *)
+
+---
+
+## Test 1 — FR-1.1: Tabeltræk IKKE mulig — nettoindkomst under lavindkomstgrænse
+
+`nettoindkomst = 120.000 kr` er under `lavindkomstGrænse = 138.500 kr`.
+GIL § 11, stk. 1: tabeltræk er ikke mulig → `tabeltrækkMulig = false`, `månedligYdelse = 0`.
+
+```catala
+declaration scope AfdragsordningerTest1:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest1:
+  # Test: FR-1.1 — 120.000 kr < 138.500 kr → tabeltræk ikke mulig
+  definition comp.nettoindkomst equals 120000
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 0
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = false
+  assertion comp.månedligYdelse = 0
+```
+
+---
+
+## Test 2 — FR-1.1: Tabeltræk MULIG — nettoindkomst præcis på lavindkomstgrænsen (grænsetilfælde ≥)
+
+`nettoindkomst = 138.500 kr` er lig `lavindkomstGrænse = 138.500 kr`.
+GIL § 11, stk. 1: betingelsen er `>=`, så præcis på grænsen er tabeltræk mulig.
+`tabeltrækkMulig = true` — dette er det AC-11 grænsetilfælde.
+
+```catala
+declaration scope AfdragsordningerTest2:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest2:
+  # Test: FR-1.1 — 138.500 kr = 138.500 kr → tabeltræk mulig (grænsetilfælde ≥)
+  definition comp.nettoindkomst equals 138500
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 4
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.afdragsProcent = 4
+```
+
+---
+
+## Test 3 — FR-1.1: Tabeltræk IKKE mulig — nettoindkomst én krone under grænsen (grænsetilfælde <)
+
+`nettoindkomst = 138.499 kr` er én krone under `lavindkomstGrænse = 138.500 kr`.
+GIL § 11, stk. 1: `138.499 < 138.500` → tabeltræk ikke mulig.
+Dette er det AC-11 grænsetilfælde for "én enhed under".
+
+```catala
+declaration scope AfdragsordningerTest3:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest3:
+  # Test: FR-1.1 — 138.499 kr < 138.500 kr → tabeltræk ikke mulig (grænsetilfælde <)
+  definition comp.nettoindkomst equals 138499
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 0
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = false
+  assertion comp.månedligYdelse = 0
+```
+
+---
+
+## Test 4 — FR-2.5: Referencetilfælde uden forsørgerpligt — 250.000 kr × 13 % → 2.700 kr
+
+GIL § 11, stk. 1–2: 250.000 kr × 13 % = 32.500 kr/år; 32.500 / 12 = 2.708 kr (floor);
+`afrundingsEnhed = 50` kr (2.708 < 5.000); 2.708 / 50 × 50 = 2.700 kr.
+Dette er det AC-6 referencetilfælde for `forsørgerpligt = false`.
+
+```catala
+declaration scope AfdragsordningerTest4:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest4:
+  # Test: FR-2.5 — 250.000 kr, 13%, ingen forsørgerpligt → 2.700 kr/måned
+  definition comp.nettoindkomst equals 250000
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 13
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.afdragsProcent = 13
+  assertion comp.betalingsevneÅr = 32500
+  assertion comp.råydelseMåned = 2708
+  assertion comp.afrundingsEnhed = 50
+  assertion comp.månedligYdelse = 2700
+```
+
+---
+
+## Test 5 — FR-2.6: Referencetilfælde med forsørgerpligt — 250.000 kr × 10 % → 2.050 kr
+
+GIL § 11, stk. 1–2: 250.000 kr × 10 % = 25.000 kr/år; 25.000 / 12 = 2.083 kr (floor);
+`afrundingsEnhed = 50` kr (2.083 < 5.000); 2.083 / 50 × 50 = 2.050 kr.
+Dette er det AC-6 referencetilfælde for `forsørgerpligt = true`.
+
+```catala
+declaration scope AfdragsordningerTest5:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest5:
+  # Test: FR-2.6 — 250.000 kr, 10%, med forsørgerpligt → 2.050 kr/måned
+  definition comp.nettoindkomst equals 250000
+  definition comp.forsørgerpligt equals true
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 10
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.afdragsProcent = 10
+  assertion comp.betalingsevneÅr = 25000
+  assertion comp.råydelseMåned = 2083
+  assertion comp.afrundingsEnhed = 50
+  assertion comp.månedligYdelse = 2050
+```
+
+---
+
+## Test 6 — FR-1.5: Minimumsafdragsprocent 3 % med forsørgerpligt
+
+GIL § 11, stk. 1: Et tabelopslag der returnerer 2 % med forsørgerpligt skal
+hæves til minimumsprocenten 3 %. `rawAfdragsProcent = 2 < 3, forsørgerpligt = true`
+→ `afdragsProcent = 3`.
+
+```catala
+declaration scope AfdragsordningerTest6:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest6:
+  # Test: FR-1.5 — raw 2% med forsørgerpligt → minimum 3%
+  definition comp.nettoindkomst equals 145000
+  definition comp.forsørgerpligt equals true
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 2
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.afdragsProcent = 3
+```
+
+---
+
+## Test 7 — FR-1.4: Minimumsafdragsprocent 4 % uden forsørgerpligt
+
+GIL § 11, stk. 1: Et tabelopslag der returnerer 3 % uden forsørgerpligt skal
+hæves til minimumsprocenten 4 %. `rawAfdragsProcent = 3 < 4, forsørgerpligt = false`
+→ `afdragsProcent = 4`.
+
+```catala
+declaration scope AfdragsordningerTest7:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest7:
+  # Test: FR-1.4 — raw 3% uden forsørgerpligt → minimum 4%
+  definition comp.nettoindkomst equals 145000
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 3
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.afdragsProcent = 4
+```
+
+---
+
+## Test 8 — FR-2.3: 100 kr afrundingsenhed for høj månedlig råydelse
+
+GIL § 11, stk. 2: Når råydelseMåned ≥ afrundingsGrænsebeløb bruges 100 kr-enheden.
+750.000 kr × 22 % = 165.000 kr/år; 165.000 / 12 = 13.750 kr; 13.750 ≥ 5.000
+→ `afrundingsEnhed = 100`; 13.750 / 100 × 100 = 13.700 kr.
+
+```catala
+declaration scope AfdragsordningerTest8:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest8:
+  # Test: FR-2.3 — 100 kr afrundingsenhed (råydelseMåned = 13.750 ≥ 5.000 grænse)
+  definition comp.nettoindkomst equals 750000
+  definition comp.forsørgerpligt equals false
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 22
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.betalingsevneÅr = 165000
+  assertion comp.råydelseMåned = 13750
+  assertion comp.afrundingsEnhed = 100
+  assertion comp.månedligYdelse = 13700
+```
+
+---
+
+## Test 9 — FR-2.4: Floor-afrunding verificerer at ydelse aldrig er halvt-op
+
+GIL § 11, stk. 2: Afrunding er altid ned (floor). Råydelse 2.783 kr / 50 = 55,66 →
+floor = 55 → 55 × 50 = 2.750 kr. Aldrig 2.800 (halvt-op til nærmeste 50).
+Beregning: 400.000 kr × 10 % = 40.000 kr/år; 40.000 / 12 = 3.333 kr (floor integer div);
+3.333 / 50 = 66 (floor integer div); 66 × 50 = 3.300 kr.
+
+```catala
+declaration scope AfdragsordningerTest9:
+  comp scope TabeltræksBeregning
+
+scope AfdragsordningerTest9:
+  # Test: FR-2.4 — floor-afrunding altid ned; 3.333 kr / 50 → 3.300 kr (ikke 3.350)
+  definition comp.nettoindkomst equals 400000
+  definition comp.forsørgerpligt equals true
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.rawAfdragsProcent equals 10
+  definition comp.afrundingsGrænsebeløb equals 5000
+  assertion comp.tabeltrækkMulig = true
+  assertion comp.betalingsevneÅr = 40000
+  assertion comp.råydelseMåned = 3333
+  assertion comp.afrundingsEnhed = 50
+  assertion comp.månedligYdelse = 3300
+```
+
+---
+
+## Test 10 — FR-3.1: Konkret betalingsevnevurdering AFVIST — under lavindkomstgrænse
+
+GIL § 11, stk. 6: Nettoindkomst 120.000 kr er under grænsen 138.500 kr.
+Konkret vurdering er ikke mulig → `vurderingMulig = false`,
+`afvisningsÅrsag = UNDER_LAVINDKOMSTGRAENSE`, `konkretYdelse = 0`.
+
+```catala
+declaration scope AfdragsordningerTest10:
+  comp scope KonkretBetalingsevneVurdering
+
+scope AfdragsordningerTest10:
+  # Test: FR-3.1 — 120.000 kr < 138.500 kr → vurdering afvist
+  definition comp.nettoindkomst equals 120000
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.budgetskemaIndsendt equals true
+  definition comp.månedligIndkomst equals 10000
+  definition comp.månedligeUdgifter equals 9000
+  assertion comp.vurderingMulig = false
+  assertion comp.afvisningsÅrsag = UNDER_LAVINDKOMSTGRAENSE
+  assertion comp.konkretYdelse = 0
+```
+
+---
+
+## Test 11 — FR-3.2: Konkret betalingsevnevurdering AFVIST — ingen budgetskema
+
+Gæld.bekendtg. chapter 7: Uden indsendt budgetskema er konkret vurdering ikke mulig
+→ `vurderingMulig = false`, `afvisningsÅrsag = BUDGETSKEMA_MANGLER`.
+
+```catala
+declaration scope AfdragsordningerTest11:
+  comp scope KonkretBetalingsevneVurdering
+
+scope AfdragsordningerTest11:
+  # Test: FR-3.2 — indkomst over grænse men ingen budgetskema → vurdering afvist
+  definition comp.nettoindkomst equals 250000
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.budgetskemaIndsendt equals false
+  definition comp.månedligIndkomst equals 20833
+  definition comp.månedligeUdgifter equals 18500
+  assertion comp.vurderingMulig = false
+  assertion comp.afvisningsÅrsag = BUDGETSKEMA_MANGLER
+  assertion comp.konkretYdelse = 0
+```
+
+---
+
+## Test 12 — FR-3.3: Konkret betalingsevnevurdering ACCEPTERET — lavere end tabeltræk
+
+GIL § 11, stk. 6: Indkomst over grænsen, budgetskema indsendt.
+`konkretYdelse = 20.833 - 18.500 = 2.333 kr` — lavere end tabeltræksreference 2.700 kr.
+Begge resultater (lavere og højere) er juridisk gyldige jf. FR-3.3.
+
+```catala
+declaration scope AfdragsordningerTest12:
+  comp scope KonkretBetalingsevneVurdering
+
+scope AfdragsordningerTest12:
+  # Test: FR-3.3 — 250.000 kr, budgetskema indsendt → vurdering accepteret, ydelse 2.333 kr
+  definition comp.nettoindkomst equals 250000
+  definition comp.lavindkomstGrænse equals 138500
+  definition comp.budgetskemaIndsendt equals true
+  definition comp.månedligIndkomst equals 20833
+  definition comp.månedligeUdgifter equals 18500
+  assertion comp.vurderingMulig = true
+  assertion comp.afvisningsÅrsag = VURDERING_MULIG
+  assertion comp.konkretYdelse = 2333
+```
+
+---
+
+## Test 13 — AfdragsordningInteraktion: AKTIV afdragsordning suspenderer lønindeholdelse
+
+G.A.3.1.1: En aktiv afdragsordning medfører suspension af lønindeholdelse.
+`afdragsordningAktiv = true` → `lønindeholdelseSuspenderet = true`.
+Forældelsesfrist afbrydes IKKE → `afbryderForaeldelse = false` (G.A.2.4).
+
+```catala
+declaration scope AfdragsordningerTest13:
+  comp scope AfdragsordningInteraktion
+
+scope AfdragsordningerTest13:
+  # Test: AKTIV afdragsordning → lønindeholdelse suspenderet = true
+  definition comp.afdragsordningAktiv equals true
+  assertion comp.lønindeholdelseSuspenderet = true
+  assertion comp.afbryderForaeldelse = false
+```
+
+---
+
+## Test 14 — AfdragsordningInteraktion: INAKTIV afdragsordning suspenderer IKKE lønindeholdelse
+
+G.A.3.1.1: En ikke-aktiv (f.eks. MISLIGHOLT) afdragsordning medfører ikke suspension.
+`afdragsordningAktiv = false` → `lønindeholdelseSuspenderet = false`.
+Forældelsesfrist afbrydes stadig IKKE → `afbryderForaeldelse = false`.
+
+```catala
+declaration scope AfdragsordningerTest14:
+  comp scope AfdragsordningInteraktion
+
+scope AfdragsordningerTest14:
+  # Test: INAKTIV/MISLIGHOLT afdragsordning → lønindeholdelse suspenderet = false
+  definition comp.afdragsordningAktiv equals false
+  assertion comp.lønindeholdelseSuspenderet = false
+  assertion comp.afbryderForaeldelse = false
+```
+
+---
+
+## Test 15 — TabeltræksOpslagDemo: Bracket-opslag 250.000 kr → 13 % (uden) / 10 % (med forsørgerpligt)
+
+GIL § 11, stk. 1; GIL § 45: 2026-parametre injiceret. Indkomst 250.000 kr falder i
+intervallet [grænse2, grænse3) = [240.001, 300.000 kr) → procent2Uden = 13 %, procent2Med = 10 %.
+Dette verificerer AC-6's referencetilfælde via bracket-opslags-scopet.
+
+```catala
+declaration scope AfdragsordningerTest15a:
+  comp scope TabeltræksOpslagDemo
+
+scope AfdragsordningerTest15a:
+  # Test: FR-1.2 — 250.000 kr, ingen forsørgerpligt → bracket [240.001, 300.000) → 13%
+  definition comp.nettoindkomst equals 250000
+  definition comp.forsørgerpligt equals false
+  definition comp.grænse1 equals 200000
+  definition comp.grænse2 equals 240001
+  definition comp.grænse3 equals 300000
+  definition comp.procent0Uden equals 4
+  definition comp.procent1Uden equals 5
+  definition comp.procent2Uden equals 13
+  definition comp.procent3Uden equals 18
+  definition comp.procent0Med equals 3
+  definition comp.procent1Med equals 3
+  definition comp.procent2Med equals 10
+  definition comp.procent3Med equals 14
+  assertion comp.rawAfdragsProcent = 13
+```
+
+```catala
+declaration scope AfdragsordningerTest15b:
+  comp scope TabeltræksOpslagDemo
+
+scope AfdragsordningerTest15b:
+  # Test: FR-1.3 — 250.000 kr, med forsørgerpligt → bracket [240.001, 300.000) → 10%
+  definition comp.nettoindkomst equals 250000
+  definition comp.forsørgerpligt equals true
+  definition comp.grænse1 equals 200000
+  definition comp.grænse2 equals 240001
+  definition comp.grænse3 equals 300000
+  definition comp.procent0Uden equals 4
+  definition comp.procent1Uden equals 5
+  definition comp.procent2Uden equals 13
+  definition comp.procent3Uden equals 18
+  definition comp.procent0Med equals 3
+  definition comp.procent1Med equals 3
+  definition comp.procent2Med equals 10
+  definition comp.procent3Med equals 14
+  assertion comp.rawAfdragsProcent = 10
+```
+
+---
+
+(* Opsummering af testdækning (15 Test-scopes — 16 individuelle assertions-grupper):
+   - FR-1.1 under grænsen:          Test 1  — AfdragsordningerTest1  (120.000 < 138.500)
+   - FR-1.1 præcis på grænsen:      Test 2  — AfdragsordningerTest2  (138.500 = 138.500, ≥)
+   - FR-1.1 én under grænsen:       Test 3  — AfdragsordningerTest3  (138.499 < 138.500, <)
+   - FR-2.5 ref. u/forsørgerpligt:  Test 4  — AfdragsordningerTest4  (250.000 × 13% → 2.700)
+   - FR-2.6 ref. m/forsørgerpligt:  Test 5  — AfdragsordningerTest5  (250.000 × 10% → 2.050)
+   - FR-1.5 minimum 3% m/forsørgerpligt: Test 6 — AfdragsordningerTest6
+   - FR-1.4 minimum 4% u/forsørgerpligt: Test 7 — AfdragsordningerTest7
+   - FR-2.3 100 kr enhed:           Test 8  — AfdragsordningerTest8  (13.750 → 13.700)
+   - FR-2.4 floor-afrunding:        Test 9  — AfdragsordningerTest9  (3.333 → 3.300, ikke 3.350)
+   - FR-3.1 afvist u/indkomst:      Test 10 — AfdragsordningerTest10 (UNDER_LAVINDKOMSTGRAENSE)
+   - FR-3.2 afvist u/budgetskema:   Test 11 — AfdragsordningerTest11 (BUDGETSKEMA_MANGLER)
+   - FR-3.3 accepteret:             Test 12 — AfdragsordningerTest12 (2.333 kr < 2.700 ref.)
+   - Interaktion aktiv:             Test 13 — AfdragsordningerTest13 (suspension = true)
+   - Interaktion inaktiv:           Test 14 — AfdragsordningerTest14 (suspension = false)
+   - FR-1.2 bracket 13%:            Test 15a — AfdragsordningerTest15a
+   - FR-1.3 bracket 10%:            Test 15b — AfdragsordningerTest15b
+
+   AC-11 grænsetilfælde dækket:
+     138.499 kr (< grænse → tabeltræk IKKE mulig): Test 3
+     138.500 kr (= grænse → tabeltræk mulig):      Test 2
+
+   AC-6 referencetilfælde verificeret:
+     250.000 kr, ingen forsørgerpligt → 2.700 kr:  Test 4
+     250.000 kr, med forsørgerpligt → 2.050 kr:    Test 5 *)

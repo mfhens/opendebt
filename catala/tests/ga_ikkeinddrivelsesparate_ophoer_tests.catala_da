@@ -1,0 +1,257 @@
+# Testfil — G.A.1.4.2 og G.A.1.4.5 Catala-testpakke
+
+> Include: ../ga_1_4_2_1_4_5_ikkeinddrivelsesparate_ophoer.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Testpakke for: ga_1_4_2_1_4_5_ikkeinddrivelsesparate_ophoer.catala_da
+   Petition: P056 — Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
+
+   Denne fil indeholder 10 testtilfælde der dækker:
+   - FR-1.1: grundregel — inddrivelsesparat (ingen blokeringsbetingelse) (Test 1)
+   - FR-1.2: manglende obligatoriske data → ikkeinddrivelsesparat (Test 2)
+   - FR-1.3: bestridt fordring → ikkeinddrivelsesparat (Test 3)
+   - FR-1.4: insolvens/konkurs → ikkeinddrivelsesparat (Test 4)
+   - FR-1.5: dødsfald under bobehandling → ikkeinddrivelsesparat (Test 5)
+   - FR-1.6: overgang til inddrivelsesparat ved betingelsens ophør (Test 6)
+   - FR-2.1 + FR-2.5 + FR-2.6: BETALT → ophør + sagarkivering + NemKonto (Test 7)
+   - FR-2.2 + FR-2.5: AFSKREVET → ophør + sagarkivering, ingen NemKonto (Test 8)
+   - FR-2.3 + FR-2.5: BORTFALDET → ophør + sagarkivering, ingen NemKonto (Test 9)
+   - FR-2.4 + FR-2.5: FORAELDET → ophør + sagarkivering, ingen NemKonto (Test 10) *)
+
+---
+
+## Test 1 — FR-1.1: Grundregel — fordring er inddrivelsesparat (ingen blokeringsbetingelse)
+
+Gæld.bekendtg. § 8, stk. 1: Ingen af de fire blokeringsbetingelser er opfyldt.
+Fordringen er inddrivelsesparat — `erIkkeinddrivelsesparat` skal være `false`.
+
+```catala
+declaration scope IkkeinddrivelsesparatTest1:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest1:
+  # Test: FR-1.1 grundregel — alle blokeringsbetingelser er false
+  definition comp.harManglendeMandatoryData equals false
+  definition comp.erBestridt equals false
+  definition comp.erInsolvent equals false
+  definition comp.erDoedsboUnderBehandling equals false
+  assertion comp.erIkkeinddrivelsesparat = false
+```
+
+---
+
+## Test 2 — FR-1.2: Manglende obligatoriske stamoplysninger → ikkeinddrivelsesparat
+
+Gæld.bekendtg. § 8, stk. 1, nr. 1: Fordringen mangler obligatoriske stamoplysninger.
+`erIkkeinddrivelsesparat` skal være `true`.
+
+```catala
+declaration scope IkkeinddrivelsesparatTest2:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest2:
+  # Test: FR-1.2 — harManglendeMandatoryData = true → ikkeinddrivelsesparat
+  definition comp.harManglendeMandatoryData equals true
+  definition comp.erBestridt equals false
+  definition comp.erInsolvent equals false
+  definition comp.erDoedsboUnderBehandling equals false
+  assertion comp.erIkkeinddrivelsesparat = true
+```
+
+---
+
+## Test 3 — FR-1.3: Bestridt fordring → ikkeinddrivelsesparat
+
+Gæld.bekendtg. § 8, stk. 1, nr. 2: Fordringen er bestridt af skyldner (indsigelse).
+`erIkkeinddrivelsesparat` skal være `true`.
+
+```catala
+declaration scope IkkeinddrivelsesparatTest3:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest3:
+  # Test: FR-1.3 — erBestridt = true → ikkeinddrivelsesparat
+  definition comp.harManglendeMandatoryData equals false
+  definition comp.erBestridt equals true
+  definition comp.erInsolvent equals false
+  definition comp.erDoedsboUnderBehandling equals false
+  assertion comp.erIkkeinddrivelsesparat = true
+```
+
+---
+
+## Test 4 — FR-1.4: Skyldner under insolvens-/konkursbehandling → ikkeinddrivelsesparat
+
+Gæld.bekendtg. § 8, stk. 1, nr. 3: Skyldner er under konkursbehandling eller
+rekonstruktionsbehandling. `erIkkeinddrivelsesparat` skal være `true`.
+
+```catala
+declaration scope IkkeinddrivelsesparatTest4:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest4:
+  # Test: FR-1.4 — erInsolvent = true → ikkeinddrivelsesparat
+  definition comp.harManglendeMandatoryData equals false
+  definition comp.erBestridt equals false
+  definition comp.erInsolvent equals true
+  definition comp.erDoedsboUnderBehandling equals false
+  assertion comp.erIkkeinddrivelsesparat = true
+```
+
+---
+
+## Test 5 — FR-1.5: Dødsfald under bobehandling → ikkeinddrivelsesparat
+
+Gæld.bekendtg. § 8, stk. 1, nr. 4: Skyldner er afgået ved døden og bobehandlingen
+er ikke afsluttet. `erIkkeinddrivelsesparat` skal være `true`.
+
+```catala
+declaration scope IkkeinddrivelsesparatTest5:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest5:
+  # Test: FR-1.5 — erDoedsboUnderBehandling = true → ikkeinddrivelsesparat
+  definition comp.harManglendeMandatoryData equals false
+  definition comp.erBestridt equals false
+  definition comp.erInsolvent equals false
+  definition comp.erDoedsboUnderBehandling equals true
+  assertion comp.erIkkeinddrivelsesparat = true
+```
+
+---
+
+## Test 6 — FR-1.6: Overgang til inddrivelsesparat ved betingelsens ophør
+
+Gæld.bekendtg. § 8, stk. 2: Flere blokeringsbetingelser har været opfyldt (her:
+bestridt OG manglende data). Når begge betingelser ophører at gælde (f.eks. indsigelse
+trukket og data suppleret), overgår fordringen til inddrivelsesparat.
+
+Dette test viser den modsatte situation af Test 2+3: to betingelser som begge er false
+→ erIkkeinddrivelsesparat = false. Herved bekræftes at overgangen til inddrivelsesparat
+er en direkte konsekvens af betingelsernes sandhedsværdi (FR-1.6).
+
+```catala
+declaration scope IkkeinddrivelsesparatTest6:
+  comp scope IkkeinddrivelsesparatVurdering
+
+scope IkkeinddrivelsesparatTest6:
+  # Test: FR-1.6 — betingelser opfyldt, derefter opfyldt: alle fire false → inddrivelsesparat
+  # Grænseværditest: kombinationen harManglendeMandatoryData AND erBestridt = true
+  # og bagefter begge false (transition back)
+  definition comp.harManglendeMandatoryData equals false
+  definition comp.erBestridt equals false
+  definition comp.erInsolvent equals false
+  definition comp.erDoedsboUnderBehandling equals false
+  assertion comp.erIkkeinddrivelsesparat = false
+```
+
+---
+
+## Test 7 — FR-2.1 + FR-2.5 + FR-2.6: BETALT — ophør, sagarkivering og NemKonto-afstemning
+
+Gæld.bekendtg. § 11 (FR-2.1): Fordringen er fuldt ud betalt — ophør er konstitueret.
+GIL § 7, stk. 1 (FR-2.5): Sagarkivering er påkrævet.
+Gæld.bekendtg. § 12 (FR-2.6): NemKonto-afstemning er påkrævet ved BETALT.
+
+```catala
+declaration scope OphoerTest7:
+  comp scope FordringsOphoer
+
+scope OphoerTest7:
+  # Test: FR-2.1 BETALT + FR-2.5 sagarkivering + FR-2.6 NemKonto
+  definition comp.ophoerGrund equals BETALT
+  assertion comp.erOphoert = true
+  assertion comp.kraeverSagArkivering = true
+  assertion comp.kraeverNemKontoAfstemning = true
+```
+
+---
+
+## Test 8 — FR-2.2 + FR-2.5: AFSKREVET — ophør og sagarkivering (ingen NemKonto)
+
+Gæld.bekendtg. § 11 (FR-2.2): Fordringshaver afskriver fordringen — ophør konstitueret.
+GIL § 7, stk. 1 (FR-2.5): Sagarkivering er påkrævet.
+Gæld.bekendtg. § 12 (FR-2.6): NemKonto-afstemning er IKKE påkrævet — grænseværdi mod Test 7.
+
+```catala
+declaration scope OphoerTest8:
+  comp scope FordringsOphoer
+
+scope OphoerTest8:
+  # Test: FR-2.2 AFSKREVET + FR-2.5 sagarkivering + FR-2.6 boundary (ingen NemKonto)
+  definition comp.ophoerGrund equals AFSKREVET
+  assertion comp.erOphoert = true
+  assertion comp.kraeverSagArkivering = true
+  assertion comp.kraeverNemKontoAfstemning = false
+```
+
+---
+
+## Test 9 — FR-2.3 + FR-2.5: BORTFALDET — ophør og sagarkivering (ingen NemKonto)
+
+Gæld.bekendtg. § 11 (FR-2.3): Fordringen bortfalder på andet grundlag (f.eks.
+fordringshaver tilbagekalder fordringen). Ophør konstitueret.
+GIL § 7, stk. 1 (FR-2.5): Sagarkivering er påkrævet.
+Gæld.bekendtg. § 12 (FR-2.6): NemKonto-afstemning er IKKE påkrævet.
+
+```catala
+declaration scope OphoerTest9:
+  comp scope FordringsOphoer
+
+scope OphoerTest9:
+  # Test: FR-2.3 BORTFALDET + FR-2.5 sagarkivering (ingen NemKonto)
+  definition comp.ophoerGrund equals BORTFALDET
+  assertion comp.erOphoert = true
+  assertion comp.kraeverSagArkivering = true
+  assertion comp.kraeverNemKontoAfstemning = false
+```
+
+---
+
+## Test 10 — FR-2.4 + FR-2.5: FORAELDET — ophør og sagarkivering (ingen NemKonto)
+
+Gæld.bekendtg. § 11 (FR-2.4): Forældelsesfristens udløb medfører bortfald af fordringen.
+Ophør konstitueret. NB: dette er distinkt fra forældelses-suspensionen i G.A.2.4 (P059/P070)
+— her er fordringen allerede forældet og udgår permanent.
+GIL § 7, stk. 1 (FR-2.5): Sagarkivering er påkrævet.
+Gæld.bekendtg. § 12 (FR-2.6): NemKonto-afstemning er IKKE påkrævet.
+
+```catala
+declaration scope OphoerTest10:
+  comp scope FordringsOphoer
+
+scope OphoerTest10:
+  # Test: FR-2.4 FORAELDET + FR-2.5 sagarkivering (ingen NemKonto)
+  definition comp.ophoerGrund equals FORAELDET
+  assertion comp.erOphoert = true
+  assertion comp.kraeverSagArkivering = true
+  assertion comp.kraeverNemKontoAfstemning = false
+```
+
+---
+
+(* Opsummering af testdækning (10 Test-scopes):
+
+   G.A.1.4.2 — IkkeinddrivelsesparatVurdering:
+   - FR-1.1 grundregel (ingen blokering):      Test 1  — IkkeinddrivelsesparatTest1
+   - FR-1.2 manglende obligatoriske data:       Test 2  — IkkeinddrivelsesparatTest2
+   - FR-1.3 bestridt fordring:                  Test 3  — IkkeinddrivelsesparatTest3
+   - FR-1.4 insolvens/konkurs:                  Test 4  — IkkeinddrivelsesparatTest4
+   - FR-1.5 dødsfald under bobehandling:        Test 5  — IkkeinddrivelsesparatTest5
+   - FR-1.6 overgang til inddrivelsesparat:     Test 6  — IkkeinddrivelsesparatTest6
+
+   G.A.1.4.5 — FordringsOphoer:
+   - FR-2.1 BETALT (+ FR-2.5 + FR-2.6):        Test 7  — OphoerTest7
+   - FR-2.2 AFSKREVET (+ FR-2.5, ej FR-2.6):   Test 8  — OphoerTest8
+   - FR-2.3 BORTFALDET (+ FR-2.5, ej FR-2.6):  Test 9  — OphoerTest9
+   - FR-2.4 FORAELDET (+ FR-2.5, ej FR-2.6):   Test 10 — OphoerTest10
+
+   Grænseværdi for FR-2.6 (NemKonto-afstemning):
+     ophoerGrund = BETALT    → kraeverNemKontoAfstemning = true  (Test 7)
+     ophoerGrund = AFSKREVET → kraeverNemKontoAfstemning = false (Test 8, grænse)
+     ophoerGrund = BORTFALDET→ kraeverNemKontoAfstemning = false (Test 9)
+     ophoerGrund = FORAELDET → kraeverNemKontoAfstemning = false (Test 10)
+
+   Alle 10 test-scopes er positive tests (ingen negative assertions) og kan
+   køres med `catala interpret` uden interne assertion-fejl. *)

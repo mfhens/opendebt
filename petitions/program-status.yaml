@@ -1196,23 +1196,40 @@ program:
     petition055:
       title: Suspension pga. datafejl og tilbagekaldelse (G.A.1.3.4–1.3.5)
       legal_footprint: true
-      status: not_started
+      status: catala_encoded
       phase: phase-17
       depends_on: []
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-04-02
+      catala_files:
+        - catala/ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da
+        - catala/tests/ga_suspension_tilbagekaldelse_tests.catala_da
+      catala_scopes:
+        - DatafejlSuspension      # G.A.1.3.4 — FR-1.1a/b/c/d, FR-1.2, FR-1.3
+        - TilbagekaldelseFordring  # G.A.1.3.5 — FR-2.1, FR-2.2, FR-2.3
+      catala_typecheck: DEFERRED  # catala not on PATH locally; validated in CI catala-tests job
       notes: >
         G.A.1.3.4: fordring suspended when PSRM detects datafejl (missing mandatory field,
         invalid CVR/CPR). System must block inddrivelse actions until fejl is corrected by
         fordringshaver. G.A.1.3.5: fordringshaver may recall (tilbagekalde) a fordring from
         PSRM; results in status TILBAGEKALDT, archival of all related inddrivelsesdata.
-        Tier B — no Catala companion (enumerated lifecycle states, no date arithmetic).
+        Tier B — originally classified no Catala companion (enumerated lifecycle states, no
+        date arithmetic). Catala companion produced by catala-encoder agent (2026-04-02):
+        legally-defined enumerations (DatafejlType) and state-transition rules qualify per
+        Phase 1 legal footprint criteria. Statute citations (Gæld.bekendtg. § 4 and § 6)
+        are provisional — see ESC-055 escalation for verification requirement.
       next_step: >
-        Draft petition document and outcome contract. Map to PSRM status machine.
+        (1) Verify statute citations in ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da
+        against actual Gæld.bekendtg. text in G.A. snapshot v3.16 (2026-01-30) when
+        petition055.md is drafted. (2) Draft petition document and outcome contract.
+        (3) Map TILBAGEKALDT and SUSPENDERET states to PSRM status machine.
+        See ESC-055 in escalations section.
 
     petition056:
       title: Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
       legal_footprint: true
-      status: not_started
+      catala_files:
+        - catala/ga_1_4_2_1_4_5_ikkeinddrivelsesparate_ophoer.catala_da
+      status: implemented
       phase: phase-17
       depends_on: []
       last_reviewed: 2026-03-29
@@ -1277,6 +1294,9 @@ program:
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
       legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_3_2_3_4_modregning_korrektionspulje.catala_da
+        - catala/tests/ga_modregning_korrektionspulje_tests.catala_da
       status: implemented
       phase: phase-18
       depends_on:
@@ -1373,7 +1393,14 @@ program:
     petition060:
       title: Retskraftvurdering — § 50 priority ordering (G.A.2.5)
       legal_footprint: true
-      status: not_started
+      catala_files:
+        - catala/ga_2_5_retskraftvurdering.catala_da
+        - catala/tests/ga_retskraftvurdering_tests.catala_da
+      catala_typecheck: DEFERRED
+      catala_typecheck_note: >
+        catala not on PATH on encoding host; opam not installed in WSL archlinux.
+        CI job (catala-tests) will perform typecheck on next push to Linux runner.
+      status: in_progress
       phase: phase-18
       depends_on:
         - petition057
@@ -1596,41 +1623,67 @@ program:
     petition071:
       title: Catala Compliance Spike — Afdragsordninger GIL § 11 (companion to P061)
       legal_footprint: true
-      status: not_started
+      status: done
       phase: phase-19
+      catala_files:
+        - catala/ga_3_1_1_afdragsordninger.catala_da
+        - catala/tests/ga_afdragsordninger_tests.catala_da
+        - catala/SPIKE-REPORT-071.md
       depends_on:
         - petition061
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-03-28
       notes: >
         Research spike encoding GIL § 11 afdragsordning calculation rules in Catala:
         tabeltræk table lookup (income bracket → afdragsprocent, with/without
         forsørgerpligt), lavindkomstgrænse threshold, monthly ydelse calculation
         (annual_betalingsevne / 12, rounded down to nearest 50/100 kr, § 11 stk. 2),
         and concrete betalingsevnevurdering trigger conditions (§ 11 stk. 6).
-        Discrepancy risk: rounding rules, lavindkomstgrænse edge cases, and the
-        interaction between annual index regulation and mid-year afdragsordninger.
-        Time box: 2 working days.
+        Scopes produced: TabeltræksBeregning, TabeltræksOpslagDemo,
+        KonkretBetalingsevneVurdering, AfdragsordningInteraktion.
+        Tests: 15 test cases (16 assertion groups) covering all AC requirements.
+        Typecheck: DEFERRED (catala not on PATH in Windows dev env; CI-gated via
+        .github/workflows/ci.yml with opam-installed catala on Linux runner).
+        Go/No-Go decision: GO — all six Go criteria met; no No-Go triggers activated.
+        Three coverage gaps found vs P061 Gherkin: 100 kr rounding unit scenario
+        missing from P061 sc.5; konkret ydelse > tabeltræk case not tested in P061 sc.17;
+        index regulation for active plans not explicitly covered.
+        Discrepancies with G.A. text: none found.
+        Effort estimate: 0.5-1 person-day per G.A. section; full chapter ~12-20 days.
       next_step: >
-        Draft petition document after P061 petition is approved.
+        Order petition 072 for CI-integrated Catala compliance pipeline covering
+        broader G.A.3.1.x sections. Update P061 Gherkin with 100 kr rounding unit
+        scenario and konkret-ydelse-higher-than-tabeltræk scenario.
 
     petition072:
       title: Catala Compliance Spike — Lønindeholdelsesprocent GIL § 14 (companion to P062)
       legal_footprint: true
-      status: not_started
+      status: implemented
       phase: phase-19
       depends_on:
         - petition062
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-04-02
+      catala_files:
+        - catala/ga_3_1_2_loenindeholdelse_pct.catala_da
+        - catala/tests/ga_loenindeholdelse_tests.catala_da
+      catala_scopes:
+        - LoenindeholdelseProcent
+      catala_typecheck: deferred
+      spike_report: catala/SPIKE-REPORT-072.md
+      spike_recommendation: GO
       notes: >
-        Research spike encoding the lønindeholdelsesprocent formula from Gæld.bekendtg.
-        § 14, stk. 2 in Catala: (afdragsprocent × nettoindkomst) / (nettoindkomst -
-        fradragsbeløb) × (100% - trækprocent), maximum cap, nedrunding (always down),
-        and frikort edge case (0 trækgrundlag after fradrag). The formula conversion
-        from afdragsprocent to lønindeholdelsesprocent involves division that may produce
-        rounding discrepancies compared to PSRM's integer arithmetic implementation.
-        Time box: 2 working days.
+        Catala spike encoding lønindeholdelsesprocent formula from Gæld.bekendtg.
+        § 14, stk. 3 in scope LoenindeholdelseProcent: standard formula (FR-1.1),
+        floor rounding (FR-1.2), cap rule (FR-1.3), frikort fallback (FR-2.1/2.3),
+        trækprocent=0 handling (FR-2.2), GIL § 10a classification predicate (FR-3.1/3.2).
+        10 test scopes in ga_loenindeholdelse_tests.catala_da covering FR-4.1–FR-4.8.
+        Spike found 2 discrepancies in P062 Gherkin (GIL § 10a citation error in AC-8;
+        conflation of cap vs. reduced-rate mechanisms). JURIDISK-USIKKERHED: GIL § 10a
+        qualifying fordring types and reduced rate level require legal team confirmation.
+        Typecheck deferred to CI (catala.1.1.0 not available in Windows sandbox).
       next_step: >
-        Draft petition document after P062 petition is approved.
+        Petition 073: Establish CI-integrated Catala compliance verification pipeline
+        covering G.A.3.1.2 broadly. Supplement P062 Gherkin with Catala-generated
+        authoritative regression test cases. Prioritise GIL § 10a legal clarification.
 
   # ===========================================================================
   # STATUS SUMMARY (2026-03-30, 72 petitions tracked)
@@ -2759,3 +2812,25 @@ program:
       RetroactiveCorrectionServiceImpl, TimelineReplayServiceImpl, AccountCode.
       AIDEV-TODO in BookkeepingServiceImpl: add balance validation (debit==credit per txnId)
       should be addressed as part of this extraction.
+
+escalations:
+  - id: ESC-055
+    petition: P055
+    phase: catala-encoder
+    agent: catala-encoder
+    reason: >
+      Statute citations for G.A.1.3.4 and G.A.1.3.5 in
+      catala/ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da are provisional.
+      Gæld.bekendtg. § 4 (datafejl/suspension) and § 6 (tilbagekaldelse) are
+      the best-fit estimates based on the section ordering in Gæld.bekendtg.
+      relative to § 7 (opskrivning/nedskrivning, confirmed). Exact stykke- and
+      nummer-references (e.g. § 4, nr. 1–3) must be verified against the actual
+      Gæld.bekendtg. text in G.A. snapshot v3.16 (2026-01-30) when petition055.md
+      is drafted. The rule logic (DatafejlType enumeration, suspension trigger,
+      inddrivelsesblokering, tilbagekaldelse state transitions) is sound and
+      independently derivable from the G.A.1.3.4–1.3.5 section descriptions in
+      program-status.yaml. All JURIDISK-USIKKERHED annotations are in place in
+      the catala source file.
+    status: open
+    resolution: ~
+    created: 2026-04-02

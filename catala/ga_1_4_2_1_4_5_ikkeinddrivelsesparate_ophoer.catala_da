@@ -1,0 +1,222 @@
+# G.A.1.4.2 — Ikkeinddrivelsesparate fordringer og G.A.1.4.5 — Ophør
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Juridisk grundlag: Gæld.bekendtg. § 8 (G.A.1.4.2); Gæld.bekendtg. § 11, GIL § 7 (G.A.1.4.5)
+   Formål: Formalisering af reglerne for ikkeinddrivelsesparate fordringer (betingelserne
+           der blokerer inddrivelse og betingelserne for genoptagelse), samt ophørsgrundene
+           (betalt, afskrevet, bortfaldet, forældet) og deres nedstrømseffekter.
+   Petition: P056 — Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
+   Status: CI-gated compliance artefact
+
+   (* JURIDISK-USIKKERHED: Petition P056 er ikke formelt udstedt som separat dokument.
+      Dette Catala-program er udledt fra programstatus-beskrivelsen og G.A.1.4.2/1.4.5
+      afsnitstitlerne. De præcise stk./nr.-referencer inden for Gæld.bekendtg. § 8 og § 11
+      bør verificeres mod den gældende bekendtgørelse (Bekendtgørelse nr. 1209 af
+      27. september 2023 om inddrivelse af gæld til det offentlige eller efterfølgende
+      revision) inden dette artefakt betragtes som juridisk endeligt.
+      Risikovurdering: LAV — de fire blokeringsgrunde (G.A.1.4.2) og fire ophørsgrunde
+      (G.A.1.4.5) er materielt veldefinerede i G.A.; kun stk./nr.-numrene er usikre. *) *)
+
+---
+
+## Artikel: G.A.1.4.2 — Ikkeinddrivelsesparate fordringer
+
+### Baggrund
+
+Ifølge G.A.1.4.2 (G.A. snapshot v3.16, 2026-01-30) er en fordring ikkeinddrivelsesparat
+hvis en eller flere af fire lovbestemte betingelser er opfyldt: (1) manglende obligatoriske
+stamoplysninger, (2) fordringen er bestridt, (3) skyldner er under insolvens-/konkursbehandling,
+eller (4) skyldner er afgået ved døden og bobehandlingen ikke er afsluttet
+(Gæld.bekendtg. § 8, stk. 1, nr. 1–4).
+
+Fordringen overgår til inddrivelsesparat, når den blokerende betingelse ophører at gælde
+(Gæld.bekendtg. § 8, stk. 2). I Catala-modellen er dette udtrykt ved, at beregningen
+af `erIkkeinddrivelsesparat` foretages dynamisk ud fra input-betingelsernes aktuelle
+sandhedsværdi — der er ingen separat overgangstilstand.
+
+---
+
+## Enumeration — IkkeinddrivelsesparatAarsag
+
+De fire kategorier der kan gøre en fordring ikkeinddrivelsesparat, samt referencetilstanden
+INDDRIVELSESPARAT når ingen betingelse er opfyldt.
+
+```catala
+declaration enumeration IkkeinddrivelsesparatAarsag:
+  -- MANGLENDE_OBLIGATORISKE_DATA
+  -- BESTRIDT_FORDRING
+  -- INSOLVENS_KONKURS
+  -- DOEDSFALD_BOBEHANDLING
+  -- INDDRIVELSESPARAT
+```
+
+---
+
+## Omfangsdeklaration — IkkeinddrivelsesparatVurdering
+
+```catala
+declaration scope IkkeinddrivelsesparatVurdering:
+  context harManglendeMandatoryData content boolean
+  context erBestridt content boolean
+  context erInsolvent content boolean
+  context erDoedsboUnderBehandling content boolean
+  context output erIkkeinddrivelsesparat content boolean
+```
+
+---
+
+## § 8, stk. 1 — Gæld.bekendtg. § 8, stk. 1, nr. 1–4
+
+**Grundregel: fordring er inddrivelsesparat (FR-1.1)**
+
+En fordring under inddrivelse er som udgangspunkt inddrivelsesparat. Den anses som
+ikkeinddrivelsesparat, hvis én eller flere af de fire lovbestemte betingelser i
+Gæld.bekendtg. § 8, stk. 1, nr. 1–4 er opfyldt.
+
+```catala
+scope IkkeinddrivelsesparatVurdering:
+  # FR-1.1: grundregel — fordring er inddrivelsesparat medmindre en betingelse er opfyldt
+  # FR-1.2: nr. 1 — manglende obligatoriske stamoplysninger → ikkeinddrivelsesparat
+  # FR-1.3: nr. 2 — bestridt fordring → ikkeinddrivelsesparat
+  # FR-1.4: nr. 3 — skyldner under insolvens-/konkursbehandling → ikkeinddrivelsesparat
+  # FR-1.5: nr. 4 — skyldner afgået ved døden, bobehandling ikke afsluttet → ikkeinddrivelsesparat
+  # Ankerpunkt: Gæld.bekendtg. § 8, stk. 1, nr. 1–4
+  # (JURIDISK-USIKKERHED: stk./nr. verificeres mod gældende bekendtgørelse)
+  definition erIkkeinddrivelsesparat equals
+    harManglendeMandatoryData or
+    erBestridt or
+    erInsolvent or
+    erDoedsboUnderBehandling
+```
+
+---
+
+## § 8, stk. 2 — Gæld.bekendtg. § 8, stk. 2
+
+**Overgang til inddrivelsesparat ved betingelsens ophør (FR-1.6)**
+
+Når den blokerende betingelse ophører at gælde, overgår fordringen til inddrivelsesparat.
+I den formelle Catala-model er dette en direkte konsekvens af definitionen ovenfor:
+`erIkkeinddrivelsesparat` beregnes til `false`, når alle fire inputbetingelser er `false`.
+
+```catala
+scope IkkeinddrivelsesparatVurdering:
+  # FR-1.6: Overgang til inddrivelsesparat — automatisk konsekvens af FR-1.1 definitionen
+  # Ankerpunkt: Gæld.bekendtg. § 8, stk. 2
+  # (JURIDISK-USIKKERHED: stk. 2 verificeres mod gældende bekendtgørelse)
+  # Ingen separat regelblok påkrævet: erIkkeinddrivelsesparat = false når alle fire
+  # blokeringsbetingelser er false — dette følger direkte af definitionen i FR-1.1 til FR-1.5.
+  assertion erIkkeinddrivelsesparat = (harManglendeMandatoryData or erBestridt or erInsolvent or erDoedsboUnderBehandling)
+```
+
+---
+
+## Artikel: G.A.1.4.5 — Ophør af fordringer
+
+### Baggrund
+
+Ifølge G.A.1.4.5 (G.A. snapshot v3.16, 2026-01-30) ophører en fordring under inddrivelse
+permanent ved en af fire grunde: (1) betalt — fordringen er fuldt ud betalt;
+(2) afskrevet — fordringshaver har afskrevet fordringen; (3) bortfaldet — fordringen
+er bortfaldet på andet grundlag; (4) forældet — forældelsesfristens udløb har medført
+bortfald (Gæld.bekendtg. § 11).
+
+Ophøret medfører to nedstrømseffekter: (a) sagarkivering er påkrævet for alle grunde
+(GIL § 7, stk. 1); (b) NemKonto-afstemning er påkrævet ved BETALT-ophør
+(Gæld.bekendtg. § 12).
+
+---
+
+## Enumeration — OphoerGrund
+
+De fire lovlige ophørsgrunde jf. G.A.1.4.5 / Gæld.bekendtg. § 11.
+
+```catala
+declaration enumeration OphoerGrund:
+  -- BETALT
+  -- AFSKREVET
+  -- BORTFALDET
+  -- FORAELDET
+```
+
+---
+
+## Omfangsdeklaration — FordringsOphoer
+
+```catala
+declaration scope FordringsOphoer:
+  context ophoerGrund content OphoerGrund
+  context output erOphoert content boolean
+  context output kraeverSagArkivering content boolean
+  context output kraeverNemKontoAfstemning content boolean
+```
+
+---
+
+## § 11 — Gæld.bekendtg. § 11
+
+**Ophørsgrunde (FR-2.1 til FR-2.4)**
+
+Alle fire lovlige grunde konstituerer ophør af fordringen. Der er ingen ulovlig
+ophørsgrund i dette scope — alle enum-værdier er gyldige jf. G.A.1.4.5.
+
+```catala
+scope FordringsOphoer:
+  # FR-2.1: BETALT — fordringen er fuldt ud betalt → ophør
+  # FR-2.2: AFSKREVET — fordringshaver afskriver fordringen → ophør
+  # FR-2.3: BORTFALDET — fordringen bortfalder på andet grundlag → ophør
+  # FR-2.4: FORAELDET — forældelsesfristens udløb → ophør
+  # Ankerpunkt: Gæld.bekendtg. § 11
+  # (JURIDISK-USIKKERHED: § 11 stk./nr. verificeres mod gældende bekendtgørelse)
+  definition erOphoert equals true
+```
+
+---
+
+## GIL § 7, stk. 1 — Sagarkivering ved ophør (FR-2.5)
+
+**Alle ophørsgrunde kræver sagarkivering**
+
+Uanset ophørsgrunden skal sagen arkiveres ved ophøret (GIL § 7, stk. 1).
+`kraeverSagArkivering` er true for alle gyldige ophørsgrunde.
+
+```catala
+scope FordringsOphoer:
+  # FR-2.5: sagarkivering påkrævet for alle ophørsgrunde
+  # Ankerpunkt: GIL § 7, stk. 1
+  # (JURIDISK-USIKKERHED: GIL § 7 stk. verificeres mod gældende GIL)
+  definition kraeverSagArkivering equals erOphoert
+```
+
+---
+
+## Gæld.bekendtg. § 12 — NemKonto-afstemning ved betalt ophør (FR-2.6)
+
+**NemKonto-afstemning kræves kun ved BETALT**
+
+Når en fordring ophører som følge af fuld betaling (BETALT), skal der foretages
+NemKonto-afstemning. For alle andre ophørsgrunde er NemKonto-afstemning ikke påkrævet
+(Gæld.bekendtg. § 12).
+
+```catala
+scope FordringsOphoer:
+  # FR-2.6: NemKonto-afstemning kræves ved BETALT ophør
+  # Ankerpunkt: Gæld.bekendtg. § 12
+  # (JURIDISK-USIKKERHED: § 12 verificeres mod gældende bekendtgørelse)
+  rule kraeverNemKontoAfstemning
+    under condition ophoerGrund = BETALT
+    consequence fulfilled
+
+  rule kraeverNemKontoAfstemning
+    under condition not (ophoerGrund = BETALT)
+    consequence not fulfilled
+```
+
+---
+
+(* Filende: ga_1_4_2_1_4_5_ikkeinddrivelsesparate_ophoer.catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Dialect: catala_da
+   Scopes: IkkeinddrivelsesparatVurdering (G.A.1.4.2), FordringsOphoer (G.A.1.4.5)
+   Enumerations: IkkeinddrivelsesparatAarsag, OphoerGrund *)

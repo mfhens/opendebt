@@ -1,0 +1,256 @@
+# G.A.3.1.2.5 — Lønindeholdelsesprocent — Gæld.bekendtg. § 14, stk. 2–3
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Juridisk grundlag: Gæld.bekendtg. § 14, stk. 2–3; GIL §§ 10, 10a;
+                      Kildeskattelovens § 48, stk. 5; SKM2015.718.ØLR
+   Formål: Formalisering af beregningsreglerne for lønindeholdelsesprocenten,
+           jf. G.A.3.1.2.5, herunder omregningsformlen (§ 14, stk. 3, 2.–4. pkt.),
+           nedrunding til nærmeste hele procent (§ 14, stk. 3, 5. pkt.; SKM2015.718.ØLR),
+           maksimumsbegrænsning (§ 14, stk. 3, 9. pkt.; kildeskattelovens § 48, stk. 5),
+           og frikort-vagtkonditioner (G.A.3.1.2.5 fallback-beregning).
+   Petition: P072 — Catala Compliance Spike — Lønindeholdelsesprocent GIL §§ 14–17
+   Status: CI-gated compliance artefakt *)
+
+## Artikel: G.A.3.1.2.5 — Beregning af lønindeholdelsesprocenten
+
+### Baggrund
+
+Ifølge G.A.3.1.2.5 (G.A. snapshot v3.16, 2026-03-28) beregnes lønindeholdelsesprocenten
+ved en omregningsformel, der tager udgangspunkt i debitorens nettoindkomst,
+skattekortfradragsbeløb og trækprocent fra eSkattekortet samt afdragsprocenten
+fastsat ved tabeltræk jf. Gæld.bekendtg. § 11, stk. 1.
+
+Omregningsformlen (Gæld.bekendtg. § 14, stk. 3, 2.–4. pkt.):
+
+```
+lønindeholdelsesprocent = floor(
+  (afdragsprocent × nettoindkomst)
+  ────────────────────────────────────────────────────────
+  (nettoindkomst − fradragsbeløb) × (1 − trækprocent/100)
+)
+```
+
+Konkret beregningseksempel (G.A.3.1.2.5, 2026-satser):
+- nettoindkomst = 400.000 kr., fradragsbeløb = 48.000 kr., trækprocent = 37 %, afdragsprocent = 10 %
+- (10 × 400.000) / ((400.000 − 48.000) × (1 − 0,37)) = 4.000.000 / 221.760 = 18,04 % → **18 %** (nedrundes)
+
+Catala repræsenterer afdragsprocent og trækprocent som heltal (10 = 10 %, 37 = 37 %).
+Mellemregninger udføres i `decimal` (rationel aritmetik — eksakt, ingen floating-point-fejl).
+Nedrunding realiseres via `integer_of_decimal`, som truncerer mod nul (= floor for positive værdier).
+
+---
+
+## Enumerationer — GIL § 10a
+
+### ENUM-1: GIL10aFordringKvalifikation — GIL § 10a
+
+GIL § 10a fastlægger, at visse fordringtyper kvalificerer til reduceret
+lønindeholdelsesprocent. Denne enumeration klassificerer fordringens
+kvalifikationsstatus for GIL § 10a-formål.
+
+(* JURIDISK-USIKKERHED: G.A. snapshot v3.16 (2026-03-28) specificerer ikke
+   en udtømmende liste over fordringtyper der kvalificerer til reduceret sats
+   jf. GIL § 10a. Nedenstående enumeration afspejler de kendte kategorier.
+   Den fulde taxonomi kræver juridisk teambekræftelse inden produktionskodning.
+   Ankerpunkt: GIL § 10a (G.A. snapshot v3.16, 2026-03-28). *)
+
+```catala
+declaration enumeration GIL10aFordringKvalifikation:
+  -- STANDARD_FORDRING
+  -- GIL10A_REDUCERET_SATS_FORDRING
+```
+
+---
+
+## Omfangsdeklaration — LoenindeholdelseProcent
+
+`afdragsprocent` er et output fra tabeltræk jf. Gæld.bekendtg. § 11, stk. 1 (P071-parameter).
+`trækprocent` og `fradragsbeloeb` injiceres fra eSkattekortet som parametre (FR-3.3).
+CPR behandles aldrig som input til denne beregning — Person Registry UUID bruges som reference.
+
+```catala
+declaration scope LoenindeholdelseProcent:
+  context afdragsprocent content integer
+  context nettoindkomst content integer
+  context fradragsbeloeb content integer
+  context traekprocent content integer
+  context fordringKvalifikation content GIL10aFordringKvalifikation
+  context output denominatorErNulEllerNegativ content boolean
+  context output erGIL10aKvalificerende content boolean
+  context output rawBeregningDecimal content decimal
+  context output cappedDecimal content decimal
+  context output loenindeholdelsesprocent content integer
+```
+
+---
+
+## G.A.3.1.2.5 — Frikort-vagtkondition
+
+**Denominator-guard (FR-2.1 og FR-2.3)**
+
+Når (nettoindkomst − fradragsbeløb) ≤ 0 er denominatoren i formlen nul eller negativ.
+Division med nul eller et negativt tal er ugyldig. Systemet falder i dette tilfælde
+tilbage til bruttoindkomst-beregning: lønindeholdelsesprocent sættes lig afdragsprocent
+(ingen skattekorrekturjustering er nødvendig, da arbejdsgiveren ikke trækker A-skat).
+Jf. G.A.3.1.2.5 (G.A. snapshot v3.16, 2026-03-28).
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-2.1 + FR-2.3: denominator-guard
+  # Ankerpunkt: G.A.3.1.2.5 (G.A. snapshot v3.16, 2026-03-28) — frikort-vagtkondition
+  definition denominatorErNulEllerNegativ equals
+    nettoindkomst - fradragsbeloeb <= 0
+```
+
+---
+
+## § 14, stk. 3, 2.–4. pkt. — Omregningsformel (standardformel)
+
+**Standardformel (FR-1.1)**
+
+Gæld.bekendtg. § 14, stk. 3, 2.–4. pkt.: Lønindeholdelsesprocenten beregnes ved at
+gange afdragsprocenten med nettoindkomsten og dividere med (nettoindkomst minus
+fradragsbeløbet) multipliceret med (én minus trækprocenten divideret med hundrede).
+
+Alle mellemregninger udføres i `decimal` (eksakt rationel aritmetik), som eliminerer
+floating-point-fejl i beregningsprincippet (diskrepanspunkt #2 i P072-spike).
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-1.1: standardformel — rawBeregningDecimal
+  # Ankerpunkt: Gæld.bekendtg. § 14, stk. 3, 2.–4. pkt.
+  definition rawBeregningDecimal equals
+    ((decimal of afdragsprocent) * (decimal of nettoindkomst)) /
+    (((decimal of nettoindkomst) - (decimal of fradragsbeloeb)) *
+     ((decimal of 1) - ((decimal of traekprocent) / (decimal of 100))))
+```
+
+---
+
+## G.A.3.1.2.5 — Frikort-fallback-regel
+
+**Fallback ved denominator ≤ 0 (FR-2.1)**
+
+Undtagelse til standardformlen: Når denominatorErNulEllerNegativ er sand (frikort-situation),
+sættes rawBeregningDecimal lig med afdragsprocenten direkte. Ingen skattekorrekturjustering
+er nødvendig fordi arbejdsgiveren ikke trækker A-skat (G.A.3.1.2.5).
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-2.1: fallback-undtagelse — rawBeregningDecimal = decimal of afdragsprocent
+  # Ankerpunkt: G.A.3.1.2.5 (G.A. snapshot v3.16, 2026-03-28) — frikort fallback
+  exception
+  definition rawBeregningDecimal
+    under condition denominatorErNulEllerNegativ
+    consequence equals decimal of afdragsprocent
+```
+
+---
+
+## G.A.3.1.2.5 — Trækprocent = 0 (frikort uden skatteforpligtelse)
+
+**Frikort med trækprocent = 0 (FR-2.2)**
+
+Når trækprocent = 0 % (frikort uden skatteforpligtelse) gælder standardformlen
+uændret. Denominatorfaktoren (1 − trækprocent/100) = (1 − 0) = 1, så formlen
+reduceres til: afdragsprocent × nettoindkomst / (nettoindkomst − fradragsbeløb).
+Ingen særregel er nødvendig — standardformlen håndterer dette tilfælde korrekt.
+
+(* FR-2.2: Ingen undtagelse nødvendig. Standardformlen er gyldig når trækprocent = 0,
+   forudsat at (nettoindkomst - fradragsbeloeb) > 0.
+   Ankerpunkt: G.A.3.1.2.5 (G.A. snapshot v3.16, 2026-03-28). *)
+
+---
+
+## § 14, stk. 3, 9. pkt. — Maksimumsbegrænsning (cap)
+
+**Cap-regel (FR-1.3)**
+
+Gæld.bekendtg. § 14, stk. 3, 9. pkt. og kildeskattelovens § 48, stk. 5:
+Den samlede indeholdelsesprocent (trækprocent + lønindeholdelsesprocent) må ikke
+overstige 100 %. Lønindeholdelsesprocenten begrænses til (100 − trækprocent).
+
+Nedrunding gælder det cappede resultat — cap anvendes FØR nedrunding jf.
+petitionens diskrepanspunkt #4 og outcome-contract AC-5.
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-1.3: standardregel — ingen cap nødvendig
+  # Ankerpunkt: Gæld.bekendtg. § 14, stk. 3, 9. pkt.; kildeskattelovens § 48, stk. 5
+  definition cappedDecimal equals rawBeregningDecimal
+
+  # FR-1.3: cap-undtagelse — samlet procent (trækprocent + lønindeholdelsesprocent) ≤ 100 %
+  # Nedrunding gælder det cappede resultat (AC-5, petitionens diskrepanspunkt #4)
+  # Ankerpunkt: Gæld.bekendtg. § 14, stk. 3, 9. pkt.; kildeskattelovens § 48, stk. 5
+  exception
+  definition cappedDecimal
+    under condition
+      rawBeregningDecimal > ((decimal of 100) - (decimal of traekprocent))
+    consequence equals (decimal of 100) - (decimal of traekprocent)
+```
+
+---
+
+## § 14, stk. 3, 5. pkt. — Nedrunding (floor)
+
+**Nedrunding (FR-1.2)**
+
+Gæld.bekendtg. § 14, stk. 3, 5. pkt.: Lønindeholdelsesprocenten nedrundes altid
+til nærmeste hele procent. SKM2015.718.ØLR bekræfter, at der aldrig oprundet —
+floor-funktion gælder konsekvent.
+
+`integer_of_decimal` truncerer mod nul — for positive decimalværdier er dette
+identisk med floor (altid ned). Nedrunding gælder det cappede resultat.
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-1.2: nedrunding (floor) — integer_of_decimal truncerer mod nul = floor for positive værdier
+  # Ankerpunkt: Gæld.bekendtg. § 14, stk. 3, 5. pkt.; SKM2015.718.ØLR
+  definition loenindeholdelsesprocent equals
+    integer_of_decimal cappedDecimal
+```
+
+---
+
+## GIL § 10a — Kvalifikationsprædikatet for reduceret sats
+
+**FR-3.1 og FR-3.2: GIL § 10a klassifikationsprædikat**
+
+GIL § 10a fastlægger reduceret lønindeholdelsesprocent for visse fordringtyper.
+`erGIL10aKvalificerende` er prædikatet der bestemmer, om den aktuelle fordring
+kvalificerer til reduceret sats. Downstream-beregninger anvender dette flag til
+at substituere en reduceret afdragsprocent fra GIL § 10a-tabellen (P071-afhængighed).
+
+(* JURIDISK-USIKKERHED: Det eksakte niveau for den reducerede sats jf. GIL § 10a
+   er ikke specificeret i G.A. snapshot v3.16 (2026-03-28) med tilstrækkelig
+   præcision til direkte kodning som konstant. Den reducerede sats kræver juridisk
+   teambekræftelse og er modelleret som en parameter-afhængighed til P071-tabeltræk.
+   Ankerpunkt: GIL § 10a (G.A. snapshot v3.16, 2026-03-28). *)
+
+```catala
+scope LoenindeholdelseProcent:
+  # FR-3.1: klassifikationsprædikat — erGIL10aKvalificerende
+  # Ankerpunkt: GIL § 10a
+  definition erGIL10aKvalificerende equals
+    fordringKvalifikation = GIL10A_REDUCERET_SATS_FORDRING
+```
+
+---
+
+(* Filende: ga_3_1_2_loenindeholdelse_pct.catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Dialect: catala_da
+   Scopes: LoenindeholdelseProcent
+   Regler kodet:
+     FR-1.1 Standardformel        — Gæld.bekendtg. § 14, stk. 3, 2.–4. pkt.
+     FR-1.2 Nedrunding (floor)    — Gæld.bekendtg. § 14, stk. 3, 5. pkt.; SKM2015.718.ØLR
+     FR-1.3 Cap-regel             — Gæld.bekendtg. § 14, stk. 3, 9. pkt.; kildeskattelovens § 48, stk. 5
+     FR-2.1 Fallback (frikort)    — G.A.3.1.2.5 (denominator ≤ 0 → brug afdragsprocent direkte)
+     FR-2.2 Trækprocent = 0       — G.A.3.1.2.5 (standardformel med denominator-faktor = 1)
+     FR-2.3 Division-med-nul-guard— G.A.3.1.2.5 (denominatorErNulEllerNegativ guard)
+     FR-3.1 GIL10a klassifikation — GIL § 10a (erGIL10aKvalificerende prædikat)
+     FR-3.2 Reduceret sats flag   — GIL § 10a (downstream P071-parameter-afhængighed)
+   JURIDISK-USIKKERHED (2 flags):
+     1. GIL10aFordringKvalifikation — udtømmende liste kræver juridisk bekræftelse
+     2. Reduceret sats-niveau       — eksakt procent kræver juridisk bekræftelse *)
