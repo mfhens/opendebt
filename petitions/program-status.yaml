@@ -215,6 +215,7 @@ program:
 
     petition001:
       title: OCR-based matching of incoming payments
+      legal_footprint: true
       status: implemented
       phase: phase-0
       depends_on: []
@@ -226,6 +227,7 @@ program:
 
     petition002:
       title: Creditor creation of a new fordring
+      legal_footprint: false
       status: implemented
       phase: phase-0
       psrm_enriched: true
@@ -257,6 +259,7 @@ program:
 
     petition003:
       title: Formalization of fordring, restance, and overdragelse til inddrivelse
+      legal_footprint: true
       status: implemented
       phase: phase-1
       psrm_enriched: true
@@ -274,6 +277,7 @@ program:
 
     petition008:
       title: Fordringshaver logical and physical data model
+      legal_footprint: false
       status: implemented
       phase: phase-1
       depends_on: []
@@ -286,6 +290,7 @@ program:
 
     petition009:
       title: Dedicated fordringshaver master data service
+      legal_footprint: false
       status: validated
       phase: phase-1
       depends_on:
@@ -299,6 +304,7 @@ program:
 
     petition010:
       title: Fordringshaver channel binding and access resolution
+      legal_footprint: false
       status: implemented
       phase: phase-1
       depends_on:
@@ -314,6 +320,7 @@ program:
 
     petition011:
       title: Fordringshaver M2M ingress via integration-gateway
+      legal_footprint: false
       status: implemented
       phase: phase-2
       depends_on:
@@ -324,6 +331,7 @@ program:
 
     petition012:
       title: Fordringshaverportal as BFF and manual submission channel
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on:
@@ -341,6 +349,7 @@ program:
 
     petition013:
       title: UI webtilgaengelighed compliance
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on: []
@@ -352,6 +361,7 @@ program:
 
     petition014:
       title: Accessibility statements and feedback for each UI
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on:
@@ -365,6 +375,7 @@ program:
 
     petition019:
       title: Legacy SOAP endpoints for external creditors
+      legal_footprint: false
       status: implemented
       phase: phase-2
       depends_on:
@@ -389,6 +400,7 @@ program:
 
     petition004:
       title: Underretning, paakrav, and rykker
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -406,6 +418,7 @@ program:
 
     petition005:
       title: Haeftelse for multiple skyldnere
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -420,6 +433,7 @@ program:
 
     petition006:
       title: Indsigelse workflow blockering
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -441,6 +455,7 @@ program:
 
     petition007:
       title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -457,6 +472,7 @@ program:
 
     petition015:
       title: Fordring core claim validation rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -473,6 +489,7 @@ program:
 
     petition016:
       title: Fordring claimant authorization rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       depends_on:
@@ -486,6 +503,7 @@ program:
 
     petition017:
       title: Fordring claim lifecycle and reference rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -505,6 +523,7 @@ program:
 
     petition018:
       title: Fordring claim content validation rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -526,6 +545,7 @@ program:
 
     petition020:
       title: OpenTelemetry-based observability
+      legal_footprint: false
       status: validated
       phase: phase-5
       depends_on: []
@@ -542,6 +562,7 @@ program:
 
     petition021:
       title: Internationalization (i18n) infrastructure for all OpenDebt portals
+      legal_footprint: false
       status: validated
       phase: phase-5
       depends_on: []
@@ -558,6 +579,7 @@ program:
 
     petition022:
       title: Skyldnerportal (citizen portal) landing page
+      legal_footprint: false
       status: implemented
       phase: phase-6
       depends_on:
@@ -575,6 +597,7 @@ program:
 
     petition023:
       title: Person Registry citizen (CPR) lookup API
+      legal_footprint: false
       status: implemented
       phase: phase-7
       depends_on: []
@@ -586,6 +609,7 @@ program:
 
     petition024:
       title: Citizen-facing debt summary endpoint
+      legal_footprint: false
       status: implemented
       phase: phase-7
       psrm_enriched: true
@@ -596,6 +620,7 @@ program:
 
     petition025:
       title: MitID/TastSelv OAuth2 browser flow for citizen portal
+      legal_footprint: false
       status: implemented
       phase: phase-7
       depends_on:
@@ -607,6 +632,7 @@ program:
 
     petition026:
       title: "\"Mit gaeldsoverblik\" authenticated citizen debt overview page"
+      legal_footprint: false
       status: not_started
       phase: phase-8
       psrm_enriched: true
@@ -619,6 +645,7 @@ program:
 
     petition027:
       title: Citizen payment initiation API and self-service payment
+      legal_footprint: false
       status: not_started
       phase: phase-8
       depends_on:
@@ -629,6 +656,7 @@ program:
 
     petition028:
       title: Digital Post integration for citizen letter retrieval
+      legal_footprint: false
       status: not_started
       phase: phase-8
       depends_on:
@@ -641,6 +669,7 @@ program:
 
     petition029:
       title: Fordringshaverportal -- Claims in recovery and zero-balance claims lists
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -656,6 +685,7 @@ program:
 
     petition030:
       title: Fordringshaverportal -- Claim detail view
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -670,6 +700,7 @@ program:
 
     petition031:
       title: Fordringshaverportal -- Claims in hearing
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -686,6 +717,7 @@ program:
 
     petition032:
       title: Fordringshaverportal -- Rejected claims
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -704,6 +736,7 @@ program:
 
     petition033:
       title: Fordringshaverportal -- Claim creation wizard
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -725,6 +758,7 @@ program:
 
     petition034:
       title: Fordringshaverportal -- Write-up and write-down submission
+      legal_footprint: false
       status: superseded
       superseded_by: petition053
       phase: phase-9
@@ -743,6 +777,7 @@ program:
 
     petition035:
       title: Fordringshaverportal -- Notifications search and download
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -760,6 +795,7 @@ program:
 
     petition036:
       title: Fordringshaverportal -- Reconciliation
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -778,6 +814,7 @@ program:
 
     petition037:
       title: Fordringshaverportal -- Monthly reports
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -794,6 +831,7 @@ program:
 
     petition038:
       title: Fordringshaverportal -- Dashboard, navigation, and settings
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -815,6 +853,7 @@ program:
 
     petition039:
       title: Krydsende handlinger — crossing financial transactions with cascading interest recalculation
+      legal_footprint: true
       status: implemented
       phase: phase-10
       depends_on:
@@ -840,6 +879,7 @@ program:
 
     petition040:
       title: Ledger query API and Sagsbehandlerportal accounting transaction view
+      legal_footprint: false
       status: implemented
       phase: phase-10
       depends_on:
@@ -857,6 +897,7 @@ program:
 
     petition041:
       title: Sagsbehandlerportal demo access with crossing-transactions showcase
+      legal_footprint: false
       status: implemented
       phase: phase-10
       depends_on:
@@ -873,6 +914,7 @@ program:
 
     petition042:
       title: Case data model based on the fællesoffentlige sagsdefinition (OIO Sag v2.0)
+      legal_footprint: false
       status: not_started
       phase: phase-10
       depends_on: []
@@ -887,6 +929,7 @@ program:
 
     petition043:
       title: Batch processing — daily lifecycle transitions and interest accrual
+      legal_footprint: true
       status: implemented
       phase: phase-10
       depends_on:
@@ -905,6 +948,7 @@ program:
 
     petition044:
       title: Comprehensive documentation — MkDocs site with multi-audience guides
+      legal_footprint: false
       status: implemented
       phase: phase-11
       depends_on: []
@@ -919,6 +963,7 @@ program:
 
     petition045:
       title: Multi-regime interest and fee compliance per PSRM debt type rules
+      legal_footprint: true
       status: implemented
       phase: phase-12
       depends_on:
@@ -939,6 +984,7 @@ program:
 
     petition046:
       title: Versioned business configuration with validity periods
+      legal_footprint: true
       status: implemented
       phase: phase-12
       depends_on: []
@@ -956,6 +1002,7 @@ program:
 
     petition047:
       title: Configuration administration UI for versioned business values
+      legal_footprint: false
       status: implemented
       phase: phase-12
       depends_on:
@@ -973,6 +1020,7 @@ program:
 
     petition048:
       title: Role-based data access control hardening
+      legal_footprint: false
       status: implemented
       phase: phase-13
       depends_on:
@@ -992,6 +1040,7 @@ program:
 
     petition049:
       title: Case handler assignment — caseworker-to-case assignment and workload management
+      legal_footprint: false
       status: not_started
       phase: phase-13
       depends_on:
@@ -1010,6 +1059,7 @@ program:
 
     petition051:
       title: immudb Ledger Integrity — Production Hardening and Audit UI
+      legal_footprint: false
       status: not_started
       phase: phase-15
       depends_on:
@@ -1028,6 +1078,7 @@ program:
 
     petition052:
       title: Manual Nemkonto Payout with 4-Eyes Approval
+      legal_footprint: false
       status: not_started
       phase: phase-16
       depends_on:
@@ -1054,6 +1105,7 @@ program:
 
     petition050:
       title: Unified Case Timeline UI
+      legal_footprint: false
       status: implemented
       phase: phase-12
       depends_on:
@@ -1080,6 +1132,10 @@ program:
 
     petition053:
       title: Fordringshaverportal — Opskrivning og nedskrivning (fuld G.A.-komplient specifikation)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_1_4_3_opskrivning.catala_da
+        - catala/ga_1_4_4_nedskrivning.catala_da
       status: implemented
       phase: phase-3
       depends_on:
@@ -1103,6 +1159,10 @@ program:
 
     petition054:
       title: Catala Compliance Spike — G.A.1.4.3 og G.A.1.4.4 formal encoding
+      legal_footprint: true
+      catala_files:
+        - catala/ga_1_4_3_opskrivning.catala_da
+        - catala/ga_1_4_4_nedskrivning.catala_da
       status: implemented
       branch: feature/p054-catala-spike
       last_reviewed: 2026-03-29
@@ -1135,6 +1195,7 @@ program:
 
     petition055:
       title: Suspension pga. datafejl og tilbagekaldelse (G.A.1.3.4–1.3.5)
+      legal_footprint: true
       status: not_started
       phase: phase-17
       depends_on: []
@@ -1150,6 +1211,7 @@ program:
 
     petition056:
       title: Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
+      legal_footprint: true
       status: not_started
       phase: phase-17
       depends_on: []
@@ -1171,6 +1233,9 @@ program:
 
     petition057:
       title: Dækningsrækkefølge — payment application order (G.A.2.3.2)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
       status: implemented
       phase: phase-18
       depends_on: []
@@ -1211,6 +1276,7 @@ program:
 
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
+      legal_footprint: true
       status: implemented
       phase: phase-18
       depends_on:
@@ -1283,6 +1349,9 @@ program:
 
     petition059:
       title: Forældelse — prescription rules (G.A.2.4)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_4_foraeldelse.catala_da
       status: not_started
       phase: phase-18
       depends_on:
@@ -1303,6 +1372,7 @@ program:
 
     petition060:
       title: Retskraftvurdering — § 50 priority ordering (G.A.2.5)
+      legal_footprint: true
       status: not_started
       phase: phase-18
       depends_on:
@@ -1322,6 +1392,7 @@ program:
 
     petition061:
       title: Afdragsordninger — instalment plan management (G.A.3.1.1)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1340,6 +1411,7 @@ program:
 
     petition062:
       title: Lønindeholdelse fuld specifikation (G.A.3.1.2)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1359,6 +1431,7 @@ program:
 
     petition063:
       title: Henstand — deferral of collection (G.A.3.1.3)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on: []
@@ -1374,6 +1447,7 @@ program:
 
     petition064:
       title: Ægtefællehæftelse — spousal joint liability (G.A.3.1.5)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on: []
@@ -1390,6 +1464,7 @@ program:
 
     petition065:
       title: Afskrivning og bortfald — write-off and lapse (G.A.3.1.6)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1409,6 +1484,7 @@ program:
 
     petition066:
       title: Udlæg — skærpet inddrivelse PSRM workflow (G.A.3.2)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on:
@@ -1426,6 +1502,7 @@ program:
 
     petition067:
       title: Særlige inddrivelsesværktøjer (G.A.3.5)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on: []
@@ -1441,6 +1518,7 @@ program:
 
     petition068:
       title: Inddrivelse af særlige fordringstyper (G.A.3.7)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on: []
@@ -1460,6 +1538,9 @@ program:
 
     petition069:
       title: Catala Compliance Spike — Dækningsrækkefølge GIL § 4 (companion to P057)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
       status: in_progress
       phase: phase-18
       depends_on:
@@ -1483,6 +1564,9 @@ program:
 
     petition070:
       title: Catala Compliance Spike — Forældelse G.A.2.4 (companion to P059)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_4_foraeldelse.catala_da
       status: implemented
       phase: phase-18
       depends_on:
@@ -1511,6 +1595,7 @@ program:
 
     petition071:
       title: Catala Compliance Spike — Afdragsordninger GIL § 11 (companion to P061)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1530,6 +1615,7 @@ program:
 
     petition072:
       title: Catala Compliance Spike — Lønindeholdelsesprocent GIL § 14 (companion to P062)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:

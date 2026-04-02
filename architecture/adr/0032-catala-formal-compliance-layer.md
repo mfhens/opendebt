@@ -1,7 +1,7 @@
 # ADR 0032: Catala as the Formal Compliance Verification Layer for Juridisk Vejledning
 
 ## Status
-Accepted
+Accepted — amended (2026-04-02: Catala promoted from spike-on-demand to first-class pipeline stage)
 
 ## Context
 
@@ -188,3 +188,51 @@ All Catala files cite the G.A. snapshot version used (currently v3.16, 2026-03-2
 - ADR 0015: Drools for Business Rules Engine
 - ADR 0031: Statutory Codes Are Defined as Enums, Not Configuration
 - G.A. Inddrivelse snapshot v3.16 (2026-03-28)
+
+---
+
+## Amendment: 2026-04-02 — Catala as First-Class Pipeline Stage
+
+### Context of amendment
+
+All four Tier A spikes (P069–P072) returned **Go**. The spike pattern has been validated across four distinct legal domains. Keeping Catala as a manual, petition-specific research activity creates a risk that future legal-footprint petitions are processed without Catala encoding simply because no spike was explicitly commissioned.
+
+### Decision
+
+Catala encoding is now a **mandatory pipeline phase** (Phase 3.7) for any petition with a legal footprint. The phase runs automatically between Gherkin (Phase 1) and Specifications (Phase 4) in the `pipeline-conductor` agent.
+
+A petition has a legal footprint if **any** of the following is true:
+
+- References a G.A. article, Gæld.bekendtg. paragraph, GIL paragraph, or Forældelsesl. section
+- Encodes a calculation, date rule, or priority ordering derived from statute
+- Depends on a legally-defined enumeration, threshold, or statutory rate
+- Is in a financial or entitlement domain where silent divergence from law creates liability
+
+### Mechanism
+
+A new `catala-encoder` agent (`~/.claude/agents/catala-encoder.agent.md`) executes Phase 3.7. It:
+
+1. Determines whether the petition has a legal footprint
+2. Encodes the legal rules into `.catala_da` scope files with statute anchors
+3. Produces a companion test suite in `catala/tests/`
+4. Typechecks both files via `catala typecheck --language en --no-stdlib`
+5. Updates `petitions/program-status.yaml` with `legal_footprint: true` and `catala_files:` list
+6. Adds the new files to the `catala typecheck` step in `.github/workflows/ci.yml`
+
+The `pipeline-conductor` agent has been updated to invoke `catala-encoder` at Phase 3.7 and to pass Catala artefact paths to `specs-translator` as mandatory context. Specs must cross-reference encoded FR-IDs.
+
+### program-status.yaml convention
+
+Each petition entry gains two optional fields:
+
+```yaml
+legal_footprint: true | false     # required for all petitions going forward
+catala_files:                     # required when legal_footprint: true
+  - catala/<scope>.catala_da
+```
+
+### Unchanged
+
+- The spike pattern (P054, P069–P072) remains valid for exploratory work on new legal domains
+- Tier B and Tier C classifications from the original decision are unchanged
+- Catala does not run in production; the Java implementation remains the authoritative runtime
