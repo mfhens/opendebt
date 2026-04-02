@@ -151,7 +151,7 @@ tal er identisk med floor-division.
 ```catala
 scope TabeltræksBeregning:
   # FR-2.1a: betalingsevneÅrDecimal (hjælpevariabel) — decimal grundlag for floor-konvertering
-  # integer_of_decimal of <var> kræver 'of' som forbindende keyword i Catala 1.1.0
+  # integer of <var> kræver 'of' som forbindende keyword i Catala 1.1.0
   # Ankerpunkt: GIL § 11, stk. 1
   definition betalingsevneÅrDecimal equals
     if tabeltrækkMulig then
@@ -161,7 +161,7 @@ scope TabeltræksBeregning:
   # FR-2.1b: betalingsevneÅr = floor(betalingsevneÅrDecimal)
   # Ankerpunkt: GIL § 11, stk. 1
   definition betalingsevneÅr equals
-    integer_of_decimal of betalingsevneÅrDecimal
+    integer of betalingsevneÅrDecimal
 
   # FR-2.2a: råydelseMånedDecimal (hjælpevariabel) — decimal månedlig råydelse
   # Ankerpunkt: GIL § 11, stk. 2
@@ -171,7 +171,7 @@ scope TabeltræksBeregning:
   # FR-2.2b: råydelseMåned = floor(råydelseMånedDecimal)
   # Ankerpunkt: GIL § 11, stk. 2
   definition råydelseMåned equals
-    integer_of_decimal of råydelseMånedDecimal
+    integer of råydelseMånedDecimal
 
   # FR-2.3: afrundingsenhed — 50 kr under grænsebeløbet, 100 kr ved/over
   # Ankerpunkt: GIL § 11, stk. 2
@@ -188,7 +188,7 @@ scope TabeltræksBeregning:
   # FR-2.4b: gulvKvotientInt = floor(gulvKvotient) — integer floor-konvertering
   # Ankerpunkt: GIL § 11, stk. 2
   definition gulvKvotientInt equals
-    integer_of_decimal of gulvKvotient
+    integer of gulvKvotient
 
   # FR-2.4c: månedligYdelse = gulvKvotientInt × afrundingsEnhed (integer × integer)
   # integer_of_decimal floor-runder → altid ned, aldrig op
