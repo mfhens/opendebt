@@ -208,7 +208,7 @@ scope LoenindeholdelseProcent:
   # FR-1.2: nedrunding (floor) — integer_of_decimal truncerer mod nul = floor for positive værdier
   # Ankerpunkt: Gæld.bekendtg. § 14, stk. 3, 5. pkt.; SKM2015.718.ØLR
   definition loenindeholdelsesprocent equals
-    integer_of_decimal cappedDecimal
+    integer_of_decimal of cappedDecimal
 ```
 
 ---
