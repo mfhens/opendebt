@@ -380,13 +380,15 @@ scope AfbrydelseValidering:
       and afgoerelseRegistreret
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  label afbrydelse_dato_loend
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
     consequence equals underretningsDato
 
-  exception
+  label frist_loend_3
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
@@ -415,14 +417,14 @@ scope AfbrydelseValidering:
       and (eventDate - inaktivSiden) >= 365 day
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  exception afbrydelse_dato_loend
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
       and (eventDate - inaktivSiden) >= 365 day
     consequence equals inaktivSiden
 
-  exception
+  exception frist_loend_3
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
@@ -452,12 +454,12 @@ scope AfbrydelseValidering:
       and retsgrundlag = ORDINARY
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = UDLAEG
     consequence equals eventDate
 
-  exception
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
@@ -471,7 +473,7 @@ scope AfbrydelseValidering:
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
     consequence equals NY_FRIST_10_AAR
 
-  exception
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
