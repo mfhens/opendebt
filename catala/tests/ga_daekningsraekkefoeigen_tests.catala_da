@@ -1,5 +1,7 @@
 # Testfil — G.A.2.3.2.1 Dækningsrækkefølge Catala-testpakke
 
+> Include: ../ga_2_3_2_1_daekningsraekkefoeigen.catala_da
+
 (* Catala kildedialekt: catala_da
    G.A. snapshot v3.16, dated 2026-03-28
    Testpakke for: ga_2_3_2_1_daekningsraekkefoeigen.catala_da
@@ -16,9 +18,8 @@
    - FR-4.1 + FR-4.2: timingregel (DaekningTest9)
    - FR-5.1 + FR-5.2: opskrivningsfordring FIFO-arv (DaekningTest10)
 
-   Verificeringskommando:
+   Verificeringskommando (typecheck):
    catala typecheck --language en --no-stdlib \
-     catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da \
      catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
    Forventet exitkode: 0; alle tests rapporterer PASS. *)
 

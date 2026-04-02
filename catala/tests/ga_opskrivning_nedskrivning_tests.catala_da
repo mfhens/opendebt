@@ -1,5 +1,8 @@
 # Testfil — G.A.1.4.3 og G.A.1.4.4 Catala-testpakke
 
+> Include: ../ga_1_4_3_opskrivning.catala_da
+> Include: ../ga_1_4_4_nedskrivning.catala_da
+
 (* Catala kildedialekt: catala_da
    G.A. snapshot v3.16, dated 2026-01-30
    Testpakke for: ga_1_4_3_opskrivning.catala_da og ga_1_4_4_nedskrivning.catala_da

@@ -1,5 +1,7 @@
 # Testfil — G.A.2.4 Forældelse Catala-testpakke
 
+> Include: ../ga_2_4_foraeldelse.catala_da
+
 (* Catala kildedialekt: catala_da
    G.A. snapshot v3.16, dated 2026-03-28
    Testpakke for: ga_2_4_foraeldelse.catala_da
