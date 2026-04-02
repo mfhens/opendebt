@@ -148,15 +148,16 @@ tal er identisk med floor-division.
 scope TabeltræksBeregning:
   # FR-2.1: årlig betalingsevne = afdragsProcent% af nettoindkomst
   # Ankerpunkt: GIL § 11, stk. 1
+  # integer_of_decimal giver floor-division (truncerer mod nul = floor for positive tal)
   definition betalingsevneÅr equals
     if tabeltrækkMulig then
-      nettoindkomst * afdragsProcent / 100
+      integer_of_decimal (decimal of nettoindkomst * decimal of afdragsProcent / decimal of 100)
     else 0
 
-  # FR-2.2: månedlig råydelse (uafrundet); heltalsdivision = floor for positive tal
+  # FR-2.2: månedlig råydelse (uafrundet); floor-division via integer_of_decimal
   # Ankerpunkt: GIL § 11, stk. 2
   definition råydelseMåned equals
-    betalingsevneÅr / 12
+    integer_of_decimal (decimal of betalingsevneÅr / decimal of 12)
 
   # FR-2.3: afrundingsenhed — 50 kr under grænsebeløbet, 100 kr ved/over
   # Ankerpunkt: GIL § 11, stk. 2
@@ -166,12 +167,12 @@ scope TabeltræksBeregning:
     else 100
 
   # FR-2.4: floor-afrunding til nærmeste multiplum af afrundingsEnhed
-  # Formel: (råydelseMåned / afrundingsEnhed) * afrundingsEnhed
-  # Heltalsdivision truncerer mod nul = floor for positive tal → altid ned, aldrig op
+  # Formel: floor(råydelseMåned / afrundingsEnhed) * afrundingsEnhed
+  # integer_of_decimal floor-runder divisionsresultatet → altid ned, aldrig op
   # Ankerpunkt: GIL § 11, stk. 2
   definition månedligYdelse equals
     if tabeltrækkMulig then
-      (råydelseMåned / afrundingsEnhed) * afrundingsEnhed
+      integer_of_decimal (decimal of råydelseMåned / decimal of afrundingsEnhed) * afrundingsEnhed
     else 0
 ```
 
