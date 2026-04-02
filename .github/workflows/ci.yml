@@ -66,6 +66,52 @@ jobs:
           catala typecheck --language en --no-stdlib catala/ga_1_4_4_nedskrivning.catala_da
           catala typecheck --language en --no-stdlib catala/ga_2_4_foraeldelse.catala_da
           catala typecheck --language en --no-stdlib catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
+          # Typecheck test files together with their source files (multi-file)
+          catala typecheck --language en --no-stdlib \
+            catala/ga_1_4_3_opskrivning.catala_da \
+            catala/ga_1_4_4_nedskrivning.catala_da \
+            catala/tests/ga_opskrivning_nedskrivning_tests.catala_da
+          catala typecheck --language en --no-stdlib \
+            catala/ga_2_4_foraeldelse.catala_da \
+            catala/tests/ga_foraeldelse_tests.catala_da
+          catala typecheck --language en --no-stdlib \
+            catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da \
+            catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
+
+      - name: Run Catala compliance assertions
+        run: |
+          eval $(opam env)
+          # Opskrivning/Nedskrivning tests (10 scopes — NedskrivningTest11 excluded: negative test)
+          for scope in OpskrivningTest1 OpskrivningTest2 OpskrivningTest3 OpskrivningTest4 \
+                       NedskrivningTest5 NedskrivningTest6 NedskrivningTest7 NedskrivningTest8 \
+                       NedskrivningTest9 NedskrivningTest10; do
+            catala interpret --language en --no-stdlib --scope "$scope" \
+              catala/ga_1_4_3_opskrivning.catala_da \
+              catala/ga_1_4_4_nedskrivning.catala_da \
+              catala/tests/ga_opskrivning_nedskrivning_tests.catala_da
+          done
+          # Forældelse tests (18 scopes)
+          for scope in ForaeldelseTest01 ForaeldelseTest02 ForaeldelseTest03 \
+                       ForaeldelseTest04 ForaeldelseTest05 ForaeldelseTest06 \
+                       ForaeldelseTest07a ForaeldelseTest07b \
+                       ForaeldelseTest08 ForaeldelseTest09 ForaeldelseTest10 \
+                       ForaeldelseTest11a ForaeldelseTest11b \
+                       ForaeldelseTest12 ForaeldelseTest13 ForaeldelseTest14 \
+                       ForaeldelseTest15 ForaeldelseTest16; do
+            catala interpret --language en --no-stdlib --scope "$scope" \
+              catala/ga_2_4_foraeldelse.catala_da \
+              catala/tests/ga_foraeldelse_tests.catala_da
+          done
+          # Dækningsrækkefølge tests (16 scopes)
+          for scope in DaekningTest1 DaekningTest2 DaekningTest3 DaekningTest11 \
+                       DaekningTest4 DaekningTest5 \
+                       DaekningTest6a DaekningTest6b DaekningTest6c \
+                       DaekningTest6d DaekningTest6e DaekningTest6f \
+                       DaekningTest7 DaekningTest8 DaekningTest9 DaekningTest10; do
+            catala interpret --language en --no-stdlib --scope "$scope" \
+              catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da \
+              catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
+          done
 
   dependency-review:
     name: Dependency Review

@@ -74,8 +74,8 @@ forud for offentligretlige (kategori 3b).
 ```catala
 declaration scope PrioritetKategoriRang:
   context kategori content PrioritetKategori
-  context prioritetRang content integer
-  context underholdsbidragOrdning content integer
+  context output prioritetRang content integer
+  context output underholdsbidragOrdning content integer
 ```
 
 ---
@@ -190,8 +190,8 @@ declaration scope FifoSortNøgle:
   context modtagelsesdato content date
   context harLegacyModtagelsesdato content boolean
   context legacyModtagelsesdato content date
-  context erFoerSeptember2013 content boolean
-  context fifoSortKey content date
+  context output erFoerSeptember2013 content boolean
+  context output fifoSortKey content date
 ```
 
 ---
@@ -245,8 +245,8 @@ rentekomponenter dækkes i en fastsat orden.
 ```catala
 declaration scope RenteKomponentRang:
   context komponent content RenteKomponent
-  context subPositionRang content integer
-  context erRente content boolean
+  context output subPositionRang content integer
+  context output erRente content boolean
 ```
 
 ---
@@ -328,11 +328,11 @@ reglen om, at overskud kan omfordeles til andre fordringer.
 declaration scope InddrivelsesindsatsAnvendelse:
   context inddrivelsesindsatsType content InddrivelsesindsatsType
   context fordringErIndsatsFordring content boolean
-  context erUdlaeg content boolean
-  context gaelderGIL4Stk3 content boolean
-  context modtagerIndsatsDaekning content boolean
-  context modtagerOverskudsDaekning content boolean
-  context udlaegSurplus content boolean
+  context output erUdlaeg content boolean
+  context output gaelderGIL4Stk3 content boolean
+  context output modtagerIndsatsDaekning content boolean
+  context output modtagerOverskudsDaekning content boolean
+  context output udlaegSurplus content boolean
 ```
 
 ---
@@ -406,8 +406,8 @@ GIL § 4, stk. 4 præciserer to tidspunkter: det tidspunkt rækkefølgen fastlæ
 declaration scope TimingRegel:
   context applikationstidspunkt content date
   context betalingstidspunkt content date
-  context raekkefoelgeFastlagtVed content date
-  context daekningVirkerFra content date
+  context output raekkefoelgeFastlagtVed content date
+  context output daekningVirkerFra content date
 ```
 
 ---
@@ -449,7 +449,7 @@ declaration scope OpskrivningFifoNøgle:
   context erOpskrivningsfordring content boolean
   context egnModtagelsesdato content date
   context stamfordringFifoNoegle content date
-  context fifoSortKey content date
+  context output fifoSortKey content date
 ```
 
 ---

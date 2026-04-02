@@ -93,7 +93,7 @@ declaration scope UdskydelsesBeregning:
   context kildesystem content KildesystemType
   context registreringsDato content date
   context inddrivelsesdato content date
-  context udskydelseDato content date
+  context output udskydelseDato content date
   context psrmUdskydelseDato content date
   context dmiUdskydelseDato content date
 ```
@@ -181,9 +181,9 @@ declaration scope ForaeldelseFristBeregning:
   context afbrydelseDato content date
   context retsgrundlag content RetsgrundlagType
   context erUdlaeg content boolean
-  context fristStartDato content date
-  context fristVarighed content integer
-  context nyFristUdloeber content date
+  context output fristStartDato content date
+  context output fristVarighed content integer
+  context output nyFristUdloeber content date
 ```
 
 ---
@@ -276,9 +276,9 @@ declaration scope AfbrydelseValidering:
   context retsgrundlag content RetsgrundlagType
   context inaktivSiden content date
   context harInaktivSiden content boolean
-  context afbrydelseResultat content AfbrydelseResultat
-  context nyAfbrydelseDato content date
-  context nyFristUdloeber content date
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyAfbrydelseDato content date
+  context output nyFristUdloeber content date
 ```
 
 ---
@@ -479,8 +479,8 @@ declaration scope Fordringskompleks:
   context antalMedlemmer content integer
   context sharedNyFrist content date
   context harAfbrydelse content boolean
-  context propagationFuldstaendig content boolean
-  context kompleksNyFristUdloeber content date
+  context output propagationFuldstaendig content boolean
+  context output kompleksNyFristUdloeber content date
 ```
 
 ---
@@ -573,8 +573,8 @@ declaration scope TillaegsfristBeregning:
   context eventDate content date
   context udskydelseDato content date
   context erTomt content boolean
-  context afbrydelseResultat content AfbrydelseResultat
-  context nyFristUdloeber content date
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyFristUdloeber content date
 ```
 
 ---

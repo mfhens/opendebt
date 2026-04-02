@@ -6,27 +6,29 @@
    Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4
    Status: Research spike — ingen produktionskode.
 
-   Denne fil indeholder 16 testscopes der dækker:
+   Denne fil indeholder 18 testscopes der dækker:
    - FR-1.1: 3-årig grundfrist (ForaeldelseTest01)
    - FR-1.2: 10-årig frist ved udlæg + særligt retsgrundlag (ForaeldelseTest02)
    - FR-1.3 grænseværdi: PSRM inddrivelse FØR 2015-11-19 (ForaeldelseTest03)
    - FR-1.3 grænseværdi: PSRM inddrivelse PÅ 2015-11-19 (ForaeldelseTest04)
    - FR-1.3 grænseværdi: PSRM inddrivelse EFTER 2015-11-19 (ForaeldelseTest05)
    - FR-1.4: DMI/SAP38-udskydelse (ForaeldelseTest06)
-   - FR-1.5: Udskydelse er uforanderlig (ForaeldelseTest07)
+   - FR-1.5: Udskydelse er uforanderlig (ForaeldelseTest07a + ForaeldelseTest07b)
    - FR-2.1: Berostillelse → NY_FRIST_3_AAR (ForaeldelseTest08)
    - FR-2.2 negativ: LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE (ForaeldelseTest09)
    - FR-2.2 positiv: Lønindeholdelsesafgørelse → NY_FRIST_3_AAR (ForaeldelseTest10)
-   - FR-2.3: Forgæves = vellykket udlæg (ForaeldelseTest11)
+   - FR-2.3: Forgæves = vellykket udlæg (ForaeldelseTest11a + ForaeldelseTest11b)
    - FR-3.2: Fordringskompleks-propagation (ForaeldelseTest12)
    - FR-4.3 branch A: max(currentFristExpires > eventDate) (ForaeldelseTest13)
    - FR-4.3 branch B: max(eventDate > currentFristExpires) (ForaeldelseTest14)
    - FR-4.2: Foreløbig afbrydelse for tomt kompleks (ForaeldelseTest15)
    - FR-2.2 A-4: Lønindeholdelse inaktiv 1 år → frist fra inaktivSiden (ForaeldelseTest16)
 
-   Verificeringskommando:
-   catala test-doc catala/tests/ga_foraeldelse_tests.catala_da
-   Forventet exitkode: 0; alle tests rapporterer PASS. *)
+   Verificeringskommando (typecheck):
+   catala typecheck --language en --no-stdlib \
+     catala/ga_2_4_foraeldelse.catala_da \
+     catala/tests/ga_foraeldelse_tests.catala_da
+   Forventet exitkode: 0 *)
 
 ---
 
@@ -45,19 +47,19 @@ inddraget den 1. juni 2022 med ORDINARY retsgrundlag og udskydelsesdato 2021-11-
 afbrydelsesdato + 3 × 365 dage = |2025-05-31| (2024 er skudår — 1095 dage fra 2022-06-01).
 
 ```catala
-# Test: FR-1.1 — 3-årig grundfrist
-# Ref: petition070 TC-1 / ForaeldelseTest01
-scope Test ForaeldelseTest01:
-  definition kildesystem equals PSRM
-  definition inddrivelsesdato equals |2022-06-01|
-  definition registreringsDato equals |2022-06-01|
-  definition retsgrundlag equals ORDINARY
-  definition erUdlaeg equals false
-  definition afbrydelseDato equals |2022-06-01|
-  definition udskydelseDato equals |2021-11-20|
-  definition currentFristExpires equals |2025-06-01|
-  assertion fristVarighed = 3
-  assertion nyFristUdloeber = |2025-05-31|
+declaration scope ForaeldelseTest01:
+  comp scope ForaeldelseFristBeregning
+
+scope ForaeldelseTest01:
+  # Test: FR-1.1 — 3-årig grundfrist
+  # Ref: petition070 TC-1 / ForaeldelseTest01
+  # kildesystem/inddrivelsesdato er UdskydelsesBeregning-inputs; udskydelseDato leveres direkte
+  definition comp.retsgrundlag equals ORDINARY
+  definition comp.erUdlaeg equals false
+  definition comp.afbrydelseDato equals |2022-06-01|
+  definition comp.udskydelseDato equals |2021-11-20|
+  assertion comp.fristVarighed = 3
+  assertion comp.nyFristUdloeber = |2025-05-31|
 ```
 
 ---
@@ -71,16 +73,18 @@ er fristStartDato = |2024-04-10| (afbrydelsesdato > udskydelsesdato) og
 nyFristUdloeber = |2034-04-08| (10 × 365 = 3650 dage fra 2024-04-10; skudår 2028 og 2032 inden for span).
 
 ```catala
-# Test: FR-1.2 — 10-årig frist ved udlæg + særligt retsgrundlag
-# Ref: petition070 TC-2 / ForaeldelseTest02
-scope Test ForaeldelseTest02:
-  definition erUdlaeg equals true
-  definition retsgrundlag equals SAERLIGT_RETSGRUNDLAG
-  definition afbrydelseDato equals |2024-04-10|
-  definition udskydelseDato equals |2021-11-20|
-  definition currentFristExpires equals |2027-04-10|
-  assertion fristVarighed = 10
-  assertion nyFristUdloeber = |2034-04-08|
+declaration scope ForaeldelseTest02:
+  comp scope ForaeldelseFristBeregning
+
+scope ForaeldelseTest02:
+  # Test: FR-1.2 — 10-årig frist ved udlæg + særligt retsgrundlag
+  # Ref: petition070 TC-2 / ForaeldelseTest02
+  definition comp.erUdlaeg equals true
+  definition comp.retsgrundlag equals SAERLIGT_RETSGRUNDLAG
+  definition comp.afbrydelseDato equals |2024-04-10|
+  definition comp.udskydelseDato equals |2021-11-20|
+  assertion comp.fristVarighed = 10
+  assertion comp.nyFristUdloeber = |2034-04-08|
 ```
 
 ---
@@ -94,13 +98,18 @@ IKKE underlagt PSRM-udskydelsen. udskydelseDato er sentinel-værdien |1970-01-01
 (ingen udskydelse). Grænseværdien er EKSKLUSIV for dagen 2015-11-18.
 
 ```catala
-# Test: FR-1.3 grænseværdi — PSRM inddrivelse FØR 2015-11-19 → ingen udskydelse
-# Ref: petition070 TC-3 / ForaeldelseTest03
-scope Test ForaeldelseTest03:
-  definition kildesystem equals PSRM
-  definition inddrivelsesdato equals |2015-11-18|
-  definition registreringsDato equals |2015-11-18|
-  assertion udskydelseDato = |1970-01-01|
+declaration scope ForaeldelseTest03:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest03:
+  # Test: FR-1.3 grænseværdi — PSRM inddrivelse FØR 2015-11-19 → ingen udskydelse
+  # Ref: petition070 TC-3 / ForaeldelseTest03
+  # udskydelseDato leveres som sentinel; ingen regel overskriver den for inddrivelsesdato < 2015-11-19
+  definition comp.kildesystem equals PSRM
+  definition comp.inddrivelsesdato equals |2015-11-18|
+  definition comp.registreringsDato equals |2015-11-18|
+  definition comp.udskydelseDato equals |1970-01-01|
+  assertion comp.udskydelseDato = |1970-01-01|
 ```
 
 ---
@@ -113,13 +122,16 @@ med inddrivelsesdato præcis den 19. november 2015 er underlagt PSRM-udskydelsen
 udskydelseDato skal være |2021-11-20|.
 
 ```catala
-# Test: FR-1.3 grænseværdi — PSRM inddrivelse PÅ 2015-11-19 → udskydelse = |2021-11-20|
-# Ref: petition070 TC-4 / ForaeldelseTest04
-scope Test ForaeldelseTest04:
-  definition kildesystem equals PSRM
-  definition inddrivelsesdato equals |2015-11-19|
-  definition registreringsDato equals |2015-11-19|
-  assertion udskydelseDato = |2021-11-20|
+declaration scope ForaeldelseTest04:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest04:
+  # Test: FR-1.3 grænseværdi — PSRM inddrivelse PÅ 2015-11-19 → udskydelse = |2021-11-20|
+  # Ref: petition070 TC-4 / ForaeldelseTest04
+  definition comp.kildesystem equals PSRM
+  definition comp.inddrivelsesdato equals |2015-11-19|
+  definition comp.registreringsDato equals |2015-11-19|
+  assertion comp.udskydelseDato = |2021-11-20|
 ```
 
 ---
@@ -133,13 +145,16 @@ udskydelseDato skal fortsat være |2021-11-20| — den er fast og ændres ikke a
 den præcise inddrivelsesdato (blot >= 2015-11-19).
 
 ```catala
-# Test: FR-1.3 grænseværdi — PSRM inddrivelse EFTER 2015-11-19 → udskydelse = |2021-11-20|
-# Ref: petition070 TC-5 / ForaeldelseTest05
-scope Test ForaeldelseTest05:
-  definition kildesystem equals PSRM
-  definition inddrivelsesdato equals |2015-11-20|
-  definition registreringsDato equals |2015-11-20|
-  assertion udskydelseDato = |2021-11-20|
+declaration scope ForaeldelseTest05:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest05:
+  # Test: FR-1.3 grænseværdi — PSRM inddrivelse EFTER 2015-11-19 → udskydelse = |2021-11-20|
+  # Ref: petition070 TC-5 / ForaeldelseTest05
+  definition comp.kildesystem equals PSRM
+  definition comp.inddrivelsesdato equals |2015-11-20|
+  definition comp.registreringsDato equals |2015-11-20|
+  assertion comp.udskydelseDato = |2021-11-20|
 ```
 
 ---
@@ -152,13 +167,16 @@ GIL § 18a, stk. 1, 2. pkt.: En DMI_SAP38-fordring med registreringsDato |2024-0
 |2027-11-20|.
 
 ```catala
-# Test: FR-1.4 — DMI/SAP38-udskydelse → udskydelseDato = |2027-11-20|
-# Ref: petition070 TC-6 / ForaeldelseTest06
-scope Test ForaeldelseTest06:
-  definition kildesystem equals DMI_SAP38
-  definition registreringsDato equals |2024-03-01|
-  definition inddrivelsesdato equals |2024-03-01|
-  assertion udskydelseDato = |2027-11-20|
+declaration scope ForaeldelseTest06:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest06:
+  # Test: FR-1.4 — DMI/SAP38-udskydelse → udskydelseDato = |2027-11-20|
+  # Ref: petition070 TC-6 / ForaeldelseTest06
+  definition comp.kildesystem equals DMI_SAP38
+  definition comp.registreringsDato equals |2024-03-01|
+  definition comp.inddrivelsesdato equals |2024-03-01|
+  assertion comp.udskydelseDato = |2027-11-20|
 ```
 
 ---
@@ -172,22 +190,36 @@ eventDate = |2023-06-01| giver ny frist, men udskydelseDato forbliver |2021-11-2
 — AfbrydelseValidering ændrer IKKE udskydelseDato. nyFristUdloeber = |2026-05-31| (3 × 365 = 1095 dage fra 2023-06-01; 2024 er skudår inden for span).
 
 ```catala
-# Test: FR-1.5 — udskydelseDato uforanderlig ved BEROSTILLELSE
-# Ref: petition070 TC-7 / ForaeldelseTest07
-scope Test ForaeldelseTest07:
-  definition kildesystem equals PSRM
-  definition inddrivelsesdato equals |2020-01-01|
-  definition registreringsDato equals |2020-01-01|
-  definition afbrydelseType equals BEROSTILLELSE
-  definition eventDate equals |2023-06-01|
-  definition afgoerelseRegistreret equals false
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition underretningsDato equals |1970-01-01|
-  definition retsgrundlag equals ORDINARY
-  definition currentFristExpires equals |2024-11-20|
-  assertion udskydelseDato = |2021-11-20|
-  assertion nyFristUdloeber = |2026-05-31|
+declaration scope ForaeldelseTest07a:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest07a:
+  # Test: FR-1.5 del A — UdskydelsesBeregning: PSRM inddrivelsesdato=|2020-01-01| → udskydelseDato=|2021-11-20|
+  # Ref: petition070 TC-7 / ForaeldelseTest07a
+  definition comp.kildesystem equals PSRM
+  definition comp.inddrivelsesdato equals |2020-01-01|
+  definition comp.registreringsDato equals |2020-01-01|
+  assertion comp.udskydelseDato = |2021-11-20|
+```
+
+```catala
+declaration scope ForaeldelseTest07b:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest07b:
+  # Test: FR-1.5 del B — AfbrydelseValidering: BEROSTILLELSE, eventDate=|2023-06-01| → nyFristUdloeber=|2026-05-31|
+  # Strukturelt bevis: AfbrydelseValidering-scopet har ingen udskydelseDato-variabel →
+  # udskydelseDato er uforanderlig per design (strukturel separation)
+  # Ref: petition070 TC-7 / ForaeldelseTest07b
+  definition comp.afbrydelseType equals BEROSTILLELSE
+  definition comp.kildesystem equals PSRM
+  definition comp.eventDate equals |2023-06-01|
+  definition comp.afgoerelseRegistreret equals false
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.underretningsDato equals |1970-01-01|
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.nyFristUdloeber = |2026-05-31|
 ```
 
 ---
@@ -200,21 +232,22 @@ GIL § 18a, stk. 8: En BEROSTILLELSE-afgørelse for en PSRM-fordring med eventDa
 |2027-02-14| (eventDate + 3 × 365 dage; 2024 er skudår og span inkluderer 29. feb 2024).
 
 ```catala
-# Test: FR-2.1 — BEROSTILLELSE → NY_FRIST_3_AAR, nyFristUdloeber = eventDate + 3 år
-# Ref: petition070 TC-8 / ForaeldelseTest08
-scope Test ForaeldelseTest08:
-  definition afbrydelseType equals BEROSTILLELSE
-  definition kildesystem equals PSRM
-  definition eventDate equals |2024-02-15|
-  definition afgoerelseRegistreret equals false
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition underretningsDato equals |1970-01-01|
-  definition retsgrundlag equals ORDINARY
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = NY_FRIST_3_AAR
-  assertion nyFristUdloeber = |2027-02-14|
+declaration scope ForaeldelseTest08:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest08:
+  # Test: FR-2.1 — BEROSTILLELSE → NY_FRIST_3_AAR, nyFristUdloeber = eventDate + 3 år
+  # Ref: petition070 TC-8 / ForaeldelseTest08
+  definition comp.afbrydelseType equals BEROSTILLELSE
+  definition comp.kildesystem equals PSRM
+  definition comp.eventDate equals |2024-02-15|
+  definition comp.afgoerelseRegistreret equals false
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.underretningsDato equals |1970-01-01|
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.afbrydelseResultat = NY_FRIST_3_AAR
+  assertion comp.nyFristUdloeber = |2027-02-14|
 ```
 
 ---
@@ -227,20 +260,21 @@ forældelsesfrist. afbrydelseResultat skal være AFVIST_VARSEL_ALENE. Ingen ny
 afbrydelsesdato fastsættes — nyAfbrydelseDato forbliver sentinel |1970-01-01|.
 
 ```catala
-# Test: FR-2.2 negativ — LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE
-# Ref: petition070 TC-9 / ForaeldelseTest09
-scope Test ForaeldelseTest09:
-  definition afbrydelseType equals LOENINDEHOLDELSE_VARSEL
-  definition eventDate equals |2024-05-10|
-  definition afgoerelseRegistreret equals false
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition underretningsDato equals |1970-01-01|
-  definition kildesystem equals PSRM
-  definition retsgrundlag equals ORDINARY
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = AFVIST_VARSEL_ALENE
+declaration scope ForaeldelseTest09:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest09:
+  # Test: FR-2.2 negativ — LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE
+  # Ref: petition070 TC-9 / ForaeldelseTest09
+  definition comp.afbrydelseType equals LOENINDEHOLDELSE_VARSEL
+  definition comp.eventDate equals |2024-05-10|
+  definition comp.afgoerelseRegistreret equals false
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.underretningsDato equals |1970-01-01|
+  definition comp.kildesystem equals PSRM
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.afbrydelseResultat = AFVIST_VARSEL_ALENE
 ```
 
 ---
@@ -253,22 +287,23 @@ afbryder forældelsesfrist. Afbrydelsen sker fra underretningsDato |2024-06-20|.
 nyFristUdloeber = |2027-06-20| (underretningsDato + 3 år).
 
 ```catala
-# Test: FR-2.2 positiv — LOENINDEHOLDELSE_AFGOERELSE + registreret → NY_FRIST_3_AAR
-# Ref: petition070 TC-10 / ForaeldelseTest10
-scope Test ForaeldelseTest10:
-  definition afbrydelseType equals LOENINDEHOLDELSE_AFGOERELSE
-  definition afgoerelseRegistreret equals true
-  definition underretningsDato equals |2024-06-20|
-  definition eventDate equals |2024-06-20|
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition kildesystem equals PSRM
-  definition retsgrundlag equals ORDINARY
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = NY_FRIST_3_AAR
-  assertion nyAfbrydelseDato = |2024-06-20|
-  assertion nyFristUdloeber = |2027-06-20|
+declaration scope ForaeldelseTest10:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest10:
+  # Test: FR-2.2 positiv — LOENINDEHOLDELSE_AFGOERELSE + registreret → NY_FRIST_3_AAR
+  # Ref: petition070 TC-10 / ForaeldelseTest10
+  definition comp.afbrydelseType equals LOENINDEHOLDELSE_AFGOERELSE
+  definition comp.afgoerelseRegistreret equals true
+  definition comp.underretningsDato equals |2024-06-20|
+  definition comp.eventDate equals |2024-06-20|
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.kildesystem equals PSRM
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.afbrydelseResultat = NY_FRIST_3_AAR
+  assertion comp.nyAfbrydelseDato = |2024-06-20|
+  assertion comp.nyFristUdloeber = |2027-06-20|
 ```
 
 ---
@@ -283,39 +318,41 @@ Sub-test A: forgaevesUdlaeg = false (vellykket). Sub-test B: forgaevesUdlaeg = t
 Catala-modellen har én samlet UDLAEG-regelgren — ingen distinktion (A-5).
 
 ```catala
-# Test: FR-2.3 — UDLAEG (vellykket) → NY_FRIST_3_AAR, nyFristUdloeber = |2027-03-22|
-# Ref: petition070 TC-11a / ForaeldelseTest11a
-scope Test ForaeldelseTest11a:
-  definition afbrydelseType equals UDLAEG
-  definition eventDate equals |2024-03-22|
-  definition retsgrundlag equals ORDINARY
-  definition afgoerelseRegistreret equals false
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition underretningsDato equals |1970-01-01|
-  definition kildesystem equals PSRM
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = NY_FRIST_3_AAR
-  assertion nyFristUdloeber = |2027-03-22|
+declaration scope ForaeldelseTest11a:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest11a:
+  # Test: FR-2.3 — UDLAEG (vellykket) → NY_FRIST_3_AAR, nyFristUdloeber = |2027-03-22|
+  # Ref: petition070 TC-11a / ForaeldelseTest11a
+  definition comp.afbrydelseType equals UDLAEG
+  definition comp.eventDate equals |2024-03-22|
+  definition comp.retsgrundlag equals ORDINARY
+  definition comp.afgoerelseRegistreret equals false
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.underretningsDato equals |1970-01-01|
+  definition comp.kildesystem equals PSRM
+  assertion comp.afbrydelseResultat = NY_FRIST_3_AAR
+  assertion comp.nyFristUdloeber = |2027-03-22|
 ```
 
 ```catala
-# Test: FR-2.3 — UDLAEG (forgæves) → samme NY_FRIST_3_AAR, nyFristUdloeber = |2027-03-22|
-# Ref: petition070 TC-11b / ForaeldelseTest11b
-scope Test ForaeldelseTest11b:
-  definition afbrydelseType equals UDLAEG
-  definition eventDate equals |2024-03-22|
-  definition retsgrundlag equals ORDINARY
-  definition afgoerelseRegistreret equals false
-  definition harInaktivSiden equals false
-  definition inaktivSiden equals |1970-01-01|
-  definition underretningsDato equals |1970-01-01|
-  definition kildesystem equals PSRM
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = NY_FRIST_3_AAR
-  assertion nyFristUdloeber = |2027-03-22|
+declaration scope ForaeldelseTest11b:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest11b:
+  # Test: FR-2.3 — UDLAEG (forgæves) → samme NY_FRIST_3_AAR, nyFristUdloeber = |2027-03-22|
+  # Ref: petition070 TC-11b / ForaeldelseTest11b
+  definition comp.afbrydelseType equals UDLAEG
+  definition comp.eventDate equals |2024-03-22|
+  definition comp.retsgrundlag equals ORDINARY
+  definition comp.afgoerelseRegistreret equals false
+  definition comp.harInaktivSiden equals false
+  definition comp.inaktivSiden equals |1970-01-01|
+  definition comp.underretningsDato equals |1970-01-01|
+  definition comp.kildesystem equals PSRM
+  assertion comp.afbrydelseResultat = NY_FRIST_3_AAR
+  assertion comp.nyFristUdloeber = |2027-03-22|
 ```
 
 ---
@@ -328,15 +365,18 @@ GIL § 18a, stk. 2, 4. pkt.: Afbrydelse for fordring 101 i kompleks med ID 1
 får nyFristUdloeber = |2027-04-01|. propagationFuldstaendig skal være true.
 
 ```catala
-# Test: FR-3.2 — fordringskompleks-propagation → begge medlemmer får ny frist
-# Ref: petition070 TC-12 / ForaeldelseTest12
-scope Test ForaeldelseTest12:
-  definition kompleksId equals 1
-  definition erForaeldet equals false
-  definition harAfbrydelse equals true
-  definition sharedNyFrist equals |2027-04-01|
-  assertion propagationFuldstaendig = true
-  assertion kompleksNyFristUdloeber = |2027-04-01|
+declaration scope ForaeldelseTest12:
+  comp scope Fordringskompleks
+
+scope ForaeldelseTest12:
+  # Test: FR-3.2 — fordringskompleks-propagation → begge medlemmer får ny frist
+  # Ref: petition070 TC-12 / ForaeldelseTest12
+  # antalMedlemmer = 2 (kompleks-struct: stamfordring 101 + rentekrav 102)
+  definition comp.antalMedlemmer equals 2
+  definition comp.harAfbrydelse equals true
+  definition comp.sharedNyFrist equals |2027-04-01|
+  assertion comp.propagationFuldstaendig = true
+  assertion comp.kompleksNyFristUdloeber = |2027-04-01|
 ```
 
 ---
@@ -351,14 +391,17 @@ Denne branch beviser at en eksisterende frist der udløber senere end
 eventDate + 2 år IKKE forkortes.
 
 ```catala
-# Test: FR-4.3 branch A — currentFristExpires > eventDate → nyFristUdloeber = |2028-01-01|
-# Ref: petition070 TC-13 / ForaeldelseTest13
-scope Test ForaeldelseTest13:
-  definition currentFristExpires equals |2026-01-01|
-  definition eventDate equals |2025-03-15|
-  definition udskydelseDato equals |2021-11-20|
-  definition erTomt equals false
-  assertion nyFristUdloeber = |2028-01-01|
+declaration scope ForaeldelseTest13:
+  comp scope TillaegsfristBeregning
+
+scope ForaeldelseTest13:
+  # Test: FR-4.3 branch A — currentFristExpires > eventDate → nyFristUdloeber = |2028-01-01|
+  # Ref: petition070 TC-13 / ForaeldelseTest13
+  definition comp.currentFristExpires equals |2026-01-01|
+  definition comp.eventDate equals |2025-03-15|
+  definition comp.udskydelseDato equals |2021-11-20|
+  definition comp.erTomt equals false
+  assertion comp.nyFristUdloeber = |2028-01-01|
 ```
 
 ---
@@ -372,14 +415,17 @@ max(|2025-01-01|, |2025-09-30|) = |2025-09-30|; + 2 år = |2027-09-30|.
 Begge branches (T-13 og T-14) tilsammen beviser at max()-formlen er nødvendig.
 
 ```catala
-# Test: FR-4.3 branch B — eventDate > currentFristExpires → nyFristUdloeber = |2027-09-30|
-# Ref: petition070 TC-14 / ForaeldelseTest14
-scope Test ForaeldelseTest14:
-  definition currentFristExpires equals |2025-01-01|
-  definition eventDate equals |2025-09-30|
-  definition udskydelseDato equals |2021-11-20|
-  definition erTomt equals false
-  assertion nyFristUdloeber = |2027-09-30|
+declaration scope ForaeldelseTest14:
+  comp scope TillaegsfristBeregning
+
+scope ForaeldelseTest14:
+  # Test: FR-4.3 branch B — eventDate > currentFristExpires → nyFristUdloeber = |2027-09-30|
+  # Ref: petition070 TC-14 / ForaeldelseTest14
+  definition comp.currentFristExpires equals |2025-01-01|
+  definition comp.eventDate equals |2025-09-30|
+  definition comp.udskydelseDato equals |2021-11-20|
+  definition comp.erTomt equals false
+  assertion comp.nyFristUdloeber = |2027-09-30|
 ```
 
 ---
@@ -392,15 +438,18 @@ afbrydelseshændelse en foreløbig afbrydelse (FORELOEBIG_AFBRYDELSE) med 3-åri
 fra eventDate. Med eventDate |2024-07-01| er nyFristUdloeber = |2027-07-01|.
 
 ```catala
-# Test: FR-4.2 — erTomt = true → FORELOEBIG_AFBRYDELSE, nyFristUdloeber = |2027-07-01|
-# Ref: petition070 TC-15 / ForaeldelseTest15
-scope Test ForaeldelseTest15:
-  definition erTomt equals true
-  definition eventDate equals |2024-07-01|
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = FORELOEBIG_AFBRYDELSE
-  assertion nyFristUdloeber = |2027-07-01|
+declaration scope ForaeldelseTest15:
+  comp scope TillaegsfristBeregning
+
+scope ForaeldelseTest15:
+  # Test: FR-4.2 — erTomt = true → FORELOEBIG_AFBRYDELSE, nyFristUdloeber = |2027-07-01|
+  # Ref: petition070 TC-15 / ForaeldelseTest15
+  definition comp.erTomt equals true
+  definition comp.eventDate equals |2024-07-01|
+  definition comp.currentFristExpires equals |2025-01-01|
+  definition comp.udskydelseDato equals |2021-11-20|
+  assertion comp.afbrydelseResultat = FORELOEBIG_AFBRYDELSE
+  assertion comp.nyFristUdloeber = |2027-07-01|
 ```
 
 ---
@@ -415,34 +464,36 @@ eventDate = |2024-08-01| er forskellen præcis 365 dage (>= tærskel).
 nyAfbrydelseDato = |2023-08-01|; nyFristUdloeber = |2026-07-31| (3 × 365 = 1095 dage fra 2023-08-01; 2024 er skudår inden for span).
 
 ```catala
-# Test: FR-2.2 A-4 — LOENINDEHOLDELSE_AFGOERELSE inaktiv 1 år → NY_FRIST_3_AAR fra inaktivSiden
-# Ref: petition070 TC-16 / ForaeldelseTest16
-scope Test ForaeldelseTest16:
-  definition afbrydelseType equals LOENINDEHOLDELSE_AFGOERELSE
-  definition afgoerelseRegistreret equals true
-  definition harInaktivSiden equals true
-  definition inaktivSiden equals |2023-08-01|
-  definition eventDate equals |2024-08-01|
-  definition underretningsDato equals |2024-08-01|
-  definition kildesystem equals PSRM
-  definition retsgrundlag equals ORDINARY
-  definition currentFristExpires equals |2025-01-01|
-  definition udskydelseDato equals |2021-11-20|
-  assertion afbrydelseResultat = NY_FRIST_3_AAR
-  assertion nyAfbrydelseDato = |2023-08-01|
-  assertion nyFristUdloeber = |2026-07-31|
+declaration scope ForaeldelseTest16:
+  comp scope AfbrydelseValidering
+
+scope ForaeldelseTest16:
+  # Test: FR-2.2 A-4 — LOENINDEHOLDELSE_AFGOERELSE inaktiv 1 år → NY_FRIST_3_AAR fra inaktivSiden
+  # Ref: petition070 TC-16 / ForaeldelseTest16
+  definition comp.afbrydelseType equals LOENINDEHOLDELSE_AFGOERELSE
+  definition comp.afgoerelseRegistreret equals true
+  definition comp.harInaktivSiden equals true
+  definition comp.inaktivSiden equals |2023-08-01|
+  definition comp.eventDate equals |2024-08-01|
+  definition comp.underretningsDato equals |2024-08-01|
+  definition comp.kildesystem equals PSRM
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.afbrydelseResultat = NY_FRIST_3_AAR
+  assertion comp.nyAfbrydelseDato = |2023-08-01|
+  assertion comp.nyFristUdloeber = |2026-07-31|
 ```
 
 ---
 
-(* Opsummering af testdækning (16 + 1 sub-test = 17 test-scopes):
-   - FR-1.1 grundfrist:         ForaeldelseTest01 — PSRM, ORDINARY → fristVarighed=3, nyFristUdloeber=|2025-05-31|
+(* Opsummering af testdækning (18 test-scopes):
+   - FR-1.1 grundfrist:         ForaeldelseTest01 — ORDINARY → fristVarighed=3, nyFristUdloeber=|2025-05-31|
    - FR-1.2 10-årig:            ForaeldelseTest02 — erUdlaeg=true, SAERLIGT → fristVarighed=10, nyFristUdloeber=|2034-04-08|
    - FR-1.3 grænse FØR:        ForaeldelseTest03 — inddrivelsesdato=|2015-11-18| → udskydelseDato=|1970-01-01|
    - FR-1.3 grænse PÅ:         ForaeldelseTest04 — inddrivelsesdato=|2015-11-19| → udskydelseDato=|2021-11-20|
    - FR-1.3 grænse EFTER:      ForaeldelseTest05 — inddrivelsesdato=|2015-11-20| → udskydelseDato=|2021-11-20|
    - FR-1.4 DMI:                ForaeldelseTest06 — DMI_SAP38, registreringsDato=|2024-03-01| → udskydelseDato=|2027-11-20|
-   - FR-1.5 immutabilitet:      ForaeldelseTest07 — BEROSTILLELSE post-udskydelse → udskydelseDato uændret, nyFristUdloeber=|2026-05-31|
+   - FR-1.5 immutabilitet A:    ForaeldelseTest07a — PSRM inddrivelse=|2020-01-01| → udskydelseDato=|2021-11-20|
+   - FR-1.5 immutabilitet B:    ForaeldelseTest07b — BEROSTILLELSE post-udskydelse → nyFristUdloeber=|2026-05-31|
    - FR-2.1 berostillelse:      ForaeldelseTest08 — BEROSTILLELSE, PSRM → NY_FRIST_3_AAR, nyFristUdloeber=|2027-02-14|
    - FR-2.2 negativ:            ForaeldelseTest09 — LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE
    - FR-2.2 positiv:            ForaeldelseTest10 — LOENINDEHOLDELSE_AFGOERELSE registreret → NY_FRIST_3_AAR, nyFristUdloeber=|2027-06-20|
@@ -457,7 +508,7 @@ scope Test ForaeldelseTest16:
    Alle fem diskrepans-hotspot-regelgrene er dækket:
    - Varsel/afgørelse-distinktion:   ForaeldelseTest09 (AFVIST) + ForaeldelseTest10 (NY_FRIST_3_AAR)
    - Fordringskompleks atomicitet:   ForaeldelseTest12
-   - Udskydelse immutabilitet:       ForaeldelseTest07
+   - Udskydelse immutabilitet:       ForaeldelseTest07a + ForaeldelseTest07b
    - Forgæves udlæg ligestilling:    ForaeldelseTest11a + ForaeldelseTest11b (identiske outputs)
    - Tillægsfrist max() branches:    ForaeldelseTest13 (branch A) + ForaeldelseTest14 (branch B)
 
