@@ -283,6 +283,23 @@ declaration scope AfbrydelseValidering:
 
 ---
 
+## Sentinel-standarder — ingen ny fristdato for AFVIST-resultater
+
+For afbrydelsetyper der ikke medfører en ny forældelsesfrist (AFVIST_VARSEL_ALENE) fastsættes
+ingen ny dato. nyAfbrydelseDato og nyFristUdloeber sættes til sentinel-værdien |1970-01-01|.
+Disse sentinel-standarder fungerer som base for alle øvrige undtagelsesregler (A-1 til A-5).
+
+```catala
+scope AfbrydelseValidering:
+  # Sentinel defaults — ingen ny dato for AFVIST-resultater
+  label afbrydelse_dato_base
+  definition nyAfbrydelseDato equals |1970-01-01|
+  label frist_udloeber_base
+  definition nyFristUdloeber equals |1970-01-01|
+```
+
+---
+
 ## GIL § 18a, stk. 8 — A-1: Berostillelse → ny 3-årig frist (PSRM only)
 
 **FR-2.1: Afgørelse om berostillelse afbryder forældelsesfrist — ny frist fra eventDate**
@@ -301,11 +318,13 @@ scope AfbrydelseValidering:
       and kildesystem = PSRM
     consequence equals NY_FRIST_3_AAR
 
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
     consequence equals eventDate
 
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
