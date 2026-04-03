@@ -22,6 +22,8 @@ The same **`scripts/basecamp/`** layout is shared with **osm2**. `Basecamp.Commo
 
 Optional: set **`BASECAMP_PROJECT`** instead of `project_id` in CI or local shells.
 
+On **Windows**, `Basecamp.Common.ps1` forces **UTF-8** while capturing **Python** JSON and calling **basecamp** so Danish text and punctuation (e.g. **§**, **—**) stay correct in titles and messages.
+
 ## Scripts (`scripts/basecamp/`)
 
 | Script | Purpose |
