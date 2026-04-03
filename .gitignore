@@ -97,6 +97,9 @@ architecture/.structurizr/
 # workspace.json is auto-exported by Structurizr Lite on save; workspace.dsl is canonical
 architecture/workspace.json
 
+# Basecamp — local project IDs (copy from .basecamp/config.example.json)
+.basecamp/config.json
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db

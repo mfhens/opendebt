@@ -64,6 +64,8 @@ markdown_extensions:
 
 nav:
   - Hjem: index.md
+  - Integrationer:
+    - Basecamp: integrations/basecamp/README.md
   - Teknisk dokumentation:
     - Oversigt: technical/index.md
     - Udviklervejledning: technical/developer-guide.md
