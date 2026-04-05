@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-04-01
-  updated_by: copilot (TB-054 — Extract ufst-bookkeeping-core as shared Maven module)
+  updated_at: 2026-04-05
+  updated_by: copilot (TB-055 — Wire LedgerServiceClient to payment-service ledger API)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1341,6 +1341,7 @@ program:
       pending:
         - "ADR-0029 amendment required before deployment gate (immudb scope expansion)"
         - "deployment-view in workspace.dsl needed before Phase 9 release gate"
+        - "TB-055: wire LedgerServiceClient to payment-service (replace HTTP stub; ADR-0018)"
       scrutiny_risks:
         - "RISK-2 (non-blocking): outbox payload missing per-fordring detail — outbox events lack individual fordring breakdown; acceptable for Phase 18 but should be addressed before production"
         - "RISK-1 (non-blocking): HTTP 403 security smoke test absent — ModregningController lacks an automated unauthorized-access assertion; manual verification confirms guard is present"
@@ -2812,6 +2813,30 @@ program:
         RetroactiveCorrectionServiceImpl, TimelineReplayServiceImpl, AccountCode.
         AIDEV-TODO in BookkeepingServiceImpl: add balance validation (debit==credit per txnId)
         should be addressed as part of this extraction.
+
+    - id: TB-055
+      title: "Wire debt-service LedgerServiceClient to payment-service ledger API (ADR-0018)"
+      status: open
+      priority: high
+      created: 2026-04-05
+      petitions: [petition058]
+      beads_issue: opendebt-ggb
+      description: |
+        debt-service `LedgerServiceClient` is a no-op stub with a comment pointing to
+        `POST /internal/ledger/double-entry` on payment-service. ModregningService calls
+        `postLedgerEntry` / `reverseLedgerEntry` for each set-off allocation (ADR-0018), but
+        nothing is persisted to the payment-service `ledger_entries` table until HTTP is wired.
+
+        Deliverables:
+        - Replace stub with an injected `WebClient.Builder` client (trace propagation, ADR-0024)
+          calling the internal bookkeeping endpoint; map failures to transactional rollback.
+        - Contract tests or integration test against payment-service (Testcontainers) proving
+          debit/credit pairs are written for a modregning allocation.
+        - Document the endpoint contract in payment-service OpenAPI if not already exposed for ops.
+
+        Optional follow-on (separate scope if large): extend daily `InterestAccrualJob` to emit
+        ledger postings for accrued interest, not only `interest_journal_entries` in debt-service
+        — align with `ufst-bookkeeping-core` / BookkeepingService interest paths (ADR-0033).
 
 escalations:
   - id: ESC-055
