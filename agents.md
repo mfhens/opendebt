@@ -578,7 +578,7 @@ improvements that are not blocking but should be tracked, use `AIDEV-` prefixed 
 
 **Workflow:**
 1. Reviewer droids (`code-reviewer-strict`, `solution-architecture-reviewer`) add AIDEV comments
-2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items
+2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items; it also posts new TB items to the wasteland `wanted` table (see **Wasteland Integration → New items**)
 3. `tech-debt-executor` implements items from the technical_backlog
 
 These comments are collected into `petitions/program-status.yaml` under `technical_backlog`.
@@ -594,6 +594,92 @@ Architecture is governed using Structurizr DSL. Key files:
 | `architecture/policies.yaml` | Architecture policy set — evaluated by `c4-model-validator` and `c4-architecture-governor` |
 
 Architectural decisions are recorded in `architecture/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.
+
+When a new ADR is accepted, also INSERT it into the wasteland `decisions` table (see **Wasteland Integration → New items**).
+
+## Wasteland Integration
+
+The **wasteland** (`mfhens/ufst` on DoltHub) is the federated work registry for the
+UFST Modernization programme. It operates at petition/TB granularity and is visible to
+external contractors and agent rigs that join the federation.
+
+**Beads and wasteland coexist.** Beads is the inner project tracker (sprint subtasks,
+fine-grained status). The wasteland is the outer federated registry (petition-level bounty
+board with evidence and trust stamps).
+
+Local clone: `~/.hop/commons/mfhens/ufst`
+
+### Claim
+
+Before starting work on a petition or TB item, mark it claimed in the wasteland:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt pull origin main
+dolt sql -q "UPDATE wanted SET status='in_progress', claimed_by='mfhens' \
+  WHERE id='<petition-id>' AND status='open'"
+dolt add . && dolt commit -m 'claim: <petition-id>' && dolt push origin main
+```
+
+If the item is not yet in `wanted` (new TB item posted mid-sprint), INSERT it first — see **New items** below.
+
+### Complete
+
+When a petition or TB item is marked `implemented`/`done` in `program-status.yaml`, post
+the completion and close the wanted item:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+GIT_SHA=$(git -C /home/markus/GitHub/opendebt rev-parse --short HEAD)
+dolt sql -q "INSERT IGNORE INTO completions \
+  (id, wanted_id, completed_by, evidence, completed_at) \
+  VALUES ('<petition-id>-cmp', '<petition-id>', 'mfhens', 'commit:${GIT_SHA}', NOW())"
+dolt sql -q "UPDATE wanted SET status='done' WHERE id='<petition-id>'"
+dolt add . && dolt commit -m 'complete: <petition-id>' && dolt push origin main
+```
+
+### Stamp
+
+Reviewer agents (`code-reviewer-strict`, `scrutiny-feature-reviewer`) issue stamps on
+**external** workers' completions to signal verified quality. The `stamps` table enforces
+`author != subject`, so self-stamps are not allowed — stamps are only meaningful when
+external rigs are involved.
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+STAMP_ID=$(python3 -c "import uuid; print(str(uuid.uuid4())[:16])")
+dolt sql -q "INSERT INTO stamps \
+  (id, author, subject, valence, confidence, skill_tags, message, context_id, context_type, created_at) \
+  VALUES ('${STAMP_ID}', '<reviewer-handle>', '<worker-handle>', \
+  '{\"quality\":\"high\",\"correctness\":\"verified\"}', 0.9, \
+  '[\"java\",\"spring-boot\",\"opendebt\"]', '<one-line review summary>', \
+  '<completion-id>', 'completion', NOW())"
+dolt add . && dolt commit -m 'stamp: <worker-handle> on <completion-id>' && dolt push origin main
+```
+
+### New items
+
+**New TB item** (`backlog-planner` posting to wasteland after updating `program-status.yaml`):
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt sql -q "INSERT IGNORE INTO wanted \
+  (id, title, project, type, priority, tags, posted_by, status, effort_level, sandbox_required, created_at, updated_at) \
+  VALUES ('<TB-id>', '<title>', 'opendebt', 'technical_backlog', 3, \
+  '[\"java\",\"tech-debt\",\"opendebt\"]', 'mfhens', 'open', 'medium', TRUE, NOW(), NOW())"
+dolt add . && dolt commit -m 'post: <TB-id>' && dolt push origin main
+```
+
+**New ADR** (`solution-architect` after writing an accepted ADR):
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt sql -q "INSERT IGNORE INTO decisions \
+  (id, number, title, status, summary, skill_tags, project, created_at) \
+  VALUES ('adr-<NNNN>', <N>, '<ADR title>', 'Accepted', '<one-sentence decision>', \
+  '[\"architecture\",\"adr\"]', 'opendebt', NOW())"
+dolt add . && dolt commit -m 'decision: adr-<NNNN>' && dolt push origin main
+```
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
@@ -628,6 +714,7 @@ bd close <id>         # Complete work
    ```bash
    git pull --rebase
    bd dolt push
+   cd ~/.hop/commons/mfhens/ufst && dolt push origin main  # sync wasteland
    git push
    git status  # MUST show "up to date with origin"
    ```
