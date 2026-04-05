@@ -126,8 +126,6 @@ An open-source debt collection platform for Danish public institutions
 
 ## The Development Pipeline
 
-<br>
-
 ```
   Petition (customer need)
        │
@@ -158,13 +156,13 @@ An open-source debt collection platform for Danish public institutions
 
 **9 specialised agents. 20 phases. Orchestrated by Gas City. Zero manual handoffs.**
 
+Petition → outcome contract → BDD → spec (incl. C4) → failing tests → implementation → review → docs/status → **Wasteland** registry.
+
 ---
 
 ## The Inversion
 
 **Traditional software delivery puts humans everywhere.**
-
-<br>
 
 ```
 Traditional:  Human writes code → Human reviews PR → Human updates docs
@@ -182,21 +180,17 @@ This process: Human sets intent (petition)
               to exercise ongoing governance
 ```
 
-<br>
-
-**What a human actually does at Gate 1 (scaffold review):**
+**Gate 1 — scaffold review**
 - Is the outcome contract faithful to the business intent?
 - Are the Gherkin scenarios complete, testable, and non-speculative?
 - Is the spec minimal — no gold-plating?
 - Is the Catala tier correct — is this statute or workflow?
 
-**What a human actually does at Gate 2 (merge gate):**
+**Gate 2 — merge gate**
 - Does the implementation match the spec — no scope creep?
 - Do `mvn verify` and the security scan pass cleanly?
 - Is the Catala encoding consistent with the legal text?
 - Am I willing to put my name on this going to 1,200 public institutions?
-
-<br>
 
 > *Two gates. All the accountability. None of the grunt work.*
 
@@ -370,8 +364,6 @@ bd close <id> "Approved"     # release the gate → pipeline resumes
 
 **Work doesn't disappear into a private repo. It's published to a federated registry.**
 
-<br>
-
 ```
   Implementation complete
          │
@@ -386,8 +378,6 @@ bd close <id> "Approved"     # release the gate → pipeline resumes
   └──────────────────────────────────────────────────────┘
 ```
 
-<br>
-
 | Concept | What it means |
 |---|---|
 | **Rig** | A participant — human, agent, or org — with a DoltHub identity |
@@ -395,8 +385,6 @@ bd close <id> "Approved"     # release the gate → pipeline resumes
 | **Completion** | Evidence that work was done (git SHA, service path) |
 | **Pattern** | Reusable solution with validated evidence (e.g., *Double-Entry Financial Ledger*) |
 | **Stamp** | Trust signal issued by a validator after reviewing a completion |
-
-<br>
 
 > Stored in versioned SQL (Dolt + DoltHub). Fork → work → push → earn reputation.
 
