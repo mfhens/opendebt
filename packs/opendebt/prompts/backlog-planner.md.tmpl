@@ -36,12 +36,22 @@ When nudged, you:
      --set-metadata catala_tier=<A|B|C>
    ```
 
-4. The mol-petition-scaffold formula will be poured automatically by the
+4. Claim the corresponding entry in the wasteland (the `wanted` row was seeded when the petition was added to `program-status.yaml`):
+   ```bash
+   cd ~/.hop/commons/mfhens/ufst
+   dolt pull origin main
+   dolt sql -q "UPDATE wanted SET status='in_progress', claimed_by='mfhens' \
+     WHERE id='<petition-id>' AND status='open'"
+   dolt add . && dolt commit -m 'claim: <petition-id>' && dolt push origin main
+   ```
+   If the entry is not yet in `wanted`, INSERT it first using the template in agents.md → Wasteland Integration → New items.
+
+5. The mol-petition-scaffold formula will be poured automatically by the
    `new-petition-scaffold` order when the bead appears.
 
-5. Update program-status.yaml to mark the petition as `in_progress`.
+6. Update program-status.yaml to mark the petition as `in_progress`.
 
-6. Mail opendebt/code-reviewer if any petition has been in `in_progress`
+7. Mail opendebt/code-reviewer if any petition has been in `in_progress`
    for more than 3 days with no progress in the bead store.
 
 ## Catala Tier Classification
