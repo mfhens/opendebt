@@ -227,29 +227,48 @@ bd create \
 | `petition_path` | `petitions/pXXX/pXXX.md` | Relative path to petition markdown |
 | `catala_tier` | `A`, `B`, `C` | A = statutory rules (triggers Catala encoding); B = workflow; C = reference |
 
-### What happens next (automated)
+### What happens next (full pipeline)
+
+The pipeline runs across two formulas. Each named step is a bead assigned to the
+relevant agent. Steps in the same column run in parallel.
 
 ```
-Petition bead created (labelled "ready")
-        ↓
-backlog-planner notices it → pours mol-petition-scaffold
-        ↓
-petition-translator   → writes outcome-contract.md
-        ↓         (parallel)
-petition-to-gherkin   → writes .feature + step stubs
-specs-translator      → writes implementation-spec.md
-        ↓
-⏸ HUMAN GATE: review scaffold  ← you are here
+── Phase 1: mol-petition-scaffold ──────────────────────────────────────────────
+
+  backlog-planner detects petition → pours mol-petition-scaffold
+          ↓
+  [translate]  petition-translator → outcome-contract.md
+          ↓
+  [gherkin]    petition-to-gherkin → .feature + failing step stubs
+  [specs]      specs-translator    → implementation-spec.md          (parallel)
+          ↓
+  ⏸ GATE 1: human-review-scaffold — review before any code is written
+
+── Phase 2: mol-petition-implement (triggered by Gate 1 approval) ───────────────
+
+  [implement]      tdd-enforcer   → feature branch, TDD red→green→refactor
+          ↓
+  [review]         code-reviewer  → reviews code, GDPR, standards, Snyk scan
+          ↓
+  [catala-encode]  catala-encoder → Catala formal encoding     (Tier A only)
+          ↓
+  ⏸ GATE 2: human-review-code — review code + Catala before merge
+          ↓
+  [doc-sync]  doc-sync agent → architecture/overview.md, ADR, user guides,
+                               program-status.yaml → 'implemented'
+          ↓
+  ⏸ GATE 3: human-merge-gate — final approval to merge
+          ↓
+  gh pr create / git merge → main
 ```
 
-The pipeline pauses and waits for you.
+The pipeline pauses at each `⏸` gate until a human explicitly closes the bead.
 
 ---
 
 ## Human review gates
 
-Two human gates are mandatory in every petition pipeline. They exist to ensure
-a human has reviewed the work before code is committed and before code is merged.
+Three human gates are mandatory in every petition pipeline.
 **Gas City will not proceed past a gate until you explicitly close it.**
 
 ### Finding your gates
@@ -258,59 +277,79 @@ a human has reviewed the work before code is committed and before code is merged
 bd list --assignee human
 ```
 
-Each gate bead has a description explaining what to review and how to approve or reject.
+Each gate bead contains a full review checklist in its description (`bd show <id>`).
 
-### Gate 1 — Scaffold review (before any code is written)
+### Gate 1 — Scaffold review (`human-review-scaffold`)
 
-Triggered after Phase 1 completes. Review:
+Triggered after `petition-to-gherkin` and `specs-translator` both complete.
+No code has been written yet. Review:
 
-- `petitions/<id>/<id>-outcome-contract.md` — does it accurately represent the petition?
-- `.feature` file in `opendebt-<service>/src/test/resources/features/` — are the scenarios complete and testable?
-- `petitions/<id>/<id>-implementation-spec.md` — is the spec accurate, minimal, feasible?
-- Confirm `catala_tier` is correct (affects whether Catala encoding runs in Phase 2)
+| Artefact | What to check |
+|----------|--------------|
+| `petitions/<id>/<id>-outcome-contract.md` | Accurately represents petition intent — no scope creep, no omissions |
+| `.feature` file in `opendebt-<service>/src/test/resources/features/` | Scenarios are complete, testable, 1:1 with acceptance criteria |
+| `petitions/<id>/<id>-implementation-spec.md` | Spec is accurate, minimal, feasible; GDPR notes correct |
+| `catala_tier` metadata | Correct tier — Tier A triggers Catala encoding in Phase 2 |
 
 ```bash
 # Approve → Phase 2 begins automatically
 bd close <bead_id> "Approved"
 
-# Reject → rework specific agents
+# Reject → reassign the step that needs rework with notes
 bd update <translate_step_bead_id> \
   --assignee opendebt/petition-translator \
   --status open \
   --notes "Rework: AC-3 is ambiguous — clarify what 'active' means for a claim"
 ```
 
-### Gate 2 — Code review (before merge)
+### Gate 2 — Code review (`human-review-code`)
 
-Triggered after `tdd-enforcer` + `code-reviewer` + (optional) `catala-encoder` complete.
+Triggered after `code-reviewer` closes (and `catala-encoder` for Tier A).
 Review:
 
-- `mvn verify` passes on the feature branch
-- Code review step is closed (check `bd list --label review`)
-- For Tier A: Catala encoding matches the Java implementation
-- No accidental scope creep
+| Check | Command |
+|-------|---------|
+| CI passes on feature branch | `gh run list --branch feature/<id>-<service> --limit 5` |
+| `mvn verify` green | `mvn verify -pl opendebt-<service>` |
+| Code review step closed | `bd list --label review --status closed` |
+| Tier A: Catala matches Java | `catala typecheck --language en --no-stdlib catala/<id>-rule.catala_en` |
+| No scope creep | `git diff main...feature/<id>-<service> --stat` |
 
 ```bash
-# Check CI on the feature branch
-gh run list --branch feature/<petition_id>-<service> --limit 5
-
-# Approve → doc-sync runs, then merge gate opens
+# Approve → doc-sync runs automatically
 bd close <bead_id> "Approved for merge"
+
+# Reject → reassign back to tdd-enforcer with reason
+bd update <implement_step_bead_id> \
+  --assignee <service>/tdd-enforcer \
+  --status open \
+  --notes "Tests fail on edge case: <details>"
 ```
 
-### Merge gate (final)
+### Gate 3 — Merge gate (`human-merge-gate`)
 
-After doc-sync completes, one last gate opens. Close it to merge.
+Triggered after `doc-sync` completes. All automated steps are done.
+The branch contains: production code, passing tests, Catala encoding (Tier A),
+updated documentation, and `program-status.yaml` set to `implemented`.
 
 ```bash
 # Open a PR (recommended for traceability)
 gh pr create \
   --base main \
   --head feature/<petition_id>-<service> \
-  --title "feat(<petition_id>): <description>"
+  --title "feat(<petition_id>): <description>" \
+  --body "Closes petition <petition_id>"
 
-# Or approve direct merge
+# Approve and merge directly
 bd close <bead_id> "Merge approved"
+git checkout main && git merge --no-ff feature/<petition_id>-<service>
+git push origin main
+git branch -d feature/<petition_id>-<service>
+git push origin --delete feature/<petition_id>-<service>
+
+# After merge
+bd update <petition_bead_id> --status closed
+bd dolt push
 ```
 
 ---
