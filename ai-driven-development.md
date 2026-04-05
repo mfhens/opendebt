@@ -150,9 +150,12 @@ An open-source debt collection platform for Danish public institutions
        │
        ▼
   Docs + Status     ◄── Auto-maintained · sprint tracker synced
+       │
+       ▼
+  Wasteland         ◄── Federated registry: completion, patterns, stamps
 ```
 
-**9 specialised agents. 20 phases. Zero manual handoffs.**
+**9 specialised agents. 20 phases. Orchestrated by Gas City. Zero manual handoffs.**
 
 ---
 
@@ -250,9 +253,17 @@ Red first. AI writes green. Human reviews.
 
 <!-- _class: compact -->
 
-## Step 4: The AI Agent Pipeline
+## Step 4: Gas City — Agent Orchestration
 
-**9 phases — each with a dedicated, stateless, auditable agent**
+**Gas City runs the pipeline automatically. Human gates pause it.**
+
+<br>
+
+```bash
+gc start ~/GitHub/opendebt   # brings all agents online in tmux
+bd list --assignee human      # find your review gates
+bd close <id> "Approved"     # release the gate → pipeline resumes
+```
 
 <br>
 
@@ -263,14 +274,14 @@ Red first. AI writes green. Human reviews.
 | 2 · Architect | `solution-architect` + `c4-model-validator` | C4 model · Architecture review |
 | 3 · Specify | `specs-translator` + `specs-reviewer` | Implementation specification |
 | 4 · Test | `bdd-test-generator` + coverage auditor | Failing BDD step definitions |
-| 5 · Implement | `tdd-enforcer` | Green implementation |
+| 5 · Implement | `tdd-enforcer` *(per-service rig)* | Green implementation |
 | 6 · Review | `code-reviewer-strict` + `code-minimality-reviewer` | Review findings · Snyk + OWASP scan |
 | 7 · Fix | `tdd-enforcer` (rerun) | All findings resolved |
 | 8 · Track | `implementation-doc-sync` + `sprint-tracker` | Docs updated · status synced |
 
 <br>
 
-> Each agent is **stateless, scoped, and auditable**. No single model owns the whole flow.
+> Two **mandatory human gates**: scaffold review (before code) and merge gate (before main).
 
 ---
 
@@ -309,6 +320,42 @@ Red first. AI writes green. Human reviews.
 <br>
 
 > **Roadmap: ~50 G.A. sections · ~1–2 person-days each.** Phases 18–20 fully planned.
+
+---
+
+## Step 6: The Wasteland — Federated Knowledge
+
+**Work doesn't disappear into a private repo. It's published to a federated registry.**
+
+<br>
+
+```
+  Implementation complete
+         │
+         ▼
+  Wasteland (mfhens/ufst on DoltHub)
+  ┌──────────────────────────────────────────────────────┐
+  │  wanted board    ← open petitions visible to all     │
+  │  completions     ← evidence of shipped work          │
+  │  patterns        ← reusable architectural knowledge  │
+  │  learnings       ← findings anchored to patterns     │
+  │  stamps          ← validator trust signals           │
+  └──────────────────────────────────────────────────────┘
+```
+
+<br>
+
+| Concept | What it means |
+|---|---|
+| **Rig** | A participant — human, agent, or org — with a DoltHub identity |
+| **Wanted** | Open work anyone can claim (petition or TB item) |
+| **Completion** | Evidence that work was done (git SHA, service path) |
+| **Pattern** | Reusable solution with validated evidence (e.g., *Double-Entry Financial Ledger*) |
+| **Stamp** | Trust signal issued by a validator after reviewing a completion |
+
+<br>
+
+> Stored in versioned SQL (Dolt + DoltHub). Fork → work → push → earn reputation.
 
 ---
 
@@ -386,10 +433,12 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkee
 | AI writes fast, breaks silently | AI writes fast, tests catch regressions |
 | Requirements drift | Petitions + outcome contracts hold the line |
 | One model, one context | Specialised agents, clear handoffs |
+| Manual dispatch, context loss | Gas City orchestrates — human gates only where it matters |
 | "It works on my machine" | CI/CD · Snyk · OWASP · automated docs |
 | GDPR as an afterthought | GDPR enforced by architecture |
 | Law interpreted loosely | G.A. encoded in Catala · discrepancies surfaced |
 | Financial records on trust | Double-entry bookkeeping · immudb ledger integrity |
+| Work buried in a private repo | Wasteland: federated board · completions · patterns · stamps |
 
 <br>
 
@@ -415,7 +464,7 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkee
 
 <br>
 
-*Petition → Outcome Contract → BDD → Spec → TDD → Review → Law as Code → Ship*
+*Petition → Outcome Contract → BDD → Spec → TDD → Review → Law as Code → Gas City → Wasteland*
 
 ---
 
@@ -429,6 +478,6 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkee
 
 <br>
 
-`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 72 petitions · 12 services
+`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 72 petitions · 12 services · Gas City · Wasteland
 
 ---
