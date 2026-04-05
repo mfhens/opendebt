@@ -1,0 +1,13 @@
+# Order: scaffold-approved
+#
+# Fires when the human-review-scaffold step bead is closed (approved).
+# Automatically pours mol-petition-implement on the parent petition bead,
+# continuing the pipeline into Phase 2 (implementation).
+#
+# The petition_id and service are read from the closed gate bead's metadata,
+# which was set by mol-petition-scaffold when the molecule was created.
+
+[[order]]
+name = "scaffold-approved-implement"
+formula = "mol-petition-implement"
+gate = "bead_closed:human-review-scaffold"
