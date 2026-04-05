@@ -170,11 +170,46 @@ You should see all agents listed as `running` or `idle`.
 
 ## Submitting a petition
 
-The pipeline starts when you create a petition bead. The `backlog-planner` agent
-can do this automatically for petitions already in `program-status.yaml` — or you
-can create one manually.
+The pipeline starts when you create a petition bead. There are two paths depending
+on whether the petition is already tracked in `program-status.yaml`.
 
-### Manual submission
+### Automatic submission (normal path)
+
+If the petition is already in `petitions/program-status.yaml`, this is all you need:
+
+**1. Write the petition markdown** (if not already present):
+```
+petitions/petition0XX/petition0XX.md
+```
+
+**2. Set the status in `program-status.yaml`:**
+```yaml
+- id: petition055
+  title: "Forældelse — statutory limitation rules"
+  status: ready_for_implementation   # ← this triggers automatic pickup
+  service: rules-engine
+  catala_tier: A                     # A=statutory, B=workflow, C=reference
+```
+
+**3. Start (or let run) the controller:**
+```bash
+gc start ~/GitHub/opendebt
+```
+
+The `backlog-planner` agent patrols `program-status.yaml` every 30 seconds. As soon
+as it sees a petition with `status: ready_for_implementation` that has no active
+molecule yet, it creates the petition bead and pours the `mol-petition-scaffold`
+formula automatically. You do not need to run `bd create` yourself.
+
+Watch for pickup:
+```bash
+gc events --tail 10          # backlog-planner logs its actions here
+bd list --label petition     # molecule bead appears within ~30s
+```
+
+### Manual submission (one-off)
+
+Use this only for petitions that are **not** tracked in `program-status.yaml`:
 
 ```bash
 bd create \
