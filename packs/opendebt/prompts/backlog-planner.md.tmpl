@@ -36,15 +36,23 @@ When nudged, you:
      --set-metadata catala_tier=<A|B|C>
    ```
 
-4. Claim the corresponding entry in the wasteland (the `wanted` row was seeded when the petition was added to `program-status.yaml`):
+4. Claim the corresponding entry in the wasteland. If the entry is not yet in `wanted`,
+   INSERT it first:
    ```bash
-   cd ~/.hop/commons/mfhens/ufst
+   HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+   cd "$HOP_DIR"
    dolt pull origin main
+   # Insert if missing (IGNORE skips if already present)
+   dolt sql -q "INSERT IGNORE INTO wanted \
+     (id, title, project, type, priority, tags, posted_by, status, effort_level, \
+      sandbox_required, created_at, updated_at) \
+     VALUES ('<petition-id>', '<title>', 'opendebt', 'petition', 2, \
+     '[\"java\",\"opendebt\"]', 'mfhens', 'open', 'medium', TRUE, NOW(), NOW())"
+   # Claim it
    dolt sql -q "UPDATE wanted SET status='in_progress', claimed_by='mfhens' \
      WHERE id='<petition-id>' AND status='open'"
    dolt add . && dolt commit -m 'claim: <petition-id>' && dolt push origin main
    ```
-   If the entry is not yet in `wanted`, INSERT it first using the template in agents.md → Wasteland Integration → New items.
 
 5. The mol-petition-scaffold formula will be poured automatically by the
    `new-petition-scaffold` order when the bead appears.
@@ -81,5 +89,7 @@ petitions:
 Before exiting:
 ```bash
 bd dolt push
-git push
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR" && dolt push origin main
+cd ~/GitHub/opendebt && git push
 ```

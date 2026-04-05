@@ -221,6 +221,7 @@ To find unblocked work ready to start:
 
 ```bash
 bd ready          # sprint-level items ready to claim
+bd prime          # full workflow context, commands, and session close protocol
 ```
 
 Or browse the federated wanted board:

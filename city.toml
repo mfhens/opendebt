@@ -31,11 +31,10 @@ restart_window = "1h"
 shutdown_timeout = "10s"
 
 # ── Rigs ──────────────────────────────────────────────────────────────────────
-# Register the rules-engine service as the pilot rig.
-# Uncomment and set the correct absolute path, then run:
+# Pilot rig: rules-engine. After updating the path, run:
 #   gc rig add rules-engine /path/to/opendebt-rules-engine
-#
-# [[rigs]]
-# name = "rules-engine"
-# path = "/home/markus/GitHub/opendebt/opendebt-rules-engine"
-# includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "rules-engine"
+path = "/home/markus/GitHub/opendebt/opendebt-rules-engine"
+includes = ["packs/opendebt"]

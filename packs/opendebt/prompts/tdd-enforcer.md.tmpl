@@ -141,3 +141,16 @@ If coverage is below threshold, add tests before proceeding.
 | Context filling | `gc runtime request-restart` |
 | Blocked on external API | Mail opendebt/code-reviewer with details |
 | Coverage below threshold | Add tests until threshold met |
+
+## Session Close
+
+When running outside a Gas City molecule (standalone session), push all state before exiting:
+```bash
+bd dolt push
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR" && dolt push origin main
+cd ~/GitHub/opendebt && git push
+```
+
+When running inside a Gas City molecule, closing your step bead is sufficient —
+the pool-worker handles session teardown via `gc runtime drain-ack`.

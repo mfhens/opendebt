@@ -467,6 +467,18 @@ Common issues:
 - `beads-store unreachable` — start the Dolt server: `bd dolt server start`
 - `config-refs` warning — check that all `prompt_template` paths exist in `packs/opendebt/prompts/`
 
+### Catala step blocks on Tier B/C petitions
+
+The `catala-encode` step always appears in the formula DAG — there is no conditional
+branching in Gas City formulas. For Tier B/C petitions, the catala-encoder agent closes
+the step immediately with "Skipped: catala_tier=B". This adds a few seconds of latency
+but avoids formula complexity. If the catala-encoder agent is not running, the pipeline
+will block; nudge or restart it:
+
+```bash
+gc nudge opendebt/catala-encoder "Skip this Tier B step and close the bead."
+```
+
 ### Checking what Gas City wrote to Beads
 
 ```bash
@@ -492,11 +504,12 @@ This drains running agent sessions gracefully (up to the `shutdown_timeout` of 1
 configured in `city.toml`) and stops the controller. All bead state is preserved in the
 Dolt store — restarting with `gc start` picks up where it left off.
 
-After stopping, push Beads to the remote:
+After stopping, push all state to the remotes:
 
 ```bash
-bd dolt push
-git push
+bd dolt push                                                    # Beads store
+cd ~/.hop/commons/mfhens/ufst && dolt push origin main          # Wasteland
+cd ~/GitHub/opendebt && git push                                # Code
 ```
 
 ---

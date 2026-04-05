@@ -122,3 +122,16 @@ No CI config changes needed.
    ```bash
    bd close {{issue}} "Catala encoding complete — typecheck and interpretation pass"
    ```
+
+## Session Close
+
+When running outside a Gas City molecule (standalone session), push all state before exiting:
+```bash
+bd dolt push
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR" && dolt push origin main
+cd ~/GitHub/opendebt && git push
+```
+
+When running inside a Gas City molecule, closing your step bead is sufficient —
+the pool-worker handles session teardown via `gc runtime drain-ack`.

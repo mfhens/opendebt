@@ -97,16 +97,28 @@ memory-add_observations for the petition entity:
    git push origin feature/{{petition_id}}-{{service}}
    ```
 
-8. **Wasteland sync** — mark petition complete in the federated registry:
+8. **Wasteland sync** — mark petition complete and post any new ADR:
    ```bash
-   cd ~/.hop/commons/mfhens/ufst
+   HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+   REPO_ROOT=$(git rev-parse --show-toplevel)
+   cd "$HOP_DIR"
    dolt pull origin main
-   GIT_SHA=$(git -C /home/markus/GitHub/opendebt rev-parse --short HEAD)
+   GIT_SHA=$(git -C "$REPO_ROOT" rev-parse --short HEAD)
    dolt sql -q "INSERT IGNORE INTO completions \
      (id, wanted_id, completed_by, evidence, completed_at) \
      VALUES ('{{petition_id}}-cmp', '{{petition_id}}', 'mfhens', 'commit:${GIT_SHA}', NOW())"
    dolt sql -q "UPDATE wanted SET status='done' WHERE id='{{petition_id}}'"
    dolt add . && dolt commit -m 'complete: {{petition_id}}' && dolt push origin main
+   ```
+
+   If a **new ADR** was created during implementation, also post it:
+   ```bash
+   cd "$HOP_DIR"
+   dolt sql -q "INSERT IGNORE INTO decisions \
+     (id, number, title, status, summary, skill_tags, project, created_at) \
+     VALUES ('adr-<NNNN>', <N>, '<ADR title>', 'Accepted', '<one-sentence decision>', \
+     '[\"architecture\",\"adr\"]', 'opendebt', NOW())"
+   dolt add . && dolt commit -m 'decision: adr-<NNNN>' && dolt push origin main
    ```
 
 9. Close:

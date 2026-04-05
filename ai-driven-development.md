@@ -172,9 +172,10 @@ This process: Human sets intent (petition)
               ↓
               Agents handle everything deterministic
               ↓
-              Human gates at exactly two moments:
+              Human gates at exactly three moments:
                   Gate 1 — Does this spec accurately represent the intent?
                   Gate 2 — Does this code responsibly deliver what was promised?
+                  Gate 3 — Is this ready to merge into production?
               ↓
               Human receives decision-support views (steerco, Basecamp)
               to exercise ongoing governance
@@ -186,13 +187,19 @@ This process: Human sets intent (petition)
 - Is the spec minimal — no gold-plating?
 - Is the Catala tier correct — is this statute or workflow?
 
-**Gate 2 — merge gate**
+**What a human actually does at Gate 2 (code review):**
 - Does the implementation match the spec — no scope creep?
 - Do `mvn verify` and the security scan pass cleanly?
 - Is the Catala encoding consistent with the legal text?
+
+**What a human actually does at Gate 3 (merge gate):**
+- Is the documentation updated and the MkDocs build clean?
+- Is `program-status.yaml` set to `implemented`?
 - Am I willing to put my name on this going to 1,200 public institutions?
 
-> *Two gates. All the accountability. None of the grunt work.*
+<br>
+
+> *Three gates. All the accountability. None of the grunt work.*
 
 ---
 
@@ -304,21 +311,22 @@ bd close <id> "Approved"     # release the gate → pipeline resumes
 
 <br>
 
-| Phase | Agent(s) | Produces |
-|---|---|---|
-| 0 · Translate | `petition-translator` + reviewer | Validated Gherkin scenarios |
-| 1 · Assign | `component-assigner` + `application-architect` | Component routing |
-| 2 · Architect | `solution-architect` + `c4-model-validator` | C4 model · Architecture review |
-| 3 · Specify | `specs-translator` + `specs-reviewer` | Implementation specification |
-| 4 · Test | `bdd-test-generator` + coverage auditor | Failing BDD step definitions |
-| 5 · Implement | `tdd-enforcer` *(per-service rig)* | Green implementation |
-| 6 · Review | `code-reviewer-strict` + `code-minimality-reviewer` | Review findings · Snyk + OWASP scan |
-| 7 · Fix | `tdd-enforcer` (rerun) | All findings resolved |
-| 8 · Track | `implementation-doc-sync` + `sprint-tracker` | Docs updated · status synced |
+| Phase | Formula step | Pipeline agent | Produces |
+|---|---|---|---|
+| 1 · Translate | `translate` | `petition-translator` | Outcome contract |
+| 2 · Test | `gherkin` | `petition-to-gherkin` | Failing BDD step definitions |
+| 3 · Specify | `specs` | `specs-translator` | Implementation specification |
+| ⏸ Gate 1 | `human-review-scaffold` | **Human** | Scaffold approved |
+| 4 · Implement | `implement` | `tdd-enforcer` *(per-service rig)* | Green implementation |
+| 5 · Review | `review` | `code-reviewer` | Review findings · Snyk scan |
+| 6 · Encode | `catala-encode` | `catala-encoder` *(Tier A only)* | Formal Catala specification |
+| ⏸ Gate 2 | `human-review-code` | **Human** | Code approved |
+| 7 · Sync | `doc-sync` | `doc-sync` | Docs updated · status synced |
+| ⏸ Gate 3 | `human-merge-gate` | **Human** | Merge approved |
 
 <br>
 
-> Two **mandatory human gates**: scaffold review (before code) and merge gate (before main).
+> Three **mandatory human gates**: scaffold review (before code), code review (before docs), merge gate (before main).
 
 ---
 

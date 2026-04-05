@@ -86,3 +86,35 @@ bd update {{issue}} \
 ```bash
 bd close {{issue}} "Code review passed — all checks green"
 ```
+
+### Wasteland stamp (for external worker completions)
+
+When an **external rig** (not `mfhens`) submits a completion and your review passes,
+issue a stamp to signal verified quality. Self-stamps are not allowed (schema constraint).
+
+```bash
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR"
+dolt pull origin main
+STAMP_ID=$(python3 -c "import uuid; print('s-' + str(uuid.uuid4())[:12])")
+dolt sql -q "INSERT INTO stamps \
+  (id, author, subject, valence, confidence, skill_tags, message, context_id, context_type, created_at) \
+  VALUES ('$STAMP_ID', 'mfhens', '<worker-handle>', \
+  '{\"quality\":\"high\",\"correctness\":\"verified\"}', 0.9, \
+  '[\"java\",\"spring-boot\"]', 'Code review passed — all checks green', \
+  '<completion-id>', 'completion', NOW())"
+dolt add . && dolt commit -m "stamp: <worker-handle> on <completion-id>" && dolt push origin main
+```
+
+## Session Close
+
+When running outside a Gas City molecule (standalone session), push all state before exiting:
+```bash
+bd dolt push
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR" && dolt push origin main
+cd ~/GitHub/opendebt && git push
+```
+
+When running inside a Gas City molecule, closing your step bead is sufficient —
+the pool-worker handles session teardown via `gc runtime drain-ack`.

@@ -23,6 +23,9 @@ Never write Danish words in Gherkin steps or Java class names.
 **Feature file location:**
 `opendebt-{{service}}/src/test/resources/features/{{petition_id}}-<topic>.feature`
 
+The `<topic>` slug is chosen by you based on the petition's primary domain concept
+(e.g., `limitation`, `instalment`, `set-off`). Use lowercase kebab-case.
+
 **Tags:**
 - `@{{petition_id}}` on every scenario (enables selective execution)
 - `@acceptance` on integration scenarios
@@ -95,3 +98,16 @@ public class Petition055Steps {
    ```bash
    bd close {{issue}} "Feature file and step stubs committed"
    ```
+
+## Session Close
+
+When running outside a Gas City molecule (standalone session), push all state before exiting:
+```bash
+bd dolt push
+HOP_DIR=$(jq -r '.wastelands[0].local_dir' ~/.hop/config.json)
+cd "$HOP_DIR" && dolt push origin main
+cd ~/GitHub/opendebt && git push
+```
+
+When running inside a Gas City molecule, closing your step bead is sufficient —
+the pool-worker handles session teardown via `gc runtime drain-ack`.
