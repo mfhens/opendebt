@@ -1,0 +1,463 @@
+# Gas City — AI Agent Orchestration
+
+Gas City is the orchestration engine used to automate the OpenDebt petition pipeline.
+When active, it runs a background controller that manages AI agent sessions (Claude,
+Copilot, etc.), routes work from the Beads issue tracker to the right agent, and
+advances each petition through the pipeline without manual dispatch.
+
+This guide covers everything needed to work with Gas City in this project: how to
+start and stop it, how to submit petitions, how to handle the mandatory human review
+gates, and how to diagnose problems.
+
+---
+
+## Concepts
+
+| Term | What it means |
+|------|--------------|
+| **City** | A project being orchestrated — this repository is the city |
+| **Rig** | A service sub-directory (e.g. `opendebt-rules-engine`) registered for per-service agents |
+| **Agent** | An AI coding session (tmux window running Claude). Each agent has a role and a prompt template |
+| **Bead** | A work item in the Beads issue tracker (`bd`). Petitions, steps, and human review items are all beads |
+| **Molecule** | A bead hierarchy created from a formula — the running instance of a pipeline |
+| **Formula** | A workflow template (TOML) that defines the sequence of agent steps for a petition |
+| **Human gate** | A bead assigned to `human` — the pipeline pauses until a human closes it |
+| **Controller** | The `gc start` process that reconciles running agents to desired state |
+
+The two formulas in this project are:
+
+- **`mol-petition-scaffold`** — Phase 1: translates a petition into outcome contract + Gherkin + implementation spec, then pauses for human review.
+- **`mol-petition-implement`** — Phase 2: runs TDD implementation, code review, optional Catala encoding, doc-sync, and a final merge gate.
+
+---
+
+## Prerequisites
+
+=== "Install gc"
+
+    `gc` is the Gas City CLI. Build it once from source:
+
+    ```bash
+    cd ~/GitHub/gascity
+    make install     # installs to $(GOPATH)/bin
+    gc version       # verify: should print a version number
+    ```
+
+    You also need:
+
+    - `tmux` — agent sessions run in tmux windows
+    - `jq` — used by agent scripts
+    - `bd` — the Beads CLI (already configured in `.beads/`)
+
+=== "Verify setup"
+
+    Run the health check from the opendebt root:
+
+    ```bash
+    cd ~/GitHub/opendebt
+    gc doctor
+    ```
+
+    Expected output (on a healthy setup):
+
+    ```
+    ✓ city-structure — city.toml present
+    ✓ config-valid   — agents, rigs, and services valid
+    ✓ beads-store    — store accessible
+    ✓ dolt-server    — reachable on 127.0.0.1:44723
+    ...
+    ```
+
+    The warnings `agent-sessions` (no sessions yet) and `events-log` (not started yet)
+    are normal before `gc start` is run.
+
+---
+
+## Quick reference
+
+```bash
+# Start the controller (all agents come online)
+gc start ~/GitHub/opendebt
+
+# Stop the controller
+gc stop ~/GitHub/opendebt
+
+# See what is running
+gc status
+
+# Submit a petition for processing
+bd create --title "P055 Forældelse regler" \
+  --label petition --label ready \
+  --set-metadata service=rules-engine \
+  --set-metadata petition_path=petitions/petition055/petition055.md \
+  --set-metadata catala_tier=A
+
+# Find items waiting for your review
+bd list --assignee human
+
+# Approve a human gate
+bd close <bead_id> "Approved"
+
+# See all open work
+bd list --status open
+
+# Watch the event log live
+gc events --tail 20 --follow
+
+# Attach to an agent session (read-only observation)
+gc session attach opendebt/petition-translator
+```
+
+---
+
+## Starting Gas City
+
+### 1. Register the pilot rig
+
+A rig maps a service directory to the pool of rig-scoped agents (currently `tdd-enforcer`).
+Edit `city.toml` and uncomment the `[[rigs]]` block:
+
+```toml
+[[rigs]]
+name = "rules-engine"
+path = "/home/markus/GitHub/opendebt/opendebt-rules-engine"
+includes = ["packs/opendebt"]
+```
+
+Then register it:
+
+```bash
+gc rig add rules-engine ~/GitHub/opendebt/opendebt-rules-engine
+```
+
+> **Pilot scope.** Start with `rules-engine` only. Add other services once the pilot
+> demonstrates value. Each new rig means a new `tdd-enforcer` pool for that service.
+
+### 2. Start the controller
+
+```bash
+cd ~/GitHub/opendebt
+gc start
+```
+
+This launches tmux sessions for all city-scoped agents:
+
+| Agent | Role |
+|-------|------|
+| `backlog-planner` | Patrols `program-status.yaml` for new ready petitions |
+| `petition-translator` | Translates petition markdown → outcome contract |
+| `petition-to-gherkin` | Converts outcome contract → `.feature` + step stubs |
+| `specs-translator` | Produces implementation spec from outcome contract |
+| `code-reviewer` | Reviews code against petition, spec, GDPR, and coding standards |
+| `catala-encoder` | Encodes statutory rules in Catala (Tier A petitions only) |
+| `doc-sync` | Synchronises docs after approved implementation |
+
+And per-rig agents for each registered service:
+
+| Agent | Role |
+|-------|------|
+| `rules-engine/tdd-enforcer` | Implements Java code (red → green → refactor) |
+
+### 3. Verify
+
+```bash
+gc status
+```
+
+You should see all agents listed as `running` or `idle`.
+
+---
+
+## Submitting a petition
+
+The pipeline starts when you create a petition bead. The `backlog-planner` agent
+can do this automatically for petitions already in `program-status.yaml` — or you
+can create one manually.
+
+### Manual submission
+
+```bash
+bd create \
+  --title "P055 Forældelse — statutory limitation rules" \
+  --label petition \
+  --label ready \
+  --set-metadata service=rules-engine \
+  --set-metadata petition_path=petitions/petition055/petition055.md \
+  --set-metadata catala_tier=A
+```
+
+| Metadata field | Values | Description |
+|----------------|--------|-------------|
+| `service` | `rules-engine`, `debt-service`, … | Target Maven module (without `opendebt-` prefix) |
+| `petition_path` | `petitions/pXXX/pXXX.md` | Relative path to petition markdown |
+| `catala_tier` | `A`, `B`, `C` | A = statutory rules (triggers Catala encoding); B = workflow; C = reference |
+
+### What happens next (automated)
+
+```
+Petition bead created (labelled "ready")
+        ↓
+backlog-planner notices it → pours mol-petition-scaffold
+        ↓
+petition-translator   → writes outcome-contract.md
+        ↓         (parallel)
+petition-to-gherkin   → writes .feature + step stubs
+specs-translator      → writes implementation-spec.md
+        ↓
+⏸ HUMAN GATE: review scaffold  ← you are here
+```
+
+The pipeline pauses and waits for you.
+
+---
+
+## Human review gates
+
+Two human gates are mandatory in every petition pipeline. They exist to ensure
+a human has reviewed the work before code is committed and before code is merged.
+**Gas City will not proceed past a gate until you explicitly close it.**
+
+### Finding your gates
+
+```bash
+bd list --assignee human
+```
+
+Each gate bead has a description explaining what to review and how to approve or reject.
+
+### Gate 1 — Scaffold review (before any code is written)
+
+Triggered after Phase 1 completes. Review:
+
+- `petitions/<id>/<id>-outcome-contract.md` — does it accurately represent the petition?
+- `.feature` file in `opendebt-<service>/src/test/resources/features/` — are the scenarios complete and testable?
+- `petitions/<id>/<id>-implementation-spec.md` — is the spec accurate, minimal, feasible?
+- Confirm `catala_tier` is correct (affects whether Catala encoding runs in Phase 2)
+
+```bash
+# Approve → Phase 2 begins automatically
+bd close <bead_id> "Approved"
+
+# Reject → rework specific agents
+bd update <translate_step_bead_id> \
+  --assignee opendebt/petition-translator \
+  --status open \
+  --notes "Rework: AC-3 is ambiguous — clarify what 'active' means for a claim"
+```
+
+### Gate 2 — Code review (before merge)
+
+Triggered after `tdd-enforcer` + `code-reviewer` + (optional) `catala-encoder` complete.
+Review:
+
+- `mvn verify` passes on the feature branch
+- Code review step is closed (check `bd list --label review`)
+- For Tier A: Catala encoding matches the Java implementation
+- No accidental scope creep
+
+```bash
+# Check CI on the feature branch
+gh run list --branch feature/<petition_id>-<service> --limit 5
+
+# Approve → doc-sync runs, then merge gate opens
+bd close <bead_id> "Approved for merge"
+```
+
+### Merge gate (final)
+
+After doc-sync completes, one last gate opens. Close it to merge.
+
+```bash
+# Open a PR (recommended for traceability)
+gh pr create \
+  --base main \
+  --head feature/<petition_id>-<service> \
+  --title "feat(<petition_id>): <description>"
+
+# Or approve direct merge
+bd close <bead_id> "Merge approved"
+```
+
+---
+
+## Monitoring progress
+
+### Pipeline overview
+
+```bash
+# All open beads (shows entire pipeline state)
+bd list --status open
+
+# Just the human gates
+bd list --assignee human
+
+# All beads for a specific petition
+bd list --metadata-field petition_id=<id>
+
+# Event log (what agents have done)
+gc events --tail 30
+```
+
+### Agent sessions
+
+```bash
+# See all sessions and their status
+gc status
+
+# Attach to a running agent session (observe without interrupting)
+gc session attach opendebt/petition-translator
+
+# Detach: Ctrl-B D (standard tmux)
+
+# View session logs
+gc session logs opendebt/petition-translator
+```
+
+### Formula progress
+
+```bash
+# Show where a molecule is in its workflow
+bd mol current <molecule_id>
+
+# Example output:
+#   [done]    translate: Translate petition P055 to outcome contract
+#   [done]    gherkin:   Generate Gherkin feature file
+#   [current] specs:     Generate implementation spec
+#   [ready]   human-review-scaffold: HUMAN GATE
+```
+
+---
+
+## Troubleshooting
+
+### An agent is stuck
+
+Check if the session is alive:
+
+```bash
+gc status                       # look for "stuck" or stale lastSeen
+gc session logs <agent-name>    # read recent output
+gc session attach <agent-name>  # observe the live session
+```
+
+If stuck, nudge it:
+
+```bash
+gc nudge opendebt/petition-translator "Check your hook and resume your current bead."
+```
+
+If unresponsive, restart the session:
+
+```bash
+gc agent suspend opendebt/petition-translator
+gc agent resume  opendebt/petition-translator
+```
+
+### A formula step was closed incorrectly
+
+Reopen the bead:
+
+```bash
+bd reopen <bead_id> "Reopened: step was closed prematurely"
+bd update <bead_id> --assignee opendebt/<agent-name> --status open
+```
+
+### The tdd-enforcer pushed code that breaks tests
+
+Check out the branch and diagnose:
+
+```bash
+git fetch origin
+git checkout feature/<petition_id>-<service>
+mvn verify -pl opendebt-<service>
+```
+
+Then reassign back to the tdd-enforcer with context:
+
+```bash
+bd update <implement_step_bead_id> \
+  --assignee rules-engine/tdd-enforcer \
+  --status open \
+  --notes "Build broken: <paste the failing test output>"
+```
+
+### Controller not starting
+
+```bash
+gc doctor        # read all warnings and failures
+gc doctor --fix  # materialise missing system files
+```
+
+Common issues:
+- `tmux not found` — install tmux: `sudo apt install tmux`
+- `beads-store unreachable` — start the Dolt server: `bd dolt server start`
+- `config-refs` warning — check that all `prompt_template` paths exist in `packs/opendebt/prompts/`
+
+### Checking what Gas City wrote to Beads
+
+```bash
+# All beads created by the pipeline (not just open ones)
+bd list --limit 50
+
+# A specific bead with all metadata
+bd show <bead_id>
+
+# The formula step graph for a molecule
+bd mol current <molecule_id>
+```
+
+---
+
+## Stopping Gas City
+
+```bash
+gc stop ~/GitHub/opendebt
+```
+
+This drains running agent sessions gracefully (up to the `shutdown_timeout` of 10 seconds
+configured in `city.toml`) and stops the controller. All bead state is preserved in the
+Dolt store — restarting with `gc start` picks up where it left off.
+
+After stopping, push Beads to the remote:
+
+```bash
+bd dolt push
+git push
+```
+
+---
+
+## Extending to other services
+
+The pilot is scoped to `opendebt-rules-engine`. To extend to another service:
+
+1. Add a rig entry in `city.toml`:
+   ```toml
+   [[rigs]]
+   name = "debt-service"
+   path = "/home/markus/GitHub/opendebt/opendebt-debt-service"
+   includes = ["packs/opendebt"]
+   ```
+
+2. Register the rig:
+   ```bash
+   gc rig add debt-service ~/GitHub/opendebt/opendebt-debt-service
+   ```
+
+3. Restart the controller:
+   ```bash
+   gc restart ~/GitHub/opendebt
+   ```
+
+A new `tdd-enforcer` pool is automatically created for the new service. All other
+city-scoped agents (`petition-translator`, `code-reviewer`, etc.) are shared across
+all services.
+
+---
+
+## Further reading
+
+- [`city.toml`](https://github.com/mfhens/opendebt/blob/main/city.toml) — agent config, daemon settings, rig template
+- [`packs/opendebt/`](https://github.com/mfhens/opendebt/blob/main/packs/opendebt/) — pack manifest, formulas, prompt templates
+- [Gas City docs](https://github.com/steveyegge/gascity) — SDK reference and CLI documentation
+- [`gc prime`](https://github.com/mfhens/opendebt) — print the agent onboarding prompt (run inside a gc session)

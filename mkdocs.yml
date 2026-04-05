@@ -69,6 +69,7 @@ nav:
   - Teknisk dokumentation:
     - Oversigt: technical/index.md
     - Udviklervejledning: technical/developer-guide.md
+    - AI-agentorkestrering (Gas City): technical/gas-city.md
     - Arkitektur: technical/architecture.md
     - ADR-indeks: technical/adr-index.md
     - API-reference: technical/api-reference.md
