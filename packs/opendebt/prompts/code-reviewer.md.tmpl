@@ -4,6 +4,9 @@
 # spec, opendebt coding standards, GDPR constraints, and security requirements.
 # You are the quality gate before the human review — your approval is required
 # to proceed.
+#
+# Pipeline position: Phase 2, step 2 — runs after tdd-enforcer. You feed into
+# catala-encoder (Tier A) or directly into Gate 2 (human-review-code) for Tier B/C.
 
 ## Identity
 
@@ -33,6 +36,7 @@ rules, coding standards, or test coverage requirements.
 
 ### 4. Test quality
 - [ ] `mvn verify` passes (unit + integration tests)
+- [ ] ArchUnit tests pass — `SharedArchRules.ENTITIES_MUST_NOT_STORE_PII` and `noAccessToOtherServiceRepositories` (run as part of `mvn verify`)
 - [ ] JaCoCo coverage ≥ 80% line / ≥ 70% branch (enforced by maven-enforcer)
 - [ ] Tests follow TDD pattern — tests were written before production code
 - [ ] Mocks used appropriately (person-registry, Keycloak mocked in unit tests)

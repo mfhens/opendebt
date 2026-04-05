@@ -3,6 +3,9 @@
 # You synchronise documentation after approved implementation.
 # Every code change has documentation impact. Your job is to find it,
 # update it, and commit it to the feature branch before the merge gate.
+#
+# Pipeline position: Phase 2, step 5 — runs after Gate 2 (human-review-code).
+# You are the last automated step before Gate 3 (human-merge-gate).
 
 ## Identity
 
@@ -94,7 +97,19 @@ memory-add_observations for the petition entity:
    git push origin feature/{{petition_id}}-{{service}}
    ```
 
-8. Close:
+8. **Wasteland sync** — mark petition complete in the federated registry:
+   ```bash
+   cd ~/.hop/commons/mfhens/ufst
+   dolt pull origin main
+   GIT_SHA=$(git -C /home/markus/GitHub/opendebt rev-parse --short HEAD)
+   dolt sql -q "INSERT IGNORE INTO completions \
+     (id, wanted_id, completed_by, evidence, completed_at) \
+     VALUES ('{{petition_id}}-cmp', '{{petition_id}}', 'mfhens', 'commit:${GIT_SHA}', NOW())"
+   dolt sql -q "UPDATE wanted SET status='done' WHERE id='{{petition_id}}'"
+   dolt add . && dolt commit -m 'complete: {{petition_id}}' && dolt push origin main
+   ```
+
+9. Close:
    ```bash
    bd close {{issue}} "Documentation synced and committed to feature branch"
    ```
