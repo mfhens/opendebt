@@ -27,6 +27,7 @@ paginate: true
 | Audience | You, maybe a friend | 1,200 public institutions |
 | Stakes | Bragging rights | €600M in public debt |
 | Agent role | Autocomplete | Orchestrated pipeline |
+| **Human role** | **Writes the code** | **Governs the process** |
 
 <br>
 
@@ -156,6 +157,48 @@ An open-source debt collection platform for Danish public institutions
 ```
 
 **9 specialised agents. 20 phases. Orchestrated by Gas City. Zero manual handoffs.**
+
+---
+
+## The Inversion
+
+**Traditional software delivery puts humans everywhere.**
+
+<br>
+
+```
+Traditional:  Human writes code → Human reviews PR → Human updates docs
+              Human writes status → Human presents to steering committee
+
+This process: Human sets intent (petition)
+              ↓
+              Agents handle everything deterministic
+              ↓
+              Human gates at exactly two moments:
+                  Gate 1 — Does this spec accurately represent the intent?
+                  Gate 2 — Does this code responsibly deliver what was promised?
+              ↓
+              Human receives decision-support views (steerco, Basecamp)
+              to exercise ongoing governance
+```
+
+<br>
+
+**What a human actually does at Gate 1 (scaffold review):**
+- Is the outcome contract faithful to the business intent?
+- Are the Gherkin scenarios complete, testable, and non-speculative?
+- Is the spec minimal — no gold-plating?
+- Is the Catala tier correct — is this statute or workflow?
+
+**What a human actually does at Gate 2 (merge gate):**
+- Does the implementation match the spec — no scope creep?
+- Do `mvn verify` and the security scan pass cleanly?
+- Is the Catala encoding consistent with the legal text?
+- Am I willing to put my name on this going to 1,200 public institutions?
+
+<br>
+
+> *Two gates. All the accountability. None of the grunt work.*
 
 ---
 
@@ -433,7 +476,7 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkee
 | AI writes fast, breaks silently | AI writes fast, tests catch regressions |
 | Requirements drift | Petitions + outcome contracts hold the line |
 | One model, one context | Specialised agents, clear handoffs |
-| Manual dispatch, context loss | Gas City orchestrates — human gates only where it matters |
+| Manual dispatch, context loss | Human judgment concentrated at accountability moments — not diluted across every PR |
 | "It works on my machine" | CI/CD · Snyk · OWASP · automated docs |
 | GDPR as an afterthought | GDPR enforced by architecture |
 | Law interpreted loosely | G.A. encoded in Catala · discrepancies surfaced |
@@ -460,11 +503,11 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkee
 <br>
 
 **The difference is not the model.**  
-**The difference is the process around the model.**
+**The difference is knowing what only a human should decide.**
 
 <br>
 
-*Petition → Outcome Contract → BDD → Spec → TDD → Review → Law as Code → Gas City → Wasteland*
+*Petition → BDD → Spec → TDD → Review → Law as Code → Gas City → ⏸ Human Gate → Wasteland*
 
 ---
 
