@@ -533,6 +533,7 @@ workflowService.completeTask(taskId, variables);
 
 ### Do
 - Follow existing patterns in the codebase
+- **Financial transactions (ADR-0018):** When a change records a financial effect (balances, payments, interest, offsetting, write-offs, refunds, corrections), ensure **double-entry postings** land in payment-service (`BookkeepingService` / ledger) or document an explicit **ADR exception**. Service-local journals alone are not sufficient for statutory accounting.
 - Write OpenAPI specs before implementing endpoints
 - Use Lombok for boilerplate reduction
 - Add proper validation annotations
@@ -545,6 +546,7 @@ workflowService.completeTask(taskId, variables);
 - Update `architecture/overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
+- **Record financial effects only in service-local tables** (e.g. interest journals) **without** a corresponding ledger posting plan to payment-service — see ADR-0018 amendment #3
 - Store CPR, CVR, names, addresses outside Person Registry
 - Access other services' databases directly
 - Skip security annotations
