@@ -54,3 +54,4 @@
 # - github.repo
 
 dolt.database: "opendebt"
+sync.git-remote: "https://doltremoteapi.dolthub.com/mfhens/opendebt"
