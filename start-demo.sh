@@ -22,6 +22,9 @@ PG_PORT=5432
 PG_USER="opendebt"
 PG_PASS="opendebt"
 
+# AES-256 key for person-registry (Base64 of 32 bytes). Same default as docker-compose.yml — dev/local only.
+ENCRYPTION_KEY="${ENCRYPTION_KEY:-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=}"
+
 DOCKER_INFRA_SERVICES=(postgres keycloak otel-collector tempo loki promtail prometheus grafana immudb)
 KEYCLOAK_ISSUER_URI="http://localhost:8080/realms/opendebt"
 CASEWORKER_PORTAL_CLIENT_SECRET="caseworker-portal-dev-secret"
@@ -278,7 +281,8 @@ start_service "person-registry" \
     "opendebt-person-registry/target/opendebt-person-registry-*.jar" \
     "$BACKEND_PROFILE" "opendebt_person" \
     "--KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI" \
-    "--KEYCLOAK_JWK_URI=$KEYCLOAK_ISSUER_URI/protocol/openid-connect/certs"
+    "--KEYCLOAK_JWK_URI=$KEYCLOAK_ISSUER_URI/protocol/openid-connect/certs" \
+    "--opendebt.encryption.key=$ENCRYPTION_KEY"
 
 if $START_CASEWORKER || $START_CITIZEN; then
     start_service "case-service" \
