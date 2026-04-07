@@ -366,9 +366,10 @@ See `CreditorArchitectureTest` (full layered architecture + shared rules) and `P
 1. `spotless:check` - Code formatting
 2. `test` - Unit tests
 3. `verify` - Integration tests + coverage
-4. `dependency-check:check` - Security vulnerabilities
-5. `sonar:sonar` - Static analysis
-6. `catala typecheck --language en --no-stdlib` — Catala compliance artefacts (for petitions with `legal_footprint: true`)
+4. `sonar:sonar` - Static analysis
+5. `catala typecheck --language en --no-stdlib` — Catala compliance artefacts (for petitions with `legal_footprint: true`)
+
+**Scheduled / manual:** `dependency-check:check` (OWASP) runs weekly and via workflow dispatch — see `.github/workflows/owasp-dependency-check.yml` (not on every push; too slow for PR feedback).
 
 ### Before Committing
 ```bash
