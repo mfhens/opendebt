@@ -40,19 +40,23 @@ description = "Beads ID of the petition"
 required = true
 
 [vars.service]
-description = "Target service name"
-default = "rules-engine"
+description = "Target service name (e.g. rules-engine, debt-service, creditor-portal)"
+required = true
 
 [vars.catala_tier]
 description = "Tier A/B/C — Tier A triggers catala-encode step"
 default = "B"
+
+[vars.implementer]
+description = "Rig-scoped agent for implementation: tdd-enforcer (backend) or portal-tdd-enforcer (portals)"
+default = "tdd-enforcer"
 
 # ── Steps ────────────────────────────────────────────────────────────────────
 
 [[steps]]
 id = "implement"
 title = "TDD implementation for {{petition_id}} in {{service}}"
-assignee = "{{service}}/tdd-enforcer"
+assignee = "{{service}}/{{implementer}}"
 needs = []
 description = """
 Implement Java code for {{petition_id}} under strict TDD discipline.

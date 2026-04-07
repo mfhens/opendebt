@@ -34,7 +34,69 @@ shutdown_timeout = "10s"
 # Pilot rig: rules-engine. After updating the path, run:
 #   gc rig add rules-engine /path/to/opendebt-rules-engine
 
+# ── Backend service rigs ──────────────────────────────────────────────────────
+# Each rig gets its own tdd-enforcer pool. Add/remove as services come online.
+
 [[rigs]]
 name = "rules-engine"
 path = "/home/markus/GitHub/opendebt/opendebt-rules-engine"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "debt-service"
+path = "/home/markus/GitHub/opendebt/opendebt-debt-service"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "payment-service"
+path = "/home/markus/GitHub/opendebt/opendebt-payment-service"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "creditor-service"
+path = "/home/markus/GitHub/opendebt/opendebt-creditor-service"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "case-service"
+path = "/home/markus/GitHub/opendebt/opendebt-case-service"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "integration-gateway"
+path = "/home/markus/GitHub/opendebt/opendebt-integration-gateway"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "person-registry"
+path = "/home/markus/GitHub/opendebt/opendebt-person-registry"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "letter-service"
+path = "/home/markus/GitHub/opendebt/opendebt-letter-service"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "wage-garnishment-service"
+path = "/home/markus/GitHub/opendebt/opendebt-wage-garnishment-service"
+includes = ["packs/opendebt"]
+
+# ── Portal rigs ───────────────────────────────────────────────────────────────
+# Portals are server-side Spring Boot + Thymeleaf + HTMX.
+# They get portal-tdd-enforcer instead of the backend tdd-enforcer.
+
+[[rigs]]
+name = "creditor-portal"
+path = "/home/markus/GitHub/opendebt/opendebt-creditor-portal"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "caseworker-portal"
+path = "/home/markus/GitHub/opendebt/opendebt-caseworker-portal"
+includes = ["packs/opendebt"]
+
+[[rigs]]
+name = "citizen-portal"
+path = "/home/markus/GitHub/opendebt/opendebt-citizen-portal"
 includes = ["packs/opendebt"]

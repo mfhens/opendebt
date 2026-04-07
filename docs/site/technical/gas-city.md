@@ -156,7 +156,15 @@ And per-rig agents for each registered service:
 
 | Agent | Role |
 |-------|------|
-| `rules-engine/tdd-enforcer` | Implements Java code (red → green → refactor) |
+| `{backend-service}/tdd-enforcer` | Implements Java backend code (red → green → refactor) |
+| `{portal}/portal-tdd-enforcer` | Implements portal UI code — Thymeleaf + HTMX (red → green → refactor) |
+
+**Backend service rigs** (get `tdd-enforcer`): rules-engine, debt-service,
+payment-service, creditor-service, case-service, integration-gateway,
+person-registry, letter-service, wage-garnishment-service.
+
+**Portal rigs** (get `portal-tdd-enforcer`): creditor-portal, caseworker-portal,
+citizen-portal.
 
 ### 3. Verify
 
@@ -514,21 +522,25 @@ cd ~/GitHub/opendebt && git push                                # Code
 
 ---
 
-## Extending to other services
+## Registered services
 
-The pilot is scoped to `opendebt-rules-engine`. To extend to another service:
+All services and portals are registered in `city.toml`. Each backend service gets
+a `tdd-enforcer` pool; each portal gets a `portal-tdd-enforcer` pool. City-scoped
+agents (petition-translator, code-reviewer, etc.) are shared across all rigs.
+
+### Adding a new service
 
 1. Add a rig entry in `city.toml`:
    ```toml
    [[rigs]]
-   name = "debt-service"
-   path = "/home/markus/GitHub/opendebt/opendebt-debt-service"
+   name = "new-service"
+   path = "/home/markus/GitHub/opendebt/opendebt-new-service"
    includes = ["packs/opendebt"]
    ```
 
 2. Register the rig:
    ```bash
-   gc rig add debt-service ~/GitHub/opendebt/opendebt-debt-service
+   gc rig add new-service ~/GitHub/opendebt/opendebt-new-service
    ```
 
 3. Restart the controller:
@@ -536,9 +548,9 @@ The pilot is scoped to `opendebt-rules-engine`. To extend to another service:
    gc restart ~/GitHub/opendebt
    ```
 
-A new `tdd-enforcer` pool is automatically created for the new service. All other
-city-scoped agents (`petition-translator`, `code-reviewer`, etc.) are shared across
-all services.
+4. Update `pack.toml` — add the new rig name to the appropriate agent's `rig_filter`:
+   - Backend services → add to `tdd-enforcer` rig_filter
+   - Portals → add to `portal-tdd-enforcer` rig_filter
 
 ---
 

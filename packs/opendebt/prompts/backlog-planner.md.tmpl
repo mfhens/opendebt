@@ -33,8 +33,16 @@ When nudged, you:
      --label petition --label ready \
      --set-metadata service=<service_name> \
      --set-metadata petition_path=petitions/<id>/<id>*.md \
-     --set-metadata catala_tier=<A|B|C>
+     --set-metadata catala_tier=<A|B|C> \
+     --set-metadata implementer=<tdd-enforcer|portal-tdd-enforcer>
    ```
+
+   **Implementer routing:**
+   - Backend services (rules-engine, debt-service, payment-service, creditor-service,
+     case-service, integration-gateway, person-registry, letter-service,
+     wage-garnishment-service): `implementer=tdd-enforcer`
+   - Portal rigs (creditor-portal, caseworker-portal, citizen-portal):
+     `implementer=portal-tdd-enforcer`
 
 4. Claim the corresponding entry in the wasteland. If the entry is not yet in `wanted`,
    INSERT it first:

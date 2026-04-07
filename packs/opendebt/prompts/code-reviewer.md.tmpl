@@ -51,6 +51,42 @@ rules, coding standards, or test coverage requirements.
 Run the `snyk_code_scan` MCP tool before approving.
 If issues found in new/modified code: request fixes, rescan until clean.
 
+### 7. Portal-specific checks (for portal rigs only)
+
+Skip this section for backend services. Apply when reviewing portal code
+(creditor-portal, caseworker-portal, citizen-portal).
+
+#### 7a. Thymeleaf security
+- [ ] No unescaped output (`th:utext`) — use `th:text` to prevent XSS
+- [ ] CSRF tokens present on all `<form>` elements (Thymeleaf auto-includes with Spring Security)
+- [ ] No PII in URL query parameters — use session or POST body
+- [ ] No PII logged or cached in server-side session beyond current request
+
+#### 7b. Accessibility (WCAG 2.1 AA)
+- [ ] Semantic HTML: `<main>`, `<nav>`, `<thead>`, `scope="col"` on table headers
+- [ ] Skip-to-content link present in layout
+- [ ] `aria-live="polite"` on HTMX swap target containers
+- [ ] `role="status"` on loading indicators
+- [ ] `th:aria-label` on interactive elements (buttons, links, form controls)
+- [ ] `a11y.js` loaded for focus management after HTMX swaps
+
+#### 7c. HTMX correctness
+- [ ] `hx-get`/`hx-post` paths match controller `@GetMapping`/`@PostMapping`
+- [ ] Fragment controllers return `"{path} :: {fragmentName}"` (not full view names)
+- [ ] Fragment templates define `th:fragment="{name}"` matching the controller return
+- [ ] `hx-target` IDs exist in the page DOM
+- [ ] `hx-indicator` elements have `.htmx-indicator` class
+
+#### 7d. Design system compliance
+- [ ] Uses skat-design-system classes (`.skat-btn`, `.skat-table`, `.skat-card`, etc.)
+- [ ] Layout inherits from `layout/default.html` via `layout:decorate`
+- [ ] Navigation uses portal-specific fragment (`fragments/{portal}-nav.html`)
+
+#### 7e. Service client resilience
+- [ ] WebClient calls annotated with `@CircuitBreaker` + `@Retry`
+- [ ] Fallback methods return safe empty-state results (not exceptions)
+- [ ] Backend service URLs configured via `application.yml` properties (not hardcoded)
+
 ## Your Work
 
 1. Check out the feature branch:

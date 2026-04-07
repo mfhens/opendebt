@@ -2,10 +2,11 @@
 #
 # Agents:
 #   city-scoped:  backlog-planner, petition-translator, petition-to-gherkin,
-#                 specs-translator, code-reviewer, catala-encoder, doc-sync
-#   rig-scoped:   tdd-enforcer (one pool per registered service rig)
+#                 specs-translator, code-reviewer, catala-encoder, doc-sync,
+#                 tech-debt-executor
+#   rig-scoped:   tdd-enforcer (backend services), portal-tdd-enforcer (portal rigs)
 #
-# Formulas: mol-petition-scaffold, mol-petition-implement
+# Formulas: mol-petition-scaffold, mol-petition-implement, mol-tech-debt
 #
 # Usage:
 #   In city.toml: includes = ["packs/opendebt"]
@@ -99,7 +100,8 @@ max_active_sessions = 1
 idle_timeout = "2h"
 
 # ── Rig-scoped agents ────────────────────────────────────────────────────────
-# tdd-enforcer is stamped per registered rig (service directory).
+# tdd-enforcer is stamped per registered backend service rig.
+# portal-tdd-enforcer is stamped per registered portal rig.
 
 [[agent]]
 name = "tdd-enforcer"
@@ -112,3 +114,17 @@ max_active_sessions = 2
 min_active_sessions = 0
 scale_check = "bd ready --label=implement --assignee={{.QualifiedName}} | wc -l"
 idle_timeout = "2h"
+rig_filter = ["rules-engine", "debt-service", "payment-service", "creditor-service", "case-service", "integration-gateway", "person-registry", "letter-service", "wage-garnishment-service"]
+
+[[agent]]
+name = "portal-tdd-enforcer"
+scope = "rig"
+description = "Implements portal UI code (Thymeleaf + HTMX) under TDD discipline"
+prompt_template = "prompts/portal-tdd-enforcer.md.tmpl"
+work_query = "bd ready --label=implement --assignee={{.QualifiedName}}"
+nudge = "Check your hook. Implement the assigned portal feature. Run 'mvn test' — no failures allowed."
+max_active_sessions = 2
+min_active_sessions = 0
+scale_check = "bd ready --label=implement --assignee={{.QualifiedName}} | wc -l"
+idle_timeout = "2h"
+rig_filter = ["creditor-portal", "caseworker-portal", "citizen-portal"]

@@ -39,8 +39,8 @@ description = "Beads ID of the source petition bead"
 required = true
 
 [vars.service]
-description = "Target service name (e.g. rules-engine, debt-service)"
-default = "rules-engine"
+description = "Target service name (e.g. rules-engine, debt-service, creditor-portal)"
+required = true
 
 [vars.catala_tier]
 description = "Tier A (formal Catala rules), B (workflow), or C (reference-only)"

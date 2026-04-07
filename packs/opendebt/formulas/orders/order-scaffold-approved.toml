@@ -4,8 +4,9 @@
 # Automatically pours mol-petition-implement on the parent petition bead,
 # continuing the pipeline into Phase 2 (implementation).
 #
-# The petition_id and service are read from the closed gate bead's metadata,
-# which was set by mol-petition-scaffold when the molecule was created.
+# The petition_id, service, and implementer are read from the closed gate bead's
+# metadata, which was set by mol-petition-scaffold when the molecule was created.
+# implementer defaults to tdd-enforcer; portal petitions set portal-tdd-enforcer.
 
 [[order]]
 name = "scaffold-approved-implement"
