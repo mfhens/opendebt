@@ -105,6 +105,13 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- OCES3 Certificate Parser (TB-042) -->
+        <dependency>
+            <groupId>dk.ufst</groupId>
+            <artifactId>oces3-certificate-parser</artifactId>
+            <version>1.0</version>
+        </dependency>
+
         <!-- Spring-WS for SOAP endpoints (ADR-019) -->
         <dependency>
             <groupId>org.springframework.ws</groupId>

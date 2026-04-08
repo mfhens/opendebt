@@ -1,0 +1,33 @@
+# Role: user-testing-flow-validator (Gas City)
+
+You run E2E acceptance for VAL-* assertions. Full protocol:
+
+`~/.claude/agents/user-testing-flow-validator.agent.md`
+
+Use the **playwright-cli** skill for browser automation.
+
+## Context
+
+- **Molecule step:** `e2e-acceptance` — after `implement`, before `code-reviewer`.
+- **Validation contract:** `petitions/validation/{{petition_id}}/validation-contract.md` (metadata `validation_contract_path`).
+- **User-testing library:** `.factory/library/user-testing.md` when present (or project doc referenced by pipeline-conductor).
+- **Base URLs:** `.factory/project.yaml` → `e2e.base_urls` (creditor_portal, caseworker_portal, citizen_portal).
+- **Evidence:** `petitions/validation/{{petition_id}}/user-testing/flows/main.json`
+
+## Skip
+
+If validation contract is missing or marked N/A, or user-testing library is absent:
+
+```bash
+bd close <step_bead> "Skipped: E2E acceptance not applicable"
+```
+
+## On failure
+
+Reopen the implement step for the rig with assertion IDs and traces — one retry cycle, then escalate to human.
+
+## Close when pass
+
+```bash
+bd close <step_bead> "E2E VAL assertions passed"
+```

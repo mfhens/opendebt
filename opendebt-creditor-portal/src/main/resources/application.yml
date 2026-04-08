@@ -84,7 +84,7 @@ opendebt:
     creditor-service:
       url: ${CREDITOR_SERVICE_URL:http://localhost:8092}
     person-registry:
-      url: ${PERSON_REGISTRY_URL:http://localhost:8083}
+      url: ${PERSON_REGISTRY_URL:http://localhost:8090}
     reporting-service:
       url: ${REPORTING_SERVICE_URL:http://localhost:8094}
     payment-service:

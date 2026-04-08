@@ -33,10 +33,11 @@ opendebt:
       url: http://localhost:9098
   soap:
     oces3:
-      fordringshaver-dn-field: CN
       trusted-ca-subjects:
     security:
       tls-termination-mode: TEST
+oces3:
+  dn-field: CN
   audit:
     cls:
       enabled: false

@@ -17,10 +17,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import dk.ufst.opendebt.common.audit.AuditContextService;
@@ -41,8 +41,8 @@ class CitizenDebtControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockBean private CitizenDebtService citizenDebtService;
-  @MockBean private AuditContextService auditContextService;
+  @MockitoBean private CitizenDebtService citizenDebtService;
+  @MockitoBean private AuditContextService auditContextService;
 
   @BeforeEach
   void setUp() {

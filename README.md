@@ -50,12 +50,11 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
 | **person-registry** | 8090 | **GDPR data store** — single source of truth for all PII (CPR/CVR encrypted) |
 | **rules-engine** | 8091 | **Business rules** — Drools-based rule evaluation |
 | case-service | 8081 | Case management and workflow (Flowable BPMN) |
-| debt-service | 8082 | Debt registration, lifecycle management, readiness validation |
+| debt-service | 8082 | Debt registration, lifecycle management, readiness validation, **offsetting/modregning** (ADR-0027, P058) |
 | payment-service | 8083 | Payment processing, double-entry bookkeeping, tamper-evidence ledger |
 | letter-service | 8084 | Letter generation, Digital Post |
 | creditor-portal | 8085 | Portal for fordringshavere |
 | citizen-portal | 8086 | Portal for borgere |
-| offsetting-service | 8087 | Modregning (set-off) processing |
 | wage-garnishment-service | 8088 | Loenindeholdelse processing |
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, legacy SOAP (OIO/SKAT) |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
@@ -216,14 +215,15 @@ Each service exposes OpenAPI documentation:
 
 ## Architecture Decision Records
 
-Key architectural decisions are documented in [docs/adr/](docs/adr/):
+Key architectural decisions are documented in [architecture/adr/](architecture/adr/):
 
-- [ADR-0002: Microservices Architecture](docs/adr/0002-microservices-architecture.md)
-- [ADR-0003: Java/Spring Boot Stack](docs/adr/0003-java-spring-boot-technology-stack.md)
-- [ADR-0007: No Direct Database Connections](docs/adr/0007-no-direct-database-connections.md)
-- [ADR-0010: Faellesoffentlige Arkitekturprincipper](docs/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
-- [ADR-0018: Double-Entry Bookkeeping](docs/adr/0018-double-entry-bookkeeping-for-payment-service.md)
-- [ADR-0029: immudb for Financial Ledger Integrity](docs/adr/0029-immudb-for-financial-ledger-integrity.md)
+- [ADR-0002: Microservices Architecture](architecture/adr/0002-microservices-architecture.md)
+- [ADR-0003: Java/Spring Boot Stack](architecture/adr/0003-java-spring-boot-technology-stack.md)
+- [ADR-0007: No Direct Database Connections](architecture/adr/0007-no-direct-database-connections.md)
+- [ADR-0010: Faellesoffentlige Arkitekturprincipper](architecture/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md)
+- [ADR-0018: Double-Entry Bookkeeping](architecture/adr/0018-double-entry-bookkeeping-for-payment-service.md)
+- [ADR-0029: immudb for Financial Ledger Integrity](architecture/adr/0029-immudb-for-financial-ledger-integrity.md)
+- [ADR-0032: Catala Formal Compliance Verification Layer](architecture/adr/0032-catala-formal-compliance-layer.md)
 
 ## Compliance
 
@@ -232,6 +232,21 @@ OpenDebt complies with:
 - **Faellesoffentlige Arkitekturprincipper** - Danish public sector architecture principles
 - **GDPR** - Privacy by design
 - **DUPLA** - UFST data exchange platform standards
+
+### Formal Compliance Verification (Catala)
+
+High-risk G.A. Inddrivelse rules are formally encoded in [Catala](https://catala-lang.org/)
+before implementation. Catala source files under `catala/` act as an executable oracle that
+validates Gherkin scenarios against the juridisk vejledning text. See
+[ADR-0032](architecture/adr/0032-catala-formal-compliance-layer.md) for the full rationale and tier
+classification.
+
+Completed spikes:
+
+| Spike | Legal section | Report |
+|-------|--------------|--------|
+| P054 | G.A.1.4.3–1.4.4 — Opskrivning/nedskrivning | [`catala/SPIKE-REPORT.md`](catala/SPIKE-REPORT.md) |
+| P069 | G.A.2.3.2.1 — Dækningsrækkefølge (GIL § 4) | [`catala/SPIKE-REPORT-069.md`](catala/SPIKE-REPORT-069.md) |
 
 ## Contributing
 

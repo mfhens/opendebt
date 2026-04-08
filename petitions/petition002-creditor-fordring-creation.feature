@@ -48,4 +48,25 @@ Feature: Creation of a new fordring by a fordringshaver
     Examples:
       | channel                           | reason                           |
       | the API for fordringshaver "K1"   | missing mandatory claim data     |
-      | the portal user for creditor "K1" | debt is not ready for collection |
+      | the portal user for fordringshaver "K1" | debt is not ready for collection |
+
+  Scenario: A successful fordring submission returns a kvittering with fordringId and slutstatus UDFOERT
+    Given fordringshaver "K1" authenticates to the API with a valid OCES3 certificate
+    And fordringshaver "K1" submits a new fordring for debtor "P1"
+    And the rules evaluate the fordring as inddrivelsesparat
+    When OpenDebt processes the submission
+    Then OpenDebt returns a kvittering with a fordringId
+    And the kvittering slutstatus is "UDFOERT"
+
+  Scenario: A fordring with stamdata deviations from indgangsfilter enters the HOERING workflow
+    Given fordringshaver "K1" authenticates to the API with a valid OCES3 certificate
+    And fordringshaver "K1" submits a fordring with stamdata that deviates from indgangsfilter rules
+    When OpenDebt processes the submission
+    Then OpenDebt returns a kvittering with slutstatus "HOERING"
+    And the fordring is not received for inddrivelse while in HOERING
+
+  Scenario: The Beskrivelse field does not store personal data
+    Given fordringshaver "K1" authenticates to the API with a valid OCES3 certificate
+    And fordringshaver "K1" submits a fordring with a Beskrivelse containing personal data
+    When OpenDebt processes the submission
+    Then the stored fordring Beskrivelse does not contain the submitted personal data

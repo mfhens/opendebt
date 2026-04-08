@@ -1,0 +1,292 @@
+# Testfil — LoenindeholdelseProcent Catala-testpakke
+
+> Include: ../ga_3_1_2_loenindeholdelse_pct.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Testpakke for: ga_3_1_2_loenindeholdelse_pct.catala_da
+   Petition: P072 — Catala Compliance Spike — Lønindeholdelsesprocent GIL §§ 14–17
+
+   Denne fil indeholder 9 testtilfælde der dækker:
+   - FR-4.1: Standardformel (10 % / 400.000 kr. / 48.000 kr. / 37 %) → 18 %  (Test 1)
+   - FR-4.2: Nedrunding — 22,727 % nedrundes til 22, ikke 23              (Test 2)
+   - FR-4.3: Frikort trækprocent = 0 % — denominator-faktor = 1           (Test 3)
+   - FR-4.4: Frikort-kant — nettoindkomst = fradragsbeløb → fallback       (Test 4)
+   - FR-4.4b: Frikort-kant — fradragsbeløb > nettoindkomst → fallback      (Test 5)
+   - FR-4.5: Cap-regel — formel-værdi over maksimum → cap anvendes         (Test 6)
+   - FR-4.6: Reduceret sats — GIL10A_REDUCERET_SATS_FORDRING → erGIL10aKvalificerende = true (Test 7)
+   - FR-4.7: Fast-punkt præcision — mellemresultat 18,04 verificeres       (Test 8, identisk med Test 1)
+   - FR-4.8: Afdragsprocent-afhængighed — P071-bracket output injiceres    (Test 9)
+
+   Grænseværdier for denominatorErNulEllerNegativ:
+     nettoindkomst = 48000, fradragsbeloeb = 48000  → denominatorErNulEllerNegativ = true  (Test 4)
+     nettoindkomst = 30000, fradragsbeloeb = 35000  → denominatorErNulEllerNegativ = true  (Test 5)
+     nettoindkomst = 400000, fradragsbeloeb = 48000 → denominatorErNulEllerNegativ = false (Test 1)
+
+   Cap-grænseværdi (Test 6):
+     afdragsprocent = 40, nettoindkomst = 400000, fradragsbeloeb = 10000, traekprocent = 70
+     raw = (40 × 400000) / ((400000 − 10000) × (1 − 0,70)) = 16.000.000 / 117.000 = 136,75 %
+     cap = 100 − 70 = 30 → loenindeholdelsesprocent = 30 *)
+
+---
+
+## Test 1 — FR-4.1: Standardformel med G.A.-kanonisk eksempel
+
+Gæld.bekendtg. § 14, stk. 3, 2.–4. pkt.: Med de kanoniske værdier fra G.A.3.1.2.5
+(afdragsprocent=10, nettoindkomst=400.000, fradragsbeloeb=48.000, traekprocent=37)
+skal resultatet være 18 % (18,04 nedrundes jf. § 14, stk. 3, 5. pkt.).
+
+```catala
+declaration scope LoenindeholdelseTest1:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest1:
+  # Test: FR-4.1 + FR-4.7 — G.A.-kanonisk eksempel og fast-punkt præcision
+  # (10 × 400000) / ((400000 − 48000) × (1 − 37/100)) = 4000000/221760 = 18,043... → floor = 18
+  definition comp.afdragsprocent equals 10
+  definition comp.nettoindkomst equals 400000
+  definition comp.fradragsbeloeb equals 48000
+  definition comp.traekprocent equals 37
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 18
+```
+
+---
+
+## Test 2 — FR-4.2: Nedrunding — aldrig oprundet (SKM2015.718.ØLR)
+
+Gæld.bekendtg. § 14, stk. 3, 5. pkt. og SKM2015.718.ØLR: Formel-værdien 22,727 %
+(fra P062 DBT-011-eksempel) skal nedrundes til 22 %, ikke 23 %.
+Standard "round-half-up"-afrunding ville gøre det samme her (22,7 → 23 med round),
+men floor giver 22. Dette test verificerer at floor (ikke round) anvendes.
+
+```catala
+declaration scope LoenindeholdelseTest2:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest2:
+  # Test: FR-4.2 — nedrunding: 22,727 → 22, ikke 23
+  # (12 × 500000) / ((500000 − 60000) × (1 − 40/100)) = 6000000/264000 = 22,727... → floor = 22
+  definition comp.afdragsprocent equals 12
+  definition comp.nettoindkomst equals 500000
+  definition comp.fradragsbeloeb equals 60000
+  definition comp.traekprocent equals 40
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 22
+```
+
+---
+
+## Test 3 — FR-4.3: Frikort — trækprocent = 0 % (standardformel, denominator-faktor = 1)
+
+G.A.3.1.2.5 (FR-2.2): Når trækprocent = 0 % er skattekortet et frikort uden
+skatteforpligtelse. Denominatorfaktoren (1 − 0/100) = 1. Standardformlen gælder.
+Result: (10 × 400000) / ((400000 − 48000) × 1.0) = 4000000/352000 = 11,363... → 11.
+
+```catala
+declaration scope LoenindeholdelseTest3:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest3:
+  # Test: FR-4.3 — trækprocent = 0 %, standardformel med denominator-faktor = 1
+  # (10 × 400000) / ((400000 − 48000) × (1 − 0/100)) = 4000000/352000 = 11,363... → floor = 11
+  definition comp.afdragsprocent equals 10
+  definition comp.nettoindkomst equals 400000
+  definition comp.fradragsbeloeb equals 48000
+  definition comp.traekprocent equals 0
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 11
+```
+
+---
+
+## Test 4 — FR-4.4: Frikort-kant — nettoindkomst = fradragsbeløb → fallback
+
+G.A.3.1.2.5 (FR-2.1 + FR-2.3): Når nettoindkomst = fradragsbeloeb er denominatoren nul.
+Systemet anvender fallback: loenindeholdelsesprocent = afdragsprocent direkte.
+Ingen division-med-nul-fejl opstår (guard-betingelse verificeres).
+
+```catala
+declaration scope LoenindeholdelseTest4:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest4:
+  # Test: FR-4.4 — frikort-kant: nettoindkomst = fradragsbeloeb → denominatorErNulEllerNegativ = true
+  # denominatorErNulEllerNegativ = (48000 - 48000 <= 0) = (0 <= 0) = true
+  # rawBeregningDecimal = decimal of afdragsprocent = 5 (fallback)
+  # loenindeholdelsesprocent = integer_of_decimal 5. = 5
+  definition comp.afdragsprocent equals 5
+  definition comp.nettoindkomst equals 48000
+  definition comp.fradragsbeloeb equals 48000
+  definition comp.traekprocent equals 0
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = true
+  assertion comp.loenindeholdelsesprocent = 5
+```
+
+---
+
+## Test 5 — FR-4.4b: Frikort-kant — fradragsbeløb > nettoindkomst → fallback
+
+G.A.3.1.2.5 (FR-2.3): Kombinationen (nettoindkomst − fradragsbeloeb) < 0 og
+trækprocent > 0 skal aktivere fallback, ikke kaste en division-med-nul-fejl.
+Result: loenindeholdelsesprocent = afdragsprocent = 4 (direkte fallback).
+
+```catala
+declaration scope LoenindeholdelseTest5:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest5:
+  # Test: FR-4.4b — fradragsbeloeb > nettoindkomst, traekprocent > 0
+  # denominatorErNulEllerNegativ = (30000 - 35000 <= 0) = (-5000 <= 0) = true
+  # fallback: loenindeholdelsesprocent = afdragsprocent = 4
+  definition comp.afdragsprocent equals 4
+  definition comp.nettoindkomst equals 30000
+  definition comp.fradragsbeloeb equals 35000
+  definition comp.traekprocent equals 32
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = true
+  assertion comp.loenindeholdelsesprocent = 4
+```
+
+---
+
+## Test 6 — FR-4.5: Cap-regel — formel-værdi over maksimum
+
+Gæld.bekendtg. § 14, stk. 3, 9. pkt.; kildeskattelovens § 48, stk. 5:
+Formel-værdien 136,75 % overstiger maksimum (100 − 70 = 30 %).
+Nedrunding gælder det cappede resultat: floor(30,0) = 30.
+Rækkefølge: CAP FØR NEDRUNDING (diskrepanspunkt #4 i P072-spike).
+
+```catala
+declaration scope LoenindeholdelseTest6:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest6:
+  # Test: FR-4.5 — cap-regel
+  # raw = (40 × 400000) / ((400000 − 10000) × (1 − 70/100)) = 16000000/117000 = 136,75...
+  # cap = 100 − 70 = 30
+  # cappedDecimal = 30 (decimal) → floor = 30
+  definition comp.afdragsprocent equals 40
+  definition comp.nettoindkomst equals 400000
+  definition comp.fradragsbeloeb equals 10000
+  definition comp.traekprocent equals 70
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 30
+```
+
+---
+
+## Test 7 — FR-4.6: Reduceret sats — GIL § 10a klassifikation
+
+GIL § 10a (FR-3.1 + FR-3.2): For en GIL10A_REDUCERET_SATS_FORDRING-fordring
+skal erGIL10aKvalificerende = true; for STANDARD_FORDRING skal det være false.
+Prædikatet er tilgængeligt for downstream-beregninger.
+
+```catala
+declaration scope LoenindeholdelseTest7a:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest7a:
+  # Test: FR-4.6 — GIL10A_REDUCERET_SATS_FORDRING → erGIL10aKvalificerende = true
+  definition comp.afdragsprocent equals 10
+  definition comp.nettoindkomst equals 400000
+  definition comp.fradragsbeloeb equals 48000
+  definition comp.traekprocent equals 37
+  definition comp.fordringKvalifikation equals GIL10A_REDUCERET_SATS_FORDRING
+  assertion comp.erGIL10aKvalificerende = true
+  assertion comp.loenindeholdelsesprocent = 18
+```
+
+```catala
+declaration scope LoenindeholdelseTest7b:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest7b:
+  # Test: FR-4.6 — STANDARD_FORDRING → erGIL10aKvalificerende = false
+  definition comp.afdragsprocent equals 10
+  definition comp.nettoindkomst equals 400000
+  definition comp.fradragsbeloeb equals 48000
+  definition comp.traekprocent equals 37
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.erGIL10aKvalificerende = false
+```
+
+---
+
+## Test 8 — FR-4.7: Fast-punkt præcision (P062 DBT-010 eksempel)
+
+Fast-punkt/rationel aritmetik: (8 × 300000) / ((300000 − 40000) × (1 − 35/100))
+= 2400000 / (260000 × 0,65) = 2400000 / 169000 = 14,201... → floor = 14.
+Verificerer at `decimal` (rationel aritmetik) ikke afviger fra det korrekte resultat
+pga. floating-point-fejl (diskrepanspunkt #2 i P072-spike).
+
+```catala
+declaration scope LoenindeholdelseTest8:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest8:
+  # Test: FR-4.7 — fast-punkt præcision: P062 DBT-010 eksempel
+  # (8 × 300000) / ((300000 − 40000) × (1 − 35/100)) = 2400000/169000 = 14,201... → 14
+  definition comp.afdragsprocent equals 8
+  definition comp.nettoindkomst equals 300000
+  definition comp.fradragsbeloeb equals 40000
+  definition comp.traekprocent equals 35
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 14
+```
+
+---
+
+## Test 9 — FR-4.8: Afdragsprocent-afhængighed (P071 tabeltræk-output)
+
+P071 (afdragsordninger, tabeltræk) leverer afdragsprocenten som input til P072-formlen.
+Denne test verificerer at afdragsprocenten fra en P071-indkomstbracket injiceres korrekt.
+Bracket: nettoindkomst 250.000 kr. → afdragsprocent 7 % (P071-tabelværdi).
+
+```catala
+declaration scope LoenindeholdelseTest9:
+  comp scope LoenindeholdelseProcent
+
+scope LoenindeholdelseTest9:
+  # Test: FR-4.8 — P071 afdragsprocent-afhængighed
+  # (7 × 250000) / ((250000 − 36000) × (1 − 32/100)) = 1750000/(214000×0,68) = 1750000/145520 = 12,025... → 12
+  definition comp.afdragsprocent equals 7
+  definition comp.nettoindkomst equals 250000
+  definition comp.fradragsbeloeb equals 36000
+  definition comp.traekprocent equals 32
+  definition comp.fordringKvalifikation equals STANDARD_FORDRING
+  assertion comp.denominatorErNulEllerNegativ = false
+  assertion comp.loenindeholdelsesprocent = 12
+```
+
+---
+
+(* Opsummering af testdækning (10 Test-scopes):
+
+   FR-1.1 standardformel (kanonisk):       Test 1 — LoenindeholdelseTest1  (18%)
+   FR-1.2 nedrunding (floor, ikke round):  Test 2 — LoenindeholdelseTest2  (22,727% → 22)
+   FR-1.3 cap-regel:                       Test 6 — LoenindeholdelseTest6  (136,75% → cap 30)
+   FR-2.1 frikort-fallback:                Test 4 — LoenindeholdelseTest4  (nettoindkomst=fradragsbeloeb)
+   FR-2.1+2.3 frikort-fallback + guard:    Test 5 — LoenindeholdelseTest5  (fradragsbeloeb > nettoindkomst)
+   FR-2.2 trækprocent=0 (standardformel):  Test 3 — LoenindeholdelseTest3  (11%)
+   FR-3.1 GIL10a prædikat true:            Test 7a — LoenindeholdelseTest7a (erGIL10aKvalificerende=true)
+   FR-3.1 GIL10a prædikat false:           Test 7b — LoenindeholdelseTest7b (erGIL10aKvalificerende=false)
+   FR-4.7 fast-punkt præcision:            Test 8 — LoenindeholdelseTest8  (14,201% → 14)
+   FR-4.8 P071 afdragsprocent-injection:   Test 9 — LoenindeholdelseTest9  (12,025% → 12)
+
+   Grænseværdier for denominatorErNulEllerNegativ:
+     nettoindkomst=48000, fradragsbeloeb=48000 → true  (Test 4, grænse: lighed)
+     nettoindkomst=30000, fradragsbeloeb=35000 → true  (Test 5, grænse: fradragsbeloeb > nettoindkomst)
+     nettoindkomst=400000, fradragsbeloeb=48000 → false (Test 1, normaltilfælde)
+
+   Interpret-scopes til CI:
+     LoenindeholdelseTest1 LoenindeholdelseTest2 LoenindeholdelseTest3
+     LoenindeholdelseTest4 LoenindeholdelseTest5 LoenindeholdelseTest6
+     LoenindeholdelseTest7a LoenindeholdelseTest7b
+     LoenindeholdelseTest8 LoenindeholdelseTest9 *)

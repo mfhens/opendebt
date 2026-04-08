@@ -135,6 +135,17 @@
             <artifactId>junit-platform-suite</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- SKAT Design System WebJar (TB-041) -->
+        <dependency>
+            <groupId>dk.ufst.opendebt</groupId>
+            <artifactId>skat-design-system</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>webjars-locator-core</artifactId>
+        </dependency>
     </dependencies>
 
     <!-- AIDEV-TODO: Improve DTO/config/controller coverage and remove overrides -->

@@ -1,0 +1,140 @@
+classDiagram
+direction TB
+
+%% === Aktører og roller ===
+class Part["Part (abstrakt)"]
+class Fordringshaver["Fordringshaver"]
+class Skyldner["Skyldner"]
+class Restanceinddrivelsesmyndighed["Restanceinddrivelsesmyndighed"]
+
+Part <|-- Fordringshaver
+Part <|-- Skyldner
+Part <|-- Restanceinddrivelsesmyndighed
+
+%% === Krav og status ===
+class Kravgrundlag["Kravgrundlag"]
+class Fordring["Fordring"]
+class Restance["Restance"]
+class Betalingsfrist["Betalingsfrist"]
+class Foraeldelse["Forældelse"]
+class Fordringsart["Fordringsart"]
+class Fordringstype["Fordringstype"]
+
+Fordring <|-- Restance
+
+Fordringshaver --> Fordring : har
+Fordring --> Kravgrundlag : er begrundet i
+Fordring --> Betalingsfrist : har
+Fordring --> Foraeldelse : har
+Fordring --> Fordringsart : er klassificeret som
+Fordring --> Fordringstype : har
+Fordring --> Fordring : er underfordring af
+
+%% === Kravstruktur ===
+class Fordringskompleks["Fordringskompleks"]
+
+Fordringskompleks --> Fordring : består af
+
+%% === Hæftelse ===
+class Haeftelse["Hæftelse"]
+class Enehaeftelse["Enehæftelse"]
+class SolidariskHaeftelse["Solidarisk hæftelse"]
+class DeltHaeftelse["Delt hæftelse"]
+
+Haeftelse <|-- Enehaeftelse
+Haeftelse <|-- SolidariskHaeftelse
+Haeftelse <|-- DeltHaeftelse
+
+Haeftelse --> Fordring : vedrører
+Haeftelse --> Skyldner : vedrører
+
+%% === Reaktion og tvist ===
+class Indsigelse["Indsigelse"]
+
+Skyldner --> Indsigelse : fremsætter
+Indsigelse --> Fordring : vedrører
+
+%% === Livscyklus ===
+class OverdragelseTilInddrivelse["Overdragelse til inddrivelse"]
+class Hoering["Høring"]
+class Regulering["Regulering (abstrakt)"]
+class Opskrivning["Opskrivning"]
+class Nedskrivning["Nedskrivning"]
+class Tilbagekald["Tilbagekald"]
+class Genindsendelse["Genindsendelse"]
+
+Regulering <|-- Opskrivning
+Regulering <|-- Nedskrivning
+
+Fordringshaver --> OverdragelseTilInddrivelse : foretager
+OverdragelseTilInddrivelse --> Restance : omfatter
+OverdragelseTilInddrivelse --> Restanceinddrivelsesmyndighed : sker til
+OverdragelseTilInddrivelse --> Hoering : kan resultere i
+
+Fordringshaver --> Regulering : foretager
+Regulering --> Restance : vedrører
+
+Fordringshaver --> Tilbagekald : foretager
+Tilbagekald --> Restance : vedrører
+
+Fordringshaver --> Genindsendelse : foretager
+Genindsendelse --> Restance : vedrører
+Genindsendelse --> Tilbagekald : følger af
+
+%% === Finansiel ===
+class Daekning["Dækning"]
+class Inddrivelsesrente["Inddrivelsesrente"]
+
+Restanceinddrivelsesmyndighed --> Daekning : opnår
+Daekning --> Restance : vedrører
+Inddrivelsesrente --> Restance : tilskrives
+
+%% === Myndighedsudøvelse ===
+class Inddrivelsesskridt["Inddrivelsesskridt (abstrakt)"]
+class Modregning["Modregning"]
+class Loenindeholdelse["Lønindeholdelse"]
+class Udlaeg["Udlæg"]
+class Afdragsordning["Afdragsordning"]
+
+Inddrivelsesskridt <|-- Modregning
+Inddrivelsesskridt <|-- Loenindeholdelse
+Inddrivelsesskridt <|-- Udlaeg
+Inddrivelsesskridt <|-- Afdragsordning
+
+Restanceinddrivelsesmyndighed --> Inddrivelsesskridt : iværksætter
+Inddrivelsesskridt --> Restance : vedrører
+
+%% === Kommunikation ===
+class Underretning["Underretning (abstrakt)"]
+class SkyldnerUnderretning["Skyldnerunderretning (abstrakt)"]
+class Underretningsmeddelelse["Underretningsmeddelelse (abstrakt)"]
+class Paakrav["Påkrav"]
+class Rykker["Rykker"]
+class AfregningsUnderretning["Afregningsunderretning"]
+class UdligningsUnderretning["Udligningsunderretning"]
+class AllokeringsUnderretning["Allokeringsunderretning"]
+class RenteUnderretning["Renteunderretning"]
+class DetaljeretRenteUnderretning["Detaljeret renteunderretning"]
+class AfskrivningsUnderretning["Afskrivningsunderretning"]
+class TilbagesendelsesUnderretning["Tilbagesendelsesunderretning"]
+class ReturneringsUnderretning["Returneringsunderretning"]
+
+Underretning <|-- SkyldnerUnderretning
+Underretning <|-- Underretningsmeddelelse
+SkyldnerUnderretning <|-- Paakrav
+SkyldnerUnderretning <|-- Rykker
+Underretningsmeddelelse <|-- AfregningsUnderretning
+Underretningsmeddelelse <|-- UdligningsUnderretning
+Underretningsmeddelelse <|-- AllokeringsUnderretning
+Underretningsmeddelelse <|-- RenteUnderretning
+Underretningsmeddelelse <|-- DetaljeretRenteUnderretning
+Underretningsmeddelelse <|-- AfskrivningsUnderretning
+Underretningsmeddelelse <|-- TilbagesendelsesUnderretning
+Underretningsmeddelelse <|-- ReturneringsUnderretning
+
+Fordringshaver --> SkyldnerUnderretning : giver
+SkyldnerUnderretning --> Skyldner : tilgår
+SkyldnerUnderretning --> Fordring : vedrører
+Restanceinddrivelsesmyndighed --> Underretningsmeddelelse : sender
+Underretningsmeddelelse --> Fordringshaver : tilgår
+Underretningsmeddelelse --> Restance : vedrører
