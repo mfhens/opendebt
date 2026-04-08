@@ -10,13 +10,13 @@ from pathlib import Path
 POLICY_CONTEXT = (
     "OpenDebt documentation policy: when you change source, API, or runtime configuration files, "
     "you must review and update impacted documentation if needed. Check these locations:\n"
-    "  1. docs/architecture-overview.md (service inventory, diagrams, endpoints)\n"
+    "  1. architecture/overview.md (service inventory, diagrams, endpoints)\n"
     "  2. docs/site/technical/ (developer guide, architecture, API reference, domain model)\n"
     "  3. docs/site/fordringshaver/ (creditor user guide -- Danish)\n"
     "  4. docs/site/skyldner/ (citizen user guide -- Danish)\n"
     "  5. docs/site/sagsbehandler/ (caseworker user guide -- Danish)\n"
     "  6. AGENTS.md/agents.md (coding conventions, ADR references)\n"
-    "  7. Relevant docs/adr/*.md files\n"
+    "  7. Relevant architecture/adr/*.md files\n"
     "Before finishing, include a line starting with 'Documentation impact:' that lists "
     "updated docs or says 'reviewed; no updates needed' with a short reason."
 )

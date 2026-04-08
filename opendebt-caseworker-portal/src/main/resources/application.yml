@@ -72,7 +72,7 @@ opendebt:
     payment-service:
       url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
     person-registry:
-      url: ${PERSON_REGISTRY_URL:http://localhost:8083}
+      url: ${PERSON_REGISTRY_URL:http://localhost:8090}
   timeline:
     visibility:
       role-categories:

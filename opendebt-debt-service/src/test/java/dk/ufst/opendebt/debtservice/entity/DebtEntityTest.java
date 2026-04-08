@@ -17,7 +17,6 @@ class DebtEntityTest {
     UUID debtorId = UUID.randomUUID();
     UUID creditorId = UUID.randomUUID();
     LocalDateTime createdAt = LocalDateTime.of(2026, 3, 6, 12, 0);
-    LocalDateTime updatedAt = LocalDateTime.of(2026, 3, 6, 12, 30);
 
     DebtEntity entity =
         DebtEntity.builder()
@@ -38,10 +37,6 @@ class DebtEntityTest {
             .readinessRejectionReason("reason")
             .readinessValidatedAt(createdAt)
             .readinessValidatedBy("worker")
-            .createdAt(createdAt)
-            .updatedAt(updatedAt)
-            .createdBy("system")
-            .version(3L)
             .build();
 
     assertThat(entity.getId()).isEqualTo(debtId);
@@ -59,10 +54,6 @@ class DebtEntityTest {
     assertThat(entity.getReadinessRejectionReason()).isEqualTo("reason");
     assertThat(entity.getReadinessValidatedAt()).isEqualTo(createdAt);
     assertThat(entity.getReadinessValidatedBy()).isEqualTo("worker");
-    assertThat(entity.getCreatedAt()).isEqualTo(createdAt);
-    assertThat(entity.getUpdatedAt()).isEqualTo(updatedAt);
-    assertThat(entity.getCreatedBy()).isEqualTo("system");
-    assertThat(entity.getVersion()).isEqualTo(3L);
   }
 
   @Test
@@ -113,18 +104,23 @@ class DebtEntityTest {
             entity.getClaimNote(),
             entity.getCustomerNote(),
             entity.getPNumber(),
+            // TB-040: PSRM dækningsrækkefølge fields (added in V3 migration)
+            entity.getSekvensNummer(),
+            entity.getGilParagraf(),
+            entity.getBeloebOpkraevningsrenter(),
+            entity.getBeloebInddrivelsesrenterFordringshaver(),
+            entity.getBeloebInddrivelsesrenterFoerTilbagefoersel(),
+            entity.getBeloebInddrivelsesrenterStk1(),
+            entity.getBeloebOevrigeRenterPsrm(),
             entity.isIkkeinddrivelsesparat(),
             entity.getLifecycleState(),
+            entity.getModregningTier(),
             entity.getReceivedAt(),
             entity.getStatus(),
             entity.getReadinessStatus(),
             entity.getReadinessRejectionReason(),
             entity.getReadinessValidatedAt(),
-            entity.getReadinessValidatedBy(),
-            entity.getCreatedAt(),
-            entity.getUpdatedAt(),
-            entity.getCreatedBy(),
-            entity.getVersion());
+            entity.getReadinessValidatedBy());
 
     assertThat(copied.getDebtTypeCode()).isEqualTo("700");
     assertThat(copied.getOutstandingBalance()).isEqualByComparingTo("525");

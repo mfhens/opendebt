@@ -1,0 +1,480 @@
+# petition057_map.yaml
+# Component Assignment Map for Petition 057:
+#   Dækningsrækkefølge — GIL § 4 payment application order (G.A.2.3.2)
+#
+# Legal basis: GIL § 4 stk. 1–4, GIL § 6a stk. 1 og stk. 12, GIL § 9 stk. 1 og stk. 3,
+#              GIL § 10b, Gæld.bekendtg. § 4 stk. 3, Retsplejelovens § 507, Lov nr. 288/2022
+# G.A. snapshot: v3.16 (2026-03-28)
+# Depended on by: Petition 059 (forældelse), Petition 062 (pro-rata distribution)
+#
+# ⚠️  NOTE: No /design/components/*.yaml definitions exist in this repository.
+#     Components are mapped to Maven module identifiers (as they appear in the
+#     project structure). Downstream agents should treat these identifiers as
+#     module-level ownership boundaries.
+#
+# ⚠️  ARCHITECTURAL TENSION — MUST RESOLVE BEFORE IMPLEMENTATION:
+#     The workspace.dsl architecture summary describes debt-service as the home
+#     of dækningsrækkefølge logic ("per architecture constraint"), but petition 057's
+#     own deliverables table (D-1 through D-9) places ALL rule-engine artefacts in
+#     opendebt-payment-service. Existing production code (CoveragePriorityService,
+#     BookkeepingService) also lives in opendebt-payment-service. This map follows
+#     the petition's deliverables table and the existing code structure. The team
+#     must confirm or correct this assignment against the canonical ADR before
+#     implementation begins.
+#
+# Component legend:
+#   opendebt-payment-service    — Core dækningsrækkefølge rule engine; DaekningsRaekkefoeigenService,
+#                                 PrioritetKategori enum, RenteKomponent enum, DaekningRecord entity,
+#                                 DaekningsRaekkefoeigenController (GET + POST simulate),
+#                                 OpenAPI spec, Liquibase migrations, CLS/immudb audit logging.
+#                                 Existing: CoveragePriorityService (to be superseded/extended).
+#   opendebt-debt-service       — Fordring entity owner: supplies legacyModtagelsesdato,
+#                                 opskrivningAfFordringId, modtagelsesdato, and indsats
+#                                 membership data via REST. Not the rule-engine host.
+#   opendebt-rules-engine       — Drools evaluation layer (ADR-0015): CollectionPriorityResult,
+#                                 collection-priority.drl. Consulted by payment-service for
+#                                 category assignment; NOT the persistence owner.
+#   opendebt-caseworker-portal  — Thymeleaf BFF view; DaekningsRaekkefoeigenViewController,
+#                                 daekningsraekkefoelge.html, i18n message bundles (DA + EN),
+#                                 read-only portal rendering. Consumes FR-7 API.
+#   opendebt-wage-garnishment-service — Provides inddrivelsesindsatsType context for
+#                                 lønindeholdelse payments (FR-4 secondary concern).
+
+petition_id: petition057
+
+scenarios:
+
+  # ── FR-1: Priority categories — GIL § 4, stk. 1 rule engine ─────────────────
+
+  - id: "001"
+    title: "Prioritetsrækkefølge — bøder dækkes før underholdsbidrag og andre fordringer"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-rules-engine
+      - opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      DaekningsRaekkefoeigenService (D-1) in opendebt-payment-service evaluates the
+      four-tier GIL § 4, stk. 1 priority ordering and assigns PrioritetKategori (D-2).
+      opendebt-rules-engine is secondary: collection-priority.drl (ADR-0015) may be
+      consulted for category evaluation. opendebt-debt-service is secondary as the
+      source of fordring data (category membership fields). The "Then" step asserts
+      correct category-level payment routing — a pure service concern.
+
+  - id: "002"
+    title: "Prioritetsrækkefølge — alle fire kategorier — kun kategori 1 dækkes ved lille betaling"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-rules-engine
+      - opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      Exercises the strict exhaustion rule across all four GIL § 4 tiers with a payment
+      too small to reach category 2. Rule execution and allocation logic live in
+      DaekningsRaekkefoeigenService / PrioritetKategori. Drools collection-priority.drl
+      is secondary for rule evaluation; debt-service supplies fordring state.
+
+  - id: "003"
+    title: "Tvangsbøder klassificeres som kategori 2 (GIL § 10b, lov nr. 288/2022)"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-rules-engine
+    fr_refs: [FR-1]
+    rationale: >
+      PrioritetKategori enum (D-2) must include tvangsbøder under
+      BOEDER_TVANGSBOEEDER_TILBAGEBETALING (category 2) per lov nr. 288/2022.
+      This is a statutory classification encoded as a Java enum (ADR-0031);
+      the enum lives in opendebt-payment-service. opendebt-rules-engine is secondary
+      because collection-priority.drl must be consistent with the enum values.
+
+  - id: "004"
+    title: "Privatretlige underholdsbidrag dækkes før offentlige inden for kategori 3"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-rules-engine
+      - opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      Sub-ordering within category 3 (privatretlige before offentlige) is a GIL § 4,
+      stk. 1, nr. 3 rule applied by DaekningsRaekkefoeigenService. PrioritetKategori
+      exposes UNDERHOLDSBIDRAG_PRIVATRETLIG and UNDERHOLDSBIDRAG_OFFENTLIG as distinct
+      enum values. Drools secondary for classification; debt-service secondary for
+      fordring type data.
+
+  # ── FR-2: Within-category FIFO ordering — GIL § 4, stk. 2 ──────────────────
+
+  - id: "005"
+    title: "FIFO inden for kategori — ældst modtagen fordring dækkes først"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      DaekningsRaekkefoeigenService sorts fordringer within a priority category by
+      ascending modtagelsesdato (fifoSortKey). The sort key is fetched from debt-service
+      (fordring entity carries modtagelsesdato). Sorting and coverage logic own the
+      "Then" step; debt-service is secondary as data supplier.
+
+  - id: "006"
+    title: "Pre-2013 fordring — legacyModtagelsesdato bruges som FIFO-nøgle"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      For fordringer received before 1 September 2013, DaekningsRaekkefoeigenService
+      must read legacyModtagelsesdato (not the overdragelse API timestamp) as the FIFO
+      sort key. The Liquibase migration adding the legacy_modtagelsesdato column is in
+      opendebt-payment-service (D-9). debt-service is secondary: it owns the fordring
+      entity and must surface legacyModtagelsesdato via its REST API so that
+      payment-service can consume it.
+
+  - id: "007"
+    title: "SKY-3027 Uafgjort FIFO: samme modtagelsesdato — laveste sekvensnummer dækkes først"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      Tie-breaking by internal sequence number (ascending) when modtagelsesdato is
+      identical is a determinism rule (NFR-1) applied inside DaekningsRaekkefoeigenService.
+      debt-service is secondary as provider of the sequence number stored on the fordring
+      entity.
+
+  # ── FR-3: Interest ordering within each fordring — Gæld.bekendtg. § 4, stk. 3 ──
+
+  - id: "008"
+    title: "Renter dækkes før Hovedfordring ved delvis betaling"
+    component: opendebt-payment-service
+    fr_refs: [FR-3]
+    rationale: >
+      The interest-before-principal rule (sub-positions 1–5 before sub-position 6) is
+      enforced by DaekningsRaekkefoeigenService using the RenteKomponent enum (D-3).
+      This scenario validates the core ordering invariant within a single fordring.
+      No secondary component is involved; the coverage allocation is entirely within
+      payment-service's CoveragePriorityService / DaekningsRaekkefoeigenService boundary.
+
+  - id: "009"
+    title: "Fuld rentesekvens — alle seks under-positioner dækkes i korrekt rækkefølge"
+    component: opendebt-payment-service
+    fr_refs: [FR-3]
+    rationale: >
+      Exercises all six RenteKomponent sub-positions in order (OPKRAEVNINGSRENTER →
+      INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 → INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL →
+      INDDRIVELSESRENTER_STK1 → OEVRIGE_RENTER_PSRM → HOVEDFORDRING). The sequence is
+      hardcoded in RenteKomponent enum ordering per ADR-0031 and enforced by
+      DaekningsRaekkefoeigenService. Pure payment-service concern.
+
+  - id: "010"
+    title: "Tidligere renteperiode dækkes inden for samme sub-position"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      Within each interest sub-position, earlier accrual periods must be covered before
+      later ones. DaekningsRaekkefoeigenService implements this secondary sort.
+      debt-service is secondary because interest accrual period metadata (InterestJournalEntry)
+      originates in debt-service and must be surfaced via the REST client.
+
+  # ── FR-4: Inddrivelsesindsats rule — GIL § 4, stk. 3 ────────────────────────
+
+  - id: "011"
+    title: "Lønindeholdelse-betaling dækker indsats-fordringer først — surplus til øvrige lønindeholdelses-fordringer"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+      - opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      DaekningsRaekkefoeigenService implements the indsats-first routing when
+      inddrivelsesindsatsType is non-null (LOENINDEHOLDELSE). It must identify which
+      fordringer belong to the triggering indsats and apply surplus to same-type
+      coverable fordringer. opendebt-wage-garnishment-service is secondary: it
+      provides indsats membership data for lønindeholdelse. opendebt-debt-service
+      is secondary as fordring data supplier. gilParagraf = "GIL § 4, stk. 3" is
+      set on the DaekningRecord audit log (D-4) within payment-service.
+
+  - id: "012"
+    title: "Udlæg-undtagelse — surplus fra udlæg-betaling flyder ikke til andre fordringer"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      The udlæg exception (retsplejelovens § 507) is an absolute rule: when
+      inddrivelsesindsatsType = UDLAEG, any surplus is NOT applied to other fordringer
+      and is flagged udlaegSurplus = true. DaekningsRaekkefoeigenService owns this
+      branching logic. debt-service is secondary as the fordring data supplier.
+      No Drools involvement needed here — this is a binary statutory exception
+      (ADR-0031 enum switch), not a configurable business rule.
+
+  # ── FR-5: Opskrivningsfordring positioning ────────────────────────────────────
+
+  - id: "013"
+    title: "Opskrivningsfordring placeres umiddelbart efter sin stamfordring"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-5]
+    rationale: >
+      DaekningsRaekkefoeigenService must read opskrivningAfFordringId from the fordring
+      entity (owned by debt-service) to position opskrivningsfordringer immediately after
+      their parent in the ordered list. The ordering algorithm lives in payment-service;
+      debt-service is secondary as provider of the parent-child relationship.
+
+  - id: "014"
+    title: "Opskrivningsfordring placeres korrekt når stamfordring allerede er fuldt dækket"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-5]
+    rationale: >
+      When the parent fordring has saldo = 0, DaekningsRaekkefoeigenService must still
+      compute the parent's FIFO position as a ghost anchor and insert the
+      opskrivningsfordring at the consecutive rank after it. This is pure ordering
+      logic within payment-service. debt-service is secondary as state data supplier.
+
+  - id: "015"
+    title: "Flere opskrivningsfordringer for samme stamfordring ordnes indbyrdes ved FIFO"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-5]
+    rationale: >
+      When multiple opskrivningsfordringer share the same parent, they are ordered among
+      themselves by ascending modtagelsesdato (FIFO on the opskrivningsfordring's own
+      receipt date). This tie-breaking rule is implemented in DaekningsRaekkefoeigenService.
+      debt-service supplies the opskrivningsfordring modtagelsesdatoer.
+
+  - id: "016"
+    title: "SKY-3029 Opskrivningsfordring — inddrivelsesrenter dækkes inden Hovedfordring ved delvis betaling (FR-5)"
+    component: opendebt-payment-service
+    fr_refs: [FR-5, FR-3]
+    rationale: >
+      Opskrivningsfordringer follow the same FR-3 interest-before-principal sequence.
+      DaekningsRaekkefoeigenService applies RenteKomponent ordering to opskrivnings-
+      fordringer identically to ordinary fordringer. Pure payment-service concern;
+      no secondary component required beyond the fordring data from debt-service
+      (already captured in scenario 013 rationale for this FR cluster).
+
+  # ── FR-6: Timing — GIL § 4, stk. 4 ──────────────────────────────────────────
+
+  - id: "017"
+    title: "Sen-ankommet fordring medtages i rækkefølgen ved applikationstidspunktet"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-6]
+    rationale: >
+      DaekningsRaekkefoeigenService must snapshot fordringer at application time T3,
+      not at betalingstidspunkt T1 (GIL § 4, stk. 4). A fordring arriving at T2
+      (T1 < T2 < T3) must therefore be included. This constraint is enforced inside
+      payment-service at query time. debt-service is secondary: it is the live source
+      of fordring state queried at T3.
+
+  - id: "018"
+    title: "Dækning logges med GIL § 4-reference, betalingstidspunkt og applikationstidspunkt"
+    component: opendebt-payment-service
+    fr_refs: [FR-6]
+    rationale: >
+      DaekningRecord entity (D-4) carries both applicationTimestamp and betalingstidspunkt.
+      The CLS/immudb audit log entry (via ImmuLedgerAppender in payment-service) must
+      include gilParagraf, prioritetKategori, fifoSortKey, betalingstidspunkt, and
+      applicationTimestamp (NFR-1, NFR-2). This is entirely a payment-service audit
+      obligation under ADR-0011 (PostgreSQL persistence) and the immudb integration.
+
+  # ── FR-7: Payment application API ────────────────────────────────────────────
+
+  - id: "019"
+    title: "GET /daekningsraekkefoelge returnerer ordnet liste med gilParagraf for alle positioner"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      DaekningsRaekkefoeigenController (D-5) in opendebt-payment-service owns the
+      GET /debtors/{debtorId}/daekningsraekkefoelge endpoint. The response carries
+      gilParagraf, prioritetKategori, fifoSortKey, and komponent (all computed by
+      DaekningsRaekkefoeigenService). debt-service is secondary as the upstream
+      fordring state provider called internally by payment-service.
+
+  - id: "020"
+    title: "GET /daekningsraekkefoelge med asOf-parameter returnerer historisk rækkefølge"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      The asOf query parameter instructs DaekningsRaekkefoeigenService to reconstruct
+      the ordering as it would have been on the given date. This requires payment-service
+      to query fordring state at a historical point from debt-service. Both the
+      temporal query logic and the response contract are owned by payment-service;
+      debt-service is secondary as the historical state provider.
+
+  - id: "021"
+    title: "POST /simulate returnerer beregnet dækningsplan uden at persistere ændringer"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      DaekningsRaekkefoeigenController exposes POST .../simulate as a read-only
+      projection (HTTP 200, no side effects). DaekningsRaekkefoeigenService must
+      guarantee no database writes occur in the simulate code path (ADR-0007 compliant).
+      debt-service is secondary as fordring data supplier; no write to its DB either.
+
+  - id: "022"
+    title: "POST /simulate med beloeb = 0 returnerer HTTP 422"
+    component: opendebt-payment-service
+    fr_refs: [FR-7]
+    rationale: >
+      Input validation of the beloeb field (zero or negative → HTTP 422) is enforced
+      by DaekningsRaekkefoeigenController's @Valid / custom validator. This is entirely
+      a payment-service API contract concern; no downstream service is involved.
+
+  - id: "023"
+    title: "SKY-3028 Simulering afviser negativt beloeb med HTTP 422"
+    component: opendebt-payment-service
+    fr_refs: [FR-7]
+    rationale: >
+      Negative beloeb shares the same HTTP 422 validation path as zero beloeb (scenario 022).
+      Handled by controller-level validation in opendebt-payment-service. Pure input
+      guard — no secondary component involved.
+
+  - id: "024"
+    title: "GET /daekningsraekkefoelge returnerer HTTP 403 for uautoriseret bruger"
+    component: opendebt-payment-service
+    fr_refs: [FR-7]
+    rationale: >
+      OAuth2 scope enforcement (payment-service:read) and role-based access control
+      are handled by SecurityConfig in opendebt-payment-service (Spring Security /
+      Keycloak integration). HTTP 403 is returned by the security filter chain before
+      DaekningsRaekkefoeigenService is invoked.
+
+  - id: "025"
+    title: "GET /daekningsraekkefoelge returnerer HTTP 404 for ukendt debtor"
+    component: opendebt-payment-service
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      When DaekningsRaekkefoeigenController receives a debtorId that has no fordringer,
+      it returns HTTP 404. The existence check requires a call to debt-service (or
+      person-registry). opendebt-payment-service owns the HTTP contract; debt-service
+      is secondary as the authoritative fordring store that confirms debtor existence.
+
+  # ── FR-8: Sagsbehandler portal — dækningsrækkefølge view ─────────────────────
+
+  - id: "026"
+    title: "Sagsbehandlerportal viser ordnet liste med GIL § 4-kategorietiketter"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-payment-service
+    fr_refs: [FR-8]
+    rationale: >
+      DaekningsRaekkefoeigenViewController (D-8) in opendebt-caseworker-portal renders
+      daekningsraekkefoelge.html (D-7) via Thymeleaf. Priority category labels must be
+      translated Danish strings from messages_da.properties and messages_en_GB.properties
+      (D-10, D-11) rather than raw enum codes (e.g. "Andre fordringer" not
+      "ANDRE_FORDRINGER"). The view is read-only and consumes the GET endpoint from
+      opendebt-payment-service (FR-7), making payment-service secondary here.
+
+  - id: "027"
+    title: "Sagsbehandlerportal markerer opskrivningsfordringer med link til stamfordring"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-payment-service
+    fr_refs: [FR-8]
+    rationale: >
+      The Thymeleaf template (daekningsraekkefoelge.html) must render a visual indicator
+      on opskrivningsfordring rows that links them to their parent fordring. The
+      opskrivningAfFordringId is surfaced in the API response from payment-service
+      (FR-7); the portal template owns the rendering logic. opendebt-payment-service
+      is secondary as the data provider (opskrivningAfFordringId field in GET response).
+
+---
+# Summary statistics
+total_scenarios_mapped: 27
+components_touched:
+  - opendebt-payment-service     # Primary for FR-1 through FR-7 (scenarios 001–025)
+  - opendebt-debt-service        # Secondary for FR-1 through FR-7 as fordring data supplier
+  - opendebt-rules-engine        # Secondary for FR-1 (Drools collection-priority.drl)
+  - opendebt-caseworker-portal   # Primary for FR-8 (scenarios 026–027)
+  - opendebt-wage-garnishment-service  # Secondary for FR-4 scenario 011 only
+
+components_missing: []
+
+new_artefacts_required:
+  - id: opendebt-payment-service/service/DaekningsRaekkefoeigenService.java
+    note: >
+      New service class. Supersedes / extends CoveragePriorityService.
+      Implements FR-1 through FR-6 ordering logic with deterministic output (NFR-1).
+  - id: opendebt-payment-service/domain/PrioritetKategori.java
+    note: >
+      New enum. Values: RIMELIGE_OMKOSTNINGER, BOEDER_TVANGSBOEEDER_TILBAGEBETALING,
+      UNDERHOLDSBIDRAG_PRIVATRETLIG, UNDERHOLDSBIDRAG_OFFENTLIG, ANDRE_FORDRINGER.
+      Encodes GIL § 4 stk. 1 + lov nr. 288/2022 (ADR-0031).
+  - id: opendebt-payment-service/domain/RenteKomponent.java
+    note: >
+      New enum. Values (in coverage order): OPKRAEVNINGSRENTER,
+      INDDRIVELSESRENTER_FORDRINGSHAVER_STK3, INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL,
+      INDDRIVELSESRENTER_STK1, OEVRIGE_RENTER_PSRM, HOVEDFORDRING.
+      Encodes Gæld.bekendtg. § 4 stk. 3 (ADR-0031).
+  - id: opendebt-payment-service/domain/DaekningRecord.java
+    note: >
+      New entity. Must carry: fordringId, komponent, daekningBeloeb, betalingstidspunkt,
+      applicationTimestamp, gilParagraf, prioritetKategori, fifoSortKey. Maps to
+      daekning_record table (PostgreSQL 16, ADR-0011).
+  - id: opendebt-payment-service/controller/DaekningsRaekkefoeigenController.java
+    note: >
+      New controller. Exposes GET + POST simulate endpoints (FR-7).
+      OAuth2 scope: payment-service:read. HTTP 200/422/403/404.
+  - id: opendebt-payment-service/resources/openapi/daekningsraekkefoelge.yaml
+    note: >
+      OpenAPI 3 spec for FR-7 endpoints. Must include gilParagraf, prioritetKategori,
+      fifoSortKey, komponent in response schema.
+  - id: opendebt-caseworker-portal/controller/DaekningsRaekkefoeigenViewController.java
+    note: >
+      New controller. Calls payment-service GET endpoint; passes ordered list to template.
+  - id: opendebt-caseworker-portal/templates/debtor/daekningsraekkefoelge.html
+    note: >
+      New Thymeleaf template. Read-only ranked list. Translated priority category labels.
+      Opskrivningsfordring parent link indicator. Reachable from case detail view.
+  - id: opendebt-payment-service/resources/db/changelog/add-legacy-modtagelsesdato.sql
+    note: >
+      Liquibase migration: adds legacy_modtagelsesdato column (FR-2, pre-2013 FIFO key).
+  - id: opendebt-payment-service/resources/db/changelog/create-daekning-record.sql
+    note: >
+      Liquibase migration: creates daekning_record table (FR-6, NFR-1 audit).
+  - id: opendebt-caseworker-portal/resources/messages_da.properties (additions)
+    note: >
+      New i18n keys for priority category labels and RenteKomponent labels (DA).
+      Must pass CI bundle-lint check (AC-17).
+  - id: opendebt-caseworker-portal/resources/messages_en_GB.properties (additions)
+    note: >
+      Mirror i18n keys in English (EN-GB). Must be in sync with messages_da.properties.
+  - id: opendebt-rules-engine/rules/collection-priority.drl (extended)
+    note: >
+      Existing DRL file. Must be consistent with PrioritetKategori enum values, especially
+      tvangsbøder → category 2 (lov nr. 288/2022, FR-1 scenario 003).
+
+architectural_tension:
+  description: >
+    workspace.dsl summary describes opendebt-debt-service as the home of
+    dækningsrækkefølge logic ("per architecture constraint"), but petition 057's
+    deliverables table (D-1 through D-9) and the existing production code
+    (CoveragePriorityService, BookkeepingService, ImmuLedgerAppender) all reside
+    in opendebt-payment-service. This map follows the petition deliverables and
+    existing code. Team must confirm via ADR review before implementation.
+
+changes_to_existing_maps: false   # No prior map file existed for petition057
+
+note: >
+  /design/components/*.yaml definitions do not exist in this repository.
+  Component identifiers correspond directly to Maven module directory names
+  at the repository root. Downstream agents must treat them as module-level
+  ownership boundaries when generating implementation tasks.
+  The Catala companion (P069) is explicitly out of scope for this petition
+  and has its own separate spec (design/specs-p069-catala-spike-daekningsraekkefoeigen.md).
+  DMI paralleldrift dækning logic (GIL § 49) is also out of scope.

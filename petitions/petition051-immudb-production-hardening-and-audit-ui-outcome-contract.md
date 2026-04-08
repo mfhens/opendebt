@@ -135,7 +135,7 @@
    populated database.
 3. Keycloak realm JSON files for dev and demo have been updated and the demo startup script
    picks them up.
-4. `docs/architecture-overview.md` updated with the new audit endpoint and `ROLE_AUDITOR`.
+4. `architecture/overview.md` updated with the new audit endpoint and `ROLE_AUDITOR`.
 5. `agents.md` updated to reflect the `immudb_pending_entries` table and
    `ImmudbReconciliationJob`.
 6. ADR-0029 moved to Fully Accepted once TB-028-a (HDP platform validation) is also complete.

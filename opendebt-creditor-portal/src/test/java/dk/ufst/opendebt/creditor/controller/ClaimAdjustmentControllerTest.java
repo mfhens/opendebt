@@ -27,6 +27,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
 import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.*;
+import dk.ufst.opendebt.creditor.dto.WriteDownReasonCode;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
 @ExtendWith(MockitoExtension.class)
@@ -139,10 +140,8 @@ class ClaimAdjustmentControllerTest {
     List<ClaimAdjustmentType> types =
         (List<ClaimAdjustmentType>) model.getAttribute("allowedTypes");
     assertThat(types).contains(ClaimAdjustmentType.OPSKRIVNING_REGULERING);
-    @SuppressWarnings("unchecked")
-    List<WriteUpReasonCode> reasonCodes =
-        (List<WriteUpReasonCode>) model.getAttribute("allowedReasonCodes");
-    assertThat(reasonCodes).containsExactlyInAnyOrder(WriteUpReasonCode.values());
+    // FR-7: allowedReasonCodes is no longer added to model for write-up (WriteUpReasonCode deleted)
+    assertThat(model.getAttribute("allowedReasonCodes")).isNull();
   }
 
   @Test
@@ -254,7 +253,6 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING) // not permitted
             .amount(new BigDecimal("100.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("Test")
             .build();
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
@@ -288,7 +286,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.NEDSKRIVNING_INDBETALING)
             .amount(new BigDecimal("100.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("Payment received")
+            .writeDownReasonCode(WriteDownReasonCode.NED_INDBETALING)
             .debtorIndex(null) // not selected
             .build();
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
@@ -326,7 +324,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.NEDSKRIV)
             .amount(new BigDecimal("500.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("Correction")
+            .writeDownReasonCode(WriteDownReasonCode.NED_GRUNDLAG_AENDRET)
             .build();
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
@@ -370,7 +368,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.NEDSKRIVNING_INDBETALING)
             .amount(new BigDecimal("200.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("Payment")
+            .writeDownReasonCode(WriteDownReasonCode.NED_INDBETALING)
             .build();
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
@@ -402,7 +400,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.NEDSKRIV)
             .amount(new BigDecimal("500.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("Correction")
+            .writeDownReasonCode(WriteDownReasonCode.NED_FEJL_OVERSENDELSE)
             .build();
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
@@ -419,7 +417,8 @@ class ClaimAdjustmentControllerTest {
   // --- Receipt page tests ---
 
   @Test
-  void submitAdjustment_writeUp_acceptsValidReasonCode() {
+  void submitAdjustment_writeUp_acceptsWithoutReasonCode() {
+    // FR-7: Write-up no longer validates or requires a reason code (WriteUpReasonCode removed).
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     CreditorAgreementDto agreement =
@@ -444,8 +443,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
             .amount(new BigDecimal("100.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("DINDB")
-            .build();
+            .build(); // No reason code needed for write-up (FR-7)
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
     RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
@@ -459,38 +457,32 @@ class ClaimAdjustmentControllerTest {
   }
 
   @Test
-  void submitAdjustment_writeUp_rejectsInvalidReasonCode() {
+  void submitAdjustment_writeDown_rejectsNullReasonCode() {
+    // FR-1: Write-down requires writeDownReasonCode. Controller rejects null with validation error.
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     CreditorAgreementDto agreement =
-        CreditorAgreementDto.builder()
-            .portalActionsAllowed(true)
-            .allowWriteUpAdjustment(true)
-            .build();
+        CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
     when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
-    when(messageSource.getMessage(
-            eq("adjustment.validation.reason.invalid"), any(), any(Locale.class)))
-        .thenReturn("Invalid reason code.");
 
     ClaimAdjustmentRequestDto form =
         ClaimAdjustmentRequestDto.builder()
-            .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
+            .adjustmentType(ClaimAdjustmentType.NEDSKRIV)
             .amount(new BigDecimal("100.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("FREE_TEXT_NOT_ALLOWED")
-            .build();
+            .build(); // writeDownReasonCode = null → should be rejected
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
     RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
 
     String viewName =
         controller.submitAdjustment(
-            TEST_CLAIM_ID, form, bindingResult, "WRITE_UP", model, session, redirectAttributes);
+            TEST_CLAIM_ID, form, bindingResult, "WRITE_DOWN", model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("claims/adjustment/form");
     assertThat(bindingResult.hasErrors()).isTrue();
-    assertThat(bindingResult.getFieldError("reason")).isNotNull();
+    assertThat(bindingResult.getFieldError("writeDownReasonCode")).isNotNull();
   }
 
   // --- Receipt page tests ---
@@ -553,8 +545,7 @@ class ClaimAdjustmentControllerTest {
             .adjustmentType(ClaimAdjustmentType.OPSKRIVNING_REGULERING)
             .amount(new BigDecimal("50.00"))
             .effectiveDate(LocalDate.of(2026, 1, 1))
-            .reason("AFSK")
-            .build();
+            .build(); // No reason code for write-up (FR-7)
     BindingResult bindingResult = new BeanPropertyBindingResult(form, "adjustmentForm");
     Model model = new ConcurrentModel();
     RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();

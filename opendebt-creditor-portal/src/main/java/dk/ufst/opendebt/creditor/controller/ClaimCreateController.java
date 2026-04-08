@@ -253,13 +253,7 @@ public class ClaimCreateController {
       hasErrors = true;
     }
 
-    if (interestRateStr != null && !interestRateStr.isBlank()) {
-      try {
-        form.setInterestRate(new java.math.BigDecimal(interestRateStr));
-      } catch (Exception ex) {
-        // Optional field — ignore parse errors
-      }
-    }
+    parseInterestRateIntoForm(form, interestRateStr);
 
     // Parse date fields
     form.setPeriodFrom(parseDate(periodFromStr));
@@ -570,6 +564,21 @@ public class ClaimCreateController {
     UUID representedCreditor = portalSessionService.getRepresentedCreditor(session);
     if (representedCreditor != null) {
       model.addAttribute("representedCreditorOrgId", representedCreditor);
+    }
+  }
+
+  /**
+   * Parses the optional interest rate string into the form; silently ignores blank or invalid
+   * input.
+   */
+  private void parseInterestRateIntoForm(ClaimWizardFormDto form, String interestRateStr) {
+    if (interestRateStr == null || interestRateStr.isBlank()) {
+      return;
+    }
+    try {
+      form.setInterestRate(new java.math.BigDecimal(interestRateStr));
+    } catch (Exception ex) {
+      // Optional field — ignore parse errors
     }
   }
 

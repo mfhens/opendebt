@@ -17,10 +17,10 @@ import org.springframework.ws.server.EndpointInterceptor;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 
-import dk.ufst.opendebt.common.soap.Oces3AuthContext;
-import dk.ufst.opendebt.common.soap.Oces3CertificateParser;
 import dk.ufst.opendebt.gateway.soap.fault.Oces3AuthenticationException;
 import dk.ufst.opendebt.gateway.soap.fault.Oces3AuthorizationException;
+import dk.ufst.security.oces3.Oces3AuthContext;
+import dk.ufst.security.oces3.Oces3CertificateParser;
 
 @Component
 public class Oces3SoapSecurityInterceptor implements EndpointInterceptor {

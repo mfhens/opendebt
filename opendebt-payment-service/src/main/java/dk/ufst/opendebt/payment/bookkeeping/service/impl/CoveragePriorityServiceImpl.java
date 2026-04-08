@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import dk.ufst.opendebt.payment.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
 import dk.ufst.opendebt.payment.bookkeeping.service.CoveragePriorityService;
 
 import lombok.extern.slf4j.Slf4j;
