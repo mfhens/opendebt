@@ -56,39 +56,11 @@ public class CaseAccessCheckerImpl implements CaseAccessChecker {
         return false;
       }
 
-      // Sensitivity filtering (W9-RBAC-02)
-      CaseSensitivity sensitivity =
-          caseEntity.getSensitivity() != null
-              ? caseEntity.getSensitivity()
-              : CaseSensitivity.NORMAL;
-
-      // Rule 5.3: CONFIDENTIAL cases are restricted to supervisors and admins only
-      if (sensitivity == CaseSensitivity.CONFIDENTIAL) {
-        log.warn(
-            "Caseworker {} denied access to CONFIDENTIAL case {}", authContext.getUserId(), caseId);
-        return false;
+      boolean granted = checkSensitivityAccess(caseId, caseEntity, authContext);
+      if (granted) {
+        log.trace("Caseworker access granted for case {}", caseId);
       }
-
-      // Rule 5.2: VIP cases require HANDLE_VIP_CASES capability
-      if (sensitivity == CaseSensitivity.VIP && !authContext.hasCapability("HANDLE_VIP_CASES")) {
-        log.warn(
-            "Caseworker {} lacks HANDLE_VIP_CASES capability for VIP case {}",
-            authContext.getUserId(),
-            caseId);
-        return false;
-      }
-
-      // Rule 5.2: PEP cases require HANDLE_PEP_CASES capability
-      if (sensitivity == CaseSensitivity.PEP && !authContext.hasCapability("HANDLE_PEP_CASES")) {
-        log.warn(
-            "Caseworker {} lacks HANDLE_PEP_CASES capability for PEP case {}",
-            authContext.getUserId(),
-            caseId);
-        return false;
-      }
-
-      log.trace("Caseworker access granted for case {}", caseId);
-      return true;
+      return granted;
     }
 
     // Citizens and creditors cannot directly access cases (Rule 3.3, 4.3)
@@ -98,5 +70,41 @@ public class CaseAccessCheckerImpl implements CaseAccessChecker {
         authContext.getRoles(),
         caseId);
     return false;
+  }
+
+  /**
+   * Sensitivity filtering (W9-RBAC-02): validates caseworker capability against case sensitivity.
+   */
+  private boolean checkSensitivityAccess(
+      UUID caseId, CaseEntity caseEntity, AuthContext authContext) {
+    CaseSensitivity sensitivity =
+        caseEntity.getSensitivity() != null ? caseEntity.getSensitivity() : CaseSensitivity.NORMAL;
+
+    // Rule 5.3: CONFIDENTIAL cases restricted to supervisors and admins only
+    if (sensitivity == CaseSensitivity.CONFIDENTIAL) {
+      log.warn(
+          "Caseworker {} denied access to CONFIDENTIAL case {}", authContext.getUserId(), caseId);
+      return false;
+    }
+
+    // Rule 5.2: VIP cases require HANDLE_VIP_CASES capability
+    if (sensitivity == CaseSensitivity.VIP && !authContext.hasCapability("HANDLE_VIP_CASES")) {
+      log.warn(
+          "Caseworker {} lacks HANDLE_VIP_CASES capability for VIP case {}",
+          authContext.getUserId(),
+          caseId);
+      return false;
+    }
+
+    // Rule 5.2: PEP cases require HANDLE_PEP_CASES capability
+    if (sensitivity == CaseSensitivity.PEP && !authContext.hasCapability("HANDLE_PEP_CASES")) {
+      log.warn(
+          "Caseworker {} lacks HANDLE_PEP_CASES capability for PEP case {}",
+          authContext.getUserId(),
+          caseId);
+      return false;
+    }
+
+    return true;
   }
 }

@@ -26,7 +26,6 @@ public class Petition011Steps {
   private DebtServiceClient debtServiceClient;
   private CreditorIngressService ingressService;
 
-  private String currentIdentity;
   private UUID resolvedCreditorOrgId;
   private GatewayClaimResponse lastResponse;
   private Exception lastException;
@@ -46,7 +45,6 @@ public class Petition011Steps {
 
   @Given("creditor system {string} is authorized for fordringshaver {string}")
   public void creditorSystemIsAuthorized(String systemId, String creditorKey) {
-    currentIdentity = systemId;
     resolvedCreditorOrgId = UUID.nameUUIDFromBytes(creditorKey.getBytes());
 
     AccessResolutionResponse accessResponse =
@@ -73,7 +71,6 @@ public class Petition011Steps {
 
   @Given("creditor system {string} is not authorized for the requested operation")
   public void creditorSystemIsNotAuthorized(String systemId) {
-    currentIdentity = systemId;
 
     AccessResolutionResponse accessResponse =
         AccessResolutionResponse.builder()

@@ -1,0 +1,270 @@
+# Testfil — G.A.1.4.3 og G.A.1.4.4 Catala-testpakke
+
+> Include: ../ga_1_4_3_opskrivning.catala_da
+> Include: ../ga_1_4_4_nedskrivning.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Testpakke for: ga_1_4_3_opskrivning.catala_da og ga_1_4_4_nedskrivning.catala_da
+   Petition: P054 — Catala Compliance Spike
+   Status: Research spike — ingen produktionskode.
+
+   Denne fil indeholder 11 testtilfælde der dækker:
+   - FR-1.1–FR-1.4: alle fire modtagelsestidspunkt-underregler (§ 7, stk. 1, 3.–6. pkt.)
+   - FR-2.1: alle tre nedskrivningsgrunde (NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET)
+   - FR-2.2: grænseværditest for retroaktivitet (virkningsdato = fordringModtagelsestidspunkt ± 1 dag)
+   - FR-2.3: GIL § 18 k suspensionsflag (true og false)
+   - FR-2.4: afvisning ved ugyldig nedskrivningsgrund *)
+
+---
+
+## Test 1 — FR-1.1: Standardregel (3. pkt.) — fordring modtages ved systemregistrering
+
+Gæld.bekendtg. § 7, stk. 1, 3. pkt.: En opskrivningsfordring der hverken er i
+høring eller er en annulleret nedskrivning modtages ved registrering i systemet.
+
+```catala
+declaration scope OpskrivningTest1:
+  comp scope OpskrivningsfordringModtagelse
+
+scope OpskrivningTest1:
+  # Test: FR-1.1 standardregel
+  definition comp.erFordringIHøring equals false
+  definition comp.erAnnulleretNedskrivning equals false
+  definition comp.erKrydssystemNedskrivning equals false
+  definition comp.modtagelseISystemet equals |2025-03-10|
+  definition comp.originalFordringModtagelsestidspunkt equals |2025-01-01|
+  assertion comp.modtagelsestidspunkt = |2025-03-10|
+```
+
+---
+
+## Test 2 — FR-1.2: Høring-undtagelse (4. pkt.) — modtagelse ved høringafslutning
+
+Gæld.bekendtg. § 7, stk. 1, 4. pkt.: Fordring under høring modtages når
+bekræftelsen registreres — ikke ved den oprindelige indsendelse.
+
+```catala
+declaration scope OpskrivningTest2:
+  comp scope OpskrivningsfordringModtagelse
+
+scope OpskrivningTest2:
+  # Test: FR-1.2 høring-undtagelse
+  definition comp.erFordringIHøring equals true
+  definition comp.erAnnulleretNedskrivning equals false
+  definition comp.erKrydssystemNedskrivning equals false
+  definition comp.modtagelseISystemet equals |2025-04-02|
+  definition comp.originalFordringModtagelsestidspunkt equals |2025-01-01|
+  assertion comp.modtagelsestidspunkt = |2025-04-02|
+```
+
+---
+
+## Test 3 — FR-1.3: Annulleret nedskrivning, samme system (5. pkt.)
+
+Gæld.bekendtg. § 7, stk. 1, 5. pkt.: Omgørelse af nedskrivning inden for samme
+system — fordringen anses modtaget på samme tidspunkt som den originale fordring.
+
+```catala
+declaration scope OpskrivningTest3:
+  comp scope OpskrivningsfordringModtagelse
+
+scope OpskrivningTest3:
+  # Test: FR-1.3 annulleret nedskrivning, samme system
+  definition comp.erFordringIHøring equals false
+  definition comp.erAnnulleretNedskrivning equals true
+  definition comp.erKrydssystemNedskrivning equals false
+  definition comp.modtagelseISystemet equals |2025-05-15|
+  definition comp.originalFordringModtagelsestidspunkt equals |2024-11-20|
+  assertion comp.modtagelsestidspunkt = |2024-11-20|
+```
+
+---
+
+## Test 4 — FR-1.4: Annulleret nedskrivning, krydssystem (6. pkt.)
+
+Gæld.bekendtg. § 7, stk. 1, 6. pkt.: Krydssystem annulleret nedskrivning —
+modtagelse altid ved modtagelsessystem-registrering.
+
+```catala
+declaration scope OpskrivningTest4:
+  comp scope OpskrivningsfordringModtagelse
+
+scope OpskrivningTest4:
+  # Test: FR-1.4 annulleret nedskrivning, krydssystem
+  definition comp.erFordringIHøring equals false
+  definition comp.erAnnulleretNedskrivning equals true
+  definition comp.erKrydssystemNedskrivning equals true
+  definition comp.modtagelseISystemet equals |2025-06-01|
+  definition comp.originalFordringModtagelsestidspunkt equals |2024-08-01|
+  assertion comp.modtagelsestidspunkt = |2025-06-01|
+```
+
+---
+
+## Test 5 — FR-2.1: NED_INDBETALING er gyldig nedskrivningsgrund
+
+Gæld.bekendtg. § 7, stk. 2, nr. 1: NED_INDBETALING godkendes som gyldig årsagskode.
+
+```catala
+declaration scope NedskrivningTest5:
+  comp scope Nedskrivning
+
+scope NedskrivningTest5:
+  # Test: FR-2.1 NED_INDBETALING gyldig
+  definition comp.nedskrivningsGrund equals NED_INDBETALING
+  definition comp.virkningsdato equals |2025-03-10|
+  # fordringModtagelsestidspunkt = fordring.receivedAt
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.grundErGyldig = true
+```
+
+---
+
+## Test 6 — FR-2.1: NED_FEJL_OVERSENDELSE er gyldig nedskrivningsgrund
+
+Gæld.bekendtg. § 7, stk. 2, nr. 2: NED_FEJL_OVERSENDELSE godkendes som gyldig årsagskode.
+
+```catala
+declaration scope NedskrivningTest6:
+  comp scope Nedskrivning
+
+scope NedskrivningTest6:
+  # Test: FR-2.1 NED_FEJL_OVERSENDELSE gyldig
+  definition comp.nedskrivningsGrund equals NED_FEJL_OVERSENDELSE
+  definition comp.virkningsdato equals |2025-03-10|
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.grundErGyldig = true
+```
+
+---
+
+## Test 7 — FR-2.1: NED_GRUNDLAG_AENDRET er gyldig nedskrivningsgrund
+
+Gæld.bekendtg. § 7, stk. 2, nr. 3: NED_GRUNDLAG_AENDRET godkendes som gyldig årsagskode.
+
+```catala
+declaration scope NedskrivningTest7:
+  comp scope Nedskrivning
+
+scope NedskrivningTest7:
+  # Test: FR-2.1 NED_GRUNDLAG_AENDRET gyldig
+  definition comp.nedskrivningsGrund equals NED_GRUNDLAG_AENDRET
+  definition comp.virkningsdato equals |2025-03-10|
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.grundErGyldig = true
+```
+
+---
+
+## Test 8 — FR-2.2 + FR-2.3: GIL § 18 k suspensionsflag true (retroaktiv nedskrivning)
+
+Når virkningsdato er strengt mindre end fordring.receivedAt, er nedskrivningen
+retroaktiv og GIL § 18 k suspensionsflagget sættes til true.
+
+```catala
+declaration scope NedskrivningTest8:
+  comp scope Nedskrivning
+
+scope NedskrivningTest8:
+  # Test: FR-2.3 GIL § 18 k suspensionsflag = true (virkningsdato er dagen FØR fordringModtagelsestidspunkt)
+  # Grænseværdi: fordringModtagelsestidspunkt = 2025-03-10, virkningsdato = 2025-03-09 (dagen før)
+  definition comp.nedskrivningsGrund equals NED_INDBETALING
+  definition comp.virkningsdato equals |2025-03-09|
+  # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.erRetroaktiv = true
+  assertion comp.erGIL18kSuspenderet = true
+```
+
+---
+
+## Test 9 — FR-2.2 + FR-2.3: GIL § 18 k suspensionsflag false (samme dag som fordringModtagelsestidspunkt)
+
+Grænseværdi: virkningsdato = fordring.receivedAt (samme dag — IKKE retroaktiv).
+Strictt less-than: virkningsdato < fordring.receivedAt er false.
+
+```catala
+declaration scope NedskrivningTest9:
+  comp scope Nedskrivning
+
+scope NedskrivningTest9:
+  # Test: FR-2.3 GIL § 18 k suspensionsflag = false (virkningsdato = fordringModtagelsestidspunkt)
+  # Grænseværdi: fordringModtagelsestidspunkt = 2025-03-10, virkningsdato = 2025-03-10 (samme dag)
+  definition comp.nedskrivningsGrund equals NED_INDBETALING
+  definition comp.virkningsdato equals |2025-03-10|
+  # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.erRetroaktiv = false
+  assertion comp.erGIL18kSuspenderet = false
+```
+
+---
+
+## Test 10 — FR-2.2: Ikke-retroaktiv (dagen EFTER fordringModtagelsestidspunkt)
+
+Grænseværdi: virkningsdato = fordring.receivedAt + 1 dag (fremtidig dato — IKKE retroaktiv).
+
+```catala
+declaration scope NedskrivningTest10:
+  comp scope Nedskrivning
+
+scope NedskrivningTest10:
+  # Test: FR-2.2 erRetroaktiv = false (virkningsdato er dagen EFTER fordringModtagelsestidspunkt)
+  # Grænseværdi: fordringModtagelsestidspunkt = 2025-03-10, virkningsdato = 2025-03-11 (dagen efter)
+  definition comp.nedskrivningsGrund equals NED_GRUNDLAG_AENDRET
+  definition comp.virkningsdato equals |2025-03-11|
+  # fordringModtagelsestidspunkt (= fordring.receivedAt) = 2025-03-10
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.erRetroaktiv = false
+  assertion comp.erGIL18kSuspenderet = false
+```
+
+---
+
+## Test 11 — FR-2.4: Ugyldig nedskrivningsgrund afvises
+
+En nedskrivning indsendt uden gyldig grund (her: UGYLDIG_GRUND / Invalid) skal
+afvises. grundErGyldig = false og assertion fejler korrekt.
+
+Bemærk: NedskrivningTest11 er en NEGATIV test — Nedskrivning-scopets interne
+`assertion grundErGyldig` vil fejle når UGYLDIG_GRUND anvendes. Denne test er
+inkluderet for dokumentationsformål; den må IKKE køres med `catala interpret`
+da scopets interne assertion altid vil afbryde eksekvering inden wrapper-assertionen
+evalueres.
+
+```catala
+declaration scope NedskrivningTest11:
+  comp scope Nedskrivning
+
+scope NedskrivningTest11:
+  # Test: FR-2.4 ugyldig nedskrivningsgrund — Invalid grund afvises
+  # Ugyldig / ugyldig / Invalid grund fører til grundErGyldig = false
+  # NB: scopets interne assertion grundErGyldig vil fejle — dette er den forventede adfærd
+  definition comp.nedskrivningsGrund equals UGYLDIG_GRUND
+  definition comp.virkningsdato equals |2025-03-10|
+  definition comp.fordringModtagelsestidspunkt equals |2025-03-10|
+  assertion comp.grundErGyldig = false
+```
+
+---
+
+(* Opsummering af testdækning (11 Test-scopes):
+   - FR-1.1 (3. pkt.): Test 1 — OpskrivningTest1
+   - FR-1.2 (4. pkt.): Test 2 — OpskrivningTest2
+   - FR-1.3 (5. pkt.): Test 3 — OpskrivningTest3
+   - FR-1.4 (6. pkt.): Test 4 — OpskrivningTest4
+   - FR-2.1 NED_INDBETALING:        Test 5 — NedskrivningTest5
+   - FR-2.1 NED_FEJL_OVERSENDELSE:  Test 6 — NedskrivningTest6
+   - FR-2.1 NED_GRUNDLAG_AENDRET:   Test 7 — NedskrivningTest7
+   - FR-2.3 GIL § 18 k true:        Test 8 — NedskrivningTest8  (2025-03-09 < 2025-03-10)
+   - FR-2.3 GIL § 18 k false:       Test 9 — NedskrivningTest9  (2025-03-10 = 2025-03-10)
+   - FR-2.2 ikke-retroaktiv:        Test 10 — NedskrivningTest10 (2025-03-11 > 2025-03-10)
+   - FR-2.4 ugyldig/invalid grund:  Test 11 — NedskrivningTest11 (NEGATIV — ekskluderes fra interpret-loop)
+
+   Grænseværdidatoer for fordringModtagelsestidspunkt = 2025-03-10:
+     2025-03-09 (dagen før   → erRetroaktiv = true)
+     2025-03-10 (samme dag   → erRetroaktiv = false)
+     2025-03-11 (dagen efter → erRetroaktiv = false)
+
+   GIL § 18 k: true i Test 8, false i Test 9 og Test 10. *)

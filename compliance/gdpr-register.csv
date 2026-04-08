@@ -1,0 +1,2 @@
+service,table_name,column_name,data_category,gdpr_sensitivity,legal_basis,retention_years,notes
+[STUB],person_registry,cpr_number_encrypted,CPR number,Fortrolig,GDPR Art 6(1)(e) - Public task,10,Encrypted at rest - never exposed to other services

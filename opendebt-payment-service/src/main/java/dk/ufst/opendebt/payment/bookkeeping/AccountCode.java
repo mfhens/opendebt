@@ -1,5 +1,8 @@
 package dk.ufst.opendebt.payment.bookkeeping;
 
+import dk.ufst.bookkeeping.spi.AccountType;
+import dk.ufst.bookkeeping.spi.BookkeepingAccountCode;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -9,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public enum AccountCode {
+public enum AccountCode implements BookkeepingAccountCode {
   RECEIVABLES("1000", "Fordringer", AccountType.ASSET),
   INTEREST_RECEIVABLE("1100", "Renter tilgodehavende", AccountType.ASSET),
   SKB_BANK("2000", "SKB Bankkonto", AccountType.ASSET),
@@ -21,11 +24,4 @@ public enum AccountCode {
   private final String code;
   private final String name;
   private final AccountType type;
-
-  public enum AccountType {
-    ASSET,
-    LIABILITY,
-    REVENUE,
-    EXPENSE
-  }
 }

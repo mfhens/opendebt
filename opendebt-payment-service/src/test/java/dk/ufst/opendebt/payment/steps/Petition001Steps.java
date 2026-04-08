@@ -16,8 +16,8 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.dto.DebtDto.DebtStatus;
@@ -43,10 +43,10 @@ public class Petition001Steps {
   @Autowired private PaymentMatchingService paymentMatchingService;
   @Autowired private PaymentRepository paymentRepository;
 
-  @MockBean private DebtServiceClient debtServiceClient;
-  @MockBean private BookkeepingService bookkeepingService;
+  @MockitoBean private DebtServiceClient debtServiceClient;
+  @MockitoBean private BookkeepingService bookkeepingService;
 
-  @MockBean
+  @MockitoBean
   private dk.ufst.opendebt.payment.service.OverpaymentRulesService overpaymentRulesService;
 
   private final Map<String, DebtDto> debtsByAlias = new HashMap<>();

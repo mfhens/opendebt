@@ -95,9 +95,17 @@ public class RulesServiceImpl implements RulesService {
   @Override
   public List<CollectionPriorityResult> sortByCollectionPriority(
       List<CollectionPriorityRequest> debts) {
-    return debts.stream()
-        .map(this::determineCollectionPriority)
-        .sorted(Comparator.comparingInt(CollectionPriorityResult::getPriorityRank))
-        .toList();
+    // GIL § 4 inter-claim sort order (TB-034):
+    // 1. priorityRank ascending (lower rank = higher priority)
+    // 2. underholdsbidragOrdning ascending (1 = privatretlig before 2 = offentlig; 0 for non-kat3)
+    // 3. fifoSortKey ascending (oldest first — GIL § 4, stk. 2, FR-2.1/FR-2.2)
+    Comparator<CollectionPriorityResult> gil4Comparator =
+        Comparator.comparingInt(CollectionPriorityResult::getPriorityRank)
+            .thenComparingInt(CollectionPriorityResult::getUnderholdsbidragOrdning)
+            .thenComparing(
+                CollectionPriorityResult::getFifoSortKey,
+                Comparator.nullsLast(Comparator.naturalOrder()));
+
+    return debts.stream().map(this::determineCollectionPriority).sorted(gil4Comparator).toList();
   }
 }

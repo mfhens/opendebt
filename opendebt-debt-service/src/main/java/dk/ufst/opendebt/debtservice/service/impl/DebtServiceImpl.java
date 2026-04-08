@@ -104,7 +104,7 @@ public class DebtServiceImpl implements DebtService {
             .outstandingBalance(calculateTotal(dto))
             .claimArt(parseClaimArt(dto.getClaimArt()))
             .creditorReference(dto.getCreditorReference())
-            .description(dto.getDescription())
+            .description(scrubCprFromDescription(dto.getDescription()))
             .limitationDate(dto.getLimitationDate())
             .periodFrom(dto.getPeriodFrom())
             .periodTo(dto.getPeriodTo())
@@ -429,5 +429,11 @@ public class DebtServiceImpl implements DebtService {
         .lifecycleState(e.getLifecycleState() != null ? e.getLifecycleState().name() : null)
         .zeroBalanceExpired(outstanding.compareTo(BigDecimal.ZERO) == 0)
         .build();
+  }
+
+  /** GDPR: scrub CPR numbers (DDMMYY[-]XXXX) from the Beskrivelse field before persistence. */
+  private String scrubCprFromDescription(String description) {
+    if (description == null) return null;
+    return description.replaceAll("\\b\\d{6}-?\\d{4}\\b", "[FJERNET]");
   }
 }

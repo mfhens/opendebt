@@ -19,6 +19,31 @@ import dk.ufst.opendebt.debtservice.entity.DebtEntity.ReadinessStatus;
 @Repository
 public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
 
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.modregningTier = :tier "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.inceptionDate ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByTier(
+      @Param("debtorPersonId") UUID debtorPersonId, @Param("tier") int tier);
+
+  /**
+   * Finds active fordringer for the given debtor, tier and paying-authority creditor. Used for
+   * tier-1 filtering by UBO per GIL § 7, stk. 1, nr. 1 (BUG-F / P058).
+   */
+  @Query(
+      "SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.modregningTier = :tier "
+          + "AND d.creditorOrgId = :creditorOrgId "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.inceptionDate ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByTierAndCreditor(
+      @Param("debtorPersonId") UUID debtorPersonId,
+      @Param("tier") int tier,
+      @Param("creditorOrgId") UUID creditorOrgId);
+
   @Query("SELECT d FROM DebtEntity d WHERE d.debtorPersonId = :debtorPersonId")
   List<DebtEntity> findByDebtorPersonId(UUID debtorPersonId);
 
@@ -95,6 +120,20 @@ public interface DebtRepository extends JpaRepository<DebtEntity, UUID> {
       @Param("parentClaimId") UUID parentClaimId,
       @Param("state") ClaimLifecycleState state,
       @Param("excludeId") UUID excludeId);
+
+  /**
+   * Returns all active fordringer for the given debtor: positive remaining balance and not in a
+   * terminal status (PAID, WRITTEN_OFF, CANCELLED). Results are ordered by sekvensNummer ASC (NULLS
+   * LAST), then by receivedAt ASC as FIFO tie-breaker, consistent with P057 § dækningsrækkefølge.
+   */
+  @Query(
+      "SELECT d FROM DebtEntity d "
+          + "WHERE d.debtorPersonId = :debtorPersonId "
+          + "AND d.outstandingBalance > 0 "
+          + "AND d.status NOT IN ('PAID', 'WRITTEN_OFF', 'CANCELLED') "
+          + "ORDER BY d.sekvensNummer ASC NULLS LAST, d.receivedAt ASC NULLS LAST")
+  List<DebtEntity> findActiveFordringerByDebtorPersonId(
+      @Param("debtorPersonId") UUID debtorPersonId);
 
   @Query(
       "SELECT d FROM DebtEntity d WHERE d.limitationDate IS NOT NULL "
