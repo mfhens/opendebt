@@ -34,3 +34,21 @@ build:
 
 package_manager: maven
 install: "mvn -q -DskipTests test-compile"
+
+# E2E acceptance tests — standalone Node.js project, runs against a live docker-compose stack.
+# Not part of the Maven build. Uses the playwright-test-generator agent.
+e2e:
+  framework: playwright
+  project_root: opendebt-e2e
+  test_dir: tests
+  playwright_config: playwright.config.ts
+  ts_config: tsconfig.json
+  install_command: "npm ci"
+  type_check_command: "npx tsc --noEmit"
+  test_list_command: "npx playwright test --list"
+  runner: "npx playwright test"
+  report_dir: playwright-report
+  base_urls:
+    creditor_portal: "http://localhost:8085"
+    caseworker_portal: "http://localhost:8087"
+    citizen_portal: "http://localhost:8086"
