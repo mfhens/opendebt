@@ -25,6 +25,18 @@ Requirements:
 - Spring Boot integration
 - Reconciliation support (afstemning) against SKB bank statements
 
+## Amendment (2026-04-05, #3): Every financial transaction posts to the ledger
+
+**Invariant:** Any behaviour that records a **financial effect** — including changes to amounts owed, received, cleared, accrued, written off, refunded, garnished, offset, or retroactively corrected — **must** result in a balanced **double-entry posting** to the canonical ledger in `opendebt-payment-service` (`BookkeepingService` / `ledger_entries` / `debt_events` timeline), unless this ADR is explicitly amended with a documented exception.
+
+**Rationale:** Statsligt regnskab and audit require one reconcilable hovedbog. Service-local tables (for example `interest_journal_entries` in debt-service) may support calculation, idempotency, or display, but they **do not** replace ledger postings where this ADR applies.
+
+**Cross-service flows:** Other services must reach the ledger via the supported API (HTTP internal routes, future `ufst-bookkeeping-core` ports, or approved events consumed by payment-service). Debt-service set-off currently invokes `LedgerServiceClient` toward payment-service; **TB-055** tracks replacing the stub with real HTTP.
+
+**Process:** Pull requests that touch money-moving code paths should answer: *Where is the ledger posting (or the ADR exception)?* New petitions or major features should call out ledger impact in the solution architecture.
+
+---
+
 ## Amendment (2026-04-01, #2): Implementation is seed for shared UFST library
 
 **Decision:** The custom implementation in `opendebt-payment-service` will be extracted into a shared `dk.ufst:ufst-bookkeeping-core` library (see ADR-0033). OpenDebt remains the initial home of the module. The architecture and interface contracts described below are the basis for that library.

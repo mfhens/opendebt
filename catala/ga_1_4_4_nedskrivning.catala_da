@@ -39,10 +39,10 @@ declaration scope Nedskrivning:
   context nedskrivningsGrund content NedskrivningsGrund
   context virkningsdato content date
   context fordringModtagelsestidspunkt content date
-  context erRetroaktiv content boolean
-  context erGIL18kSuspenderet content boolean
-  context grundErGyldig content boolean
-  context nedskrivningGodkendt content boolean
+  context output erRetroaktiv content boolean
+  context output erGIL18kSuspenderet content boolean
+  context output grundErGyldig content boolean
+  context output nedskrivningGodkendt content boolean
 ```
 
 ---

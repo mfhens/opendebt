@@ -11,4 +11,5 @@ All technical documentation is written in English.
 - [ADR Index](adr-index.md) -- Architecture Decision Records
 - [API Reference](api-reference.md) -- REST API documentation for each service
 - [Domain Model](domain-model.md) -- Begrebsmodel terminology and entity relationships
+- [Gas City](gas-city.md) -- AI agent orchestration: petition pipeline, human gates, troubleshooting
 - [Operations](operations.md) -- Deployment, monitoring, and incident response

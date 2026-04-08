@@ -27,7 +27,7 @@ declaration scope OpskrivningsfordringModtagelse:
   context erKrydssystemNedskrivning content boolean
   context originalFordringModtagelsestidspunkt content date
   context modtagelseISystemet content date
-  context modtagelsestidspunkt content date
+  context output modtagelsestidspunkt content date
 ```
 
 ---
