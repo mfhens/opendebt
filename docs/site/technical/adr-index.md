@@ -19,7 +19,7 @@
 | 0015 | Drools rules engine | Drools for business rule evaluation |
 | 0016 | Flowable workflow engine | Flowable BPMN for case management workflows |
 | 0017 | Smooks EDIFACT CREMUL/DEBMUL | Smooks for parsing SKB payment files |
-| 0018 | Double-entry bookkeeping | Double-entry bookkeeping for all financial transactions |
+| 0018 | Double-entry bookkeeping | All financial effects post to payment-service ledger (amendment #3); local journals supplementary |
 | 0019 | Orchestration over event-driven | Prefer orchestration (REST calls) over async events |
 | 0020 | Creditor channel and master data | Channel binding and access resolution architecture |
 | 0021 | UI accessibility compliance | WCAG 2.1 AA and webtilgaengelighed.dk compliance |
@@ -32,5 +32,6 @@
 | 0028 | Backup and disaster recovery | pgBackRest WAL archiving + streaming replication; RTO 4h / RPO 4h |
 | 0029 | immudb for financial ledger integrity | immudb 1.10 + immudb4j 1.0.1 as cryptographic tamper-evidence KV store for double-entry ledger entries; dual-write pattern from `BookkeepingService`; conditionally accepted pending UFST HDP platform validation (TB-028-a) |
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
+| 0031 | Statutory codes as enums | Values defined by statute (e.g., `WriteDownReasonCode`) are Java enums, not DB configuration; confirmed compatible with Catala's enumeration model (P054 spike) |
 
-ADR source files are in `docs/adr/` in the repository.
+ADR source files are in `architecture/adr/` in the repository.

@@ -41,7 +41,11 @@ OpenDebt follows the UFST begrebsmodel (concept model) for Danish public debt co
 | Rentejournal | Interest Journal | `InterestJournalEntry` |
 | Rentegrænse | Rate Boundary | year-boundary split in interest recalculation |
 | Dækning | Recovery / Payment applied | payment matching |
-| Dækningsrækkefølge | Coverage Priority | interest before fees before principal |
+| Dækningsrækkefølge | Coverage Priority / Payment Application Order | GIL § 4 — 5-category priority sort + FIFO |
+| Prioritetkategori | Priority Category | `PrioritetKategori` enum (INDDRIVELSESRENTER, OPKRAEVNINGSRENTER, GEBYRER, AFDRAG, ANDRE) |
+| Rentekomponent | Interest Component | `RenteKomponent` enum — 6 sub-positions for inddrivelsesrenter allocation (GIL § 4 stk. 1–4) |
+| Inddrivelsesindsats | Collection Effort Type | `InddrivelsesindsatsType` enum (LOENINDEHOLDELSE, UDLAEG, BEGGE, INGEN) — determines stk. 3 surplus routing |
+| Dækningspost | Payment Application Record | `DaekningRecord` — immutable audit record written per fordring component |
 
 ## Entity relationships
 
@@ -57,6 +61,8 @@ erDiagram
     DEBT ||--o{ PAYMENT : "receives"
     CASE ||--o{ DEBT : "contains"
     CASE }o--|| PERSON : "assigned caseworker"
+    DEBTOR ||--o{ DAEKNING_FORDRING : "has fordringer in queue"
+    DAEKNING_FORDRING ||--o{ DAEKNING_RECORD : "allocated to component"
 
     CREDITOR {
         UUID id PK
@@ -119,6 +125,31 @@ erDiagram
         decimal amount
         string ocrLine
         date valueDate
+    }
+
+    DAEKNING_FORDRING {
+        UUID id PK
+        UUID debtorId FK
+        UUID fordringId FK
+        string prioritetKategori "PrioritetKategori enum (GIL § 4)"
+        string renteKomponent "RenteKomponent enum"
+        string inddrivelsesindsatsType "InddrivelsesindsatsType enum"
+        decimal inddrivelsesrenterBeloeb
+        decimal opkraevningsrenterBeloeb
+        decimal gebyrBeloeb
+        decimal afdragBeloeb
+        decimal andreBeloeb
+        timestamp fifoSortKey
+    }
+
+    DAEKNING_RECORD {
+        UUID id PK
+        UUID debtorId FK
+        UUID fordringId FK
+        string komponent "RenteKomponent or PrioritetKategori component"
+        decimal daekningBeloeb
+        timestamp appliedAt
+        boolean simulated
     }
 ```
 

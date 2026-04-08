@@ -109,7 +109,7 @@ _Source: `docs/psrm-reference/06-underretningsmeddelelser.md`_
 ### Bi-temporal bookkeeping (ADR-0018)
 The double-entry bookkeeping system uses `effective_date` (vaerdidag) and `posting_date` (bogfoeringsdag). Retroactive corrections posted today can have an effective date in the past. The storno pattern ensures full auditability.
 
-_Source: `docs/adr/0018-double-entry-bookkeeping.md`_
+_Source: `architecture/adr/0018-double-entry-bookkeeping.md`_
 
 ## Constraints and assumptions
 

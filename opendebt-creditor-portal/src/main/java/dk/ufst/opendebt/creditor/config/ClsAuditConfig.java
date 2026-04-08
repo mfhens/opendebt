@@ -30,7 +30,9 @@ public class ClsAuditConfig {
       }
 
       @Override
-      public void flush() {}
+      public void flush() {
+        // No-op: disabled CLS client has no buffer to flush.
+      }
 
       @Override
       public boolean isEnabled() {

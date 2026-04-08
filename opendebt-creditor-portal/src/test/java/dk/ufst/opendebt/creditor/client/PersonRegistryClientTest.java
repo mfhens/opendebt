@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dk.ufst.opendebt.creditor.dto.DebtorVerificationResultDto;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -24,7 +22,6 @@ class PersonRegistryClientTest {
 
   private MockWebServer mockWebServer;
   private PersonRegistryClient client;
-  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() throws Exception {

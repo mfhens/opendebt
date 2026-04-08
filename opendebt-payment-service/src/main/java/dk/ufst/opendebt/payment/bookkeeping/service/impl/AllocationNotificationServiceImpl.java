@@ -9,7 +9,10 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import dk.ufst.opendebt.payment.bookkeeping.model.*;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.CoverageReversal;
+import dk.ufst.bookkeeping.model.TimelineReplayResult;
+import dk.ufst.opendebt.payment.bookkeeping.model.AllocationNotification;
 import dk.ufst.opendebt.payment.bookkeeping.service.AllocationNotificationService;
 
 import lombok.extern.slf4j.Slf4j;
