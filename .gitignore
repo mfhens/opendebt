@@ -100,6 +100,12 @@ architecture/workspace.json
 # Basecamp — local project IDs (copy from .basecamp/config.example.json)
 .basecamp/config.json
 
+# Playwright E2E (Node — see opendebt-e2e/, ADR-0034)
+opendebt-e2e/node_modules/
+opendebt-e2e/test-results/
+opendebt-e2e/playwright-report/
+opendebt-e2e/.cache/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db

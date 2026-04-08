@@ -1,0 +1,13 @@
+{
+  "name": "opendebt-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright E2E acceptance tests for OpenDebt portals (ADR-0034)",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}
