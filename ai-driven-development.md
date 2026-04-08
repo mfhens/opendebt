@@ -27,6 +27,7 @@ paginate: true
 | Audience | You, maybe a friend | 1,200 public institutions |
 | Stakes | Bragging rights | €600M in public debt |
 | Agent role | Autocomplete | Orchestrated pipeline |
+| **Human role** | **Writes the code** | **Governs the process** |
 
 <br>
 
@@ -125,8 +126,6 @@ An open-source debt collection platform for Danish public institutions
 
 ## The Development Pipeline
 
-<br>
-
 ```
   Petition (customer need)
        │
@@ -150,9 +149,57 @@ An open-source debt collection platform for Danish public institutions
        │
        ▼
   Docs + Status     ◄── Auto-maintained · sprint tracker synced
+       │
+       ▼
+  Wasteland         ◄── Federated registry: completion, patterns, stamps
 ```
 
-**9 specialised agents. 9 phases. Zero manual handoffs.**
+**9 specialised agents. 20 phases. Orchestrated by Gas City. Zero manual handoffs.**
+
+Petition → outcome contract → BDD → spec (incl. C4) → failing tests → implementation → review → docs/status → **Wasteland** registry.
+
+---
+
+## The Inversion
+
+**Traditional software delivery puts humans everywhere.**
+
+```
+Traditional:  Human writes code → Human reviews PR → Human updates docs
+              Human writes status → Human presents to steering committee
+
+This process: Human sets intent (petition)
+              ↓
+              Agents handle everything deterministic
+              ↓
+              Human gates at exactly three moments:
+                  Gate 1 — Does this spec accurately represent the intent?
+                  Gate 2 — Does this code responsibly deliver what was promised?
+                  Gate 3 — Is this ready to merge into production?
+              ↓
+              Human receives decision-support views (steerco, Basecamp)
+              to exercise ongoing governance
+```
+
+**Gate 1 — scaffold review**
+- Is the outcome contract faithful to the business intent?
+- Are the Gherkin scenarios complete, testable, and non-speculative?
+- Is the spec minimal — no gold-plating?
+- Is the Catala tier correct — is this statute or workflow?
+
+**What a human actually does at Gate 2 (code review):**
+- Does the implementation match the spec — no scope creep?
+- Do `mvn verify` and the security scan pass cleanly?
+- Is the Catala encoding consistent with the legal text?
+
+**What a human actually does at Gate 3 (merge gate):**
+- Is the documentation updated and the MkDocs build clean?
+- Is `program-status.yaml` set to `implemented`?
+- Am I willing to put my name on this going to 1,200 public institutions?
+
+<br>
+
+> *Three gates. All the accountability. None of the grunt work.*
 
 ---
 
@@ -168,20 +215,20 @@ petition001 · OCR Payment Matching
   phase: 0 — Existing Foundation
 
 petition019 · Legacy SOAP Endpoints (OCES3)
-  status: in_progress
+  status: implemented
   component: opendebt-integration-gateway
   rationale: Protocol adaptation — not an exception to REST,
              but additive SOAP capability for legacy creditors
 
 petition050 · Unified Case Timeline UI
-  status: planned
+  status: implemented
   personas: caseworker · citizen · creditor
   principle: one view, all history, role-filtered
 ```
 
 <br>
 
-50 petitions. 9 phases. Full traceability from business need → code → test.
+72 petitions. 20 phases. Full traceability from business need → code → test.
 
 ---
 
@@ -250,27 +297,36 @@ Red first. AI writes green. Human reviews.
 
 <!-- _class: compact -->
 
-## Step 4: The AI Agent Pipeline
+## Step 4: Gas City — Agent Orchestration
 
-**9 phases — each with a dedicated, stateless, auditable agent**
-
-<br>
-
-| Phase | Agent(s) | Produces |
-|---|---|---|
-| 0 · Translate | `petition-translator` + reviewer | Validated Gherkin scenarios |
-| 1 · Assign | `component-assigner` + `application-architect` | Component routing |
-| 2 · Architect | `solution-architect` + `c4-model-validator` | C4 model · Architecture review |
-| 3 · Specify | `specs-translator` + `specs-reviewer` | Implementation specification |
-| 4 · Test | `bdd-test-generator` + coverage auditor | Failing BDD step definitions |
-| 5 · Implement | `tdd-enforcer` | Green implementation |
-| 6 · Review | `code-reviewer-strict` + `code-minimality-reviewer` | Review findings |
-| 7 · Fix | `tdd-enforcer` (rerun) | All findings resolved |
-| 8 · Track | `implementation-doc-sync` + `sprint-tracker` | Docs updated · status synced |
+**Gas City runs the pipeline automatically. Human gates pause it.**
 
 <br>
 
-> Each agent is **stateless, scoped, and auditable**. No single model owns the whole flow.
+```bash
+gc start ~/GitHub/opendebt   # brings all agents online in tmux
+bd list --assignee human      # find your review gates
+bd close <id> "Approved"     # release the gate → pipeline resumes
+```
+
+<br>
+
+| Phase | Formula step | Pipeline agent | Produces |
+|---|---|---|---|
+| 1 · Translate | `translate` | `petition-translator` | Outcome contract |
+| 2 · Test | `gherkin` | `petition-to-gherkin` | Failing BDD step definitions |
+| 3 · Specify | `specs` | `specs-translator` | Implementation specification |
+| ⏸ Gate 1 | `human-review-scaffold` | **Human** | Scaffold approved |
+| 4 · Implement | `implement` | `tdd-enforcer` *(per-service rig)* | Green implementation |
+| 5 · Review | `review` | `code-reviewer` | Review findings · Snyk scan |
+| 6 · Encode | `catala-encode` | `catala-encoder` *(Tier A only)* | Formal Catala specification |
+| ⏸ Gate 2 | `human-review-code` | **Human** | Code approved |
+| 7 · Sync | `doc-sync` | `doc-sync` | Docs updated · status synced |
+| ⏸ Gate 3 | `human-merge-gate` | **Human** | Merge approved |
+
+<br>
+
+> Three **mandatory human gates**: scaffold review (before code), code review (before docs), merge gate (before main).
 
 ---
 
@@ -285,29 +341,60 @@ Red first. AI writes green. Human reviews.
 ```
   Juridisk Vejledning (G.A.)
         │
-        │  G.A.1.4.3 Opskrivning · G.A.1.4.4 Nedskrivning · GIL §18k
+        │  G.A.1.4.3 · G.A.1.4.4 · G.A.2.3.2 · G.A.2.4 · GIL §4 · §18k ...
         ▼
    Catala DSL           ◄── Formally typed, machine-checkable rules
         │                   Anchored to exact G.A. article citations
         ├──► Test suite ◄── Boundary conditions derived from legal text
         │
-        └──► Compare vs. PSRM implementation
+        ├──► Compare vs. PSRM implementation ◄── Discrepancies surfaced
+        │
+        └──► CI typecheck ◄── catala typecheck in GitHub Actions (ADR-0032)
 ```
 
 <br>
 
-**Spike result: 4 discrepancies found between G.A. prose and PSRM**
+**3 completed spikes, 3× Go verdict:**
 
-| # | Discrepancy | Impact |
+| Spike | Section | Key finding |
 |---|---|---|
-| 1 | Retroaktivitet: portal compares to *today*, G.A. compares to *fordring.receivedAt* | Differs for old debts |
-| 2 | GIL §18k: portal requires retroaktiv **AND** krydssystem; G.A. only requires retroaktiv | Under-application of rule |
-| 3 | §7 stk. 1 (6. pkt.) krydssystem case: no Gherkin scenario existed | Untested legal branch |
-| 4 | Høring banner (UI) conflated with modtagelsestidspunkt (legal timestamp) | Traceability gap |
+| P054 | G.A.1.4.3/1.4.4 (opskrivning/nedskrivning) | 4 discrepancies vs. PSRM — retroaktivitet, §18k under-application |
+| P069 | G.A.2.3.2 (dækningsrækkefølge GIL §4) | Token mismatch: INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 vs. G.A. text |
+| P070 | G.A.2.4 (forældelse — prescription) | SKM2015.718.ØLR varsel/afgørelse distinction; 2 P059 coverage gaps |
 
 <br>
 
-> **Go verdict.** Full G.A. Inddrivelse chapter: ~50 sections · ~1–2 person-days each.
+> **Roadmap: ~50 G.A. sections · ~1–2 person-days each.** Phases 18–20 fully planned.
+
+---
+
+## Step 6: The Wasteland — Federated Knowledge
+
+**Work doesn't disappear into a private repo. It's published to a federated registry.**
+
+```
+  Implementation complete
+         │
+         ▼
+  Wasteland (mfhens/ufst on DoltHub)
+  ┌──────────────────────────────────────────────────────┐
+  │  wanted board    ← open petitions visible to all     │
+  │  completions     ← evidence of shipped work          │
+  │  patterns        ← reusable architectural knowledge  │
+  │  learnings       ← findings anchored to patterns     │
+  │  stamps          ← validator trust signals           │
+  └──────────────────────────────────────────────────────┘
+```
+
+| Concept | What it means |
+|---|---|
+| **Rig** | A participant — human, agent, or org — with a DoltHub identity |
+| **Wanted** | Open work anyone can claim (petition or TB item) |
+| **Completion** | Evidence that work was done (git SHA, service path) |
+| **Pattern** | Reusable solution with validated evidence (e.g., *Double-Entry Financial Ledger*) |
+| **Stamp** | Trust signal issued by a validator after reviewing a completion |
+
+> Stored in versioned SQL (Dolt + DoltHub). Fork → work → push → earn reputation.
 
 ---
 
@@ -347,28 +434,28 @@ private String cprNumber;      // ← never in this service
 <br>
 
 ```
-┌──────────────┐  ┌──────────────┐  ┌────────────────────┐
-│citizen-portal│  │creditor-portal│  │integration-gateway │
-│  (MitID/     │  │  (MitID      │  │  (OCES3 · SOAP ·   │
-│  TastSelv)   │  │   Erhverv)   │  │   DUPLA · REST)    │
-└──────┬───────┘  └──────┬───────┘  └─────────┬──────────┘
-       │                 │                     │
-       └─────────────────┴─────────────────────┘
+┌──────────────┐  ┌───────────────┐  ┌──────────────┐  ┌────────────────────┐
+│citizen-portal│  │creditor-portal│  │caseworker-   │  │integration-gateway │
+│  (MitID/     │  │  (MitID       │  │portal        │  │  (OCES3 · SOAP ·   │
+│  TastSelv)   │  │   Erhverv)    │  │  (Keycloak)  │  │   DUPLA · REST)    │
+└──────┬───────┘  └──────┬────────┘  └──────┬───────┘  └─────────┬──────────┘
+       └─────────────────┴───────────────────┴───────────────────┘
                          │
-    ┌────────┬────────────┼───────────┬──────────────┐
-    │        │            │           │              │
-debt-svc  case-svc  payment-svc  letter-svc  rules-engine
-(Fordring) (Flowable)  (OCR match) (DigPost)  (Drools)
-    │        │            │           │              │
-    └────────┴────────────┴───────────┴──────────────┘
+    ┌────────┬────────────┼──────────┬──────────────┬──────────────┐
+    │        │            │          │              │              │
+debt-svc  case-svc  payment-svc  letter-svc  rules-engine  wage-garnishment
+(Fordring) (Flowable) (OCR match) (DigPost)  (Drools)      (Lønindeholdelse)
+    │        │            │          │              │              │
+    └────────┴────────────┴──────────┴──────────────┴──────────────┘
                          │
-            ┌────────────┴────────────┐
-            │     person-registry     │
-            │    creditor-service     │
-            └─────────────────────────┘
+          ┌──────────────┴─────────────────┐
+          │  person-registry  (AES-256 PII) │
+          │  creditor-service               │
+          │  immudb  (cryptographic ledger) │  ◄── ADR-0029
+          └─────────────────────────────────┘
 ```
 
-PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
+PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkeeping (ADR-0018)
 
 ---
 
@@ -385,9 +472,12 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
 | AI writes fast, breaks silently | AI writes fast, tests catch regressions |
 | Requirements drift | Petitions + outcome contracts hold the line |
 | One model, one context | Specialised agents, clear handoffs |
-| "It works on my machine" | CI/CD · Snyk · automated docs |
+| Manual dispatch, context loss | Human judgment concentrated at accountability moments — not diluted across every PR |
+| "It works on my machine" | CI/CD · Snyk · OWASP · automated docs |
 | GDPR as an afterthought | GDPR enforced by architecture |
 | Law interpreted loosely | G.A. encoded in Catala · discrepancies surfaced |
+| Financial records on trust | Double-entry bookkeeping · immudb ledger integrity |
+| Work buried in a private repo | Wasteland: federated board · completions · patterns · stamps |
 
 <br>
 
@@ -409,11 +499,11 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
 <br>
 
 **The difference is not the model.**  
-**The difference is the process around the model.**
+**The difference is knowing what only a human should decide.**
 
 <br>
 
-*Petition → Outcome Contract → BDD → Spec → TDD → Review → Law as Code → Ship*
+*Petition → BDD → Spec → TDD → Review → Law as Code → Gas City → ⏸ Human Gate → Wasteland*
 
 ---
 
@@ -427,6 +517,6 @@ PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes
 
 <br>
 
-`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 50 petitions · 12 services
+`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 72 petitions · 12 services · Gas City · Wasteland
 
 ---

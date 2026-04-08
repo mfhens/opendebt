@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+        False positive: keycloak-oauth2-starter is an internal library that wraps the
+        Keycloak client SDK. OWASP matches its JAR name against the Keycloak upstream
+        product CPE (cpe:2.3:a:keycloak:keycloak:1.0) and incorrectly flags historic
+        Keycloak server vulnerabilities that do not apply to this library.
+    -->
+    <suppress>
+        <notes>Internal keycloak-oauth2-starter adapter — not the Keycloak server product.</notes>
+        <gav regex="true">dk\.ufst:keycloak-oauth2-starter:.*</gav>
+        <cve>CVE-2014-3651</cve>
+    </suppress>
+    <suppress>
+        <notes>Internal keycloak-oauth2-starter adapter — not the Keycloak server product.</notes>
+        <gav regex="true">dk\.ufst:keycloak-oauth2-starter:.*</gav>
+        <cve>CVE-2014-3709</cve>
+    </suppress>
+    <suppress>
+        <notes>Internal keycloak-oauth2-starter adapter — not the Keycloak server product.</notes>
+        <gav regex="true">dk\.ufst:keycloak-oauth2-starter:.*</gav>
+        <cve>CVE-2017-12161</cve>
+    </suppress>
+
+    <!--
+        Temporary suppression: CVE-2026-33871 (CVSS 8.7) and CVE-2026-33870 (CVSS 7.5)
+        affect all netty-transport-* artifacts at 4.1.131.Final (including
+        netty-transport-classes-epoll), pulled in transitively via
+        spring-boot-starter-webflux (Reactor Netty) in opendebt-debt-service.
+
+        Spring Boot 3.5.12 manages Netty at 4.1.131.Final; no patched release exists
+        as of 2026-04-01. Expires 2026-07-01 — upgrade to a Spring Boot patch that
+        ships Netty ≥ 4.1.132.Final when available, then remove this suppression.
+
+        Mitigating controls: debt-service is deployed in a private Kubernetes namespace
+        with no direct internet exposure; Netty transport layer is not reachable externally.
+    -->
+    <suppress until="2026-07-01Z">
+        <notes>CVE-2026-33871 (CVSS 8.7) — all io.netty artifacts at 4.1.131.Final (netty-codec, netty-transport, netty-handler etc). No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
+        <gav regex="true">io\.netty:netty-.*:.*</gav>
+        <cve>CVE-2026-33871</cve>
+    </suppress>
+    <suppress until="2026-07-01Z">
+        <notes>CVE-2026-33870 (CVSS 7.5) — all io.netty artifacts at 4.1.131.Final (netty-codec, netty-transport, netty-handler etc). No fix available as of 2026-04-01. Review by 2026-07-01.</notes>
+        <gav regex="true">io\.netty:netty-.*:.*</gav>
+        <cve>CVE-2026-33870</cve>
+    </suppress>
+
+</suppressions>

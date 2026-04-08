@@ -1,7 +1,7 @@
 # Spike Findings: TB-028 — immudb Financial Ledger Integrity (ADR-0029)
 
 **Branch:** `spike/TB-028-immudb-financial-ledger-integrity`  
-**ADR:** [docs/adr/0029-immudb-for-financial-ledger-integrity.md](../adr/0029-immudb-for-financial-ledger-integrity.md)  
+**ADR:** [architecture/adr/0029-immudb-for-financial-ledger-integrity.md](../adr/0029-immudb-for-financial-ledger-integrity.md)  
 **Status:** Implementable sub-tasks (TB-028-b, TB-028-c) complete — platform sub-tasks
 (TB-028-a, TB-028-d, TB-028-e, TB-028-f) pending UFST HDP validation.
 

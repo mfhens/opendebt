@@ -70,7 +70,6 @@ public class Petition058Steps {
 
   private int lastHttpStatus;
   private UUID activeCaseworkerId;
-  private boolean waiverOutcome;
 
   private UUID currentDebtorPersonId;
   private BigDecimal currentDisbursementAmount;
@@ -104,7 +103,6 @@ public class Petition058Steps {
     eventKeyIndex.clear();
     lastHttpStatus = 0;
     activeCaseworkerId = null;
-    waiverOutcome = false;
     currentDebtorPersonId = null;
     currentDisbursementAmount = null;
     currentNemkontoReferenceId = null;
@@ -981,6 +979,8 @@ public class Petition058Steps {
       modregningEventRepository
           .findById(eventId)
           .ifPresent(me -> assertThat(me.isRenteGodtgoerelseNonTaxable()).isTrue());
+    }
+    if (!eventKeyIndex.isEmpty()) {
       return;
     }
     // For KPE scenarios, check any ModregningEvent for currentKpeDebtorId
@@ -1151,7 +1151,7 @@ public class Petition058Steps {
         korrektionspuljeEntryRepository.findAll().stream()
             .filter(e -> debtorId.equals(e.getDebtorPersonId()))
             .toList();
-    assertThat(entries).allMatch(e -> e.getSettledAt() == null);
+    assertThat(entries).isNotEmpty().allMatch(e -> e.getSettledAt() == null);
   }
 
   @Then("the entry is marked for annual-only settlement")
@@ -1161,7 +1161,7 @@ public class Petition058Steps {
           korrektionspuljeEntryRepository.findAll().stream()
               .filter(e -> currentKpeDebtorId.equals(e.getDebtorPersonId()))
               .toList();
-      assertThat(entries).allMatch(KorrektionspuljeEntry::isAnnualOnlySettlement);
+      assertThat(entries).isNotEmpty().allMatch(KorrektionspuljeEntry::isAnnualOnlySettlement);
     }
   }
 

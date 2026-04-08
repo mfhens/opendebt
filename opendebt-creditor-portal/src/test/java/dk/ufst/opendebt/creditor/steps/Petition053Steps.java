@@ -96,18 +96,6 @@ public class Petition053Steps {
   /** Content of {@code receipt.html} loaded for FR-6 receipt assertions. */
   private String receiptHtml;
 
-  /** External reference of the claim under test (informational only for template tests). */
-  private String currentClaimId;
-
-  /**
-   * Adjustment type selected by the user in FR-5 scenarios. Stored so {@code Then} steps can use it
-   * in assertion messages.
-   */
-  private String selectedAdjustmentType;
-
-  /** PSRM registration date (ISO-8601 string) for FR-6 scenarios. */
-  private String psrmRegistrationDate;
-
   // ── Direct controller test state (FR-1 submission scenarios) ─────────────────
 
   /** Mocked DebtServiceClient for controller-level submission tests (FR-1 / AC-5). */
@@ -128,15 +116,6 @@ public class Petition053Steps {
   /** Last binding result from the controller under test. */
   private BindingResult lastBindingResult;
 
-  /** Last model from the controller under test. */
-  private Model lastModel;
-
-  /** Last redirect attributes from the controller under test. */
-  private RedirectAttributesModelMap lastRedirectAttributes;
-
-  /** Claim ID UUID used for controller submission tests. */
-  private UUID controllerTestClaimId;
-
   private static final UUID DEFAULT_CREDITOR_ID =
       UUID.fromString("00000000-0000-0000-0000-000000000001");
   private static final UUID DEFAULT_CLAIM_UUID =
@@ -146,14 +125,8 @@ public class Petition053Steps {
   public void resetState() {
     formHtml = null;
     receiptHtml = null;
-    currentClaimId = null;
-    selectedAdjustmentType = null;
-    psrmRegistrationDate = null;
     lastViewName = null;
     lastBindingResult = null;
-    lastModel = null;
-    lastRedirectAttributes = null;
-    controllerTestClaimId = DEFAULT_CLAIM_UUID;
 
     // Set up mocks for controller-level submission tests (FR-1 / AC-5).
     mockDebtServiceClient = mock(DebtServiceClient.class);
@@ -229,14 +202,10 @@ public class Petition053Steps {
   }
 
   @Given("a claim {string} is under inddrivelse for fordringshaver {string}")
-  public void claimIsUnderInddrivelseForFordringshaver(String claimId, String creditorId) {
-    currentClaimId = claimId;
-  }
+  public void claimIsUnderInddrivelseForFordringshaver(String claimId, String creditorId) {}
 
   @Given("a claim {string} is under inddrivelse")
-  public void claimIsUnderInddrivelse(String claimId) {
-    currentClaimId = claimId;
-  }
+  public void claimIsUnderInddrivelse(String claimId) {}
 
   /**
    * FR-4: Pre-load the adjustment form template so the Given step already holds {@code formHtml}
@@ -245,17 +214,13 @@ public class Petition053Steps {
   @Given("user {string} is on the nedskrivning adjustment form for claim {string}")
   public void userIsOnNedskrivningAdjustmentFormForClaim(String userId, String claimId)
       throws IOException {
-    currentClaimId = claimId;
     formHtml = readResource(formTemplate);
     assertThat(formHtml).isNotBlank();
   }
 
   /** FR-6: Store PSRM registration date for cross-system retroactive comparison. */
   @Given("a claim {string} has a PSRM registration date of {string}")
-  public void claimHasPsrmRegistrationDate(String claimId, String date) {
-    currentClaimId = claimId;
-    psrmRegistrationDate = date;
-  }
+  public void claimHasPsrmRegistrationDate(String claimId, String date) {}
 
   // ── FR-1 When steps ─────────────────────────────────────────────────────────
 
@@ -269,7 +234,6 @@ public class Petition053Steps {
   @When("user {string} navigates to the nedskrivning adjustment form for claim {string}")
   public void userNavigatesToNedskrivningAdjustmentForm(String userId, String claimId)
       throws IOException {
-    currentClaimId = claimId;
     formHtml = readResource(formTemplate);
     assertThat(formHtml).isNotBlank();
   }
@@ -281,7 +245,6 @@ public class Petition053Steps {
   @When("user {string} navigates to the opskrivning adjustment form for claim {string}")
   public void userNavigatesToOpskrivningAdjustmentForm(String userId, String claimId)
       throws IOException {
-    currentClaimId = claimId;
     formHtml = readResource(formTemplate);
     assertThat(formHtml).isNotBlank();
   }
@@ -414,7 +377,6 @@ public class Petition053Steps {
   @When("user {string} enters virkningsdato {string} on the nedskrivning form for claim {string}")
   public void userEntersVirkningsdatoOnNedskrivningForm(
       String userId, String dateDescription, String claimId) throws IOException {
-    currentClaimId = claimId;
     formHtml = readResource(formTemplate);
     // Absence assertion in the Then step is a static check (key not present in template).
   }
@@ -427,9 +389,7 @@ public class Petition053Steps {
    * expression and message key are present.
    */
   @When("user {string} selects adjustment type {string}")
-  public void userSelectsAdjustmentType(String userId, String adjustmentType) {
-    selectedAdjustmentType = adjustmentType;
-  }
+  public void userSelectsAdjustmentType(String userId, String adjustmentType) {}
 
   // ── FR-6 When steps ─────────────────────────────────────────────────────────
 
@@ -445,7 +405,6 @@ public class Petition053Steps {
   @When("user {string} submits a nedskrivning for claim {string} with virkningsdato {string}")
   public void userSubmitsNedskrivningWithVirkningsdato(
       String userId, String claimId, String virkningsdato) throws IOException {
-    currentClaimId = claimId;
     receiptHtml = readResource(receiptTemplate);
     assertThat(receiptHtml).isNotBlank();
     // Full BFF → debt-service flow with ClaimAdjustmentResponseDto.crossSystemRetroactiveApplies
@@ -932,8 +891,6 @@ public class Petition053Steps {
 
     lastViewName = viewName;
     lastBindingResult = bindingResult;
-    lastModel = model;
-    lastRedirectAttributes = redirectAttributes;
   }
 
   /**

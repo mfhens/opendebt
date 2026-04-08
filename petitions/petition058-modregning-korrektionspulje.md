@@ -523,4 +523,4 @@ from event ingestion to transaction commit.
 - [ ] Liquibase migrations add `modregning_event`, `korrektionspulje_entry`, `rentegodt_rate_entry` tables with all required columns
 - [ ] CLS audit log entries for each modregning decision include `gilParagraf`, `modregningEventId`, `debtorPersonId`, and `fordringId`
 - [ ] `behave --dry-run` passes on `petitions/petition058-modregning-korrektionspulje.feature`
-- [ ] Architecture overview updated in `docs/architecture-overview.md`
+- [ ] Architecture overview updated in `architecture/overview.md`

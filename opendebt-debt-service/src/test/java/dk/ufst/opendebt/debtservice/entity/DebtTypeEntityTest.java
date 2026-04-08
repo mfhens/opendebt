@@ -2,8 +2,6 @@ package dk.ufst.opendebt.debtservice.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
-
 import org.junit.jupiter.api.Test;
 
 class DebtTypeEntityTest {
@@ -19,8 +17,6 @@ class DebtTypeEntityTest {
 
   @Test
   void builderAllowsOverridingFlagsAndMetadata() {
-    LocalDateTime createdAt = LocalDateTime.of(2026, 3, 6, 12, 0);
-    LocalDateTime updatedAt = LocalDateTime.of(2026, 3, 6, 12, 30);
     DebtTypeEntity entity =
         DebtTypeEntity.builder()
             .code("700")
@@ -31,8 +27,6 @@ class DebtTypeEntityTest {
             .active(false)
             .requiresManualReview(true)
             .interestApplicable(false)
-            .createdAt(createdAt)
-            .updatedAt(updatedAt)
             .build();
 
     assertThat(entity.getCode()).isEqualTo("700");
@@ -42,8 +36,6 @@ class DebtTypeEntityTest {
     assertThat(entity.isActive()).isFalse();
     assertThat(entity.isRequiresManualReview()).isTrue();
     assertThat(entity.isInterestApplicable()).isFalse();
-    assertThat(entity.getCreatedAt()).isEqualTo(createdAt);
-    assertThat(entity.getUpdatedAt()).isEqualTo(updatedAt);
   }
 
   @Test
@@ -69,9 +61,7 @@ class DebtTypeEntityTest {
             entity.isRequiresManualReview(),
             entity.isInterestApplicable(),
             entity.isCivilLaw(),
-            entity.getClaimTypeCode(),
-            entity.getCreatedAt(),
-            entity.getUpdatedAt());
+            entity.getClaimTypeCode());
 
     assertThat(copied.getCode()).isEqualTo("800");
     assertThat(copied.getName()).isEqualTo("Interest bearing debt");

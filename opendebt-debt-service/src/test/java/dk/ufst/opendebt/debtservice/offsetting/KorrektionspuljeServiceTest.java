@@ -205,7 +205,7 @@ class KorrektionspuljeServiceTest {
       OffsettingReversalEvent reversalEvent =
           buildReversalEvent(new BigDecimal("1500.00"), "PSRM", false, false);
 
-      KorrektionspuljeResult result = underTest.processReversal(reversalEvent);
+      underTest.processReversal(reversalEvent);
 
       ArgumentCaptor<KorrektionspuljeEntry> captor =
           ArgumentCaptor.forClass(KorrektionspuljeEntry.class);

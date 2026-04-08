@@ -1573,12 +1573,12 @@ ALTER TABLE cases DROP COLUMN IF EXISTS assigned_caseworker_ids;
 
 - [petition048-role-based-data-access-control.md](petition048-role-based-data-access-control.md)
 - [petition048-outcome-contract.md](petition048-outcome-contract.md)
-- [ADR-0005: Keycloak Authentication](../docs/adr/0005-keycloak-authentication.md)
-- [ADR-0007: No Cross-Service Database Access](../docs/adr/0007-no-direct-database-connections.md)
-- [ADR-0014: GDPR Data Isolation](../docs/adr/0014-gdpr-data-isolation.md)
-- [ADR-0024: Observability Backend Stack](../docs/adr/0024-observability-backend-stack.md)
-- [ADR-0022: Shared Audit Infrastructure](../docs/adr/0022-shared-audit-infrastructure.md)
-- [ADR-0026: Inter-Service Resilience](../docs/adr/0026-inter-service-resilience.md)
+- [ADR-0005: Keycloak Authentication](../architecture/adr/0005-keycloak-authentication.md)
+- [ADR-0007: No Cross-Service Database Access](../architecture/adr/0007-no-direct-database-connections.md)
+- [ADR-0014: GDPR Data Isolation](../architecture/adr/0014-gdpr-data-isolation.md)
+- [ADR-0024: Observability Backend Stack](../architecture/adr/0024-observability-backend-stack.md)
+- [ADR-0022: Shared Audit Infrastructure](../architecture/adr/0022-shared-audit-infrastructure.md)
+- [ADR-0026: Inter-Service Resilience](../architecture/adr/0026-inter-service-resilience.md)
 
 ### Appendix C: Architectural Review Checklist
 

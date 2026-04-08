@@ -46,7 +46,6 @@ public class Petition038Steps {
   private String navHtml;
   private String settingsHtml;
   private String selectionHtml;
-  private String claimCountsHtml;
 
   @Given("the creditor portal is running")
   public void theCreditorPortalIsRunning() {

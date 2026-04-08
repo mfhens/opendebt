@@ -101,7 +101,6 @@ public class ModregningService implements OffsettingService {
    * @param restrictedPayment true if børne-og-ungeydelse restrictions apply
    * @return ModregningResult summary
    */
-  @Transactional
   public ModregningResult initiateModregning(
       UUID debtorPersonId,
       BigDecimal availableAmount,
@@ -224,7 +223,6 @@ public class ModregningService implements OffsettingService {
    * CollectionMeasureEntity rows (MISSING-2) 8. Reverse ledger entries for original tier-2 measures
    * (ADR-0018) 9. Persist updated event 10. CLS audit
    */
-  @Transactional
   public ModregningResult applyTier2Waiver(
       UUID debtorPersonId, UUID modregningEventId, String waiverReason, UUID caseworkerId) {
 
@@ -316,7 +314,6 @@ public class ModregningService implements OffsettingService {
    * @param success true if notice was delivered successfully
    * @param deliveryDate the date notice was delivered (only used when success=true)
    */
-  @Transactional
   public void handleNoticeDelivery(UUID eventId, boolean success, LocalDate deliveryDate) {
     ModregningEvent event =
         modregningEventRepository
