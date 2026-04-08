@@ -179,7 +179,7 @@ See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
 
 - **ADR-0007**: No cross-service database connections
 - **ADR-0014**: GDPR data isolation in person-registry
-- **ADR-0018**: Double-entry bookkeeping for payments
+- **ADR-0018**: Double-entry bookkeeping — every financial transaction posts to the payment-service ledger (see amendment #3); local journal tables are not a substitute
 - **ADR-0019**: Orchestration over event-driven architecture
 - **ADR-0024**: Observability with Grafana stack
 - **ADR-0029**: immudb for cryptographic financial ledger integrity (conditionally accepted; pending TB-028-a HDP validation)

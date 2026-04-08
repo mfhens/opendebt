@@ -3,6 +3,8 @@ package dk.ufst.opendebt.debtservice.offsetting;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import dk.ufst.opendebt.debtservice.service.PaymentType;
+
 /**
  * Domain service for offsetting (modregning) — matching incoming payments eligible for government
  * set-off against registered debts.
@@ -30,5 +32,5 @@ public interface OffsettingService {
    * @return a summary of the offsetting result
    */
   OffsettingResult initiateOffsetting(
-      UUID debtorPersonId, BigDecimal availableAmount, String paymentType);
+      UUID debtorPersonId, BigDecimal availableAmount, PaymentType paymentType);
 }

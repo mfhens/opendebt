@@ -1,0 +1,414 @@
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Juridisk grundlag: Gæld.bekendtg. § 50 (retsinformation.dk/eli/lta/2024/1110#P50);
+                      GIL § 18c (retsinformation.dk/eli/lta/2024/1063#P18c)
+   Formål: Formalisering af retskraftvurderingsrækkefølgen for fordringer overdraget
+           til restanceinddrivelsesmyndigheden til og med den 31. december 2024 (G.A.2.5)
+   Petition: P060 — Retskraftvurdering — § 50 priority ordering (G.A.2.5)
+   Status: CI-gated compliance artefact
+
+   Juridisk noter:
+   - GIL § 4 og § 7, stk. 1 finder IKKE anvendelse på rækkefølgen for retskraftvurderinger
+     (Gæld.bekendtg. § 50, stk. 1). Catala-scopet RetskraftVurderingsRaekkefoelge er
+     derfor UAFHÆNGIGT af PrioritetKategoriRang i ga_2_3_2_1_daekningsraekkefoeigen.catala_da.
+   - Diskretionære fravigelsesregler (§ 50, stk. 2, 2. afsnit; stk. 3; stk. 4, 3. afsnit;
+     stk. 5, 2. afsnit) er IKKE formaliseret i Catala — se JURIDISK-USIKKERHED-flag nedenfor.
+
+   Encoded FR rules:
+   - FR-0.1: GIL § 18c — eligibilitetsgrænse 31. december 2024
+   - FR-1.1–FR-1.3: Gæld.bekendtg. § 50, stk. 2 — trepunktsprioritering (bøder → underholdsbidrag → øvrige)
+   - FR-1.4: Gæld.bekendtg. § 50, stk. 3 — datafejl suspenderer standardrækkefølgen
+   - FR-2.1–FR-2.2: Gæld.bekendtg. § 50, stk. 6 — renter vurderes kun hvis stamfordring er retskraftig
+   - FR-3.1–FR-3.3: Gæld.bekendtg. § 50, stk. 4 — surplus-betaling udløser GIL § 4, stk. 2–3 vurdering
+   - FR-4.1–FR-4.2: Gæld.bekendtg. § 50, stk. 5 — modregning: retskraftig gæld dækkes først *)
+
+---
+
+## Artikel: G.A.2.5 — Retskraftvurderingsrækkefølgen efter Gæld.bekendtg. § 50
+
+### Baggrund
+
+Ifølge G.A.2.5 (G.A. snapshot v3.16, 2026-03-28) skal restanceinddrivelsesmyndigheden
+vurdere, om fordringer overdraget til inddrivelse til og med den 31. december 2024 er
+retskraftige. Rækkefølgen for retskraftvurderingen er reguleret i Gæld.bekendtg. § 50
+og adskiller sig fra den ordinære dækningsrækkefølge i GIL § 4: GIL § 4 og § 7, stk. 1
+finder ikke anvendelse på retskraftvurderingsrækkefølgen (§ 50, stk. 1).
+
+Standardrækkefølgen er: (1) Bøder, (2) private krav på underholdsbidrag, (3) alle øvrige
+fordringer. Fordringer med mistanke om datafejl vurderes i en skønsmæssig rækkefølge
+(stk. 3). Renter og lignende ydelser vurderes kun, hvis stamfordringen er retskraftig
+(stk. 6). Ved overskydende betalinger og modregningssituationer gælder særregler for,
+hvilken del af gælden der skal retskraftvurderes (stk. 4–5).
+
+Dette Catala-program formaliserer retskraftvurderingsreglerne i fem scopes og én
+enumerationstype.
+
+---
+
+## Enumerationer — Juridisk grundlag: Gæld.bekendtg. § 50, stk. 2
+
+### ENUM-1: FordringRetskraftKategori — Gæld.bekendtg. § 50, stk. 2
+
+De tre fordringskategorier jf. Gæld.bekendtg. § 50, stk. 2. Kategorien afgør
+rækkefølgen for retskraftvurderingen: bøder vurderes forud for private
+underholdsbidrag, som vurderes forud for alle øvrige fordringer.
+
+```catala
+declaration enumeration FordringRetskraftKategori:
+  -- BOEDE
+  -- PRIVAT_UNDERHOLDSBIDRAG
+  -- OEVRIGT
+```
+
+---
+
+## Gæld.bekendtg. § 50 — SCOPE-1: RetskraftEligibilitet (GIL § 18c)
+
+### Omfangsdeklaration — RetskraftEligibilitet
+
+GIL § 18c fastlægger, at restanceinddrivelsesmyndighedens retskraftvurderingspligt
+kun gælder fordringer overdraget til og med den 31. december 2024. Fordringer
+overdraget efter denne dato er ikke omfattet af § 50-retskraftvurderingspligten.
+
+```catala
+declaration scope RetskraftEligibilitet:
+  context overdragelsesdato content date
+  context output erEligibleForRetskraftvurdering content boolean
+```
+
+---
+
+## GIL § 18c — Eligibilitetsgrænse den 31. december 2024
+
+**FR-0.1: Fordringer overdraget til og med 31. december 2024 er eligible for retskraftvurdering**
+
+GIL § 18c fastsætter restanceinddrivelsesmyndighedens pligt til at vurdere retskraft
+for fordringer overdraget til og med den 31. december 2024 ("til og med" er inklusiv —
+grænseværdidatoen er inkluderet i scopet). Fordringer overdraget den 1. januar 2025
+eller senere er IKKE encompassed af § 50-pligten.
+
+```catala
+scope RetskraftEligibilitet:
+  # FR-0.1: eligible = (overdragelsesdato <= |2024-12-31|)
+  # Ankerpunkt: GIL § 18c
+  definition erEligibleForRetskraftvurdering
+    equals overdragelsesdato <= |2024-12-31|
+```
+
+---
+
+## Gæld.bekendtg. § 50 — SCOPE-2: RetskraftVurderingsRaekkefoelge (stk. 1–3)
+
+### Omfangsdeklaration — RetskraftVurderingsRaekkefoelge
+
+Gæld.bekendtg. § 50, stk. 2 fastlægger en trepunktsprioritering for, i hvilken
+rækkefølge restanceinddrivelsesmyndigheden foretager retskraftvurdering af fordringer.
+Stk. 1 præciserer, at GIL § 4 og § 7, stk. 1's dækningsrækkefølge IKKE finder
+anvendelse på denne vurderingsrækkefølge. Stk. 3 indfører en undtagelse ved
+mistanke om datafejl.
+
+```catala
+declaration scope RetskraftVurderingsRaekkefoelge:
+  context fordringKategori content FordringRetskraftKategori
+  context harMistankeOmDatafejl content boolean
+  context output vurderingsRang content integer
+  context output standardRaekkefoelgeGaelder content boolean
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 2, 1. afsnit — Standardrækkefølgen: tre kategorier
+
+**FR-1.1: Bøder retskraftvurderes forud for alle andre fordringer (rang 1)**
+
+Gæld.bekendtg. § 50, stk. 2, nr. 1: Bøder vurderes i første rækkefølge. BOEDE
+er den højest prioriterede kategori i retskraftvurderingsrækkefølgen.
+
+```catala
+scope RetskraftVurderingsRaekkefoelge:
+  # FR-1.1: BOEDE → vurderingsRang = 1
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 2, nr. 1
+  definition vurderingsRang
+    under condition fordringKategori = BOEDE
+    consequence equals 1
+```
+
+---
+
+**FR-1.2: Private krav på underholdsbidrag vurderes som nummer to (rang 2)**
+
+Gæld.bekendtg. § 50, stk. 2, nr. 2: Private krav på underholdsbidrag vurderes i
+anden rækkefølge — efter bøder men forud for alle øvrige fordringer.
+
+```catala
+scope RetskraftVurderingsRaekkefoelge:
+  # FR-1.2: PRIVAT_UNDERHOLDSBIDRAG → vurderingsRang = 2
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 2, nr. 2
+  definition vurderingsRang
+    under condition fordringKategori = PRIVAT_UNDERHOLDSBIDRAG
+    consequence equals 2
+```
+
+---
+
+**FR-1.3: Alle øvrige fordringer vurderes sidst (rang 3)**
+
+Gæld.bekendtg. § 50, stk. 2, nr. 3: Alle øvrige fordringer — der ikke er bøder
+eller private underholdsbidragskrav — vurderes i tredje rækkefølge.
+
+```catala
+scope RetskraftVurderingsRaekkefoelge:
+  # FR-1.3: OEVRIGT → vurderingsRang = 3
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 2, nr. 3
+  definition vurderingsRang
+    under condition fordringKategori = OEVRIGT
+    consequence equals 3
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 2, 2. afsnit — standardRaekkefoelgeGaelder grundregel
+
+**FR-1.4-base: Standardrækkefølgen gælder som udgangspunkt**
+
+Standardrækkefølgen jf. stk. 2, nr. 1–3 gælder, medmindre der er mistanke om
+datafejl (stk. 3) eller særlige omstændigheder berettiger fravigelse (stk. 2, 2. afsnit).
+Catala formaliserer grundreglen som: standardRaekkefoelgeGaelder = not harMistankeOmDatafejl.
+
+(* JURIDISK-USIKKERHED: Gæld.bekendtg. § 50, stk. 2, 2. afsnit: "Restanceinddrivelsesmyndigheden
+   kan dog vælge at fravige rækkefølgen, hvis særlige omstændigheder taler derfor."
+   Fravigelse er et administrativt skøn og kan ikke formaliseres i Catala. Denne regelgren
+   er IKKE encoded. Implementeringen skal sikre, at sagsbehandlere kan overrides manuelt. *)
+
+```catala
+scope RetskraftVurderingsRaekkefoelge:
+  # FR-1.4-base: standardrækkefølge gælder medmindre datafejl
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 2; § 50, stk. 3
+  definition standardRaekkefoelgeGaelder
+    equals not harMistankeOmDatafejl
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 3 — Datafejl suspenderer standardrækkefølgen
+
+**FR-1.4: Ved mistanke om datafejl gælder standardrækkefølgen ikke**
+
+Gæld.bekendtg. § 50, stk. 3: "Ved mistanke om datafejl, der kan have betydning for
+inddrivelse, modregning eller dækning, vurderes fordringerne i den rækkefølge, som af
+restanceinddrivelsesmyndigheden skønnes hensigtsmæssig." Catala formaliserer alene
+flaget standardRaekkefoelgeGaelder = false — den konkrete rækkefølge er diskretionær.
+
+(* JURIDISK-USIKKERHED: Gæld.bekendtg. § 50, stk. 3: Den specifikke rækkefølge ved
+   datafejl er et administrativt skøn baseret på "fordringernes beløb, fejlens karakter,
+   undersøgelsernes kompleksitet og mulighederne for at opnå betaling." Denne rækkefølge
+   er IKKE encodable i Catala. vurderingsRang er UNDEFINED (ikke bindende) når
+   standardRaekkefoelgeGaelder = false. *)
+
+---
+
+## Gæld.bekendtg. § 50 — SCOPE-3: RenterRetskraftbetingelse (stk. 6)
+
+### Omfangsdeklaration — RenterRetskraftbetingelse
+
+Gæld.bekendtg. § 50, stk. 6 fastsætter, at renter og lignende ydelser kun
+retskraftvurderes, hvis den fordring de vedrører er retskraftig. Desuden: hvis
+renter afskrives efter GIL § 16, stk. 1 (fordi retskraftvurdering er forbundet med
+uforholdsmæssige omkostninger), skal retskraftvurdering ikke finde sted.
+
+```catala
+declaration scope RenterRetskraftbetingelse:
+  context erStamfordringRetskraftig content boolean
+  context erAfskrevneEfterGIL16Stk1 content boolean
+  context output skalRetskraftvurderes content boolean
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 6, 1. pkt. — Renter vurderes kun hvis stamfordring er retskraftig
+
+**FR-2.1: Grundregel — renters retskraftstatus afhænger af stamfordringens retskraft**
+
+Gæld.bekendtg. § 50, stk. 6, 1. pkt.: "Renter og lignende ydelser retskraftvurderes
+alene, hvis den fordring, de vedrører, er retskraftig." Skalretskraftvurderes = true
+hvis og kun hvis stamfordringen er retskraftig (og renter ikke er afskrevet jf. FR-2.2).
+
+```catala
+scope RenterRetskraftbetingelse:
+  # FR-2.1: skalRetskraftvurderes = erStamfordringRetskraftig (grundregel)
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 6, 1. pkt.
+  definition skalRetskraftvurderes
+    equals erStamfordringRetskraftig
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 6, 2. pkt. — Afskrivning under GIL § 16, stk. 1 fritar for vurdering
+
+**FR-2.2: Undtagelse — renter afskrevet efter GIL § 16, stk. 1 kræver ikke retskraftvurdering**
+
+Gæld.bekendtg. § 50, stk. 6, 2. pkt.: "Hvis renter eller lignende ydelser afskrives
+efter gældsinddrivelseslovens § 16, stk. 1, fordi det vil være forbundet med
+uforholdsmæssige omkostninger at foretage en retskraftvurdering af dem, skal
+retskraftvurdering af disse fordringer ikke finde sted." Undtagelse til FR-2.1: selv
+hvis stamfordring er retskraftig, skal retskraftvurdering ikke ske for afskrevne renter.
+
+```catala
+scope RenterRetskraftbetingelse:
+  # FR-2.2: undtagelse til FR-2.1 — afskrivning efter GIL § 16, stk. 1 → skalRetskraftvurderes = false
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 6, 2. pkt.; GIL § 16, stk. 1
+  exception
+  definition skalRetskraftvurderes
+    under condition erAfskrevneEfterGIL16Stk1
+    consequence equals false
+```
+
+---
+
+## Gæld.bekendtg. § 50 — SCOPE-4: SurplusBetalingRetskraft (stk. 4)
+
+### Omfangsdeklaration — SurplusBetalingRetskraft
+
+Gæld.bekendtg. § 50, stk. 4 regulerer, hvad der sker, når restanceinddrivelsesmyndigheden
+modtager en betaling, og der efter dækning af bekræftet retskraftig gæld (GIL § 4)
+opstår et overskydende beløb. Stk. 4 pålægger retskraftvurdering af den tvivlsomme
+gæld ud fra GIL § 4, stk. 2 og 3's rækkefølge, og renter vurderes altid sidst (stk. 6).
+
+(* JURIDISK-USIKKERHED: Gæld.bekendtg. § 50, stk. 4, 3. afsnit: Restanceinddrivelsesmyndigheden
+   kan fravige rækkefølgen for retskraftvurderingerne, hvis det vil forsinke anvendelsen af det
+   overskydende beløb. Er der anden gæld registreret i DMI, gælder GIL § 18j, stk. 2 (ændret
+   ved lov nr. 1565 af 12. december 2023). Disse bestemmelser er diskretionære / kræver
+   separat petition for DMI-specifik encoding og er IKKE formaliseret i dette scope. *)
+
+```catala
+declaration scope SurplusBetalingRetskraft:
+  context harOvskydendeBelob content boolean
+  context harGaeldMedTvivlsomRetskraft content boolean
+  context harGaeldMedDatafejl content boolean
+  context output skalRetskraftvurdereOvskydende content boolean
+  context output skalAnvendeGIL4Stk2Stk3Ordering content boolean
+  context output skalRenterVurderesSidst content boolean
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 4, 1.–2. afsnit — Surplus-betaling udløser retskraftvurdering
+
+**FR-3.1: Overskydende beløb + tvivlsom gæld udløser retskraftvurdering**
+
+Gæld.bekendtg. § 50, stk. 4, 2. afsnit: "Hvis der herefter er et beløb i overskud, og
+skyldneren har anden gæld med tvivlsom retskraft eller mistanke om datafejl, som er under
+inddrivelse hos restanceinddrivelsesmyndigheden, retskraftvurderer restanceinddrivelsesmyndigheden
+ud fra dækningsrækkefølgen i gældsinddrivelseslovens § 4, stk. 2 og 3 så stor en del af
+gælden, som beløbsmæssigt svarer til det overskydende beløb." Triggerbetingelsen er
+BEGGE: (a) der er et overskydende beløb OG (b) der er tvivlsom gæld eller gæld med datafejl.
+
+```catala
+scope SurplusBetalingRetskraft:
+  # FR-3.1: skalRetskraftvurdereOvskydende = harOvskydendeBelob and (tvivlsom OR datafejl)
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 4, 2. afsnit
+  definition skalRetskraftvurdereOvskydende
+    equals harOvskydendeBelob
+      and (harGaeldMedTvivlsomRetskraft or harGaeldMedDatafejl)
+```
+
+---
+
+**FR-3.2: Surplus-vurdering følger GIL § 4, stk. 2 og 3 — dækningsrækkefølgens ordensprincip**
+
+Gæld.bekendtg. § 50, stk. 4, 2. afsnit: retskraftvurderingen af den overskydende del
+sker "ud fra dækningsrækkefølgen i gældsinddrivelseslovens § 4, stk. 2 og 3". Når
+skalRetskraftvurdereOvskydende = true, skal GIL § 4, stk. 2 og 3 (FIFO-sortering og
+inddrivelsesindsats-reglerne fra ga_2_3_2_1_daekningsraekkefoeigen.catala_da) anvendes
+til at bestemme, hvilke fordringer der retskraftvurderes inden for det overskydende beløb.
+
+```catala
+scope SurplusBetalingRetskraft:
+  # FR-3.2: skalAnvendeGIL4Stk2Stk3Ordering = skalRetskraftvurdereOvskydende
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 4, 2. afsnit (GIL § 4, stk. 2–3 reference)
+  definition skalAnvendeGIL4Stk2Stk3Ordering
+    equals skalRetskraftvurdereOvskydende
+```
+
+---
+
+**FR-3.3: Renter og lignende ydelser vurderes altid sidst i surplus-kontekst**
+
+Gæld.bekendtg. § 50, stk. 4, 2. afsnit in fine (jf. stk. 6, 1. pkt.): "Renter og
+lignende ydelser retskraftvurderes dog sidst." Renter er den sidst vurderede kategori
+i surplus-assessmentet — uanset de øvrige rækkefølgeregler. Betingelsen er identisk
+med FR-3.1: skalRenterVurderesSidst er true præcis når skalRetskraftvurdereOvskydende er true.
+
+```catala
+scope SurplusBetalingRetskraft:
+  # FR-3.3: skalRenterVurderesSidst = skalRetskraftvurdereOvskydende
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 4, 2. afsnit + stk. 6, 1. pkt.
+  definition skalRenterVurderesSidst
+    equals skalRetskraftvurdereOvskydende
+```
+
+---
+
+## Gæld.bekendtg. § 50 — SCOPE-5: ModregningRetskraft (stk. 5)
+
+### Omfangsdeklaration — ModregningRetskraft
+
+Gæld.bekendtg. § 50, stk. 5 regulerer retskraftvurdering i modregningssituationer
+jf. GIL § 4, stk. 5 og Gæld.bekendtg. § 7, stk. 4 og 5. I disse situationer kan
+restanceinddrivelsesmyndigheden fravige den sædvanlige dækningsrækkefølge (GIL § 7,
+stk. 1–2) og § 50, stk. 2–3-rækkefølgen for at dække allerede bekræftede retskraftige
+fordringer (uden datafejl) først. Renter vurderes sidst (jf. stk. 6).
+
+(* JURIDISK-USIKKERHED: Gæld.bekendtg. § 50, stk. 5, 2. afsnit: Restanceinddrivelsesmyndigheden
+   kan fravige rækkefølgen for vurderingerne ELLER beslutte, at der helt eller delvist IKKE
+   foretages modregning i udbetalingen, hvis det under hensyntagen til driftstilrettelæggelsen,
+   udbetalingsfristen, fordringernes beløb, fejlens karakter eller undersøgelsernes kompleksitet
+   findes hensigtsmæssigt. Disse diskretionære undtagelser er IKKE formaliseret i Catala. *)
+
+```catala
+declaration scope ModregningRetskraft:
+  context erModregningsSituation content boolean
+  context harRetskraftigGaeldUdenDatafejl content boolean
+  context harOvskydendeBelob content boolean
+  context output daekRetskraftigForst content boolean
+  context output skalRenterVurderesSidst content boolean
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 5, 1. afsnit — Bekræftet retskraftig gæld dækkes først
+
+**FR-4.1: I modregningssituationer dækkes bekræftet retskraftig gæld (uden datafejl) forud for øvrig gæld**
+
+Gæld.bekendtg. § 50, stk. 5, 1. afsnit: "kan rækkefølgen for dækning af fordringer...
+og rækkefølgen for vurderinger... fraviges, så beløbet først anvendes til at dække
+fordringer, som er konstateret retskraftige og uden datafejl." Betingelsen er BEGGE:
+(a) det er en modregningssituation OG (b) der er bekræftet retskraftig gæld uden datafejl.
+
+```catala
+scope ModregningRetskraft:
+  # FR-4.1: daekRetskraftigForst = erModregningsSituation and harRetskraftigGaeldUdenDatafejl
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 5, 1. afsnit
+  definition daekRetskraftigForst
+    equals erModregningsSituation
+      and harRetskraftigGaeldUdenDatafejl
+```
+
+---
+
+## Gæld.bekendtg. § 50, stk. 5, 1. afsnit + stk. 6, 1. pkt. — Renter vurderes sidst
+
+**FR-4.2: I modregningssituationer med overskydende beløb vurderes renter sidst**
+
+Gæld.bekendtg. § 50, stk. 5, 1. afsnit in fine (jf. stk. 6, 1. pkt.): "idet renter
+og lignende ydelser dog vurderes sidst." Renter vurderes sidst præcis når der er en
+modregningssituation OG der er et overskydende beløb der skal retskraftvurderes.
+
+```catala
+scope ModregningRetskraft:
+  # FR-4.2: skalRenterVurderesSidst = erModregningsSituation and harOvskydendeBelob
+  # Ankerpunkt: Gæld.bekendtg. § 50, stk. 5, 1. afsnit; stk. 6, 1. pkt.
+  definition skalRenterVurderesSidst
+    equals erModregningsSituation
+      and harOvskydendeBelob
+```

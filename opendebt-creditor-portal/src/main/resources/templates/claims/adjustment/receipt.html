@@ -21,6 +21,22 @@
       <p th:text="#{adjustment.receipt.success}">Opdateringen er indsendt.</p>
     </div>
 
+    <!-- FR-6 / GIL § 18 k: Standard receipt confirmation (always shown — SPEC-P053 §6.5) -->
+    <div class="skat-alert skat-alert--success" role="status">
+      <p th:text="#{adjustment.receipt.confirmation}">Opdateringen er bekræftet og registreret.</p>
+    </div>
+
+    <!-- FR-6 / GIL § 18 k: Cross-system suspension advisory (SPEC-P053 §6.5) -->
+    <div th:if="${receipt.crossSystemRetroactiveApplies}"
+         class="skat-alert skat-alert--warning"
+         role="note">
+      <p th:text="#{adjustment.info.suspension.krydssystem}">
+        Restanceinddrivelsesmyndigheden kan suspendere inddrivelsen af denne fordring
+        midlertidigt, mens korrektionen behandles, hvis korrektionen ikke kan gennemføres
+        straks (GIL § 18 k). Suspensionen ophæves automatisk, når korrektionen er registreret.
+      </p>
+    </div>
+
     <div th:if="${receipt}" class="skat-card" style="margin-bottom: 1rem;">
       <div class="skat-card__body">
         <h2 th:text="#{adjustment.receipt.section.details}">Opdateringsdetaljer</h2>
