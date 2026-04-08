@@ -2,10 +2,15 @@ description = """
 Phase 2 of the OpenDebt petition pipeline.
 
 Implements approved scaffold artefacts under strict TDD discipline:
-  TDD implementation → code review → [Catala encoding, Tier A only]
+  Playwright test generation (RED) → TDD implementation → E2E acceptance (optional)
+  → code review → [Catala encoding, Tier A only]
   → HUMAN GATE: review code before merge
   → documentation sync
   → HUMAN GATE: final merge approval
+
+Aligns with Claude `pipeline-conductor` Phase 5–6.5 where applicable: failing
+Playwright tests in `opendebt-e2e/`, then Java/Cucumber TDD, then VAL-* E2E
+when `validation-contract.md` exists.
 
 This formula assumes mol-petition-scaffold has completed and the human
 scaffold gate has been closed (approved).
@@ -13,6 +18,7 @@ scaffold gate has been closed (approved).
 ## Prerequisites (set by Phase 1)
 - `metadata.outcome_contract_path` — outcome contract file path
 - `metadata.spec_path` — implementation spec file path
+- `metadata.validation_contract_path` — optional; `petitions/validation/<id>/validation-contract.md` for E2E
 - `metadata.catala_tier` — A, B, or C (determines whether catala-encode step runs)
 
 ## Human gates
@@ -32,7 +38,7 @@ After merge gate approval, open a PR manually or close the gate to trigger merge
   gh pr create --base main --head feature/{{petition_id}}-<service>
 """
 formula = "mol-petition-implement"
-version = 2
+version = 3
 
 [vars]
 [vars.petition_id]
@@ -54,10 +60,39 @@ default = "tdd-enforcer"
 # ── Steps ────────────────────────────────────────────────────────────────────
 
 [[steps]]
+id = "test-generate"
+title = "Generate failing Playwright E2E tests for {{petition_id}}"
+assignee = "opendebt/playwright-test-generator"
+needs = []
+description = """
+Generate native Playwright TypeScript `test()` blocks from the petition Gherkin feature,
+outcome contract, and implementation spec — RED tests that fail until the stack is ready.
+
+**Canonical instructions:** read `~/.claude/agents/playwright-test-generator.agent.md`.
+
+**Config:** `.factory/project.yaml` — `test_framework: playwright`, `e2e.project_root` (`opendebt-e2e/`).
+
+**Inputs:**
+- Feature file: `opendebt-{{service}}/src/test/resources/features/{{petition_id}}-*.feature`
+- Outcome contract + implementation spec paths from petition bead metadata
+- If the repo also maintains `petitions/{{petition_id}}/{{petition_id}}.feature`, prefer that as the single Gherkin source of truth when present
+
+**Commands (sanity):**
+```bash
+cd opendebt-e2e && npm ci && npx playwright test --list
+```
+
+**Close:**
+```bash
+bd close {{issue}} "Playwright RED tests generated under opendebt-e2e/tests/"
+```
+"""
+
+[[steps]]
 id = "implement"
 title = "TDD implementation for {{petition_id}} in {{service}}"
 assignee = "{{service}}/{{implementer}}"
-needs = []
+needs = ["test-generate"]
 description = """
 Implement Java code for {{petition_id}} under strict TDD discipline.
 
@@ -68,7 +103,10 @@ Implement Java code for {{petition_id}} under strict TDD discipline.
 cd opendebt-{{service}}
 mvn test -q
 ```
-All existing tests must pass. If they do not, stop and mail opendebt/code-reviewer.
+All existing tests must pass. If they do not, stop and notify opendebt/code-reviewer.
+
+The **test-generate** step should already have produced failing Playwright tests under
+`opendebt-e2e/`; keep Cucumber/Java TDD as the primary service-level loop.
 
 **1. Create feature branch:**
 ```bash
@@ -136,10 +174,42 @@ bd close {{issue}} "Implementation complete, branch pushed"
 """
 
 [[steps]]
+id = "e2e-acceptance"
+title = "E2E acceptance (Playwright VAL-*) for {{petition_id}}"
+assignee = "opendebt/user-testing-flow-validator"
+needs = ["implement"]
+description = """
+Run Playwright E2E assertions from `validation-contract.md` against a running stack
+(Phase 6.5 in `pipeline-conductor`).
+
+**Canonical instructions:** `~/.claude/agents/user-testing-flow-validator.agent.md`.
+
+**Skip this step** (close immediately) if ANY of:
+- `.factory/library/user-testing.md` (or project-equivalent) is absent
+- `petitions/validation/{{petition_id}}/validation-contract.md` is absent
+- No VAL-* assertions apply to this petition
+
+```bash
+bd close {{issue}} "Skipped: no validation contract or user-testing library for E2E"
+```
+
+**When running:** use `playwright-cli` skill; write evidence to
+`petitions/validation/{{petition_id}}/user-testing/flows/main.json`; pass assertion IDs
+from the validation contract. Base URLs: `.factory/project.yaml` `e2e.base_urls`.
+
+**On failure:** reopen **implement** with failing assertion IDs — max one retry cycle, then escalate.
+
+**Close when green:**
+```bash
+bd close {{issue}} "E2E VAL assertions passed; evidence under petitions/validation/{{petition_id}}/user-testing/"
+```
+"""
+
+[[steps]]
 id = "review"
 title = "Code review for {{petition_id}}"
 assignee = "opendebt/code-reviewer"
-needs = ["implement"]
+needs = ["e2e-acceptance"]
 description = """
 Strict code review against petition intent, implementation spec, and opendebt standards.
 

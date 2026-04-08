@@ -107,9 +107,22 @@ opendebt-{{service}}
      --set-metadata spec_path="petitions/{{petition_id}}/{{petition_id}}-implementation-spec.md"
    ```
 
-6. Close:
+6. **Validation contract (E2E bridge)** — same directory layout as `specs-translator` Step 7 in
+   `~/.claude/agents/specs-translator.agent.md`:
+   - Create `petitions/validation/{{petition_id}}/validation-contract.md` with one `VAL-*` ID per
+     scenario needing browser/API proof (traceable to Gherkin).
+   - If no UI/API surface, write one line: `E2E not applicable for this petition.` and still record metadata.
+
    ```bash
-   bd close {{issue}} "Implementation spec written"
+   mkdir -p petitions/validation/{{petition_id}}
+   bd update {{petition_id}} \
+     --set-metadata validation_contract_path="petitions/validation/{{petition_id}}/validation-contract.md"
+   git add petitions/validation/{{petition_id}}/ && git commit -m "docs({{petition_id}}): validation contract" || true
+   ```
+
+7. Close:
+   ```bash
+   bd close {{issue}} "Implementation spec and validation contract written"
    ```
 
 ## Session Close

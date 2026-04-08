@@ -31,7 +31,7 @@ The two formulas in this project are:
 
 ### Relationship to Claude `pipeline-conductor`
 
-Gas City formulas are a **narrower** automation than the full graph in `~/.claude/agents/pipeline-conductor.agent.md`. The conductor adds quality gates (architecture, C4 compliance, specifications as YAML, optional Catala **before** specs for legal-footprint work when using that flow), **Phase 5** routing to `playwright-test-generator` vs `bdd-test-generator` (this repo sets `test_framework: playwright` in `.factory/project.yaml` so Playwright E2E in `opendebt-e2e/` is chosen), and **Phase 6.5** E2E acceptance via `user-testing-flow-validator` when a `validation-contract.md` exists. Gas City does **not** spawn separate formula steps for those agents today — use `@pipeline-conductor` (or run those agents manually) when you need that full path. Catala ordering also differs: formulas run **catala-encode after code review**; the conductor places Catala encoding **after architecture and before specifications** when following the full pipeline. See ADR 0034 and the agents README.
+`mol-petition-implement` (v3) now includes **`playwright-test-generator`** and **`user-testing-flow-validator`** beads aligned with the conductor’s Phase 5 and 6.5. The full graph in `~/.claude/agents/pipeline-conductor.agent.md` is still richer: architecture / C4 gates, specifications as YAML, optional Catala **before** specs for legal-footprint work, BDD routing when not Playwright, deployment drift gates, release-manager, etc. Use `@pipeline-conductor` when you need that end-to-end path. **Catala ordering still differs:** Gas City runs **catala-encode after code review**; the conductor places Catala encoding **after architecture and before specifications** in the full pipeline. See ADR 0034 and the agents README.
 
 ---
 
@@ -151,7 +151,9 @@ This launches tmux sessions for all city-scoped agents:
 | `backlog-planner` | Patrols `program-status.yaml` for new ready petitions |
 | `petition-translator` | Translates petition markdown → outcome contract |
 | `petition-to-gherkin` | Converts outcome contract → `.feature` + step stubs |
-| `specs-translator` | Produces implementation spec from outcome contract |
+| `specs-translator` | Produces implementation spec + `validation-contract.md` from outcome contract |
+| `playwright-test-generator` | Generates failing Playwright TS tests in `opendebt-e2e/` after scaffold approval |
+| `user-testing-flow-validator` | Runs VAL-* E2E assertions (skipped when no contract / N/A) |
 | `code-reviewer` | Reviews code against petition, spec, GDPR, and coding standards |
 | `catala-encoder` | Encodes statutory rules in Catala (Tier A petitions only) |
 | `doc-sync` | Synchronises docs after approved implementation |
@@ -258,7 +260,11 @@ relevant agent. Steps in the same column run in parallel.
 
 ── Phase 2: mol-petition-implement (triggered by Gate 1 approval) ───────────────
 
-  [implement]      tdd-enforcer   → feature branch, TDD red→green→refactor
+  [test-generate]  playwright-test-generator → failing Playwright tests in opendebt-e2e/
+          ↓
+  [implement]      tdd-enforcer / portal-tdd-enforcer → feature branch, Java/Cucumber TDD
+          ↓
+  [e2e-acceptance] user-testing-flow-validator → VAL-* E2E (or skip if N/A)
           ↓
   [review]         code-reviewer  → reviews code, GDPR, standards, Snyk scan
           ↓
@@ -301,6 +307,7 @@ No code has been written yet. Review:
 | `petitions/<id>/<id>-outcome-contract.md` | Accurately represents petition intent — no scope creep, no omissions |
 | `.feature` file in `opendebt-<service>/src/test/resources/features/` | Scenarios are complete, testable, 1:1 with acceptance criteria |
 | `petitions/<id>/<id>-implementation-spec.md` | Spec is accurate, minimal, feasible; GDPR notes correct |
+| `petitions/validation/<id>/validation-contract.md` | VAL-* assertions trace scenarios for Phase 2 E2E, or explicit N/A |
 | `catala_tier` metadata | Correct tier — Tier A triggers Catala encoding in Phase 2 |
 
 ```bash
