@@ -1,0 +1,680 @@
+# G.A.2.4 — Forældelse — GIL §§ 18, 18a; Forældelsesl. §§ 3, 5, 18–19
+
+---
+
+## Artikel: G.A.2.4.1 — Udskydelse (GIL § 18a, stk. 1)
+
+### Baggrund
+
+Ifølge G.A.2.4.1 (G.A. snapshot v3.16, 2026-03-28) udskyder GIL § 18a, stk. 1 det
+tidligste tidspunkt for forældelsesfristens udløb for fordringer under inddrivelse i
+PSRM og DMI/SAP38. Udskydelsen er en engangsregel knyttet til et systems registrerings-
+eller inddrivelsesdato — den er uforanderlig og påvirkes ikke af efterfølgende afbrydelser.
+
+Dette Catala-program formaliserer forældelsesreglerne i fem scopes og fire enumerationstyper.
+
+---
+
+## Enumerationer — Juridisk grundlag: GIL § 18a, stk. 1; Forældelsesl. § 5, stk. 1
+
+### ENUM-1: KildesystemType — GIL § 18a, stk. 1
+
+De to kildesystemer der er underlagt særlig udskydelsesregel jf. GIL § 18a, stk. 1.
+PSRM (det primære inddrivelsessystem) og DMI_SAP38 (Debitor Management Interface / SAP38).
+Kildesystemet afgør hvilken udskydelsesdato der finder anvendelse.
+
+```catala
+declaration enumeration KildesystemType:
+  -- PSRM
+  -- DMI_SAP38
+```
+
+### ENUM-2: RetsgrundlagType — Forældelsesl. § 5, stk. 1
+
+Retsgrundlaget for fordringen afgør forældelsesfristens varighed jf. Forældelsesl. § 5, stk. 1.
+ORDINARY-fordringer er underlagt den almindelige 3-årige frist. SAERLIGT_RETSGRUNDLAG
+(f.eks. dom, forlig, gældserkendelse) giver adgang til den 10-årige frist ved udlæg.
+
+```catala
+declaration enumeration RetsgrundlagType:
+  -- ORDINARY
+  -- SAERLIGT_RETSGRUNDLAG
+```
+
+### ENUM-3: AfbrydelseType — G.A.2.4.4.1
+
+De fire gyldige afbrydelsetyper jf. G.A.2.4.4.1. MODREGNING og FORELOEBIG_MODTAGELSE
+er udenfor P070-scope og udskydes til efterfølgende petition. LOENINDEHOLDELSE_VARSEL
+er en selvstændig type der eksplicit skelnes fra LOENINDEHOLDELSE_AFGOERELSE — denne
+distinktion er juridisk fastslået ved SKM2015.718.ØLR: varsel alene afbryder IKKE
+forældelsesfrist.
+
+```catala
+declaration enumeration AfbrydelseType:
+  -- BEROSTILLELSE
+  -- LOENINDEHOLDELSE_AFGOERELSE
+  -- LOENINDEHOLDELSE_VARSEL
+  -- UDLAEG
+```
+
+### ENUM-4: AfbrydelseResultat — Klassifikation af afbrydelsesresultat
+
+Resultatkategorier for klassifikation af en afbrydelseshændelses juridiske virkning.
+NY_FRIST_3_AAR og NY_FRIST_10_AAR angiver, hvilken type ny forældelsesfrist der fastsættes.
+AFVIST_VARSEL_ALENE angiver at hændelsen IKKE afbryder forældelsesfrist.
+FORELOEBIG_AFBRYDELSE angiver en betinget afbrydelse (tomt fordringskompleks, GIL § 18a, stk. 7).
+
+```catala
+declaration enumeration AfbrydelseResultat:
+  -- NY_FRIST_3_AAR
+  -- NY_FRIST_10_AAR
+  -- AFVIST_VARSEL_ALENE
+  -- FORELOEBIG_AFBRYDELSE
+```
+
+---
+
+## Artikel: G.A.2.4.1 — SCOPE-1: UdskydelsesBeregning (GIL § 18a, stk. 1)
+
+### Baggrund
+
+GIL § 18a, stk. 1 fastsætter en særlig udskydelse af forældelsesfristens tidligste
+udløbstidspunkt for fordringer under inddrivelse i PSRM og DMI/SAP38. For PSRM-fordringer
+gælder udskydelsen for fordringer overdraget til inddrivelse den 19. november 2015 eller
+senere — tidligste udløbstidspunkt er den 20. november 2021. For DMI/SAP38-fordringer
+registreret den 1. januar 2024 eller senere er tidligste udløbstidspunkt den 20. november 2027.
+Udskydelsesdatoen er definitiv og uforanderlig: AfbrydelseValidering-scopet må ALDRIG
+overskrive udskydelseDato-outputtet fra dette scope.
+
+### Omfangsdeklaration — UdskydelsesBeregning
+
+```catala
+declaration scope UdskydelsesBeregning:
+  context kildesystem content KildesystemType
+  context registreringsDato content date
+  context inddrivelsesdato content date
+  context output udskydelseDato content date
+  context psrmUdskydelseDato content date
+  context dmiUdskydelseDato content date
+```
+
+---
+
+## GIL § 18a, stk. 1 — U-1: PSRM-udskydelse (inddrivelsesdato ≥ 2015-11-19)
+
+**FR-1.3: PSRM-fordring inddraget fra og med 2015-11-19 har tidligste frist fra 2021-11-20**
+
+For fordringer inddraget i PSRM den 19. november 2015 eller senere fastlægger
+GIL § 18a, stk. 1 at det tidligste tidspunkt for forældelsesfristens udløb er
+den 20. november 2021. Grænseværdidatoen er inklusiv (>=).
+
+```catala
+scope UdskydelsesBeregning:
+  # U-1: PSRM + inddrivelsesdato >= |2015-11-19| → udskydelseDato = |2021-11-20|
+  # Ankerpunkt: GIL § 18a, stk. 1, 1. pkt.
+  definition psrmUdskydelseDato equals |2021-11-20|
+
+  definition udskydelseDato
+    under condition kildesystem = PSRM
+      and inddrivelsesdato >= |2015-11-19|
+    consequence equals |2021-11-20|
+```
+
+---
+
+## GIL § 18a, stk. 1 — U-2: DMI/SAP38-udskydelse (registreringsDato ≥ 2024-01-01)
+
+**FR-1.4: DMI/SAP38-fordring registreret fra og med 2024-01-01 har tidligste frist fra 2027-11-20**
+
+For fordringer registreret i DMI/SAP38 den 1. januar 2024 eller senere fastlægger
+GIL § 18a, stk. 1 at det tidligste tidspunkt for forældelsesfristens udløb er
+den 20. november 2027.
+
+```catala
+scope UdskydelsesBeregning:
+  # U-2: DMI_SAP38 + registreringsDato >= |2024-01-01| → udskydelseDato = |2027-11-20|
+  # Ankerpunkt: GIL § 18a, stk. 1, 2. pkt.
+  definition dmiUdskydelseDato equals |2027-11-20|
+
+  exception
+  definition udskydelseDato
+    under condition kildesystem = DMI_SAP38
+      and registreringsDato >= |2024-01-01|
+    consequence equals |2027-11-20|
+```
+
+---
+
+## GIL § 18a, stk. 1 — U-3: Udskydelse er uforanderlig
+
+**FR-1.5: udskydelseDato ændres ikke af efterfølgende afbrydelser**
+
+Udskydelsesdatoen fastlægges én gang ved UdskydelsesBeregning-scopet og er
+strukturelt uforanderlig: AfbrydelseValidering-scopet modtager udskydelseDato
+som input og må aldrig output en ændret udskydelseDato. Denne strukturelle
+separation sikrer den juridiske uforanderlighed jf. GIL § 18a, stk. 1.
+
+```catala
+  # U-3: udskydelseDato er uforanderlig — kommentar til implementeringsguide:
+  # AfbrydelseValidering-scopet MUST NOT output udskydelseDato.
+  # Separation er strukturelt håndhævet: udskydelseDato er KUN output fra UdskydelsesBeregning.
+  # Ankerpunkt: GIL § 18a, stk. 1 (uforanderlighedsprincip)
+```
+
+---
+
+## Artikel: G.A.2.4.1 — SCOPE-2: ForaeldelseFristBeregning (GIL § 18a, stk. 4 + Forældelsesl. § 5)
+
+### Baggrund
+
+GIL § 18a, stk. 4 fastlægger den ordinære forældelsesfrist på 3 år for fordringer
+under inddrivelse. Forældelsesl. § 5, stk. 1 giver mulighed for en 10-årig frist,
+når fordringen har særligt retsgrundlag (f.eks. dom eller forlig) og der er foretaget
+udlæg. Fristens startdato er det seneste af afbrydelsesdatoen og udskydelsesdatoen —
+dette sikrer at udskydelsen respekteres uanset afbrydelsesstidspunktet.
+
+### Omfangsdeklaration — ForaeldelseFristBeregning
+
+```catala
+declaration scope ForaeldelseFristBeregning:
+  context udskydelseDato content date
+  context afbrydelseDato content date
+  context retsgrundlag content RetsgrundlagType
+  context erUdlaeg content boolean
+  context output fristStartDato content date
+  context output fristVarighed content integer
+  context output nyFristUdloeber content date
+```
+
+---
+
+## GIL § 18a, stk. 4 — F-1: 3-årig grundfrist
+
+**FR-1.1: Ordinær forældelsesfrist er 3 år**
+
+Som udgangspunkt er forældelsesfristens varighed 3 år jf. GIL § 18a, stk. 4.
+Denne grundregel finder anvendelse for alle fordringer medmindre den særlige
+10-årige undtagelsesregel (F-2) finder anvendelse.
+
+```catala
+scope ForaeldelseFristBeregning:
+  # F-1: grundregel — fristVarighed = 3 år
+  # Ankerpunkt: GIL § 18a, stk. 4
+  definition fristVarighed equals 3
+```
+
+---
+
+## Forældelsesl. § 5, stk. 1 — F-2: 10-årig undtagelse ved udlæg + særligt retsgrundlag
+
+**FR-1.2: 10-årig frist ved udlæg på fordring med særligt retsgrundlag**
+
+Forældelsesl. § 5, stk. 1 fastlægger at en ny forældelsesfrist på 10 år indtræder
+når et udlæg foretages på en fordring der har særligt retsgrundlag (dom, forlig
+eller gældserkendelse). Denne regel er en undtagelse til grundreglen om 3 år (F-1)
+og har højere juridisk prioritet.
+
+```catala
+scope ForaeldelseFristBeregning:
+  # F-2: undtagelse til F-1 — 10 år ved udlæg + SAERLIGT_RETSGRUNDLAG
+  # Ankerpunkt: Forældelsesl. § 5, stk. 1
+  exception
+  definition fristVarighed
+    under condition erUdlaeg
+      and retsgrundlag = SAERLIGT_RETSGRUNDLAG
+    consequence equals 10
+```
+
+---
+
+## GIL § 18a, stk. 1 + stk. 4 — F-3: Friststart og ny udløbsdato
+
+**FR-1.1 / FR-1.2: fristStartDato = max(afbrydelseDato, udskydelseDato); nyFristUdloeber = fristStartDato + fristVarighed år**
+
+Fristens startdato er det seneste af afbrydelsesdatoen og udskydelsesdatoen jf.
+GIL § 18a, stk. 1 og stk. 4 sammenholdt. Dette sikrer at udskydelsen overholdes
+selv når en afbrydelse sker på et tidligere tidspunkt end udskydelsesdatoen.
+Den nye forældelsesfrists udløbsdato beregnes som fristStartDato plus fristVarighed år.
+
+```catala
+scope ForaeldelseFristBeregning:
+  # F-3: fristStartDato = maximum af afbrydelseDato og udskydelseDato
+  # Ankerpunkt: GIL § 18a, stk. 1 (udskydelse) + GIL § 18a, stk. 4 (friststartdato)
+  definition fristStartDato equals
+    if afbrydelseDato >= udskydelseDato
+    then afbrydelseDato
+    else udskydelseDato
+
+  # F-3b: nyFristUdloeber = fristStartDato + fristVarighed år
+  definition nyFristUdloeber equals
+    fristStartDato +@ fristVarighed * 365 day
+```
+
+---
+
+## Artikel: G.A.2.4.4.1 — SCOPE-3: AfbrydelseValidering
+
+### Baggrund
+
+G.A.2.4.4.1 fastlægger reglerne for, hvornår en afbrydelseshændelse medfører en
+ny forældelsesfrist og hvad dens startdato er. GIL § 18, stk. 4 er det centrale
+juridiske fundament for BEROSTILLELSE og LOENINDEHOLDELSE. UDLAEG reguleres af
+Forældelsesl. § 18, stk. 1. Den afgørende distinktion mellem LOENINDEHOLDELSE_VARSEL
+og LOENINDEHOLDELSE_AFGOERELSE er fastslået ved SKM2015.718.ØLR: alene varslet om
+lønindeholdelse afbryder IKKE forældelsesfrist; det kræver en registreret afgørelse
+og underretning til debitor.
+
+### Omfangsdeklaration — AfbrydelseValidering
+
+```catala
+declaration scope AfbrydelseValidering:
+  context afbrydelseType content AfbrydelseType
+  context eventDate content date
+  context afgoerelseRegistreret content boolean
+  context underretningsDato content date
+  context kildesystem content KildesystemType
+  context retsgrundlag content RetsgrundlagType
+  context inaktivSiden content date
+  context harInaktivSiden content boolean
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyAfbrydelseDato content date
+  context output nyFristUdloeber content date
+```
+
+---
+
+## Sentinel-standarder — ingen ny fristdato for AFVIST-resultater
+
+For afbrydelsetyper der ikke medfører en ny forældelsesfrist (AFVIST_VARSEL_ALENE) fastsættes
+ingen ny dato. nyAfbrydelseDato og nyFristUdloeber sættes til sentinel-værdien |1970-01-01|.
+Disse sentinel-standarder fungerer som base for alle øvrige undtagelsesregler (A-1 til A-5).
+
+```catala
+scope AfbrydelseValidering:
+  # Sentinel defaults — ingen ny dato for AFVIST-resultater
+  label afbrydelse_dato_base
+  definition nyAfbrydelseDato equals |1970-01-01|
+  label frist_udloeber_base
+  definition nyFristUdloeber equals |1970-01-01|
+```
+
+---
+
+## GIL § 18a, stk. 8 — A-1: Berostillelse → ny 3-årig frist (PSRM only)
+
+**FR-2.1: Afgørelse om berostillelse afbryder forældelsesfrist — ny frist fra eventDate**
+
+En afgørelse om berostillelse jf. GIL § 18a, stk. 8 medfører en ny forældelsesfrist
+på 3 år fra hændelsesdatoen. Reglen gælder kun for fordringer under inddrivelse i PSRM.
+Berostillelse er en administrativ afgørelse om midlertidigt ophør af inddrivelse —
+den afbryder forældelsesfrist med virkning fra beslutningsdatoen.
+
+```catala
+scope AfbrydelseValidering:
+  # A-1: BEROSTILLELSE + kildesystem = PSRM → NY_FRIST_3_AAR, nyFristUdloeber = eventDate + 3 år
+  # Ankerpunkt: GIL § 18a, stk. 8
+  definition afbrydelseResultat
+    under condition afbrydelseType = BEROSTILLELSE
+      and kildesystem = PSRM
+    consequence equals NY_FRIST_3_AAR
+
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
+    under condition afbrydelseType = BEROSTILLELSE
+      and kildesystem = PSRM
+    consequence equals eventDate
+
+  exception frist_udloeber_base
+  definition nyFristUdloeber
+    under condition afbrydelseType = BEROSTILLELSE
+      and kildesystem = PSRM
+    consequence equals eventDate +@ 3 * 365 day
+```
+
+---
+
+## GIL § 18, stk. 4 + SKM2015.718.ØLR — A-2: Lønindeholdelsesvarsel afbryder IKKE
+
+**FR-2.2 (negativ): LOENINDEHOLDELSE_VARSEL alene giver AFVIST_VARSEL_ALENE**
+
+Jf. GIL § 18, stk. 4 og SKM2015.718.ØLR afbryder et lønindeholdelsesvarsel alene
+IKKE forældelsesfrist. Det samme gælder en LOENINDEHOLDELSE_AFGOERELSE hvis
+afgørelsen endnu ikke er formelt registreret (afgoerelseRegistreret = false).
+Afbrydelseresultatet er AFVIST_VARSEL_ALENE — der fastsættes ingen ny frist.
+
+```catala
+scope AfbrydelseValidering:
+  # A-2: LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE (ingen ny frist)
+  # A-2b: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = false → AFVIST_VARSEL_ALENE
+  # Ankerpunkt: GIL § 18, stk. 4; SKM2015.718.ØLR
+  label a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = LOENINDEHOLDELSE_VARSEL
+    consequence equals AFVIST_VARSEL_ALENE
+
+  exception a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and not afgoerelseRegistreret
+    consequence equals AFVIST_VARSEL_ALENE
+```
+
+---
+
+## GIL § 18, stk. 4 — A-3: Lønindeholdelsesafgørelse → ny frist fra underretningsDato
+
+**FR-2.2 (positiv): Registreret afgørelse om lønindeholdelse afbryder ved underretning til debitor**
+
+Jf. GIL § 18, stk. 4 afbryder en formelt registreret afgørelse om lønindeholdelse
+forældelsesfrist. Afbrydelsen sker med virkning fra den dato debitor underrettes.
+Ny forældelsesfrist er 3 år fra underretningsDato.
+
+```catala
+scope AfbrydelseValidering:
+  # A-3: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = true → NY_FRIST_3_AAR
+  # nyAfbrydelseDato = underretningsDato; nyFristUdloeber = underretningsDato + 3 år
+  # Ankerpunkt: GIL § 18, stk. 4
+  exception a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and afgoerelseRegistreret
+    consequence equals NY_FRIST_3_AAR
+
+  label afbrydelse_dato_loend
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and afgoerelseRegistreret
+    consequence equals underretningsDato
+
+  label frist_loend_3
+  exception frist_udloeber_base
+  definition nyFristUdloeber
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and afgoerelseRegistreret
+    consequence equals underretningsDato +@ 3 * 365 day
+```
+
+---
+
+## GIL § 18, stk. 4 — A-4: Lønindeholdelse inaktiv i ≥ 1 år → frist fra inaktivSiden
+
+**FR-2.3: Inaktiv lønindeholdelse i 1 år eller mere medfører ny forældelsesfrist fra inaktivitetsdatoen**
+
+Jf. GIL § 18, stk. 4 medfører en lønindeholdelse der har været inaktiv i mindst 1 år
+(365 dage) en ny forældelsesfrist. Fristen løber fra inaktivitetsdatoen (inaktivSiden),
+ikke fra hændelsesdatoen. Ny forældelsesfrist er 3 år fra inaktivSiden.
+
+```catala
+scope AfbrydelseValidering:
+  # A-4: LOENINDEHOLDELSE_AFGOERELSE + harInaktivSiden = true
+  #      + (eventDate - inaktivSiden) >= 365 dage → NY_FRIST_3_AAR fra inaktivSiden
+  # Ankerpunkt: GIL § 18, stk. 4
+  exception a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and harInaktivSiden
+      and (eventDate - inaktivSiden) >= 365 day
+    consequence equals NY_FRIST_3_AAR
+
+  exception afbrydelse_dato_loend
+  definition nyAfbrydelseDato
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and harInaktivSiden
+      and (eventDate - inaktivSiden) >= 365 day
+    consequence equals inaktivSiden
+
+  exception frist_loend_3
+  definition nyFristUdloeber
+    under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
+      and harInaktivSiden
+      and (eventDate - inaktivSiden) >= 365 day
+    consequence equals inaktivSiden +@ 3 * 365 day
+```
+
+---
+
+## Forældelsesl. § 18, stk. 1 — A-5: Udlæg (forgæves og vellykket ligestillet)
+
+**FR-2.3: Udlæg afbryder forældelsesfrist — forgæves og vellykket udlæg er ligestillet**
+
+Forældelsesl. § 18, stk. 1 fastlægger at et udlæg afbryder forældelsesfrist uanset
+om udlægget er vellykket eller forgæves (insolvenserklæring). Der gælder ingen
+distinktion mellem forgæves og vellykket udlæg — begge medfører afbrydelse.
+Fristens varighed afhænger af fordringens retsgrundlag: ORDINARY giver 3 år (A-5a);
+SAERLIGT_RETSGRUNDLAG giver 10 år (A-5b).
+
+```catala
+scope AfbrydelseValidering:
+  # A-5a: UDLAEG + ORDINARY → NY_FRIST_3_AAR
+  # Ankerpunkt: Forældelsesl. § 18, stk. 1 + GIL § 18a, stk. 4
+  exception a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = UDLAEG
+      and retsgrundlag = ORDINARY
+    consequence equals NY_FRIST_3_AAR
+
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
+    under condition afbrydelseType = UDLAEG
+    consequence equals eventDate
+
+  exception frist_udloeber_base
+  definition nyFristUdloeber
+    under condition afbrydelseType = UDLAEG
+      and retsgrundlag = ORDINARY
+    consequence equals eventDate +@ 3 * 365 day
+
+  # A-5b: UDLAEG + SAERLIGT_RETSGRUNDLAG → NY_FRIST_10_AAR
+  # Ankerpunkt: Forældelsesl. § 18, stk. 1 + Forældelsesl. § 5, stk. 1
+  exception a2_base
+  definition afbrydelseResultat
+    under condition afbrydelseType = UDLAEG
+      and retsgrundlag = SAERLIGT_RETSGRUNDLAG
+    consequence equals NY_FRIST_10_AAR
+
+  exception frist_udloeber_base
+  definition nyFristUdloeber
+    under condition afbrydelseType = UDLAEG
+      and retsgrundlag = SAERLIGT_RETSGRUNDLAG
+    consequence equals eventDate +@ 10 * 365 day
+```
+
+---
+
+## Artikel: G.A.2.4.2 — SCOPE-4: Fordringskompleks (GIL § 18a, stk. 2)
+
+### Baggrund
+
+GIL § 18a, stk. 2 fastlægger reglerne for fordringskomplekser: en samling af en
+hovedfordring (index 0 i fordringIds-listen) og tilknyttede renter. Alle medlemmer
+af et fordringskompleks deler én forældelsesfrist. En afbrydelse for ét kompleks-
+medlem propagerer automatisk til alle øvrige medlemmer — dette krav er absolut og
+atomisk. Delvis propagation er en fejltilstand der skal medføre komplet rollback.
+K-3-assertionen formaliserer dette atomicitetskrav direkte i Catala.
+
+### Omfangsdeklaration — Fordringskompleks
+
+```catala
+declaration scope Fordringskompleks:
+  context antalMedlemmer content integer
+  context sharedNyFrist content date
+  context harAfbrydelse content boolean
+  context output propagationFuldstaendig content boolean
+  context output kompleksNyFristUdloeber content date
+```
+
+---
+
+## GIL § 18a, stk. 2 — K-1: Fordringskompleks-struktur
+
+**FR-3.1: Fordringskompleks = stamfordring (index 0) + tilknyttede renter**
+
+GIL § 18a, stk. 2 fastlægger at et fordringskompleks består af en stamfordring
+og tilknyttede rentekrav. Alle deler én samlet forældelsesfrist.
+
+```catala
+scope Fordringskompleks:
+  # K-1: fordringskompleks-struktur — stamfordring er index 0 i fordringIds
+  # Tilknyttede renter er øvrige elementer i fordringIds-listen
+  # Ankerpunkt: GIL § 18a, stk. 2
+  definition kompleksNyFristUdloeber
+    under condition harAfbrydelse
+    consequence equals sharedNyFrist
+```
+
+---
+
+## GIL § 18a, stk. 2, 4. pkt. — K-2: Propagation til alle kompleks-medlemmer
+
+**FR-3.2: Afbrydelse for ét kompleks-medlem propagerer til alle medlemmer**
+
+GIL § 18a, stk. 2, 4. pkt. fastlægger at en afbrydelse for én fordring i
+fordringskomplekset automatisk medfører en tilsvarende ny frist for alle øvrige
+kompleks-medlemmer. nyFristUdloeber for alle fordringer i komplekset sættes til
+sharedNyFrist — ingen distinktion mellem stamfordring og tilknyttede renter.
+
+```catala
+scope Fordringskompleks:
+  # K-2: propagation til ALLE kompleks-medlemmer — for all fordringer: nyFristUdloeber = sharedNyFrist
+  # Ankerpunkt: GIL § 18a, stk. 2, 4. pkt.
+  rule propagationFuldstaendig
+    under condition harAfbrydelse
+    consequence fulfilled
+```
+
+---
+
+## GIL § 18a, stk. 2 — K-3: Atomicitet via scope-kontraktmønster
+
+**FR-3.2 (scope-kontrakt): Atomicitet er håndhævet som scope-kontraktbetingelse**
+
+K-3 formaliserer atomicitetskravet via scope-kontraktmønsteret: dette scope SKAL
+invokeres med SAMTLIGE fordringer i fordringskomplekset på én gang (alle fordringIds).
+Delvis invokation — f.eks. kun stamfordringen men ikke rentekravene — er en caller
+contract violation. Catala's funktionelle model kan ikke verificere atomicitet
+på tværs af separate kald, men scope-grænsen udgør en formaliseret kontraktforpligtelse.
+Kalderen er bundet af denne kontrakt. Se SPIKE-REPORT-070.md §3 Hotspot 2 + §5 Kriterium 3.
+
+Den tidligere assertion `(not harAfbrydelse) or propagationFuldstaendig` var en tautologi:
+K-2 sætter altid propagationFuldstaendig = true under condition harAfbrydelse = true,
+så assertionen kunne aldrig fejle og detekterede ikke delvis propagation.
+Scope-kontraktmønsteret er den korrekte Catala-tilgang til atomicitetskravet.
+
+```catala
+scope Fordringskompleks:
+  # K-3: atomicitet er håndhævet som scope-kontraktbetingelse.
+  # Dette scope SKAL invokeres med SAMTLIGE fordringskompleks-medlemmer (alle fordringIds).
+  # Delvis invokation er en caller contract violation — Catala's funktionelle model
+  # kan ikke verificere on-tværs-af-kald-atomicitet; dette er dokumenteret i spike-rapporten.
+  # Strukturel guard: komplekset skal have mindst ét medlem (antalMedlemmer = length of fordringIds).
+  # Ankerpunkt: GIL § 18a, stk. 2 (absolutkrav om fuldstændig propagation)
+  assertion antalMedlemmer >= 1
+```
+
+---
+
+## Artikel: G.A.2.4.4.2 — SCOPE-5: TillaegsfristBeregning
+
+### Baggrund
+
+G.A.2.4.4.2 fastlægger reglerne for tillægsfrister ved intern opskrivning.
+Reglerne i G.A.2.4.4.2.1 fastsætter en 2-årig tillægsfrist beregnet som
+maximum af nuværende fristudløb og hændelsesdato + 2 år. Formlen SKAL bruge
+max() — det er utilstrækkeligt blot at tilføje 2 år til hændelsesdatoen, da
+en eksisterende frist der udløber senere end hændelsesdato + 2 år derved
+ulovligt forkortes. G.A.2.4.4.2.2 dækker det særlige tilfælde med tomt
+fordringskompleks (GIL § 18a, stk. 7).
+
+### Omfangsdeklaration — TillaegsfristBeregning
+
+```catala
+declaration scope TillaegsfristBeregning:
+  context currentFristExpires content date
+  context eventDate content date
+  context udskydelseDato content date
+  context erTomt content boolean
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyFristUdloeber content date
+```
+
+---
+
+## G.A.2.4.4.2.1 — T-1 og T-2: Intern opskrivning → 2-årig tillægsfrist via max()
+
+**FR-4.1 og FR-4.3: Tillægsfrist = max(currentFristExpires, eventDate) + 2 år**
+
+G.A.2.4.4.2.1 fastlægger at en intern opskrivning giver en 2-årig tillægsfrist.
+Beregningsformlen SKAL bruge maximum af currentFristExpires og eventDate — aldrig
+blot eventDate + 2 år. Dette sikrer at en eksisterende frist der udløber efter
+eventDate + 2 år ikke ulovligt forkortes. T-2 er afhængig af T-1 og anvender
+altid max()-formlen uanset hvilken dato der er størst.
+
+```catala
+scope TillaegsfristBeregning:
+  # T-1: intern opskrivning → 2-årig tillægsfrist via max()
+  # Ankerpunkt: G.A.2.4.4.2.1
+  definition afbrydelseResultat
+    under condition not erTomt
+    consequence equals NY_FRIST_3_AAR
+
+  # T-2: nyFristUdloeber = max(max(currentFristExpires, eventDate), udskydelseDato) + 2 år
+  # ALTID tre-vejs max() — inkluderer udskydelseDato som floor-grænse (T-4, GIL § 18a, stk. 1).
+  # Aldrig blot eventDate + 2 år; aldrig blot to-vejs max uden udskydelseDato-floor.
+  # Ankerpunkt: G.A.2.4.4.2 + GIL § 18a, stk. 1 (floor-grænse T-4)
+  definition nyFristUdloeber
+    under condition not erTomt
+    consequence equals
+      (if (if currentFristExpires >= eventDate then currentFristExpires else eventDate) >= udskydelseDato
+       then (if currentFristExpires >= eventDate then currentFristExpires else eventDate)
+       else udskydelseDato)
+      +@ 2 * 365 day
+```
+
+---
+
+## GIL § 18a, stk. 7 — T-3: Tomt fordringskompleks → foreløbig afbrydelse
+
+**FR-4.2: Tomt fordringskompleks giver FORELOEBIG_AFBRYDELSE med 3-årig frist**
+
+GIL § 18a, stk. 7 fastlægger at en afbrydelseshændelse for et tomt
+fordringskompleks (erTomt = true) giver en foreløbig afbrydelse med
+en 3-årig frist fra hændelsesdatoen. Denne frist er midlertidig og
+omdannes til en permanent frist så snart fordringskomplekset igen
+indeholder fordringer.
+
+```catala
+scope TillaegsfristBeregning:
+  # T-3: erTomt = true → FORELOEBIG_AFBRYDELSE, nyFristUdloeber = eventDate + 3 år
+  # Ankerpunkt: GIL § 18a, stk. 7
+  exception
+  definition afbrydelseResultat
+    under condition erTomt
+    consequence equals FORELOEBIG_AFBRYDELSE
+
+  exception
+  definition nyFristUdloeber
+    under condition erTomt
+    consequence equals eventDate +@ 3 * 365 day
+```
+
+---
+
+## GIL § 18a, stk. 1 — T-4: Floor-grænse: fristStartDato ≥ udskydelseDato
+
+**FR-1.3 (floor): Ingen frist kan starte tidligere end udskydelsesdatoen**
+
+GIL § 18a, stk. 1 fastlægger en absolut floor-grænse: fristStartDato kan
+aldrig falde tidligere end udskydelseDato. Tillægsfristen beregnes fra
+maximum af hændelsesdato og udskydelsesdato — en opskrivning der sker
+inden udskydelsesdatoen giver stadig fristStartDato = udskydelseDato.
+
+```catala
+  # T-4: floor — nyFristUdloeber >= udskydelseDato + 2 år altid (GIL § 18a, stk. 1)
+  # IMPLEMENTERET I T-2: T-2-reglen anvender nu tre-vejs max() der inkluderer udskydelseDato
+  # som floor-grænse: max(max(currentFristExpires, eventDate), udskydelseDato) + 2 år.
+  # Dette sikrer at ingen tillægsfrist kan starte fra en dato tidligere end udskydelseDato.
+  # Ankerpunkt: GIL § 18a, stk. 1
+```
+
+---

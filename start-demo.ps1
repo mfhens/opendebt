@@ -27,6 +27,12 @@ $PgPort = 5432
 $PgUser = "opendebt"
 $PgPass = "opendebt"
 
+# AES-256 key for person-registry (Base64 of 32 bytes). Same default as docker-compose.yml — dev/local only.
+# Inherited by java child processes (person-registry reads ENCRYPTION_KEY via application.yml).
+if (-not $env:ENCRYPTION_KEY) {
+    $env:ENCRYPTION_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY="
+}
+
 $DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "promtail", "prometheus", "grafana", "immudb")
 $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
@@ -191,8 +197,8 @@ if ($startCreditor) {
     [void]$modules.Add("opendebt-creditor-portal")
 }
 
-# AIDEV-TODO: Add person-registry once PersonServiceImpl exists (currently skeleton only)
-# [void]$modules.Add("opendebt-person-registry")
+# Shared backend: person-registry (PII store, needed by all portals)
+[void]$modules.Add("opendebt-person-registry")
 
 $totalSteps = 5
 $step = 0
@@ -274,8 +280,15 @@ Start-Service -Name "debt-service" `
         "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
     }
 
-# AIDEV-TODO: Start person-registry here once PersonServiceImpl exists
-# Start-Service -Name "person-registry" ...
+# -- person-registry (shared PII store, needed by all portals) --
+Start-Service -Name "person-registry" `
+    -JarPattern "opendebt-person-registry\target\opendebt-person-registry-*.jar" `
+    -Profile $backendProfile -DbName "opendebt_person" `
+    -ExtraArgs @{
+        "KEYCLOAK_ISSUER_URI"     = $KeycloakIssuerUri
+        "KEYCLOAK_JWK_URI"        = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        "opendebt.encryption.key" = $env:ENCRYPTION_KEY
+    }
 
 
 if ($startCaseworker -or $startCitizen) {
@@ -319,6 +332,10 @@ Write-Status "[$step/$totalSteps] Waiting for backend services..."
 $ok = Wait-ForUrl "http://localhost:8082/debt-service/actuator/health"
 if (-not $ok) { Write-Err "  debt-service failed! Check .demo-logs\debt-service-err.log"; exit 1 }
 Write-Ok "  debt-service ready."
+
+$ok = Wait-ForUrl "http://localhost:8090/person-registry/actuator/health"
+if (-not $ok) { Write-Err "  person-registry failed! Check .demo-logs\person-registry-err.log"; exit 1 }
+Write-Ok "  person-registry ready."
 
 if ($startCaseworker -or $startCitizen) {
     $ok = Wait-ForUrl "http://localhost:8081/case-service/actuator/health"
@@ -410,6 +427,7 @@ if ($startCitizen) {
 Write-Host ""
 Write-Host "  Backend APIs:"
 Write-Host "    Debt API:         http://localhost:8082/debt-service/swagger-ui.html"
+Write-Host "    Person Registry:  http://localhost:8090/person-registry/swagger-ui.html"
 
 if ($startCaseworker -or $startCitizen) {
     Write-Host "    Case API:         http://localhost:8081/case-service/swagger-ui.html"

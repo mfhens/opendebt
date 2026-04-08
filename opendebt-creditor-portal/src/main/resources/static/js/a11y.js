@@ -1,24 +1,46 @@
 /**
- * OpenDebt — Accessibility helpers (a11y.js)
+ * a11y.js — Accessibility utilities for HTMX-driven pages.
  *
- * Minimal focus-management script for HTMX-driven content updates.
- * After HTMX swaps new content into the DOM, focus is moved to the
- * swapped container so that screen readers announce the updated content.
+ * Manages keyboard focus after HTMX content swaps so screen-reader users
+ * always land on a meaningful element when partial page updates occur.
  *
- * No framework dependencies. Loaded with "defer" in the layout template.
+ * Strategy:
+ *   1. After every HTMX swap, look for an element with [autofocus] or
+ *      [data-a11y-focus] inside the swapped target.
+ *   2. Fall back to the first <h1> inside the target.
+ *   3. Fall back to the target element itself (with tabindex=-1 so it
+ *      receives focus without appearing in the tab order).
  */
 (function () {
   "use strict";
 
   document.addEventListener("htmx:afterSwap", function (event) {
     var target = event.detail.target;
-    if (!target) {
-      return;
+    if (!target) return;
+
+    var focusable =
+      target.querySelector("[autofocus], [data-a11y-focus]") ||
+      target.querySelector("h1");
+
+    if (focusable) {
+      focusable.focus();
+    } else if (target !== document.body) {
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "-1");
+      }
+      target.focus();
     }
-    // Make the target programmatically focusable if it isn't already
-    if (!target.hasAttribute("tabindex")) {
-      target.setAttribute("tabindex", "-1");
-    }
-    target.focus({ preventScroll: false });
+  });
+
+  /* Announce live-region updates to screen readers after HTMX settles. */
+  document.addEventListener("htmx:afterSettle", function (event) {
+    var alerts = document.querySelectorAll('[role="alert"][data-htmx-alert]');
+    alerts.forEach(function (el) {
+      var msg = el.textContent.trim();
+      if (msg) {
+        el.removeAttribute("data-htmx-alert");
+        el.setAttribute("aria-live", "assertive");
+      }
+    });
   });
 })();

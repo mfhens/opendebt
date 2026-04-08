@@ -431,7 +431,7 @@
 5. `PAYOUT_SMALL_THRESHOLD` and `PAYOUT_LARGE_THRESHOLD` seed values committed to the `business_config` migration (for dev/demo environments).
 6. PEP/VIP flag confirmed present on `PersonEntity` in person-registry (or its addition is delivered as part of this petition).
 7. Integration-gateway NemKonto adapter confirmed operational in dev environment (or payout stops at `APPROVED` with a clear `DISBURSEMENT_FAILED` event if not yet available).
-8. `docs/architecture-overview.md` updated: payout domain, `ROLE_DIRECTOR`, NemKonto channel.
+8. `architecture/overview.md` updated: payout domain, `ROLE_DIRECTOR`, NemKonto channel.
 9. `agents.md` updated: `payout_requests` table, new event types, `ROLE_DIRECTOR`.
 10. Snyk code scan shows no new high or critical issues in changed code.
 11. PR reviewed and approved before merge to `main`.

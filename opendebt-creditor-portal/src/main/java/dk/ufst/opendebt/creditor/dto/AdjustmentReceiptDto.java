@@ -19,4 +19,10 @@ public class AdjustmentReceiptDto {
   private BigDecimal amount;
   private String debtorIdentifier;
   private String adjustmentType;
+
+  /**
+   * GIL § 18 k flag (FR-6 / SPEC-P053 §6.3). True when virkningsdato is before the PSRM
+   * registration date of the claim, indicating a cross-system retroactive nedskrivning.
+   */
+  private boolean crossSystemRetroactiveApplies;
 }

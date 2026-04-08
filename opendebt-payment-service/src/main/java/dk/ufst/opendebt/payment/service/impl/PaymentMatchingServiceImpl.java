@@ -8,12 +8,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dk.ufst.bookkeeping.model.TimelineReplayResult;
+import dk.ufst.bookkeeping.service.TimelineReplayService;
 import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.payment.bookkeeping.BookkeepingService;
 import dk.ufst.opendebt.payment.bookkeeping.model.CrossingDetectionResult;
-import dk.ufst.opendebt.payment.bookkeeping.model.TimelineReplayResult;
 import dk.ufst.opendebt.payment.bookkeeping.service.CrossingTransactionDetector;
-import dk.ufst.opendebt.payment.bookkeeping.service.TimelineReplayService;
 import dk.ufst.opendebt.payment.client.DebtServiceClient;
 import dk.ufst.opendebt.payment.dto.IncomingPaymentDto;
 import dk.ufst.opendebt.payment.dto.OverpaymentOutcome;

@@ -27,14 +27,43 @@ Alle finansielle hændelser registreres som bogføringsposter med:
 - Reference til udløsende hændelse
 - Sagsbehandler/system der posterede
 
-## Dækningsrækkefølge
+## Dækningsrækkefølge (GIL § 4)
 
-Når en betaling modtages, allokeres den efter dækningsrækkefølgen:
+Når en betaling modtages, allokeres den efter den lovpligtige dækningsrækkefølge i GIL § 4. Rækkefølgen gælder pr. skyldner og bestemmer hvilke fordringer og komponenter der dækkes først.
 
-1. **Inddrivelsesrenter** dækkes først
-2. **Hovedstol** dækkes derefter
+### De 5 prioritetskategorier (GIL § 4 stk. 1–4)
 
-Dette fremgår af tidslinjen som separate bogføringsposter.
+| Prioritet | Kategori | Kode |
+|-----------|---------|------|
+| 1 | Inddrivelsesrenter | `INDDRIVELSESRENTER` |
+| 2 | Opkrævningsrenter | `OPKRAEVNINGSRENTER` |
+| 3 | Gebyrer | `GEBYRER` |
+| 4 | Afdrag (restgæld/hovedstol) | `AFDRAG` |
+| 5 | Andre komponenter | `ANDRE` |
+
+Inden for samme kategori gælder FIFO-rækkefølge: den ældste fordring dækkes først.
+
+### Rentekomponenter (6 underpositioner, GIL § 4 stk. 1–4)
+
+Inddrivelsesrenter fordeles yderligere på seks underpositioner jf. GIL § 4 stk. 1–4, herunder renter med og uden fordringshaver-særstilling, renter før tilbageførsel, og PSRM-interne renter.
+
+### Inddrivelsesindsatstype (GIL § 10b og Retsplejelovens § 507)
+
+Fordelingen af overskud i stk. 3 afhænger af hvilken inddrivelsesindsats der er iværksat: lønindeholdelse, udlæg, begge eller ingen.
+
+### Dækningsvisning i portalen
+
+Du kan se den aktuelle dækningsrækkefølge for en skyldner under:
+
+**Skyldner → Dækningsrækkefølge**
+
+Visningen viser en tabel med fordringens placering, kategori, rentekomponent og det beløb der vil dækkes ved næste betaling.
+
+Du kan også køre en **simulering** med et hypotetisk beløb for at se den forventede allokering uden at gemme noget.
+
+### Bogføringsspor
+
+Når en betaling faktisk allokeres, oprettes en `daekning_record` pr. fordringkomponent. Denne post er skrivebeskyttet og kan ikke ændres — den udgør auditesporet for betalingsallokeringen. Posten fremgår af betalingstidslinjen.
 
 ## Storno
 

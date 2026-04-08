@@ -1,0 +1,92 @@
+# Architecture Policies for OpenDebt
+# Evaluated by: c4-model-validator, c4-architecture-governor
+# Severity levels: blocking (halts pipeline), warning (non-blocking), info (advisory)
+# Add new policies by appending to this list. Do not remove existing ones without an ADR.
+
+version: "1.0"
+policies:
+
+  - id: ARCH-001
+    name: bounded-context-isolation
+    severity: blocking
+    description: >
+      No direct cross-bounded-context data access. A service must not query
+      a database owned by a different bounded context. Use APIs or events instead.
+
+  - id: ARCH-002
+    name: external-system-classification
+    severity: blocking
+    description: >
+      All external systems declared in workspace.dsl must carry at least one
+      classification tag: internal, external, third-party, or public.
+
+  - id: ARCH-003
+    name: trust-boundary-enforcement
+    severity: blocking
+    description: >
+      Data crossing a zone or network boundary must route through a declared
+      trust boundary element (API gateway, BFF, adapter). Direct cross-boundary
+      calls without a boundary element are forbidden.
+
+  - id: ARCH-004
+    name: no-orphaned-containers
+    severity: blocking
+    description: >
+      Every container must participate in at least one declared relationship
+      (as source or target). A container with no relationships is undeclared
+      architectural drift.
+
+  - id: ARCH-005
+    name: deployment-view-required
+    severity: blocking
+    description: >
+      Every container must appear in at least one deploymentEnvironment view
+      before the feature reaches the deployment gate.
+
+  - id: ARCH-006
+    name: descriptions-required
+    severity: warning
+    description: >
+      All containers, components, and relationships must carry a non-empty
+      description. Blank descriptions degrade diagram readability and downstream
+      documentation quality.
+
+  - id: ARCH-007
+    name: technology-tags-required
+    severity: warning
+    description: >
+      All containers must carry a technology tag (e.g., "Spring Boot", "React",
+      "PostgreSQL", "Kafka"). Technology tags make the model actionable for
+      infrastructure and security reviews.
+
+  # --- OpenDebt-specific policies ---
+
+  - id: ARCH-008
+    name: pii-datastore-isolation
+    severity: blocking
+    description: >
+      Personal data (CPR, CVR, names, addresses, contact details) must only be
+      persisted in the Person Registry service. All other services must reference
+      persons by technical UUID only. Enforced by ADR 0014.
+
+  - id: ARCH-009
+    name: no-cross-service-db-access
+    severity: blocking
+    description: >
+      No service may connect directly to a database owned by another service.
+      Cross-service data access is exclusively via REST APIs. Enforced by ADR 0007.
+
+  - id: ARCH-010
+    name: api-first-openapi
+    severity: blocking
+    description: >
+      All inter-service APIs must be described in an OpenAPI 3.1 specification
+      before implementation begins. The spec is the contract. Enforced by ADR 0004.
+
+  - id: ARCH-011
+    name: oauth2-all-endpoints
+    severity: blocking
+    description: >
+      All HTTP endpoints exposed by any container must be protected by OAuth2/OIDC
+      via Keycloak. Unauthenticated endpoints are forbidden except /actuator/health.
+      Enforced by ADR 0005.

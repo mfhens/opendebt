@@ -20,12 +20,10 @@ import reactor.core.publisher.Mono;
 public class CreditorServiceClient {
 
   private final WebClient webClient;
-  private final String creditorServiceUrl;
 
   public CreditorServiceClient(
       WebClient.Builder webClientBuilder,
       @Value("${opendebt.services.creditor-service.url:http://localhost:8092}") String baseUrl) {
-    this.creditorServiceUrl = baseUrl;
     this.webClient = webClientBuilder.baseUrl(baseUrl).build();
   }
 

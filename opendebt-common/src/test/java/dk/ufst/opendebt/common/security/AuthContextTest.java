@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +38,6 @@ class AuthContextTest {
   void shouldExtractCaseworkerContext() {
     // Given
     String userId = "user123";
-    Set<String> roles = Set.of("ROLE_CASEWORKER");
     List<String> capabilities = List.of("HANDLE_VIP_CASES", "HANDLE_PEP_CASES");
 
     Jwt jwt =
@@ -74,7 +72,6 @@ class AuthContextTest {
     // Given
     String userId = "citizen-user-456";
     UUID personId = UUID.randomUUID();
-    Set<String> roles = Set.of("ROLE_CITIZEN");
 
     Jwt jwt =
         Jwt.withTokenValue("token")
@@ -106,7 +103,6 @@ class AuthContextTest {
     // Given
     String userId = "creditor-user-789";
     UUID organizationId = UUID.randomUUID();
-    Set<String> roles = Set.of("ROLE_CREDITOR");
 
     Jwt jwt =
         Jwt.withTokenValue("token")

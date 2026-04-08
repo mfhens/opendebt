@@ -40,10 +40,10 @@ The Snyk MCP server is configured in `.mcp.json` at the repo root.
 
 ### Documentation Maintenance (CRITICAL)
 **Every time source code is changed, check and update the following documentation if affected:**
-- `docs/architecture-overview.md` - Service inventory, implementation status, diagrams, endpoint lists
+- `architecture/overview.md` - Service inventory, implementation status, diagrams, endpoint lists
 - `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
 - `agents.md` - ADR references, package structure, patterns
-- Relevant ADR in `docs/adr/` if an architectural decision is affected
+- Relevant ADR in `architecture/adr/` if an architectural decision is affected
 - `docs/site/technical/` - Developer guide, architecture, API reference, domain model (English)
 - `docs/site/fordringshaver/` - Creditor user guide (Danish) if creditor-facing features change
 - `docs/site/skyldner/` - Citizen user guide (Danish) if citizen-facing features change
@@ -52,7 +52,7 @@ The Snyk MCP server is configured in `.mcp.json` at the repo root.
 The documentation site is built with MkDocs (`mkdocs.yml` at repo root). Run `mkdocs serve` to preview locally.
 
 ### Memory MCP Synchronisation
-**When `petitions/program-status.yaml` or `docs/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
+**When `petitions/program-status.yaml` or `architecture/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
 
 Update memory when:
 - A new ADR is added or its status changes → create or update an entity for the ADR
@@ -194,6 +194,69 @@ dk.ufst.opendebt.integrationgateway.soap/
 └── skat/            # SKAT endpoints, SkatClaimMapper, generated JAXB
 ```
 
+`payment-service` additionally contains a `daekning/` domain sub-package for the GIL § 4 payment application order module (petition057):
+
+```
+dk.ufst.opendebt.payment.daekning/
+├── PrioritetKategori.java       # Enum — 5 GIL § 4 priority categories
+├── RenteKomponent.java          # Enum — 6 interest component sub-positions
+├── InddrivelsesindsatsType.java # Enum — 4 inddrivelsesindsats types
+├── dto/                         # DaekningsraekkefoelgePositionDto, SimulatePositionDto, SimulateRequestDto
+├── entity/                      # DaekningFordringEntity (daekning_fordring), DaekningRecord (daekning_record)
+├── repository/                  # DaekningFordringRepository, DaekningRecordRepository
+└── service/
+    ├── DaekningsRaekkefoeigenService.java      # Interface
+    └── impl/
+        └── DaekningsRaekkefoeigenServiceImpl.java  # 8-step GIL § 4 algorithm
+```
+
+`debt-service` additionally contains an `offsetting/` domain sub-package for the Modregning og Korrektionspulje module (petition058, ADR-0027):
+
+```
+dk.ufst.opendebt.debtservice.offsetting/
+├── batch/
+│   └── KorrektionspuljeSettlementJob.java  # @Scheduled monthly + annual settlement sweep
+├── client/
+│   └── DaekningsRaekkefoeigenServiceClient.java  # HTTP stub for P057 in payment-service
+├── controller/
+│   └── ModregningController.java           # POST tier2-waiver, GET modregning-events
+├── entity/
+│   ├── ModregningEvent.java                # GIL § 16 stk. 1 set-off decision; written to immudb (ADR-0029)
+│   ├── KorrektionspuljeEntry.java          # Pool entry for reversal/gendaenkning credit
+│   └── RenteGodtgoerelseRateEntry.java     # Rate table for GIL § 8b computation
+├── repository/
+│   ├── ModregningEventRepository.java
+│   ├── KorrektionspuljeEntryRepository.java
+│   └── RenteGodtgoerelseRateEntryRepository.java
+└── service/
+    ├── FordringQueryPort.java                     # Internal JPA adapter for active-fordringer queries
+    ├── ModregningService.java                     # @Service, @Transactional — three-tier orchestrator
+    ├── ModregningsRaekkefoeigenEngine.java        # GIL § 7 stk. 1 allocation algorithm
+    ├── KorrektionspuljeService.java               # @Service, @Transactional — reversal/pool processor
+    ├── RenteGodtgoerelseService.java              # GIL § 8b rate + start-date calculator
+    ├── DanishBankingCalendar.java                 # 5-banking-day utility
+    ├── PublicDisbursementEvent.java               # Inbound DTO from integration-gateway (Nemkonto)
+    └── [result/decision records]                  # ModregningResult, KorrektionspuljeResult, etc.
+```
+
+Key invariants enforced in `offsetting/`:
+- `renteGodtgoerelseNonTaxable` is ALWAYS `true` (GIL SS 8b; hardcoded, never configurable)
+- No CPR/PII in entities — `UUID debtorPersonId` only (ADR-0014)
+- Idempotency via `nemkontoReferenceId` unique constraint (AC-5)
+- `@Transactional` on `initiateModregning` and `settleEntry` (NFR-1)
+- CLS audit per allocation with `gilParagraf` annotation (NFR-2)
+
+`caseworker-portal` additionally contains a `daekning/` view sub-package for the GIL § 4 view (petition057):
+
+```
+dk.ufst.opendebt.caseworkerportal.daekning/
+└── DaekningsRaekkefoeigenViewController.java   # GET /debtors/{debtorId}/daekningsraekkefoelge
+                                                 # — calls PaymentServiceClient.getDaekningsraekkefoelge()
+                                                 #   and renders daekningsraakkefoelge.html
+```
+
+The `PaymentServiceClient` in `caseworker-portal` was extended with `getDaekningsraekkefoelge(UUID debtorId)` that calls `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057). i18n: 12 new keys per locale (5 priority category labels, 6 interest component labels, 1 view title).
+
 Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
 
 ```
@@ -303,8 +366,10 @@ See `CreditorArchitectureTest` (full layered architecture + shared rules) and `P
 1. `spotless:check` - Code formatting
 2. `test` - Unit tests
 3. `verify` - Integration tests + coverage
-4. `dependency-check:check` - Security vulnerabilities
-5. `sonar:sonar` - Static analysis
+4. `sonar:sonar` - Static analysis
+5. `catala typecheck --language en --no-stdlib` — Catala compliance artefacts (for petitions with `legal_footprint: true`)
+
+**Scheduled / manual:** `dependency-check:check` (OWASP) runs weekly and via workflow dispatch — see `.github/workflows/owasp-dependency-check.yml` (not on every push; too slow for PR feedback).
 
 ### Before Committing
 ```bash
@@ -426,6 +491,10 @@ When making architectural decisions, reference existing ADRs:
 - ADR-0026: Inter-Service Resilience (Resilience4j Circuit Breaker + Retry)
 - ADR-0027: Offsetting merged into debt-service
 - ADR-0028: Backup and Disaster Recovery Strategy (RTO 4h / RPO 4h)
+- ADR-0029: immudb for Financial Ledger Integrity (payment-service + debt-service offsetting records; see P058 amendment)
+- ADR-0030: SOAP Legacy Gateway (OIO/SKAT endpoints, petition019)
+- ADR-0031: Statutory Codes as Enums not Configuration
+- ADR-0032: Catala Formal Compliance Layer
 
 ## Standard Components
 
@@ -465,6 +534,7 @@ workflowService.completeTask(taskId, variables);
 
 ### Do
 - Follow existing patterns in the codebase
+- **Financial transactions (ADR-0018):** When a change records a financial effect (balances, payments, interest, offsetting, write-offs, refunds, corrections), ensure **double-entry postings** land in payment-service (`BookkeepingService` / ledger) or document an explicit **ADR exception**. Service-local journals alone are not sufficient for statutory accounting.
 - Write OpenAPI specs before implementing endpoints
 - Use Lombok for boilerplate reduction
 - Add proper validation annotations
@@ -474,9 +544,10 @@ workflowService.completeTask(taskId, variables);
 - Use Mermaid for all diagrams in documentation
 - Store PII only in Person Registry
 - Use technical UUIDs to reference persons/organizations
-- Update `docs/architecture-overview.md` when adding/changing services, endpoints, entities, or migrations
+- Update `architecture/overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
+- **Record financial effects only in service-local tables** (e.g. interest journals) **without** a corresponding ledger posting plan to payment-service — see ADR-0018 amendment #3
 - Store CPR, CVR, names, addresses outside Person Registry
 - Access other services' databases directly
 - Skip security annotations
@@ -510,7 +581,153 @@ improvements that are not blocking but should be tracked, use `AIDEV-` prefixed 
 
 **Workflow:**
 1. Reviewer droids (`code-reviewer-strict`, `solution-architecture-reviewer`) add AIDEV comments
-2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items
+2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items; it also posts new TB items to the wasteland `wanted` table (see **Wasteland Integration → New items**)
 3. `tech-debt-executor` implements items from the technical_backlog
 
 These comments are collected into `petitions/program-status.yaml` under `technical_backlog`.
+
+
+## C4 Architecture Governance
+
+Architecture is governed using Structurizr DSL. Key files:
+
+| File | Purpose |
+|---|---|
+| `architecture/workspace.dsl` | Canonical C4 model — updated by `solution-architect`, maintained by `implementation-doc-sync` |
+| `architecture/policies.yaml` | Architecture policy set — evaluated by `c4-model-validator` and `c4-architecture-governor` |
+
+Architectural decisions are recorded in `architecture/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.
+
+When a new ADR is accepted, also INSERT it into the wasteland `decisions` table (see **Wasteland Integration → New items**).
+
+## Wasteland Integration
+
+The **wasteland** (`mfhens/ufst` on DoltHub) is the federated work registry for the
+UFST Modernization programme. It operates at petition/TB granularity and is visible to
+external contractors and agent rigs that join the federation.
+
+**Beads and wasteland coexist.** Beads is the inner project tracker (sprint subtasks,
+fine-grained status). The wasteland is the outer federated registry (petition-level bounty
+board with evidence and trust stamps).
+
+Local clone: `~/.hop/commons/mfhens/ufst`
+
+### Claim
+
+Before starting work on a petition or TB item, mark it claimed in the wasteland:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt pull origin main
+dolt sql -q "UPDATE wanted SET status='in_progress', claimed_by='mfhens' \
+  WHERE id='<petition-id>' AND status='open'"
+dolt add . && dolt commit -m 'claim: <petition-id>' && dolt push origin main
+```
+
+If the item is not yet in `wanted` (new TB item posted mid-sprint), INSERT it first — see **New items** below.
+
+### Complete
+
+When a petition or TB item is marked `implemented`/`done` in `program-status.yaml`, post
+the completion and close the wanted item:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+GIT_SHA=$(git -C /home/markus/GitHub/opendebt rev-parse --short HEAD)
+dolt sql -q "INSERT IGNORE INTO completions \
+  (id, wanted_id, completed_by, evidence, completed_at) \
+  VALUES ('<petition-id>-cmp', '<petition-id>', 'mfhens', 'commit:${GIT_SHA}', NOW())"
+dolt sql -q "UPDATE wanted SET status='done' WHERE id='<petition-id>'"
+dolt add . && dolt commit -m 'complete: <petition-id>' && dolt push origin main
+```
+
+### Stamp
+
+Reviewer agents (`code-reviewer-strict`, `scrutiny-feature-reviewer`) issue stamps on
+**external** workers' completions to signal verified quality. The `stamps` table enforces
+`author != subject`, so self-stamps are not allowed — stamps are only meaningful when
+external rigs are involved.
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+STAMP_ID=$(python3 -c "import uuid; print(str(uuid.uuid4())[:16])")
+dolt sql -q "INSERT INTO stamps \
+  (id, author, subject, valence, confidence, skill_tags, message, context_id, context_type, created_at) \
+  VALUES ('${STAMP_ID}', '<reviewer-handle>', '<worker-handle>', \
+  '{\"quality\":\"high\",\"correctness\":\"verified\"}', 0.9, \
+  '[\"java\",\"spring-boot\",\"opendebt\"]', '<one-line review summary>', \
+  '<completion-id>', 'completion', NOW())"
+dolt add . && dolt commit -m 'stamp: <worker-handle> on <completion-id>' && dolt push origin main
+```
+
+### New items
+
+**New TB item** (`backlog-planner` posting to wasteland after updating `program-status.yaml`):
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt sql -q "INSERT IGNORE INTO wanted \
+  (id, title, project, type, priority, tags, posted_by, status, effort_level, sandbox_required, created_at, updated_at) \
+  VALUES ('<TB-id>', '<title>', 'opendebt', 'technical_backlog', 3, \
+  '[\"java\",\"tech-debt\",\"opendebt\"]', 'mfhens', 'open', 'medium', TRUE, NOW(), NOW())"
+dolt add . && dolt commit -m 'post: <TB-id>' && dolt push origin main
+```
+
+**New ADR** (`solution-architect` after writing an accepted ADR):
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt sql -q "INSERT IGNORE INTO decisions \
+  (id, number, title, status, summary, skill_tags, project, created_at) \
+  VALUES ('adr-<NNNN>', <N>, '<ADR title>', 'Accepted', '<one-sentence decision>', \
+  '[\"architecture\",\"adr\"]', 'opendebt', NOW())"
+dolt add . && dolt commit -m 'decision: adr-<NNNN>' && dolt push origin main
+```
+
+<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
+## Beads Issue Tracker
+
+This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+
+### Quick Reference
+
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work
+bd close <id>         # Complete work
+```
+
+### Rules
+
+- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
+- Run `bd prime` for detailed command reference and session close protocol
+- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+
+## Session Completion
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd dolt push
+   cd ~/.hop/commons/mfhens/ufst && dolt push origin main  # sync wasteland
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+<!-- END BEADS INTEGRATION -->

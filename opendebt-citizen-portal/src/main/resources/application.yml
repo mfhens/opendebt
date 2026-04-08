@@ -85,7 +85,7 @@ opendebt:
       - en-GB
   services:
     person-registry:
-      url: ${PERSON_REGISTRY_URL:http://localhost:8084}
+      url: ${PERSON_REGISTRY_URL:http://localhost:8090}
     debt-service:
       url: ${DEBT_SERVICE_URL:http://localhost:8082}
     case-service:
