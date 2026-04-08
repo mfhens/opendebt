@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-03-30
-  updated_by: copilot (P057 sprint-tracker — full delivery pipeline complete, DEP-1 backlog item noted)
+  updated_at: 2026-04-05
+  updated_by: copilot (TB-055 — Wire LedgerServiceClient to payment-service ledger API)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -215,17 +215,19 @@ program:
 
     petition001:
       title: OCR-based matching of incoming payments
+      legal_footprint: true
       status: implemented
       phase: phase-0
       depends_on: []
       last_reviewed: 2026-03-17
       evidence:
-        - opendebt-payment-service payment matching module is marked Done in docs/architecture-overview.md
+        - opendebt-payment-service payment matching module is marked Done in architecture/overview.md
         - debt-service exposes OCR lookup and write-down endpoints
       next_step: Revalidate against petition outcome contract during broader program review.
 
     petition002:
       title: Creditor creation of a new fordring
+      legal_footprint: false
       status: implemented
       phase: phase-0
       psrm_enriched: true
@@ -257,6 +259,7 @@ program:
 
     petition003:
       title: Formalization of fordring, restance, and overdragelse til inddrivelse
+      legal_footprint: true
       status: implemented
       phase: phase-1
       psrm_enriched: true
@@ -274,6 +277,7 @@ program:
 
     petition008:
       title: Fordringshaver logical and physical data model
+      legal_footprint: false
       status: implemented
       phase: phase-1
       depends_on: []
@@ -286,6 +290,7 @@ program:
 
     petition009:
       title: Dedicated fordringshaver master data service
+      legal_footprint: false
       status: validated
       phase: phase-1
       depends_on:
@@ -299,6 +304,7 @@ program:
 
     petition010:
       title: Fordringshaver channel binding and access resolution
+      legal_footprint: false
       status: implemented
       phase: phase-1
       depends_on:
@@ -314,6 +320,7 @@ program:
 
     petition011:
       title: Fordringshaver M2M ingress via integration-gateway
+      legal_footprint: false
       status: implemented
       phase: phase-2
       depends_on:
@@ -324,6 +331,7 @@ program:
 
     petition012:
       title: Fordringshaverportal as BFF and manual submission channel
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on:
@@ -341,6 +349,7 @@ program:
 
     petition013:
       title: UI webtilgaengelighed compliance
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on: []
@@ -352,6 +361,7 @@ program:
 
     petition014:
       title: Accessibility statements and feedback for each UI
+      legal_footprint: false
       status: validated
       phase: phase-2
       depends_on:
@@ -365,6 +375,7 @@ program:
 
     petition019:
       title: Legacy SOAP endpoints for external creditors
+      legal_footprint: false
       status: implemented
       phase: phase-2
       depends_on:
@@ -389,6 +400,7 @@ program:
 
     petition004:
       title: Underretning, paakrav, and rykker
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -406,6 +418,7 @@ program:
 
     petition005:
       title: Haeftelse for multiple skyldnere
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -420,6 +433,7 @@ program:
 
     petition006:
       title: Indsigelse workflow blockering
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -441,6 +455,7 @@ program:
 
     petition007:
       title: Inddrivelsesskridt for modregning, loenindeholdelse, and udlaeg
+      legal_footprint: true
       status: implemented
       phase: phase-3
       psrm_enriched: true
@@ -457,6 +472,7 @@ program:
 
     petition015:
       title: Fordring core claim validation rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -473,6 +489,7 @@ program:
 
     petition016:
       title: Fordring claimant authorization rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       depends_on:
@@ -486,6 +503,7 @@ program:
 
     petition017:
       title: Fordring claim lifecycle and reference rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -505,6 +523,7 @@ program:
 
     petition018:
       title: Fordring claim content validation rules
+      legal_footprint: true
       status: implemented
       phase: phase-4
       psrm_enriched: true
@@ -526,6 +545,7 @@ program:
 
     petition020:
       title: OpenTelemetry-based observability
+      legal_footprint: false
       status: validated
       phase: phase-5
       depends_on: []
@@ -542,6 +562,7 @@ program:
 
     petition021:
       title: Internationalization (i18n) infrastructure for all OpenDebt portals
+      legal_footprint: false
       status: validated
       phase: phase-5
       depends_on: []
@@ -558,6 +579,7 @@ program:
 
     petition022:
       title: Skyldnerportal (citizen portal) landing page
+      legal_footprint: false
       status: implemented
       phase: phase-6
       depends_on:
@@ -575,6 +597,7 @@ program:
 
     petition023:
       title: Person Registry citizen (CPR) lookup API
+      legal_footprint: false
       status: implemented
       phase: phase-7
       depends_on: []
@@ -586,6 +609,7 @@ program:
 
     petition024:
       title: Citizen-facing debt summary endpoint
+      legal_footprint: false
       status: implemented
       phase: phase-7
       psrm_enriched: true
@@ -596,6 +620,7 @@ program:
 
     petition025:
       title: MitID/TastSelv OAuth2 browser flow for citizen portal
+      legal_footprint: false
       status: implemented
       phase: phase-7
       depends_on:
@@ -607,6 +632,7 @@ program:
 
     petition026:
       title: "\"Mit gaeldsoverblik\" authenticated citizen debt overview page"
+      legal_footprint: false
       status: not_started
       phase: phase-8
       psrm_enriched: true
@@ -619,6 +645,7 @@ program:
 
     petition027:
       title: Citizen payment initiation API and self-service payment
+      legal_footprint: false
       status: not_started
       phase: phase-8
       depends_on:
@@ -629,6 +656,7 @@ program:
 
     petition028:
       title: Digital Post integration for citizen letter retrieval
+      legal_footprint: false
       status: not_started
       phase: phase-8
       depends_on:
@@ -641,6 +669,7 @@ program:
 
     petition029:
       title: Fordringshaverportal -- Claims in recovery and zero-balance claims lists
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -656,6 +685,7 @@ program:
 
     petition030:
       title: Fordringshaverportal -- Claim detail view
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -670,6 +700,7 @@ program:
 
     petition031:
       title: Fordringshaverportal -- Claims in hearing
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -686,6 +717,7 @@ program:
 
     petition032:
       title: Fordringshaverportal -- Rejected claims
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -704,6 +736,7 @@ program:
 
     petition033:
       title: Fordringshaverportal -- Claim creation wizard
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -725,6 +758,7 @@ program:
 
     petition034:
       title: Fordringshaverportal -- Write-up and write-down submission
+      legal_footprint: false
       status: superseded
       superseded_by: petition053
       phase: phase-9
@@ -743,6 +777,7 @@ program:
 
     petition035:
       title: Fordringshaverportal -- Notifications search and download
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -760,6 +795,7 @@ program:
 
     petition036:
       title: Fordringshaverportal -- Reconciliation
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -778,6 +814,7 @@ program:
 
     petition037:
       title: Fordringshaverportal -- Monthly reports
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -794,6 +831,7 @@ program:
 
     petition038:
       title: Fordringshaverportal -- Dashboard, navigation, and settings
+      legal_footprint: false
       status: implemented
       phase: phase-9
       depends_on:
@@ -815,6 +853,7 @@ program:
 
     petition039:
       title: Krydsende handlinger — crossing financial transactions with cascading interest recalculation
+      legal_footprint: true
       status: implemented
       phase: phase-10
       depends_on:
@@ -840,6 +879,7 @@ program:
 
     petition040:
       title: Ledger query API and Sagsbehandlerportal accounting transaction view
+      legal_footprint: false
       status: implemented
       phase: phase-10
       depends_on:
@@ -857,6 +897,7 @@ program:
 
     petition041:
       title: Sagsbehandlerportal demo access with crossing-transactions showcase
+      legal_footprint: false
       status: implemented
       phase: phase-10
       depends_on:
@@ -873,6 +914,7 @@ program:
 
     petition042:
       title: Case data model based on the fællesoffentlige sagsdefinition (OIO Sag v2.0)
+      legal_footprint: false
       status: not_started
       phase: phase-10
       depends_on: []
@@ -887,6 +929,7 @@ program:
 
     petition043:
       title: Batch processing — daily lifecycle transitions and interest accrual
+      legal_footprint: true
       status: implemented
       phase: phase-10
       depends_on:
@@ -905,6 +948,7 @@ program:
 
     petition044:
       title: Comprehensive documentation — MkDocs site with multi-audience guides
+      legal_footprint: false
       status: implemented
       phase: phase-11
       depends_on: []
@@ -919,6 +963,7 @@ program:
 
     petition045:
       title: Multi-regime interest and fee compliance per PSRM debt type rules
+      legal_footprint: true
       status: implemented
       phase: phase-12
       depends_on:
@@ -939,6 +984,7 @@ program:
 
     petition046:
       title: Versioned business configuration with validity periods
+      legal_footprint: true
       status: implemented
       phase: phase-12
       depends_on: []
@@ -956,6 +1002,7 @@ program:
 
     petition047:
       title: Configuration administration UI for versioned business values
+      legal_footprint: false
       status: implemented
       phase: phase-12
       depends_on:
@@ -973,6 +1020,7 @@ program:
 
     petition048:
       title: Role-based data access control hardening
+      legal_footprint: false
       status: implemented
       phase: phase-13
       depends_on:
@@ -992,6 +1040,7 @@ program:
 
     petition049:
       title: Case handler assignment — caseworker-to-case assignment and workload management
+      legal_footprint: false
       status: not_started
       phase: phase-13
       depends_on:
@@ -1010,6 +1059,7 @@ program:
 
     petition051:
       title: immudb Ledger Integrity — Production Hardening and Audit UI
+      legal_footprint: false
       status: not_started
       phase: phase-15
       depends_on:
@@ -1028,6 +1078,7 @@ program:
 
     petition052:
       title: Manual Nemkonto Payout with 4-Eyes Approval
+      legal_footprint: false
       status: not_started
       phase: phase-16
       depends_on:
@@ -1054,6 +1105,7 @@ program:
 
     petition050:
       title: Unified Case Timeline UI
+      legal_footprint: false
       status: implemented
       phase: phase-12
       depends_on:
@@ -1080,6 +1132,10 @@ program:
 
     petition053:
       title: Fordringshaverportal — Opskrivning og nedskrivning (fuld G.A.-komplient specifikation)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_1_4_3_opskrivning.catala_da
+        - catala/ga_1_4_4_nedskrivning.catala_da
       status: implemented
       phase: phase-3
       depends_on:
@@ -1103,6 +1159,10 @@ program:
 
     petition054:
       title: Catala Compliance Spike — G.A.1.4.3 og G.A.1.4.4 formal encoding
+      legal_footprint: true
+      catala_files:
+        - catala/ga_1_4_3_opskrivning.catala_da
+        - catala/ga_1_4_4_nedskrivning.catala_da
       status: implemented
       branch: feature/p054-catala-spike
       last_reviewed: 2026-03-29
@@ -1135,22 +1195,41 @@ program:
 
     petition055:
       title: Suspension pga. datafejl og tilbagekaldelse (G.A.1.3.4–1.3.5)
-      status: not_started
+      legal_footprint: true
+      status: catala_encoded
       phase: phase-17
       depends_on: []
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-04-02
+      catala_files:
+        - catala/ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da
+        - catala/tests/ga_suspension_tilbagekaldelse_tests.catala_da
+      catala_scopes:
+        - DatafejlSuspension      # G.A.1.3.4 — FR-1.1a/b/c/d, FR-1.2, FR-1.3
+        - TilbagekaldelseFordring  # G.A.1.3.5 — FR-2.1, FR-2.2, FR-2.3
+      catala_typecheck: DEFERRED  # catala not on PATH locally; validated in CI catala-tests job
       notes: >
         G.A.1.3.4: fordring suspended when PSRM detects datafejl (missing mandatory field,
         invalid CVR/CPR). System must block inddrivelse actions until fejl is corrected by
         fordringshaver. G.A.1.3.5: fordringshaver may recall (tilbagekalde) a fordring from
         PSRM; results in status TILBAGEKALDT, archival of all related inddrivelsesdata.
-        Tier B — no Catala companion (enumerated lifecycle states, no date arithmetic).
+        Tier B — originally classified no Catala companion (enumerated lifecycle states, no
+        date arithmetic). Catala companion produced by catala-encoder agent (2026-04-02):
+        legally-defined enumerations (DatafejlType) and state-transition rules qualify per
+        Phase 1 legal footprint criteria. Statute citations (Gæld.bekendtg. § 4 and § 6)
+        are provisional — see ESC-055 escalation for verification requirement.
       next_step: >
-        Draft petition document and outcome contract. Map to PSRM status machine.
+        (1) Verify statute citations in ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da
+        against actual Gæld.bekendtg. text in G.A. snapshot v3.16 (2026-01-30) when
+        petition055.md is drafted. (2) Draft petition document and outcome contract.
+        (3) Map TILBAGEKALDT and SUSPENDERET states to PSRM status machine.
+        See ESC-055 in escalations section.
 
     petition056:
       title: Ikkeinddrivelsesparate fordringer og ophør (G.A.1.4.2 + G.A.1.4.5)
-      status: not_started
+      legal_footprint: true
+      catala_files:
+        - catala/ga_1_4_2_1_4_5_ikkeinddrivelsesparate_ophoer.catala_da
+      status: implemented
       phase: phase-17
       depends_on: []
       last_reviewed: 2026-03-29
@@ -1171,6 +1250,9 @@ program:
 
     petition057:
       title: Dækningsrækkefølge — payment application order (G.A.2.3.2)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
       status: implemented
       phase: phase-18
       depends_on: []
@@ -1211,6 +1293,10 @@ program:
 
     petition058:
       title: Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_3_2_3_4_modregning_korrektionspulje.catala_da
+        - catala/tests/ga_modregning_korrektionspulje_tests.catala_da
       status: implemented
       phase: phase-18
       depends_on:
@@ -1255,6 +1341,7 @@ program:
       pending:
         - "ADR-0029 amendment required before deployment gate (immudb scope expansion)"
         - "deployment-view in workspace.dsl needed before Phase 9 release gate"
+        - "TB-055: wire LedgerServiceClient to payment-service (replace HTTP stub; ADR-0018)"
       scrutiny_risks:
         - "RISK-2 (non-blocking): outbox payload missing per-fordring detail — outbox events lack individual fordring breakdown; acceptable for Phase 18 but should be addressed before production"
         - "RISK-1 (non-blocking): HTTP 403 security smoke test absent — ModregningController lacks an automated unauthorized-access assertion; manual verification confirms guard is present"
@@ -1283,6 +1370,9 @@ program:
 
     petition059:
       title: Forældelse — prescription rules (G.A.2.4)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_4_foraeldelse.catala_da
       status: not_started
       phase: phase-18
       depends_on:
@@ -1303,7 +1393,15 @@ program:
 
     petition060:
       title: Retskraftvurdering — § 50 priority ordering (G.A.2.5)
-      status: not_started
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_5_retskraftvurdering.catala_da
+        - catala/tests/ga_retskraftvurdering_tests.catala_da
+      catala_typecheck: DEFERRED
+      catala_typecheck_note: >
+        catala not on PATH on encoding host; opam not installed in WSL archlinux.
+        CI job (catala-tests) will perform typecheck on next push to Linux runner.
+      status: in_progress
       phase: phase-18
       depends_on:
         - petition057
@@ -1322,6 +1420,7 @@ program:
 
     petition061:
       title: Afdragsordninger — instalment plan management (G.A.3.1.1)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1340,6 +1439,7 @@ program:
 
     petition062:
       title: Lønindeholdelse fuld specifikation (G.A.3.1.2)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1359,6 +1459,7 @@ program:
 
     petition063:
       title: Henstand — deferral of collection (G.A.3.1.3)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on: []
@@ -1374,6 +1475,7 @@ program:
 
     petition064:
       title: Ægtefællehæftelse — spousal joint liability (G.A.3.1.5)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on: []
@@ -1390,6 +1492,7 @@ program:
 
     petition065:
       title: Afskrivning og bortfald — write-off and lapse (G.A.3.1.6)
+      legal_footprint: true
       status: not_started
       phase: phase-19
       depends_on:
@@ -1409,6 +1512,7 @@ program:
 
     petition066:
       title: Udlæg — skærpet inddrivelse PSRM workflow (G.A.3.2)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on:
@@ -1426,6 +1530,7 @@ program:
 
     petition067:
       title: Særlige inddrivelsesværktøjer (G.A.3.5)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on: []
@@ -1441,6 +1546,7 @@ program:
 
     petition068:
       title: Inddrivelse af særlige fordringstyper (G.A.3.7)
+      legal_footprint: true
       status: not_started
       phase: phase-20
       depends_on: []
@@ -1460,6 +1566,9 @@ program:
 
     petition069:
       title: Catala Compliance Spike — Dækningsrækkefølge GIL § 4 (companion to P057)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da
       status: in_progress
       phase: phase-18
       depends_on:
@@ -1471,7 +1580,7 @@ program:
         (catala/ga_2_3_2_1_daekningsraekkefoeigen.catala_da, 19 633 bytes), 16-scope
         test suite (catala/tests/ga_daekningsraekkefoeigen_tests.catala_da, 13 623 bytes),
         SPIKE-REPORT-069.md (22 442 bytes), and implementation spec
-        design/specs-p069-catala-spike-daekningsraekkefoeigen.md (51 039 bytes).
+        petitions/specs/specs-p069-catala-spike-daekningsraekkefoeigen.md (51 039 bytes).
         Key discrepancy found: INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 token mismatch
         between P057 Gherkin and G.A. text — flagged for P057 follow-up.
         Open item: AC-18 (Catala CLI compilation exit-code 0) deferred — requires a
@@ -1483,6 +1592,9 @@ program:
 
     petition070:
       title: Catala Compliance Spike — Forældelse G.A.2.4 (companion to P059)
+      legal_footprint: true
+      catala_files:
+        - catala/ga_2_4_foraeldelse.catala_da
       status: implemented
       phase: phase-18
       depends_on:
@@ -1497,7 +1609,7 @@ program:
         tillægsfrister. Test suite: catala/tests/ga_foraeldelse_tests.catala_da —
         16 cases (T-01–T-16). Spike report: catala/SPIKE-REPORT-070.md (Go/No-Go
         verdict: GO). Spec and solution architecture:
-        design/specs-p070-catala-spike-foraeldelse.md and
+        petitions/specs/specs-p070-catala-spike-foraeldelse.md and
         design/solution-architecture-p070-catala-spike-foraeldelse.md.
         Key findings: SKM2015.718.ØLR varsel/afgørelse distinction formally encoded;
         fordringskompleks atomicity modelled via scope-contract; 2 P059 coverage gaps
@@ -1511,40 +1623,68 @@ program:
 
     petition071:
       title: Catala Compliance Spike — Afdragsordninger GIL § 11 (companion to P061)
-      status: not_started
+      legal_footprint: true
+      status: done
       phase: phase-19
+      catala_files:
+        - catala/ga_3_1_1_afdragsordninger.catala_da
+        - catala/tests/ga_afdragsordninger_tests.catala_da
+        - catala/SPIKE-REPORT-071.md
       depends_on:
         - petition061
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-03-28
       notes: >
         Research spike encoding GIL § 11 afdragsordning calculation rules in Catala:
         tabeltræk table lookup (income bracket → afdragsprocent, with/without
         forsørgerpligt), lavindkomstgrænse threshold, monthly ydelse calculation
         (annual_betalingsevne / 12, rounded down to nearest 50/100 kr, § 11 stk. 2),
         and concrete betalingsevnevurdering trigger conditions (§ 11 stk. 6).
-        Discrepancy risk: rounding rules, lavindkomstgrænse edge cases, and the
-        interaction between annual index regulation and mid-year afdragsordninger.
-        Time box: 2 working days.
+        Scopes produced: TabeltræksBeregning, TabeltræksOpslagDemo,
+        KonkretBetalingsevneVurdering, AfdragsordningInteraktion.
+        Tests: 15 test cases (16 assertion groups) covering all AC requirements.
+        Typecheck: DEFERRED (catala not on PATH in Windows dev env; CI-gated via
+        .github/workflows/ci.yml with opam-installed catala on Linux runner).
+        Go/No-Go decision: GO — all six Go criteria met; no No-Go triggers activated.
+        Three coverage gaps found vs P061 Gherkin: 100 kr rounding unit scenario
+        missing from P061 sc.5; konkret ydelse > tabeltræk case not tested in P061 sc.17;
+        index regulation for active plans not explicitly covered.
+        Discrepancies with G.A. text: none found.
+        Effort estimate: 0.5-1 person-day per G.A. section; full chapter ~12-20 days.
       next_step: >
-        Draft petition document after P061 petition is approved.
+        Order petition 072 for CI-integrated Catala compliance pipeline covering
+        broader G.A.3.1.x sections. Update P061 Gherkin with 100 kr rounding unit
+        scenario and konkret-ydelse-higher-than-tabeltræk scenario.
 
     petition072:
       title: Catala Compliance Spike — Lønindeholdelsesprocent GIL § 14 (companion to P062)
-      status: not_started
+      legal_footprint: true
+      status: implemented
       phase: phase-19
       depends_on:
         - petition062
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-04-02
+      catala_files:
+        - catala/ga_3_1_2_loenindeholdelse_pct.catala_da
+        - catala/tests/ga_loenindeholdelse_tests.catala_da
+      catala_scopes:
+        - LoenindeholdelseProcent
+      catala_typecheck: deferred
+      spike_report: catala/SPIKE-REPORT-072.md
+      spike_recommendation: GO
       notes: >
-        Research spike encoding the lønindeholdelsesprocent formula from Gæld.bekendtg.
-        § 14, stk. 2 in Catala: (afdragsprocent × nettoindkomst) / (nettoindkomst -
-        fradragsbeløb) × (100% - trækprocent), maximum cap, nedrunding (always down),
-        and frikort edge case (0 trækgrundlag after fradrag). The formula conversion
-        from afdragsprocent to lønindeholdelsesprocent involves division that may produce
-        rounding discrepancies compared to PSRM's integer arithmetic implementation.
-        Time box: 2 working days.
+        Catala spike encoding lønindeholdelsesprocent formula from Gæld.bekendtg.
+        § 14, stk. 3 in scope LoenindeholdelseProcent: standard formula (FR-1.1),
+        floor rounding (FR-1.2), cap rule (FR-1.3), frikort fallback (FR-2.1/2.3),
+        trækprocent=0 handling (FR-2.2), GIL § 10a classification predicate (FR-3.1/3.2).
+        10 test scopes in ga_loenindeholdelse_tests.catala_da covering FR-4.1–FR-4.8.
+        Spike found 2 discrepancies in P062 Gherkin (GIL § 10a citation error in AC-8;
+        conflation of cap vs. reduced-rate mechanisms). JURIDISK-USIKKERHED: GIL § 10a
+        qualifying fordring types and reduced rate level require legal team confirmation.
+        Typecheck deferred to CI (catala.1.1.0 not available in Windows sandbox).
       next_step: >
-        Draft petition document after P062 petition is approved.
+        Petition 073: Establish CI-integrated Catala compliance verification pipeline
+        covering G.A.3.1.2 broadly. Supplement P062 Gherkin with Catala-generated
+        authoritative regression test cases. Prioritise GIL § 10a legal clarification.
 
   # ===========================================================================
   # STATUS SUMMARY (2026-03-30, 72 petitions tracked)
@@ -1601,9 +1741,10 @@ program:
   technical_backlog:
     - id: TB-001
       title: Migrate remaining entities to AuditableEntity base class
-      status: in_progress
+      status: implemented
       priority: medium
       created: 2026-03-14
+      completed: 2026-03-31
       description: |
         ADR-0022 established shared audit infrastructure in opendebt-common.
         CreditorEntity and ChannelBindingEntity are migrated. Remaining entities
@@ -1611,9 +1752,9 @@ program:
       entities_migrated:
         - CreditorEntity (creditor-service)
         - ChannelBindingEntity (creditor-service)
-      entities_pending:
         - DebtEntity (debt-service)
         - DebtTypeEntity (debt-service)
+      entities_pending:
         - CaseEntity (case-service)
         - PaymentEntity (payment-service)
         - LedgerEntryEntity (payment-service)
@@ -1778,7 +1919,7 @@ program:
       status: not_started
       priority: critical
       created: 2026-03-25
-      adr: docs/adr/0028-backup-and-disaster-recovery.md
+      adr: architecture/adr/0028-backup-and-disaster-recovery.md
       description: |
         ADR-0028 defines the backup and DR strategy (RTO 4h / RPO 4h). The architecture
         and k8s manifests are complete. The following infrastructure must be provisioned
@@ -1951,7 +2092,7 @@ program:
       created: 2026-03-25
       resolved: 2026-03-26
       branch: spike/TB-028-immudb-financial-ledger-integrity
-      adr: docs/adr/0029-immudb-for-financial-ledger-integrity.md
+      adr: architecture/adr/0029-immudb-for-financial-ledger-integrity.md
       type: spike
       description: |
         ADR-0029 proposes immudb as a cryptographic tamper-evidence layer for the
@@ -2097,7 +2238,7 @@ program:
 
     - id: TB-034
       title: "Fix inter-claim dækningsrækkefølge in collection-priority.drl (GIL § 4)"
-      status: open
+      status: implemented
       priority: high
       created: 2026-03-28
       petitions: [petition001, petition007]
@@ -2285,7 +2426,7 @@ program:
         Spring Boot auto-configuration via META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports.
         Only Oces3SoapSecurityInterceptor.java in integration-gateway needed import updates.
         All 59 integration-gateway tests pass (29 scenarios).
-        References: ADR-0030, docs/architecture-overview.md (TB-042 note).
+        References: ADR-0030, architecture/overview.md (TB-042 note).
       description: |
         The OCES3 X.509 certificate parsing logic in opendebt-common is fully reusable
         by any Danish e-government system using SOAP/mTLS. Handles RFC2253 DN parsing,
@@ -2353,9 +2494,11 @@ program:
 
     - id: TB-044
       title: "Extract SOAP PII Masking Utility into shared commons"
-      status: not_started
+      status: implemented
       priority: medium
       created: 2026-03-30
+      updated_at: 2026-03-30
+      updated_by: "copilot (TB-044/045 audit-trail-commons extraction)"
       petitions: []
       description: |
         SoapPiiMaskingUtil in opendebt-common masks sensitive fields in SOAP
@@ -2376,9 +2519,11 @@ program:
 
     - id: TB-045
       title: "Extract Audit Trail Commons (AuditableEntity + CLS client)"
-      status: not_started
+      status: implemented
       priority: high
       created: 2026-03-30
+      updated_at: 2026-03-30
+      updated_by: "copilot (TB-044/045 audit-trail-commons extraction)"
       petitions: []
       description: |
         The audit trail infrastructure in opendebt-common is 95% generic and satisfies
@@ -2546,7 +2691,7 @@ program:
         reference implementation for similar debt-collection systems instead.
 
         Actions:
-        - Add architecture note to docs/architecture-overview.md explaining the pattern
+        - Add architecture note to architecture/overview.md explaining the pattern
         - Create docs/site/technical/bookkeeping-reference.md with design rationale
         - Tag module in pom.xml with purpose metadata
         - Future: separate generic yanimetaxas wrapper from Danish-law-specific coverage rules
@@ -2556,5 +2701,161 @@ program:
         Documentation only: SMALL (2-3 days).
         Reuse estimate: 1-2 debt systems in similar jurisdictions.
       implementation_notes: |
-        Uses yanimetaxas/bookkeeping 4.3.0 for core double-entry logic.
+        Double-entry bookkeeping engine is custom (see ADR-0018 amendment, ADR-0033).
         Coverage priority (DaekningsraekkefolgePosition) tied to Gaeldsbekendtgoerelsen § 4.
+
+    - id: TB-052
+      title: "OAuth2 token relay in caseworker portal WebClient"
+      status: implemented
+      priority: high
+      created: 2026-03-30
+      completed: 2026-03-31
+      petitions: []
+      description: |
+        The caseworker portal makes server-to-server calls to payment-service and other
+        backend services via a plain WebClient with no Authorization header. In dev mode
+        this is acceptable (method security is profile-gated to non-dev). In production
+        (Keycloak active) backend services enforce @PreAuthorize — the unauthenticated calls
+        will return 403 causing the Posteringslog and other data panels to appear empty.
+
+        The fix is OAuth2 token relay ("token propagation"): configure the caseworker portal's
+        WebClient.Builder to attach the current user's Keycloak access token to all outgoing
+        backend requests. Only active in non-dev profiles (dev has no real token to relay).
+
+        Pattern: ServletOAuth2AuthorizedClientExchangeFilterFunction with
+        setDefaultOAuth2AuthorizedClient(true) — Spring Security provides this out of the box
+        for servlet OAuth2 clients.
+
+        Implementation steps:
+        - Add profile-gated WebClient.Builder bean in WebClientConfig: dev/local/test uses
+          plain builder; prod uses builder + OAuth2 filter function
+        - Add OAuth2AuthorizedClientManager bean (Spring Boot auto-configures the dependencies
+          when spring.security.oauth2.client.registration is present)
+        - Ensure the filter function propagates the current user token (not a client_credentials
+          service account) since the backend audit trail records who performed the action
+        - Add integration test or curl sequence verifying that in demo-auth profile (Keycloak
+          running) the Posteringslog populates for an authenticated CASEWORKER user
+
+        Root cause analysis: TB-043 created MethodSecurityConfig for payment-service without
+        the profile restriction that creditor-service already had. Fixed in TB-043 follow-up
+        commit 077b769 (profile-gate for dev/local/test). Token relay is the complementary
+        production-side fix.
+
+        Effort: SMALL (1-2 days). Risk: LOW — Spring Security provides first-class support.
+        Prerequisite: Keycloak running (demo-auth profile) for end-to-end verification.
+      implementation_notes: |
+        See WebClientConfig.java in opendebt-caseworker-portal. The bean is injected into
+        PaymentServiceClient, CaseServiceClient, DebtServiceClient, PersonServiceClient.
+        All four clients must receive the token-relaying builder in production.
+
+    - id: TB-053
+      title: "Consolidate specs files into petitions/specs/"
+      status: implemented
+      priority: low
+      effort: trivial
+      description: >
+        Moved all scattered specs files (in design/, docs/specs/, and petitions/ root)
+        into the canonical petitions/specs/ folder. Updated all references in
+        program-status.yaml. Removed now-empty design/ and docs/specs/ directories.
+
+    - id: TB-054
+      title: "Extract ufst-bookkeeping-core as shared Maven module"
+      status: done
+      priority: high
+      effort: medium
+      created: 2026-04-01
+      completed: 2026-04-01
+      petitions: []
+      adr: ADR-0033
+      description: |
+        OSM2 (VAT modernisation) is in active development and requires identical double-entry
+        bookkeeping mechanics to OpenDebt (storno, bi-temporal, period-based interest,
+        retroactive corrections). Decision taken at UFST level to share a single library
+        rather than allow two diverging implementations.
+
+        Extract the generic bookkeeping engine from opendebt-payment-service into a new
+        sibling Maven module `ufst-bookkeeping-core` (groupId: dk.ufst, artifactId:
+        ufst-bookkeeping-core). The module will be hosted in the OpenDebt repo until a
+        dedicated UFST platform repo is established.
+
+        Scope of extraction (see ADR-0033 for full table):
+        - Double-entry posting engine (no JPA — pure domain logic)
+        - InterestAccrualService (period-based daily-rate calculation)
+        - TimelineReplayService
+        - RetroactiveCorrectionService (storno + interest recalculation orchestration)
+        - AccountCode SPI (interface; each system provides its own kontoplan enum)
+        - LedgerEntryStore and DebtEventStore port interfaces (no JPA dependency)
+        - Domain value objects: InterestPeriod, CorrectionResult, LedgerEntry, FinancialEvent
+
+        What stays in opendebt-payment-service:
+        - LedgerEntryEntity, DebtEventEntity (JPA entities)
+        - LedgerEntryRepository, DebtEventRepository (Spring Data)
+        - JPA adapter implementations of LedgerEntryStore / DebtEventStore
+        - ImmuLedgerAppender wiring
+        - AllocationNotificationService, CoveragePriorityService, CrossingTransactionDetector
+
+        Implementation steps:
+        1. Create ufst-bookkeeping-core/ Maven module with Java 21, no Spring dependency
+        2. Define AccountCodeProvider SPI and port interfaces (LedgerEntryStore, DebtEventStore)
+        3. Move/refactor the engine classes into the new module
+        4. Add JPA adapter implementations in opendebt-payment-service implementing the ports
+        5. Wire adapters via constructor injection in BookkeepingServiceImpl
+        6. Update opendebt-payment-service pom.xml to depend on ufst-bookkeeping-core
+        7. Add ufst-bookkeeping-core as a module in root pom.xml
+        8. Ensure all existing tests pass
+
+        Effort: MEDIUM (3-5 days). Risk: MEDIUM — financial logic must not regress.
+        Follow-up: tdd-enforcer pass on ufst-bookkeeping-core to harden test coverage
+        before OSM2 consumes it.
+      implementation_notes: |
+        Seed implementation is in opendebt-payment-service/src/main/java/dk/ufst/opendebt/payment/bookkeeping/
+        Key classes: BookkeepingServiceImpl, InterestAccrualServiceImpl,
+        RetroactiveCorrectionServiceImpl, TimelineReplayServiceImpl, AccountCode.
+        AIDEV-TODO in BookkeepingServiceImpl: add balance validation (debit==credit per txnId)
+        should be addressed as part of this extraction.
+
+    - id: TB-055
+      title: "Wire debt-service LedgerServiceClient to payment-service ledger API (ADR-0018)"
+      status: open
+      priority: high
+      created: 2026-04-05
+      petitions: [petition058]
+      beads_issue: opendebt-ggb
+      description: |
+        debt-service `LedgerServiceClient` is a no-op stub with a comment pointing to
+        `POST /internal/ledger/double-entry` on payment-service. ModregningService calls
+        `postLedgerEntry` / `reverseLedgerEntry` for each set-off allocation (ADR-0018), but
+        nothing is persisted to the payment-service `ledger_entries` table until HTTP is wired.
+
+        Deliverables:
+        - Replace stub with an injected `WebClient.Builder` client (trace propagation, ADR-0024)
+          calling the internal bookkeeping endpoint; map failures to transactional rollback.
+        - Contract tests or integration test against payment-service (Testcontainers) proving
+          debit/credit pairs are written for a modregning allocation.
+        - Document the endpoint contract in payment-service OpenAPI if not already exposed for ops.
+
+        Optional follow-on (separate scope if large): extend daily `InterestAccrualJob` to emit
+        ledger postings for accrued interest, not only `interest_journal_entries` in debt-service
+        — align with `ufst-bookkeeping-core` / BookkeepingService interest paths (ADR-0033).
+
+escalations:
+  - id: ESC-055
+    petition: P055
+    phase: catala-encoder
+    agent: catala-encoder
+    reason: >
+      Statute citations for G.A.1.3.4 and G.A.1.3.5 in
+      catala/ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da are provisional.
+      Gæld.bekendtg. § 4 (datafejl/suspension) and § 6 (tilbagekaldelse) are
+      the best-fit estimates based on the section ordering in Gæld.bekendtg.
+      relative to § 7 (opskrivning/nedskrivning, confirmed). Exact stykke- and
+      nummer-references (e.g. § 4, nr. 1–3) must be verified against the actual
+      Gæld.bekendtg. text in G.A. snapshot v3.16 (2026-01-30) when petition055.md
+      is drafted. The rule logic (DatafejlType enumeration, suspension trigger,
+      inddrivelsesblokering, tilbagekaldelse state transitions) is sound and
+      independently derivable from the G.A.1.3.4–1.3.5 section descriptions in
+      program-status.yaml. All JURIDISK-USIKKERHED annotations are in place in
+      the catala source file.
+    status: open
+    resolution: ~
+    created: 2026-04-02

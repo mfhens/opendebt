@@ -18,6 +18,11 @@ scrape_configs:
     static_configs:
       - targets: ['creditor-portal:8085']
 
+  - job_name: 'caseworker-portal'
+    metrics_path: '/caseworker-portal/actuator/prometheus'
+    static_configs:
+      - targets: ['caseworker-portal:8087']
+
   - job_name: 'case-service'
     metrics_path: '/case-service/actuator/prometheus'
     static_configs:

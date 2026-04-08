@@ -1,0 +1,375 @@
+# G.A.3.1.1 / G.A.3.1.1.1 — Afdragsordninger — GIL § 11, stk. 1–2, stk. 6
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Juridisk grundlag: GIL § 11, stk. 1–2, stk. 6; GIL § 45; Gæld.bekendtg. chapter 7
+   Formål: Formalisering af tabeltræksreglerne for afdragsordninger, herunder
+           lavindkomstgrænse-guard, månedlig ydelse med floor-afrunding,
+           konkret betalingsevnevurdering, og afdragsordningers interaktion
+           med lønindeholdelse og forældelsesfrist.
+   Petition: P071 — Catala Compliance Spike — Afdragsordninger GIL § 11
+   Status: Research spike — ingen produktionskode. CI-gated compliance artefakt. *)
+
+## Artikel: G.A.3.1.1 — Afdragsordninger (GIL § 11)
+
+### Baggrund
+
+Ifølge G.A.3.1.1 og G.A.3.1.1.1 (G.A. snapshot v3.16, 2026-03-28) fastsætter GIL § 11
+de centrale regler for afdragsordninger: tabeltræksopslaget der bestemmer afdragsprocenten
+(stk. 1), beregningen af den månedlige ydelse med floor-afrunding (stk. 2), og betingelserne
+for konkret betalingsevnevurdering med budgetskema (stk. 6). Indkomstgrænserne opdateres
+hvert år pr. 1. januar via SKM-meddelelse jf. GIL § 45 og er parametre i dette
+Catala-program — ingen grænseværdier er hardkodet.
+
+(* JURIDISK-USIKKERHED: De præcise intervalgrænser for de enkelte indkomstintervaller i
+   GIL § 11, stk. 1's tabel fremgår af den til enhver tid gældende SKM-meddelelse jf.
+   GIL § 45 og er ikke fastsat i selve lovteksten. De injiceres som parametre i
+   testtilfælde — ingen intervalgrænseværdier eller procentværdier er hardkodet her.
+   Afrundingsgrænsebeløbet (skift fra 50 kr til 100 kr afrundingsenhed i stk. 2) er
+   ligeledes en parameter, da G.A.-teksten ikke angiver en eksakt numerisk grænse for
+   dette skift. *)
+
+---
+
+## Enumerationer — GIL § 11, stk. 6; Gæld.bekendtg. chapter 7
+
+### ENUM-1: AfvisningsÅrsag — Afvisningskategori for konkret betalingsevnevurdering
+
+`UNDER_LAVINDKOMSTGRAENSE` afspejler GIL § 11, stk. 6's indkomstguard.
+`BUDGETSKEMA_MANGLER` afspejler Gæld.bekendtg. chapter 7-kravet om indsendt budgetskema.
+`VURDERING_MULIG` angiver at begge betingelser er opfyldt og vurderingen kan gennemføres.
+
+```catala
+declaration enumeration AfvisningsÅrsag:
+  -- UNDER_LAVINDKOMSTGRAENSE
+  -- BUDGETSKEMA_MANGLER
+  -- VURDERING_MULIG
+```
+
+---
+
+## Artikel: G.A.3.1.1.1 — GIL § 11, stk. 1: Tabeltræk og lavindkomstgrænse
+
+### Baggrund
+
+GIL § 11, stk. 1 fastsætter, at afdragsprocenten bestemmes ved opslag i den lovbestemte
+tabel på baggrund af skyldnerens nettoindkomst og forsørgerpligtstatus. Opslaget er kun
+muligt, hvis nettoindkomsten er mindst lig lavindkomstgrænsen. Grænsen er reguleret
+jf. GIL § 45 og er en parameter i dette program. Tabellen har to kolonner: én for
+debitorer uden forsørgerpligt (minimumsafdragsprocent 4 %) og én for debitorer med
+forsørgerpligt (minimumsafdragsprocent 3 %).
+
+`rawAfdragsProcent` repræsenterer resultatet af det lovbestemte tabelopslag og injiceres
+som parameter af kalderen. `TabeltræksOpslagDemo` nedenfor demonstrerer, at selve
+opslaget kan udtrykkes i Catala uden hardkodede grænseværdier.
+
+### Omfangsdeklaration — TabeltræksBeregning
+
+```catala
+declaration scope TabeltræksBeregning:
+  context nettoindkomst content integer
+  context forsørgerpligt content boolean
+  context lavindkomstGrænse content integer
+  context rawAfdragsProcent content integer
+  context afrundingsGrænsebeløb content integer
+  context output tabeltrækkMulig content boolean
+  context output afdragsProcent content integer
+  context output betalingsevneÅr content integer
+  context output råydelseMåned content integer
+  context output afrundingsEnhed content integer
+  context output månedligYdelse content integer
+  context output betalingsevneÅrDecimal content decimal
+  context output råydelseMånedDecimal content decimal
+  context output gulvKvotient content decimal
+  context output gulvKvotientInt content integer
+```
+
+---
+
+## GIL § 11, stk. 1 — Lavindkomstgrænse-guard
+
+**FR-1.1: tabeltrækkMulig — indkomstguard**
+
+Tabeltræk er kun mulig, hvis skyldnerens nettoindkomst er mindst lig lavindkomstgrænsen
+(GIL § 11, stk. 1; G.A.3.1.1.1). Lavindkomstgrænsen er en parameter reguleret jf.
+GIL § 45 — den er ikke hardkodet i dette program.
+
+```catala
+scope TabeltræksBeregning:
+  # FR-1.1: lavindkomstgrænse-guard
+  # Ankerpunkt: GIL § 11, stk. 1; GIL § 45
+  definition tabeltrækkMulig equals
+    nettoindkomst >= lavindkomstGrænse
+```
+
+---
+
+## GIL § 11, stk. 1 — Afdragsprocent med minimumsregler
+
+**FR-1.2 / FR-1.3 / FR-1.4 / FR-1.5: Afdragsprocent og minimumsprocenter**
+
+Afdragsprocenten sættes til `rawAfdragsProcent` (det parameteriserede tabelopslag).
+Minimumsafdragsprocent for debitorer med forsørgerpligt er 3 % (FR-1.5, GIL § 11,
+stk. 1, tabelkolonne "med forsørgerpligt"). Minimumsafdragsprocent uden forsørgerpligt
+er 4 % (FR-1.4, GIL § 11, stk. 1, tabelkolonne "uden forsørgerpligt"). De to
+undtagelsesbetingelser er gensidigt udelukkende (forsørgerpligt XOR ej forsørgerpligt),
+og der opstår ingen tvetydighed i Catala's exception-semantik.
+
+```catala
+scope TabeltræksBeregning:
+  # FR-1.2/FR-1.3: basisregel — afdragsprocent fra tabelopslag (parameteriseret)
+  # Ankerpunkt: GIL § 11, stk. 1
+  definition afdragsProcent equals rawAfdragsProcent
+
+  # FR-1.5: minimumsafdragsprocent 3 % med forsørgerpligt
+  # Ankerpunkt: GIL § 11, stk. 1 (tabelkolonne "med forsørgerpligt")
+  exception definition afdragsProcent
+    under condition forsørgerpligt and rawAfdragsProcent < 3
+    consequence equals 3
+
+  # FR-1.4: minimumsafdragsprocent 4 % uden forsørgerpligt
+  # Ankerpunkt: GIL § 11, stk. 1 (tabelkolonne "uden forsørgerpligt")
+  exception definition afdragsProcent
+    under condition not forsørgerpligt and rawAfdragsProcent < 4
+    consequence equals 4
+```
+
+---
+
+## Artikel: G.A.3.1.1.1 — GIL § 11, stk. 2: Månedlig ydelse og floor-afrunding
+
+### Baggrund
+
+GIL § 11, stk. 2 fastsætter beregningen af den månedlige ydelse: den årlige betalingsevne
+(`afdragsProcent × nettoindkomst`) divideres med 12 og afrundes NED til nærmeste multiplum
+af 50 kr eller 100 kr afhængigt af ydelsens størrelse. Afrunding er altid floor (ned) —
+aldrig til nærmeste eller op. Implementationen bruger heltalsdivision, som for positive
+tal er identisk med floor-division.
+
+**FR-2.1 til FR-2.4: Betalingsevne, råydelse, afrundingsenhed og floor-afrunding**
+
+```catala
+scope TabeltræksBeregning:
+  # FR-2.1a: betalingsevneÅrDecimal (hjælpevariabel) — decimal grundlag for floor-konvertering
+  # integer of <var> kræver 'of' som forbindende keyword i Catala 1.1.0
+  # Ankerpunkt: GIL § 11, stk. 1
+  definition betalingsevneÅrDecimal equals
+    if tabeltrækkMulig then
+      decimal of nettoindkomst * decimal of afdragsProcent / decimal of 100
+    else 0.00
+
+  # FR-2.1b: betalingsevneÅr = floor(betalingsevneÅrDecimal)
+  # Ankerpunkt: GIL § 11, stk. 1
+  definition betalingsevneÅr equals
+    integer of betalingsevneÅrDecimal
+
+  # FR-2.2a: råydelseMånedDecimal (hjælpevariabel) — decimal månedlig råydelse
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition råydelseMånedDecimal equals
+    betalingsevneÅrDecimal / decimal of 12
+
+  # FR-2.2b: råydelseMåned = floor(råydelseMånedDecimal)
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition råydelseMåned equals
+    integer of råydelseMånedDecimal
+
+  # FR-2.3: afrundingsenhed — 50 kr under grænsebeløbet, 100 kr ved/over
+  # Ankerpunkt: GIL § 11, stk. 2
+  # (grænsebeløbet er en parameter — G.A.-teksten angiver ikke den præcise numeriske grænse)
+  definition afrundingsEnhed equals
+    if råydelseMåned < afrundingsGrænsebeløb then 50
+    else 100
+
+  # FR-2.4a: gulvKvotient (hjælpevariabel) — decimal kvotient til floor-afrunding
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition gulvKvotient equals
+    råydelseMånedDecimal / decimal of afrundingsEnhed
+
+  # FR-2.4b: gulvKvotientInt = floor(gulvKvotient) — integer floor-konvertering
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition gulvKvotientInt equals
+    integer of gulvKvotient
+
+  # FR-2.4c: månedligYdelse = gulvKvotientInt × afrundingsEnhed (integer × integer)
+  # integer_of_decimal floor-runder → altid ned, aldrig op
+  # Ankerpunkt: GIL § 11, stk. 2
+  definition månedligYdelse equals
+    if tabeltrækkMulig then
+      gulvKvotientInt * afrundingsEnhed
+    else 0
+```
+
+---
+
+## G.A.3.1.1.1 — TabeltræksOpslagDemo: Bracket-tabelstruktur med parameteriserede grænser
+
+### Baggrund
+
+Dette hjælpescope demonstrerer (FR-1.2 / FR-1.3), at GIL § 11, stk. 1's tabelstruktur
+kan formaliseres i Catala uden hardkodede grænseværdier. Den fulde lovtabel har 12
+indkomstintervaller per kolonne; dette scope viser mønsteret med fire repræsentative
+intervaller. Alle intervalgrænser og procentsatser er `context`-parametre. I tests
+injiceres konkrete 2026-værdier fra den til enhver tid gældende SKM-meddelelse
+jf. GIL § 45 (FR-1.6).
+
+### Omfangsdeklaration — TabeltræksOpslagDemo
+
+```catala
+declaration scope TabeltræksOpslagDemo:
+  context nettoindkomst content integer
+  context forsørgerpligt content boolean
+  context grænse1 content integer
+  context grænse2 content integer
+  context grænse3 content integer
+  context procent0Uden content integer
+  context procent1Uden content integer
+  context procent2Uden content integer
+  context procent3Uden content integer
+  context procent0Med content integer
+  context procent1Med content integer
+  context procent2Med content integer
+  context procent3Med content integer
+  context output rawAfdragsProcent content integer
+```
+
+---
+
+## GIL § 11, stk. 1 — Tabelopslag med fire parameteriserede intervalgrupper
+
+**FR-1.2 (uden forsørgerpligt) og FR-1.3 (med forsørgerpligt)**
+
+Betinget opslag i to parallelle tabelkolonner. Betingelserne er gensidigt udelukkende
+for enhver given `nettoindkomst` (kun ét interval er aktivt ad gangen). Alle
+intervalgrænser og procentsatser er `context`-parametre jf. FR-1.6 og GIL § 45.
+
+```catala
+scope TabeltræksOpslagDemo:
+  # FR-1.2 & FR-1.3: bracket-opslag med parameteriserede intervalgrænser
+  # Ankerpunkt: GIL § 11, stk. 1; GIL § 45
+  definition rawAfdragsProcent equals
+    if forsørgerpligt then
+      if nettoindkomst < grænse1 then procent0Med
+      else if nettoindkomst < grænse2 then procent1Med
+      else if nettoindkomst < grænse3 then procent2Med
+      else procent3Med
+    else
+      if nettoindkomst < grænse1 then procent0Uden
+      else if nettoindkomst < grænse2 then procent1Uden
+      else if nettoindkomst < grænse3 then procent2Uden
+      else procent3Uden
+```
+
+---
+
+## Artikel: G.A.3.1.1.1 — GIL § 11, stk. 6: Konkret betalingsevnevurdering
+
+### Baggrund
+
+GIL § 11, stk. 6 giver skyldnere med nettoindkomst ved eller over lavindkomstgrænsen
+mulighed for at anmode om en konkret betalingsevnevurdering baseret på budgetskema.
+Resultatet kan lovligt være lavere eller højere end tabeltræksydelsen (FR-3.3).
+Budgetskemaet er en forudsætning jf. Gæld.bekendtg. chapter 7 (FR-3.2). Tabeltræks-
+ydelsen beregnes altid parallelt som referencepunkt (FR-3.4).
+
+### Omfangsdeklaration — KonkretBetalingsevneVurdering
+
+```catala
+declaration scope KonkretBetalingsevneVurdering:
+  context nettoindkomst content integer
+  context lavindkomstGrænse content integer
+  context budgetskemaIndsendt content boolean
+  context månedligIndkomst content integer
+  context månedligeUdgifter content integer
+  context output vurderingMulig content boolean
+  context output afvisningsÅrsag content AfvisningsÅrsag
+  context output konkretYdelse content integer
+```
+
+---
+
+## GIL § 11, stk. 6 — Trigger-betingelser, forguard og budgetskema-krav
+
+**FR-3.1: Indkomstguard — FR-3.2: Budgetskema-krav — FR-3.3/FR-3.4: Resultat**
+
+Konkret betalingsevnevurdering kræver nettoindkomst ≥ lavindkomstGrænse OG indsendt
+budgetskema. Afvisningsårsagen klassificeres sekventielt: indkomstguard prioriteres over
+budgetskema-mangler (begge betingelser kan potentielt fejle; den første registreres).
+
+```catala
+scope KonkretBetalingsevneVurdering:
+  # FR-3.1: indkomstguard + FR-3.2: budgetskema-krav
+  # Ankerpunkt: GIL § 11, stk. 6; Gæld.bekendtg. chapter 7
+  definition vurderingMulig equals
+    nettoindkomst >= lavindkomstGrænse and budgetskemaIndsendt
+
+  # FR-3.1 + FR-3.2: afvisningskategori (sekventiel prioritering)
+  # Ankerpunkt: GIL § 11, stk. 6; Gæld.bekendtg. chapter 7
+  definition afvisningsÅrsag equals
+    if nettoindkomst < lavindkomstGrænse then UNDER_LAVINDKOMSTGRAENSE
+    else if not budgetskemaIndsendt then BUDGETSKEMA_MANGLER
+    else VURDERING_MULIG
+
+  # FR-3.3: konkret ydelse fra budgetskema (lovligt lavere eller højere end tabeltræk)
+  # FR-3.4: tabeltræksydelsen beregnes parallelt i TabeltræksBeregning-scope til sammenligning
+  # Ankerpunkt: GIL § 11, stk. 6; Gæld.bekendtg. chapter 7
+  # (Forenkling: konkretYdelse = månedligIndkomst - månedligeUdgifter.
+  #  Den fulde Gæld.bekendtg. chapter 7-metodik har yderligere poster.
+  #  Begge retninger — lavere og højere end tabeltræk — er juridisk gyldige.)
+  definition konkretYdelse equals
+    if vurderingMulig then
+      månedligIndkomst - månedligeUdgifter
+    else 0
+```
+
+---
+
+## G.A.3.1.1 — Afdragsordning interaktionsregler
+
+### Baggrund
+
+G.A.3.1.1 fastslår, at en AKTIV afdragsordning suspenderer lønindeholdelse.
+G.A.2.4 fastslår, at en afdragsordning ikke udgør et forældelsesbrud. Disse regler
+er supplementære til tabeltræksberegningen og formaliseres som simple predikater.
+
+### Omfangsdeklaration — AfdragsordningInteraktion
+
+```catala
+declaration scope AfdragsordningInteraktion:
+  context afdragsordningAktiv content boolean
+  context output lønindeholdelseSuspenderet content boolean
+  context output afbryderForaeldelse content boolean
+```
+
+---
+
+## G.A.3.1.1 — Suspension af lønindeholdelse ved aktiv afdragsordning
+
+**FR-1 supplement: Aktiv afdragsordning suspenderer lønindeholdelse**
+
+```catala
+scope AfdragsordningInteraktion:
+  # Ankerpunkt: G.A.3.1.1 — aktiv afdragsordning medfører suspension af lønindeholdelse
+  definition lønindeholdelseSuspenderet equals afdragsordningAktiv
+```
+
+---
+
+## G.A.2.4 — Afdragsordning afbryder ikke forældelsesfrist
+
+**FR-1 supplement: Afdragsordning er ikke et forældelsesbrud**
+
+```catala
+scope AfdragsordningInteraktion:
+  # Ankerpunkt: G.A.2.4 — en afdragsordning udgør ikke et forældelsesbrud
+  definition afbryderForaeldelse equals false
+```
+
+---
+
+(* Filende: ga_3_1_1_afdragsordninger.catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Scopes: TabeltræksBeregning, TabeltræksOpslagDemo,
+           KonkretBetalingsevneVurdering, AfdragsordningInteraktion
+   Enumerationer: AfvisningsÅrsag
+   Regler kodet: FR-1.1–FR-1.6, FR-2.1–FR-2.4, FR-3.1–FR-3.4
+   Dialect: catala_da *)

@@ -2,8 +2,8 @@ package dk.ufst.opendebt.caseworker.steps;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dk.ufst.opendebt.caseworker.client.PaymentServiceClient;
 
@@ -24,5 +24,5 @@ import io.cucumber.spring.CucumberContextConfiguration;
 public class CucumberSpringConfiguration {
 
   /** Mocked payment-service client — configured per-scenario in Petition057PortalSteps. */
-  @MockBean public PaymentServiceClient paymentServiceClient;
+  @MockitoBean public PaymentServiceClient paymentServiceClient;
 }

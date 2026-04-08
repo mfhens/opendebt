@@ -193,7 +193,6 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
   private List<DaekningFordringEntity> repositionOpskrivningsfordringer(
       List<DaekningFordringEntity> sorted) {
 
-    // Separate stamfordringer from opskrivningsfordringer
     List<DaekningFordringEntity> stamfordringer =
         sorted.stream()
             .filter(
@@ -232,38 +231,55 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
     for (Map.Entry<String, List<DaekningFordringEntity>> entry : opskriv.entrySet()) {
       String parentId = entry.getKey();
       List<DaekningFordringEntity> children = entry.getValue();
-      // If parent is not in result, insert children at their natural position
       boolean parentInResult = result.stream().anyMatch(e -> e.getFordringId().equals(parentId));
-      if (parentInResult) {
-        continue; // already inserted after parent in the main loop
+      if (!parentInResult) {
+        insertOrphanedChildren(result, allById, parentId, children);
       }
-      // Parent not in result (fully covered / zero balance, or excluded by timestamp filter)
-      int insertAt = 0;
-      if (allById.containsKey(parentId)) {
-        // Parent is in the sorted list (zero balance) → use parent's fifo key and category
-        LocalDate parentFifo = computeFifoSortKey(allById.get(parentId));
-        PrioritetKategori parentKat = allById.get(parentId).getPrioritetKategori();
-        for (int i = 0; i < result.size(); i++) {
-          DaekningFordringEntity r = result.get(i);
-          if (r.getPrioritetKategori() == parentKat && !computeFifoSortKey(r).isAfter(parentFifo)) {
-            insertAt = i + 1;
-          }
-        }
-      } else if (!children.isEmpty()) {
-        // Parent not in sorted list (excluded by timestamp filter) → use child's own fifo
-        LocalDate childFifo = computeFifoSortKey(children.get(0));
-        PrioritetKategori childKat = children.get(0).getPrioritetKategori();
-        for (int i = 0; i < result.size(); i++) {
-          DaekningFordringEntity r = result.get(i);
-          if (r.getPrioritetKategori() == childKat && !computeFifoSortKey(r).isAfter(childFifo)) {
-            insertAt = i + 1;
-          }
-        }
-      }
-      result.addAll(insertAt, children);
     }
 
     return result;
+  }
+
+  /**
+   * Inserts opskrivningsfordringer whose parent is absent from the result list at the correct
+   * natural position (determined by parent's or child's FIFO sort key and priority category).
+   */
+  private void insertOrphanedChildren(
+      List<DaekningFordringEntity> result,
+      Map<String, DaekningFordringEntity> allById,
+      String parentId,
+      List<DaekningFordringEntity> children) {
+    int insertAt;
+    if (allById.containsKey(parentId)) {
+      // Parent present in full sorted list (zero balance) → anchor by parent's fifo/category
+      DaekningFordringEntity parent = allById.get(parentId);
+      insertAt =
+          findInsertPosition(result, computeFifoSortKey(parent), parent.getPrioritetKategori());
+    } else if (!children.isEmpty()) {
+      // Parent excluded by timestamp filter → anchor by first child's fifo/category
+      DaekningFordringEntity first = children.get(0);
+      insertAt =
+          findInsertPosition(result, computeFifoSortKey(first), first.getPrioritetKategori());
+    } else {
+      insertAt = 0;
+    }
+    result.addAll(insertAt, children);
+  }
+
+  /**
+   * Returns the index after the last result entry that shares {@code kat} and is not after {@code
+   * fifoKey}.
+   */
+  private int findInsertPosition(
+      List<DaekningFordringEntity> result, LocalDate fifoKey, PrioritetKategori kat) {
+    int insertAt = 0;
+    for (int i = 0; i < result.size(); i++) {
+      DaekningFordringEntity r = result.get(i);
+      if (r.getPrioritetKategori() == kat && !computeFifoSortKey(r).isAfter(fifoKey)) {
+        insertAt = i + 1;
+      }
+    }
+    return insertAt;
   }
 
   /** Step 4: compute FIFO sort key for a fordring. */
@@ -326,53 +342,56 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
       List<DaekningFordringEntity> fordringer,
       BigDecimal totalBeloeb,
       InddrivelsesindsatsType inddrivelsesindsatsType) {
-
-    List<AllocationEntry> result = new ArrayList<>();
-
     if (inddrivelsesindsatsType == InddrivelsesindsatsType.UDLAEG) {
-      // Only udlaeg fordringer; surplus flagged but not applied
-      List<DaekningFordringEntity> udlaeg =
-          fordringer.stream()
-              .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
-              .collect(Collectors.toCollection(ArrayList::new));
-      udlaeg.sort(
-          Comparator.comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
-              .thenComparing(this::computeFifoSortKey)
-              .thenComparingInt(
-                  e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE));
-      udlaeg = repositionOpskrivningsfordringer(udlaeg);
+      return allocateUdlaeg(fordringer, totalBeloeb);
+    }
+    return allocateToEntities(
+        buildOrderedFordringList(fordringer, inddrivelsesindsatsType), totalBeloeb);
+  }
 
-      BigDecimal remaining = totalBeloeb;
-      for (DaekningFordringEntity e : udlaeg) {
-        for (SubPosition sub : expandSubPositions(e)) {
-          BigDecimal cover = remaining.min(sub.beloeb());
-          result.add(new AllocationEntry(e, sub.komponent(), cover, false));
-          remaining = remaining.subtract(cover);
-          if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-        }
-        if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-      }
-      // Surplus as a udlaegSurplus record
-      if (remaining.compareTo(BigDecimal.ZERO) > 0 && !udlaeg.isEmpty()) {
-        DaekningFordringEntity last = udlaeg.get(0);
-        result.add(new AllocationEntry(last, RenteKomponent.HOOFDFORDRING, remaining, true));
-      }
-    } else {
-      // FRIVILLIG / LOENINDEHOLDELSE / MODREGNING
-      List<DaekningFordringEntity> ordered =
-          buildOrderedFordringList(fordringer, inddrivelsesindsatsType);
-      BigDecimal remaining = totalBeloeb;
-      for (DaekningFordringEntity e : ordered) {
-        for (SubPosition sub : expandSubPositions(e)) {
-          BigDecimal cover = remaining.min(sub.beloeb());
-          result.add(new AllocationEntry(e, sub.komponent(), cover, false));
-          remaining = remaining.subtract(cover);
-          if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-        }
-        if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
+  /** Allocates against udlaeg fordringer only; any surplus is appended as a udlaegSurplus entry. */
+  private List<AllocationEntry> allocateUdlaeg(
+      List<DaekningFordringEntity> fordringer, BigDecimal beloeb) {
+    List<DaekningFordringEntity> udlaeg =
+        fordringer.stream()
+            .filter(f -> Boolean.TRUE.equals(f.getInUdlaegForretning()))
+            .collect(Collectors.toCollection(ArrayList::new));
+    udlaeg.sort(
+        Comparator.comparingInt((DaekningFordringEntity e) -> e.getPrioritetKategori().ordinal())
+            .thenComparing(this::computeFifoSortKey)
+            .thenComparingInt(
+                e -> e.getSekvensNummer() != null ? e.getSekvensNummer() : Integer.MAX_VALUE));
+    udlaeg = repositionOpskrivningsfordringer(udlaeg);
+
+    List<AllocationEntry> result = allocateToEntities(udlaeg, beloeb);
+
+    if (!udlaeg.isEmpty()) {
+      BigDecimal allocated =
+          result.stream()
+              .map(AllocationEntry::daekningBeloeb)
+              .reduce(BigDecimal.ZERO, BigDecimal::add);
+      BigDecimal surplus = beloeb.subtract(allocated);
+      if (surplus.compareTo(BigDecimal.ZERO) > 0) {
+        result.add(new AllocationEntry(udlaeg.get(0), RenteKomponent.HOOFDFORDRING, surplus, true));
       }
     }
+    return result;
+  }
 
+  /** Greedily allocates {@code beloeb} across the ordered list, stopping when exhausted. */
+  private List<AllocationEntry> allocateToEntities(
+      List<DaekningFordringEntity> ordered, BigDecimal beloeb) {
+    List<AllocationEntry> result = new ArrayList<>();
+    BigDecimal remaining = beloeb;
+    for (DaekningFordringEntity e : ordered) {
+      for (SubPosition sub : expandSubPositions(e)) {
+        BigDecimal cover = remaining.min(sub.beloeb());
+        result.add(new AllocationEntry(e, sub.komponent(), cover, false));
+        remaining = remaining.subtract(cover);
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
+      }
+      if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
+    }
     return result;
   }
 

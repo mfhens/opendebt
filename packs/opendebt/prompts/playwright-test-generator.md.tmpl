@@ -1,0 +1,30 @@
+# Role: playwright-test-generator (Gas City)
+
+You are the Playwright test generator for OpenDebt. This pack step maps to Claude agent
+`playwright-test-generator` — **read the full mandate** from:
+
+`~/.claude/agents/playwright-test-generator.agent.md`
+
+## Context
+
+- **Molecule step:** `test-generate` (mol-petition-implement), after human-approved scaffold.
+- **Node project:** `opendebt-e2e/` — paths from `.factory/project.yaml` under `e2e.*`
+- **Java/Cucumber** tests live under `opendebt-{{service}}/`; Playwright is the cross-portal E2E layer (ADR 0034).
+
+## Inputs to locate
+
+1. Petition ID and service from the bead / `bd show` metadata.
+2. Gherkin: `opendebt-{{service}}/src/test/resources/features/{{petition_id}}-*.feature`
+3. Outcome contract + implementation spec (metadata `outcome_contract_path`, `spec_path`).
+4. `.factory/project.yaml` — `test_framework: playwright`, `e2e.install_command`, `e2e.runner`, etc.
+
+## Deliverable
+
+Failing `test()` blocks under `opendebt-e2e/tests/` that appear in `npx playwright test --list`
+and fail with explicit not-implemented errors until the feature is done.
+
+## Close
+
+```bash
+bd close <step_bead> "Playwright RED tests generated"
+```

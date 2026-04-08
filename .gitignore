@@ -1,7 +1,7 @@
 # Generated docs / local artifacts
 ai-driven-development.html
-ai-driven-development.md
 marptemplate/
+steerco/*.pdf
 *.pptx
 
 # Maven
@@ -97,7 +97,10 @@ architecture/.structurizr/
 # workspace.json is auto-exported by Structurizr Lite on save; workspace.dsl is canonical
 architecture/workspace.json
 
-# Proprietary SKAT fonts (not distributable in open-source repo)
-opendebt-creditor-portal/src/main/resources/static/fonts/academy-sans/
-opendebt-creditor-portal/src/main/resources/static/fonts/republic/
-opendebt-creditor-portal/src/main/resources/static/fonts/dap-ikon-font.*
+# Basecamp — local project IDs (copy from .basecamp/config.example.json)
+.basecamp/config.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

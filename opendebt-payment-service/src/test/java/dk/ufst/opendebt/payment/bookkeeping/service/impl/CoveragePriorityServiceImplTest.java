@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import dk.ufst.opendebt.payment.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
 
 class CoveragePriorityServiceImplTest {
 

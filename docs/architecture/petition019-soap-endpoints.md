@@ -859,7 +859,7 @@ The project convention — `WebClient.Builder` must be **injected** (never `WebC
 
 ### 11.4 New ADR Recommended: ADR-0030 — SOAP/Spring-WS for Legacy Creditor Integration
 
-**Recommendation:** Create `docs/adr/0030-soap-spring-ws-legacy-creditor-integration.md`
+**Recommendation:** Create `architecture/adr/0030-soap-spring-ws-legacy-creditor-integration.md`
 
 **Reason:** Adding Spring-WS (`spring-ws-core`, `spring-ws-security`) to a Spring Boot 3.3 application that uses Spring MVC is a non-trivial architectural decision with implications for:
 - Dual-servlet registration (MVC `DispatcherServlet` + WS `MessageDispatcherServlet`)

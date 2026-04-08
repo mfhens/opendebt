@@ -1,0 +1,374 @@
+# Testfil — G.A.2.5 Retskraftvurdering Catala-testpakke
+
+> Include: ../ga_2_5_retskraftvurdering.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Testpakke for: ga_2_5_retskraftvurdering.catala_da
+   Petition: P060 — Retskraftvurdering — § 50 priority ordering (G.A.2.5)
+   Status: CI-gated compliance artefact
+
+   Denne fil indeholder 16 testscopes der dækker:
+   - FR-0.1: Eligibilitetsgrænse 2024-12-31 (Test01, Test02, Test03)
+   - FR-1.1: BOEDE → vurderingsRang = 1 (Test04)
+   - FR-1.2: PRIVAT_UNDERHOLDSBIDRAG → vurderingsRang = 2 (Test05)
+   - FR-1.3: OEVRIGT → vurderingsRang = 3 (Test06)
+   - FR-1.4: harMistankeOmDatafejl → standardRaekkefoelgeGaelder = false (Test07)
+   - FR-2.1: renter med retskraftig stamfordring → skalRetskraftvurderes = true (Test08)
+   - FR-2.1 negativ: ikke retskraftig stamfordring → skalRetskraftvurderes = false (Test09)
+   - FR-2.2: exception — afskrevet efter GIL § 16, stk. 1 → skalRetskraftvurderes = false (Test10)
+   - FR-3.1 + FR-3.3: overskud + tvivlsom gæld → skalRetskraftvurdereOvskydende = true (Test11)
+   - FR-3.1 via datafejl: overskud + datafejl-gæld → skalRetskraftvurdereOvskydende = true (Test12)
+   - FR-3.1 negativ: ingen overskud → skalRetskraftvurdereOvskydende = false (Test13)
+   - FR-3.1 negativ: overskud men ingen tvivlsom/datafejl-gæld → false (Test14)
+   - FR-4.1 + FR-4.2: modregning + retskraftig gæld + overskud → daekRetskraftigForst = true (Test15)
+   - FR-4.1 negativ: ikke modregningssituation → daekRetskraftigForst = false (Test16)
+
+   Boundary dates used:
+   - |2024-12-31|: GIL § 18c cutoff date (last eligible day, inclusive)
+   - |2025-01-01|: first day AFTER cutoff (not eligible)
+   - |2020-06-01|: historical date (well within eligible period)
+
+   FR → Test mapping:
+   FR-0.1  → Test01 (on cutoff), Test02 (after cutoff), Test03 (historical)
+   FR-1.1  → Test04
+   FR-1.2  → Test05
+   FR-1.3  → Test06
+   FR-1.4  → Test07 (datafejl flag)
+   FR-2.1  → Test08 (positive), Test09 (negative)
+   FR-2.2  → Test10 (exception)
+   FR-3.1  → Test11 (tvivlsom), Test12 (datafejl), Test13 (ingen overskud), Test14 (ingen tvivlsom/datafejl)
+   FR-3.3  → Test11, Test12 (skalRenterVurderesSidst = true)
+   FR-4.1  → Test15 (positive), Test16 (negative)
+   FR-4.2  → Test15 (skalRenterVurderesSidst = true)
+
+   Verificeringskommando (typecheck):
+   catala typecheck --language en --no-stdlib \
+     catala/tests/ga_retskraftvurdering_tests.catala_da
+   Forventet exitkode: 0 *)
+
+---
+
+## Test 01 — FR-0.1: Eligibilitet grænseværdi — på skæringsdatoen 2024-12-31
+
+Ref: P060 FR-0.1
+GIL § 18c: overdragelsesdato = |2024-12-31| er "til og med den 31. december 2024" —
+inklusiv grænseværdi. erEligibleForRetskraftvurdering skal være true.
+
+```catala
+declaration scope RetskraftTest01:
+  comp scope RetskraftEligibilitet
+
+scope RetskraftTest01:
+  # Test: FR-0.1 grænseværdi — på cutoff-datoen 2024-12-31
+  definition comp.overdragelsesdato equals |2024-12-31|
+  assertion comp.erEligibleForRetskraftvurdering = true
+```
+
+---
+
+## Test 02 — FR-0.1: Eligibilitet grænseværdi — dagen efter 2025-01-01
+
+Ref: P060 FR-0.1 boundary
+GIL § 18c: overdragelsesdato = |2025-01-01| er EFTER den 31. december 2024.
+erEligibleForRetskraftvurdering skal være false.
+
+```catala
+declaration scope RetskraftTest02:
+  comp scope RetskraftEligibilitet
+
+scope RetskraftTest02:
+  # Test: FR-0.1 boundary — dagen EFTER cutoff
+  definition comp.overdragelsesdato equals |2025-01-01|
+  assertion comp.erEligibleForRetskraftvurdering = false
+```
+
+---
+
+## Test 03 — FR-0.1: Eligibilitet — historisk overdragelsesdato
+
+Ref: P060 FR-0.1
+GIL § 18c: overdragelsesdato = |2020-06-01| er klart inden cutoff.
+erEligibleForRetskraftvurdering skal være true.
+
+```catala
+declaration scope RetskraftTest03:
+  comp scope RetskraftEligibilitet
+
+scope RetskraftTest03:
+  # Test: FR-0.1 — historisk dato (2020-06-01) vel inden for eligible periode
+  definition comp.overdragelsesdato equals |2020-06-01|
+  assertion comp.erEligibleForRetskraftvurdering = true
+```
+
+---
+
+## Test 04 — FR-1.1: Bøder → vurderingsRang = 1, standardRaekkefoelgeGaelder = true
+
+Ref: P060 FR-1.1
+Gæld.bekendtg. § 50, stk. 2, nr. 1: BOEDE-fordringer vurderes forud for alle andre
+fordringer. vurderingsRang = 1. Ingen datafejl → standardRaekkefoelgeGaelder = true.
+
+```catala
+declaration scope RetskraftTest04:
+  comp scope RetskraftVurderingsRaekkefoelge
+
+scope RetskraftTest04:
+  # Test: FR-1.1 — BOEDE, ingen datafejl → rang 1, standard gælder
+  definition comp.fordringKategori equals BOEDE
+  definition comp.harMistankeOmDatafejl equals false
+  assertion comp.vurderingsRang = 1
+  assertion comp.standardRaekkefoelgeGaelder = true
+```
+
+---
+
+## Test 05 — FR-1.2: Privat underholdsbidrag → vurderingsRang = 2
+
+Ref: P060 FR-1.2
+Gæld.bekendtg. § 50, stk. 2, nr. 2: PRIVAT_UNDERHOLDSBIDRAG vurderes efter bøder
+men forud for alle øvrige fordringer. vurderingsRang = 2.
+
+```catala
+declaration scope RetskraftTest05:
+  comp scope RetskraftVurderingsRaekkefoelge
+
+scope RetskraftTest05:
+  # Test: FR-1.2 — PRIVAT_UNDERHOLDSBIDRAG, ingen datafejl → rang 2
+  definition comp.fordringKategori equals PRIVAT_UNDERHOLDSBIDRAG
+  definition comp.harMistankeOmDatafejl equals false
+  assertion comp.vurderingsRang = 2
+  assertion comp.standardRaekkefoelgeGaelder = true
+```
+
+---
+
+## Test 06 — FR-1.3: Øvrige fordringer → vurderingsRang = 3
+
+Ref: P060 FR-1.3
+Gæld.bekendtg. § 50, stk. 2, nr. 3: OEVRIGT-fordringer vurderes sidst — efter bøder
+og private underholdsbidragskrav. vurderingsRang = 3.
+
+```catala
+declaration scope RetskraftTest06:
+  comp scope RetskraftVurderingsRaekkefoelge
+
+scope RetskraftTest06:
+  # Test: FR-1.3 — OEVRIGT, ingen datafejl → rang 3
+  definition comp.fordringKategori equals OEVRIGT
+  definition comp.harMistankeOmDatafejl equals false
+  assertion comp.vurderingsRang = 3
+  assertion comp.standardRaekkefoelgeGaelder = true
+```
+
+---
+
+## Test 07 — FR-1.4: Mistanke om datafejl → standardRaekkefoelgeGaelder = false
+
+Ref: P060 FR-1.4
+Gæld.bekendtg. § 50, stk. 3: Ved mistanke om datafejl gælder standardrækkefølgen ikke.
+Uanset fordringskategori (her BOEDE) skal standardRaekkefoelgeGaelder = false når
+harMistankeOmDatafejl = true. vurderingsRang returnerer fortsat standardrangens værdi (1),
+men er IKKE bindende — implementeringen skal checke standardRaekkefoelgeGaelder.
+
+```catala
+declaration scope RetskraftTest07:
+  comp scope RetskraftVurderingsRaekkefoelge
+
+scope RetskraftTest07:
+  # Test: FR-1.4 — BOEDE med datafejl → standardRaekkefoelgeGaelder = false
+  definition comp.fordringKategori equals BOEDE
+  definition comp.harMistankeOmDatafejl equals true
+  assertion comp.vurderingsRang = 1
+  assertion comp.standardRaekkefoelgeGaelder = false
+```
+
+---
+
+## Test 08 — FR-2.1: Renter med retskraftig stamfordring → skalRetskraftvurderes = true
+
+Ref: P060 FR-2.1
+Gæld.bekendtg. § 50, stk. 6, 1. pkt.: Renter retskraftvurderes alene hvis stamfordringen
+er retskraftig. erStamfordringRetskraftig = true, erAfskrevneEfterGIL16Stk1 = false
+→ skalRetskraftvurderes = true.
+
+```catala
+declaration scope RetskraftTest08:
+  comp scope RenterRetskraftbetingelse
+
+scope RetskraftTest08:
+  # Test: FR-2.1 — retskraftig stamfordring, ikke afskrevet → skalRetskraftvurderes = true
+  definition comp.erStamfordringRetskraftig equals true
+  definition comp.erAfskrevneEfterGIL16Stk1 equals false
+  assertion comp.skalRetskraftvurderes = true
+```
+
+---
+
+## Test 09 — FR-2.1 negativ: Renter med ikke-retskraftig stamfordring → skalRetskraftvurderes = false
+
+Ref: P060 FR-2.1 (negativ)
+Gæld.bekendtg. § 50, stk. 6, 1. pkt.: Grundreglen giver false når stamfordringen
+ikke er retskraftig. erStamfordringRetskraftig = false → skalRetskraftvurderes = false.
+
+```catala
+declaration scope RetskraftTest09:
+  comp scope RenterRetskraftbetingelse
+
+scope RetskraftTest09:
+  # Test: FR-2.1 negativ — ikke retskraftig stamfordring → skalRetskraftvurderes = false
+  definition comp.erStamfordringRetskraftig equals false
+  definition comp.erAfskrevneEfterGIL16Stk1 equals false
+  assertion comp.skalRetskraftvurderes = false
+```
+
+---
+
+## Test 10 — FR-2.2: Undtagelse — retskraftig stamfordring men afskrevne renter → false
+
+Ref: P060 FR-2.2
+Gæld.bekendtg. § 50, stk. 6, 2. pkt.: Undtagelse til FR-2.1 — selv når stamfordringen ER
+retskraftig, fritar afskrivning efter GIL § 16, stk. 1 for retskraftvurdering.
+erStamfordringRetskraftig = true, erAfskrevneEfterGIL16Stk1 = true → skalRetskraftvurderes = false.
+
+```catala
+declaration scope RetskraftTest10:
+  comp scope RenterRetskraftbetingelse
+
+scope RetskraftTest10:
+  # Test: FR-2.2 exception — retskraftig stamfordring + afskrivning → skalRetskraftvurderes = false
+  definition comp.erStamfordringRetskraftig equals true
+  definition comp.erAfskrevneEfterGIL16Stk1 equals true
+  assertion comp.skalRetskraftvurderes = false
+```
+
+---
+
+## Test 11 — FR-3.1 + FR-3.3: Overskud + tvivlsom gæld → surplus-vurdering udløses
+
+Ref: P060 FR-3.1, FR-3.3
+Gæld.bekendtg. § 50, stk. 4, 2. afsnit: harOvskydendeBelob = true OG
+harGaeldMedTvivlsomRetskraft = true → skalRetskraftvurdereOvskydende = true,
+skalAnvendeGIL4Stk2Stk3Ordering = true, skalRenterVurderesSidst = true.
+
+```catala
+declaration scope RetskraftTest11:
+  comp scope SurplusBetalingRetskraft
+
+scope RetskraftTest11:
+  # Test: FR-3.1 + FR-3.3 — overskud + tvivlsom gæld → surplus-assessment udløses
+  definition comp.harOvskydendeBelob equals true
+  definition comp.harGaeldMedTvivlsomRetskraft equals true
+  definition comp.harGaeldMedDatafejl equals false
+  assertion comp.skalRetskraftvurdereOvskydende = true
+  assertion comp.skalAnvendeGIL4Stk2Stk3Ordering = true
+  assertion comp.skalRenterVurderesSidst = true
+```
+
+---
+
+## Test 12 — FR-3.1: Overskud + datafejl-gæld → surplus-vurdering udløses via datafejl-gren
+
+Ref: P060 FR-3.1
+Gæld.bekendtg. § 50, stk. 4, 2. afsnit: triggerbetingelsen er "tvivlsom retskraft ELLER
+mistanke om datafejl". Her: harGaeldMedTvivlsomRetskraft = false men harGaeldMedDatafejl = true
+→ skalRetskraftvurdereOvskydende = true (via datafejl-gren).
+
+```catala
+declaration scope RetskraftTest12:
+  comp scope SurplusBetalingRetskraft
+
+scope RetskraftTest12:
+  # Test: FR-3.1 — overskud + datafejl-gæld (tvivlsom = false) → surplus-assessment udløses
+  definition comp.harOvskydendeBelob equals true
+  definition comp.harGaeldMedTvivlsomRetskraft equals false
+  definition comp.harGaeldMedDatafejl equals true
+  assertion comp.skalRetskraftvurdereOvskydende = true
+  assertion comp.skalRenterVurderesSidst = true
+```
+
+---
+
+## Test 13 — FR-3.1 negativ: Ingen overskydende beløb → surplus-vurdering udløses IKKE
+
+Ref: P060 FR-3.1 (negativ)
+Gæld.bekendtg. § 50, stk. 4: Betingelsen for surplus-assessment kræver et overskydende beløb.
+harOvskydendeBelob = false → skalRetskraftvurdereOvskydende = false, selv om tvivlsom gæld eksisterer.
+
+```catala
+declaration scope RetskraftTest13:
+  comp scope SurplusBetalingRetskraft
+
+scope RetskraftTest13:
+  # Test: FR-3.1 negativ — ingen overskud → ingen surplus-assessment
+  definition comp.harOvskydendeBelob equals false
+  definition comp.harGaeldMedTvivlsomRetskraft equals true
+  definition comp.harGaeldMedDatafejl equals false
+  assertion comp.skalRetskraftvurdereOvskydende = false
+  assertion comp.skalRenterVurderesSidst = false
+```
+
+---
+
+## Test 14 — FR-3.1 negativ: Overskud men ingen tvivlsom eller datafejl-gæld → ingen surplus-vurdering
+
+Ref: P060 FR-3.1 (negativ)
+Gæld.bekendtg. § 50, stk. 4: Begge betingelser (overskud OG tvivlsom/datafejl-gæld) kræves.
+harOvskydendeBelob = true men harGaeldMedTvivlsomRetskraft = false og harGaeldMedDatafejl = false
+→ skalRetskraftvurdereOvskydende = false.
+
+```catala
+declaration scope RetskraftTest14:
+  comp scope SurplusBetalingRetskraft
+
+scope RetskraftTest14:
+  # Test: FR-3.1 negativ — overskud men al gæld er klar (ingen tvivlsom/datafejl)
+  definition comp.harOvskydendeBelob equals true
+  definition comp.harGaeldMedTvivlsomRetskraft equals false
+  definition comp.harGaeldMedDatafejl equals false
+  assertion comp.skalRetskraftvurdereOvskydende = false
+  assertion comp.skalRenterVurderesSidst = false
+```
+
+---
+
+## Test 15 — FR-4.1 + FR-4.2: Modregning + retskraftig gæld + overskud
+
+Ref: P060 FR-4.1, FR-4.2
+Gæld.bekendtg. § 50, stk. 5: erModregningsSituation = true OG
+harRetskraftigGaeldUdenDatafejl = true → daekRetskraftigForst = true.
+harOvskydendeBelob = true → skalRenterVurderesSidst = true.
+
+```catala
+declaration scope RetskraftTest15:
+  comp scope ModregningRetskraft
+
+scope RetskraftTest15:
+  # Test: FR-4.1 + FR-4.2 — modregning + retskraftig gæld + overskud
+  definition comp.erModregningsSituation equals true
+  definition comp.harRetskraftigGaeldUdenDatafejl equals true
+  definition comp.harOvskydendeBelob equals true
+  assertion comp.daekRetskraftigForst = true
+  assertion comp.skalRenterVurderesSidst = true
+```
+
+---
+
+## Test 16 — FR-4.1 negativ: Ikke modregningssituation → daekRetskraftigForst = false
+
+Ref: P060 FR-4.1 (negativ)
+Gæld.bekendtg. § 50, stk. 5: FR-4.1 kræver erModregningsSituation = true.
+Når det ikke er en modregningssituation, gælder den særlige "dæk retskraftig gæld først"-regel ikke.
+
+```catala
+declaration scope RetskraftTest16:
+  comp scope ModregningRetskraft
+
+scope RetskraftTest16:
+  # Test: FR-4.1 negativ — ikke modregningssituation → daekRetskraftigForst = false
+  definition comp.erModregningsSituation equals false
+  definition comp.harRetskraftigGaeldUdenDatafejl equals true
+  definition comp.harOvskydendeBelob equals false
+  assertion comp.daekRetskraftigForst = false
+  assertion comp.skalRenterVurderesSidst = false
+```

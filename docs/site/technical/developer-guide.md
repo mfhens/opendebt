@@ -203,13 +203,87 @@ mvn verify
 
 ## Contribution workflow
 
+OpenDebt uses an **AI-driven petition pipeline** orchestrated by Gas City. Work flows
+from petition → agents → human review gates → merge. Here is what the process looks
+like from a developer or contributor perspective.
+
+### Starting work
+
+Work items live in three places, at different granularities:
+
+| Tracker | Granularity | Tool |
+|---|---|---|
+| **Beads** | Sprint subtasks and pipeline steps | `bd` CLI |
+| **Wasteland** | Petition-level wanted board (federated, visible to all rigs) | `dolt` + DoltHub |
+| `petitions/program-status.yaml` | Programme-level petition status | YAML + Git |
+
+To find unblocked work ready to start:
+
+```bash
+bd ready          # sprint-level items ready to claim
+bd prime          # full workflow context, commands, and session close protocol
+```
+
+Or browse the federated wanted board:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+dolt pull origin main
+dolt sql -q "SELECT id, title, status, effort_level FROM wanted WHERE status='open' ORDER BY priority"
+```
+
+### Submitting a petition (automated pipeline)
+
+The full pipeline runs via Gas City:
+
+```bash
+gc start ~/GitHub/opendebt        # start the orchestrator
+bd list --assignee human          # find your review gates
+bd close <id> "Approved"          # release a gate
+gc stop ~/GitHub/opendebt         # stop when done
+```
+
+See [Gas City](gas-city.md) for the complete workflow, agent roles, and
+troubleshooting guide.
+
+### Manual contribution (without Gas City)
+
 1. Create a feature branch from `main`
 2. Implement the change following coding conventions
 3. Write/update tests (unit + BDD where applicable)
 4. Run `mvn spotless:apply` to fix formatting
 5. Run `mvn verify` to ensure all checks pass
-6. Commit with a meaningful message
+6. Commit using the conventional commit format: `type(scope): description`
+   ```
+   feat(debt-service): add fordring suspension endpoint (P055)
+   
+   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+   ```
 7. Open a pull request against `main`
+
+### Marking work complete in the Wasteland
+
+When a petition or technical backlog item is implemented, update the federated registry:
+
+```bash
+cd ~/.hop/commons/mfhens/ufst
+GIT_SHA=$(git -C ~/GitHub/opendebt rev-parse --short HEAD)
+dolt sql -q "INSERT IGNORE INTO completions \
+  (id, wanted_id, completed_by, evidence, completed_at) \
+  VALUES ('<petition-id>-cmp', '<petition-id>', 'mfhens', 'commit:${GIT_SHA}', NOW())"
+dolt sql -q "UPDATE wanted SET status='done' WHERE id='<petition-id>'"
+dolt add . && dolt commit -m 'complete: <petition-id>' && dolt push origin main
+```
+
+### Session close checklist
+
+Every work session must end with all three stores pushed:
+
+```bash
+git pull --rebase && git push                          # code
+bd dolt push                                           # beads
+cd ~/.hop/commons/mfhens/ufst && dolt push origin main  # wasteland
+```
 
 ## Documentation
 

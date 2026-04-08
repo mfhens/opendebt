@@ -1,13 +1,5 @@
 # G.A.2.4 — Forældelse — GIL §§ 18, 18a; Forældelsesl. §§ 3, 5, 18–19
 
-(* Catala kildedialekt: catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Juridisk grundlag: GIL § 18 stk. 4, GIL § 18a stk. 1–8,
-                      Forældelsesl. §§ 3, 5, 18–19, SKM2015.718.ØLR
-   Formål: Formalisering af forældelses-reglerne i G.A.2.4.1–G.A.2.4.4.2.
-   Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4
-   Status: Research spike — ingen produktionskode. *)
-
 ---
 
 ## Artikel: G.A.2.4.1 — Udskydelse (GIL § 18a, stk. 1)
@@ -98,12 +90,12 @@ overskrive udskydelseDato-outputtet fra dette scope.
 
 ```catala
 declaration scope UdskydelsesBeregning:
-  context kildesystem content KildesystemType        (* input: PSRM eller DMI_SAP38 *)
-  context registreringsDato content date             (* input: dato for registrering i kildesystem *)
-  context inddrivelsesdato content date              (* input: dato for overdragelse til inddrivelse i PSRM *)
-  context udskydelseDato content date                (* output: udskydelsesdato jf. GIL § 18a, stk. 1 *)
-  context psrmUdskydelseDato content date            (* output: PSRM-specifik udskydelsesdato *)
-  context dmiUdskydelseDato content date             (* output: DMI_SAP38-specifik udskydelsesdato *)
+  context kildesystem content KildesystemType
+  context registreringsDato content date
+  context inddrivelsesdato content date
+  context output udskydelseDato content date
+  context psrmUdskydelseDato content date
+  context dmiUdskydelseDato content date
 ```
 
 ---
@@ -120,9 +112,9 @@ den 20. november 2021. Grænseværdidatoen er inklusiv (>=).
 scope UdskydelsesBeregning:
   # U-1: PSRM + inddrivelsesdato >= |2015-11-19| → udskydelseDato = |2021-11-20|
   # Ankerpunkt: GIL § 18a, stk. 1, 1. pkt.
-  rule psrmUdskydelseDato equals |2021-11-20|
+  definition psrmUdskydelseDato equals |2021-11-20|
 
-  rule udskydelseDato
+  definition udskydelseDato
     under condition kildesystem = PSRM
       and inddrivelsesdato >= |2015-11-19|
     consequence equals |2021-11-20|
@@ -142,10 +134,10 @@ den 20. november 2027.
 scope UdskydelsesBeregning:
   # U-2: DMI_SAP38 + registreringsDato >= |2024-01-01| → udskydelseDato = |2027-11-20|
   # Ankerpunkt: GIL § 18a, stk. 1, 2. pkt.
-  rule dmiUdskydelseDato equals |2027-11-20|
+  definition dmiUdskydelseDato equals |2027-11-20|
 
   exception
-  rule udskydelseDato
+  definition udskydelseDato
     under condition kildesystem = DMI_SAP38
       and registreringsDato >= |2024-01-01|
     consequence equals |2027-11-20|
@@ -185,13 +177,13 @@ dette sikrer at udskydelsen respekteres uanset afbrydelsesstidspunktet.
 
 ```catala
 declaration scope ForaeldelseFristBeregning:
-  context udskydelseDato content date                (* input: fra UdskydelsesBeregning *)
-  context afbrydelseDato content date                (* input: dato for afbrydelseshændelse *)
-  context retsgrundlag content RetsgrundlagType      (* input: ORDINARY eller SAERLIGT_RETSGRUNDLAG *)
-  context erUdlaeg content boolean                   (* input: true hvis afbrydelse er udlæg *)
-  context fristStartDato content date                (* output: startdato for ny frist *)
-  context fristVarighed content integer              (* output: fristens varighed i år (3 eller 10) *)
-  context nyFristUdloeber content date               (* output: ny forældelsesfristudløbsdato *)
+  context udskydelseDato content date
+  context afbrydelseDato content date
+  context retsgrundlag content RetsgrundlagType
+  context erUdlaeg content boolean
+  context output fristStartDato content date
+  context output fristVarighed content integer
+  context output nyFristUdloeber content date
 ```
 
 ---
@@ -208,7 +200,7 @@ Denne grundregel finder anvendelse for alle fordringer medmindre den særlige
 scope ForaeldelseFristBeregning:
   # F-1: grundregel — fristVarighed = 3 år
   # Ankerpunkt: GIL § 18a, stk. 4
-  rule fristVarighed equals 3
+  definition fristVarighed equals 3
 ```
 
 ---
@@ -227,7 +219,7 @@ scope ForaeldelseFristBeregning:
   # F-2: undtagelse til F-1 — 10 år ved udlæg + SAERLIGT_RETSGRUNDLAG
   # Ankerpunkt: Forældelsesl. § 5, stk. 1
   exception
-  rule fristVarighed
+  definition fristVarighed
     under condition erUdlaeg
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
     consequence equals 10
@@ -248,14 +240,14 @@ Den nye forældelsesfrists udløbsdato beregnes som fristStartDato plus fristVar
 scope ForaeldelseFristBeregning:
   # F-3: fristStartDato = maximum af afbrydelseDato og udskydelseDato
   # Ankerpunkt: GIL § 18a, stk. 1 (udskydelse) + GIL § 18a, stk. 4 (friststartdato)
-  rule fristStartDato equals
+  definition fristStartDato equals
     if afbrydelseDato >= udskydelseDato
     then afbrydelseDato
     else udskydelseDato
 
   # F-3b: nyFristUdloeber = fristStartDato + fristVarighed år
-  rule nyFristUdloeber equals
-    fristStartDato +@ duration of (fristVarighed * 365) days
+  definition nyFristUdloeber equals
+    fristStartDato +@ fristVarighed * 365 day
 ```
 
 ---
@@ -276,17 +268,34 @@ og underretning til debitor.
 
 ```catala
 declaration scope AfbrydelseValidering:
-  context afbrydelseType content AfbrydelseType      (* input: type af afbrydelseshændelse *)
-  context eventDate content date                     (* input: dato for hændelsen *)
-  context afgoerelseRegistreret content boolean      (* input: true hvis afgørelse er formelt registreret *)
-  context underretningsDato content date             (* input: dato debitor underrettes ved lønindeholdelse *)
-  context kildesystem content KildesystemType        (* input: kildesystem for fordringen *)
-  context retsgrundlag content RetsgrundlagType      (* input: fordringens retsgrundlag *)
-  context inaktivSiden content date                  (* input: dato lønindeholdelse ophørte med aktivitet *)
-  context harInaktivSiden content boolean            (* input: true hvis lønindeholdelse har været inaktiv *)
-  context afbrydelseResultat content AfbrydelseResultat  (* output: klassifikation af afbrydelsesresultat *)
-  context nyAfbrydelseDato content date              (* output: effektiv dato for ny afbrydelsesfrist *)
-  context nyFristUdloeber content date               (* output: ny forældelsesfristudløbsdato *)
+  context afbrydelseType content AfbrydelseType
+  context eventDate content date
+  context afgoerelseRegistreret content boolean
+  context underretningsDato content date
+  context kildesystem content KildesystemType
+  context retsgrundlag content RetsgrundlagType
+  context inaktivSiden content date
+  context harInaktivSiden content boolean
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyAfbrydelseDato content date
+  context output nyFristUdloeber content date
+```
+
+---
+
+## Sentinel-standarder — ingen ny fristdato for AFVIST-resultater
+
+For afbrydelsetyper der ikke medfører en ny forældelsesfrist (AFVIST_VARSEL_ALENE) fastsættes
+ingen ny dato. nyAfbrydelseDato og nyFristUdloeber sættes til sentinel-værdien |1970-01-01|.
+Disse sentinel-standarder fungerer som base for alle øvrige undtagelsesregler (A-1 til A-5).
+
+```catala
+scope AfbrydelseValidering:
+  # Sentinel defaults — ingen ny dato for AFVIST-resultater
+  label afbrydelse_dato_base
+  definition nyAfbrydelseDato equals |1970-01-01|
+  label frist_udloeber_base
+  definition nyFristUdloeber equals |1970-01-01|
 ```
 
 ---
@@ -304,20 +313,22 @@ den afbryder forældelsesfrist med virkning fra beslutningsdatoen.
 scope AfbrydelseValidering:
   # A-1: BEROSTILLELSE + kildesystem = PSRM → NY_FRIST_3_AAR, nyFristUdloeber = eventDate + 3 år
   # Ankerpunkt: GIL § 18a, stk. 8
-  rule afbrydelseResultat
+  definition afbrydelseResultat
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
     consequence equals NY_FRIST_3_AAR
 
-  rule nyAfbrydelseDato
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
     consequence equals eventDate
 
-  rule nyFristUdloeber
+  exception frist_udloeber_base
+  definition nyFristUdloeber
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 ```
 
 ---
@@ -336,12 +347,13 @@ scope AfbrydelseValidering:
   # A-2: LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE (ingen ny frist)
   # A-2b: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = false → AFVIST_VARSEL_ALENE
   # Ankerpunkt: GIL § 18, stk. 4; SKM2015.718.ØLR
-  rule afbrydelseResultat
+  label a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_VARSEL
     consequence equals AFVIST_VARSEL_ALENE
 
-  exception
-  rule afbrydelseResultat
+  exception a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and not afgoerelseRegistreret
     consequence equals AFVIST_VARSEL_ALENE
@@ -362,23 +374,25 @@ scope AfbrydelseValidering:
   # A-3: LOENINDEHOLDELSE_AFGOERELSE + afgoerelseRegistreret = true → NY_FRIST_3_AAR
   # nyAfbrydelseDato = underretningsDato; nyFristUdloeber = underretningsDato + 3 år
   # Ankerpunkt: GIL § 18, stk. 4
-  exception
-  rule afbrydelseResultat
+  exception a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
     consequence equals NY_FRIST_3_AAR
 
-  exception
-  rule nyAfbrydelseDato
+  label afbrydelse_dato_loend
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
     consequence equals underretningsDato
 
-  exception
-  rule nyFristUdloeber
+  label frist_loend_3
+  exception frist_udloeber_base
+  definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
-    consequence equals underretningsDato +@ duration of (3 * 365) days
+    consequence equals underretningsDato +@ 3 * 365 day
 ```
 
 ---
@@ -396,26 +410,26 @@ scope AfbrydelseValidering:
   # A-4: LOENINDEHOLDELSE_AFGOERELSE + harInaktivSiden = true
   #      + (eventDate - inaktivSiden) >= 365 dage → NY_FRIST_3_AAR fra inaktivSiden
   # Ankerpunkt: GIL § 18, stk. 4
-  exception
-  rule afbrydelseResultat
+  exception a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
+      and (eventDate - inaktivSiden) >= 365 day
     consequence equals NY_FRIST_3_AAR
 
-  exception
-  rule nyAfbrydelseDato
+  exception afbrydelse_dato_loend
+  definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
+      and (eventDate - inaktivSiden) >= 365 day
     consequence equals inaktivSiden
 
-  exception
-  rule nyFristUdloeber
+  exception frist_loend_3
+  definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
-      and (eventDate - inaktivSiden) >= duration of 365 days
-    consequence equals inaktivSiden +@ duration of (3 * 365) days
+      and (eventDate - inaktivSiden) >= 365 day
+    consequence equals inaktivSiden +@ 3 * 365 day
 ```
 
 ---
@@ -434,36 +448,36 @@ SAERLIGT_RETSGRUNDLAG giver 10 år (A-5b).
 scope AfbrydelseValidering:
   # A-5a: UDLAEG + ORDINARY → NY_FRIST_3_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + GIL § 18a, stk. 4
-  exception
-  rule afbrydelseResultat
+  exception a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
     consequence equals NY_FRIST_3_AAR
 
-  exception
-  rule nyAfbrydelseDato
+  exception afbrydelse_dato_base
+  definition nyAfbrydelseDato
     under condition afbrydelseType = UDLAEG
     consequence equals eventDate
 
-  exception
-  rule nyFristUdloeber
+  exception frist_udloeber_base
+  definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 
   # A-5b: UDLAEG + SAERLIGT_RETSGRUNDLAG → NY_FRIST_10_AAR
   # Ankerpunkt: Forældelsesl. § 18, stk. 1 + Forældelsesl. § 5, stk. 1
-  exception
-  rule afbrydelseResultat
+  exception a2_base
+  definition afbrydelseResultat
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
     consequence equals NY_FRIST_10_AAR
 
-  exception
-  rule nyFristUdloeber
+  exception frist_udloeber_base
+  definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
-    consequence equals eventDate +@ duration of (10 * 365) days
+    consequence equals eventDate +@ 10 * 365 day
 ```
 
 ---
@@ -483,11 +497,11 @@ K-3-assertionen formaliserer dette atomicitetskrav direkte i Catala.
 
 ```catala
 declaration scope Fordringskompleks:
-  context antalMedlemmer content integer                  (* input: antal fordringer i komplekset (= length of fordringIds) *)
-  context sharedNyFrist content date                      (* input: fælles ny frist fra afbrydelseValidering *)
-  context harAfbrydelse content boolean                   (* input: true hvis én eller flere fordringer afbrydes *)
-  context propagationFuldstaendig content boolean         (* output: true kun hvis ALLE fordringer har fået ny frist *)
-  context kompleksNyFristUdloeber content date            (* output: fælles ny forældelsesfrist for hele komplekset *)
+  context antalMedlemmer content integer
+  context sharedNyFrist content date
+  context harAfbrydelse content boolean
+  context output propagationFuldstaendig content boolean
+  context output kompleksNyFristUdloeber content date
 ```
 
 ---
@@ -504,7 +518,7 @@ scope Fordringskompleks:
   # K-1: fordringskompleks-struktur — stamfordring er index 0 i fordringIds
   # Tilknyttede renter er øvrige elementer i fordringIds-listen
   # Ankerpunkt: GIL § 18a, stk. 2
-  rule kompleksNyFristUdloeber
+  definition kompleksNyFristUdloeber
     under condition harAfbrydelse
     consequence equals sharedNyFrist
 ```
@@ -526,7 +540,7 @@ scope Fordringskompleks:
   # Ankerpunkt: GIL § 18a, stk. 2, 4. pkt.
   rule propagationFuldstaendig
     under condition harAfbrydelse
-    consequence equals true
+    consequence fulfilled
 ```
 
 ---
@@ -576,12 +590,12 @@ fordringskompleks (GIL § 18a, stk. 7).
 
 ```catala
 declaration scope TillaegsfristBeregning:
-  context currentFristExpires content date           (* input: nuværende forældelsesfristudløb *)
-  context eventDate content date                     (* input: dato for intern opskrivning *)
-  context udskydelseDato content date                (* input: udskydelsesdato — floor-grænse *)
-  context erTomt content boolean                     (* input: true hvis fordringskompleks er tomt *)
-  context afbrydelseResultat content AfbrydelseResultat  (* output: klassifikation *)
-  context nyFristUdloeber content date               (* output: ny tillægsfristudløbsdato *)
+  context currentFristExpires content date
+  context eventDate content date
+  context udskydelseDato content date
+  context erTomt content boolean
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyFristUdloeber content date
 ```
 
 ---
@@ -600,7 +614,7 @@ altid max()-formlen uanset hvilken dato der er størst.
 scope TillaegsfristBeregning:
   # T-1: intern opskrivning → 2-årig tillægsfrist via max()
   # Ankerpunkt: G.A.2.4.4.2.1
-  rule afbrydelseResultat
+  definition afbrydelseResultat
     under condition not erTomt
     consequence equals NY_FRIST_3_AAR
 
@@ -608,13 +622,13 @@ scope TillaegsfristBeregning:
   # ALTID tre-vejs max() — inkluderer udskydelseDato som floor-grænse (T-4, GIL § 18a, stk. 1).
   # Aldrig blot eventDate + 2 år; aldrig blot to-vejs max uden udskydelseDato-floor.
   # Ankerpunkt: G.A.2.4.4.2 + GIL § 18a, stk. 1 (floor-grænse T-4)
-  rule nyFristUdloeber
+  definition nyFristUdloeber
     under condition not erTomt
     consequence equals
       (if (if currentFristExpires >= eventDate then currentFristExpires else eventDate) >= udskydelseDato
        then (if currentFristExpires >= eventDate then currentFristExpires else eventDate)
        else udskydelseDato)
-      +@ duration of (2 * 365) days
+      +@ 2 * 365 day
 ```
 
 ---
@@ -634,14 +648,14 @@ scope TillaegsfristBeregning:
   # T-3: erTomt = true → FORELOEBIG_AFBRYDELSE, nyFristUdloeber = eventDate + 3 år
   # Ankerpunkt: GIL § 18a, stk. 7
   exception
-  rule afbrydelseResultat
+  definition afbrydelseResultat
     under condition erTomt
     consequence equals FORELOEBIG_AFBRYDELSE
 
   exception
-  rule nyFristUdloeber
+  definition nyFristUdloeber
     under condition erTomt
-    consequence equals eventDate +@ duration of (3 * 365) days
+    consequence equals eventDate +@ 3 * 365 day
 ```
 
 ---
@@ -664,12 +678,3 @@ inden udskydelsesdatoen giver stadig fristStartDato = udskydelseDato.
 ```
 
 ---
-
-(* Filende: ga_2_4_foraeldelse.catala_da
-   G.A. snapshot v3.16, dated 2026-03-28
-   Dialect: catala_da
-   5 scopes: UdskydelsesBeregning, ForaeldelseFristBeregning, AfbrydelseValidering,
-             Fordringskompleks, TillaegsfristBeregning
-   4 enumerationer: KildesystemType (2 varianter), RetsgrundlagType (2 varianter),
-                    AfbrydelseType (4 varianter), AfbrydelseResultat (4 varianter)
-   Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4 *)
