@@ -380,4 +380,4 @@ for upstream or downstream systems are changed.
 - [ ] All new i18n labels present in both DA and EN message bundles
 - [ ] Liquibase migration adds `legacy_modtagelsesdato` column and `daekning_record` table
 - [ ] `behave --dry-run` passes on `petitions/petition057-daekningsraekkefoeigen.feature`
-- [ ] Architecture overview updated in `docs/architecture-overview.md`
+- [ ] Architecture overview updated in `architecture/overview.md`

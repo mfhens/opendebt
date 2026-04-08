@@ -1,0 +1,816 @@
+# Domain Concept Model
+#
+# Source of truth for domain terminology, relationships, and implementation traceability.
+# Reviewed and approved by domain experts before driving architecture and translation.
+#
+# Consumed by: concept-model-curator, solution-architect, translator, c4-model-validator
+
+version: "1.0"
+domain: Inddrivelse af offentlige fordringer
+source_authority: Gældsstyrelsen / UFST (Udviklings- og Forenklingsstyrelsen)
+source_locale: da
+approved_by: ~
+approved_date: ~
+
+concepts:
+
+  # === Aktører og roller ===
+
+  - id: part
+    term: Part
+    en: Party
+    definition: >
+      Abstrakt aktørbegreb, der dækker en identificerbar enhed, som kan indgå i
+      relationer om fordringer, kommunikation og inddrivelse.
+    abstract: true
+    area: Aktører og roller
+    implementation:
+      service: person-registry
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Rollen findes indirekte som debtorPersonId og creditorOrgId, men der er
+        ingen fælles Part-model eller rollelag.
+
+  - id: fordringshaver
+    term: Fordringshaver
+    en: Creditor
+    definition: >
+      Part, der har eller administrerer en fordring mod en skyldner og som kan
+      fremsende skyldnerunderretning, foretage overdragelse til inddrivelse,
+      regulere overdragne fordringer, tilbagekalde fordringer og modtage
+      underretningsmeddelelser fra restanceinddrivelsesmyndigheden.
+    specialization_of: part
+    area: Aktører og roller
+    relationships:
+      - target: fordring
+        label: har
+      - target: skyldnerunderretning
+        label: giver
+      - target: overdragelse-til-inddrivelse
+        label: foretager
+      - target: regulering
+        label: foretager
+      - target: tilbagekald
+        label: foretager
+      - target: genindsendelse
+        label: foretager
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Findes som reference (creditorOrgId i DebtEntity), ikke som domæneobjekt
+        med egne regler.
+
+  - id: skyldner
+    term: Skyldner
+    en: Debtor
+    definition: >
+      Part, der hæfter helt eller delvist for en fordring og som kan modtage
+      skyldnerunderretning og fremsætte indsigelse.
+    specialization_of: part
+    area: Aktører og roller
+    relationships:
+      - target: indsigelse
+        label: fremsætter
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Findes som reference (debtorPersonId i DebtEntity og CaseEntity), men
+        ingen eksplicit relation til hæftelse eller understøttelse af
+        flerpartshæftelse.
+
+  - id: restanceinddrivelsesmyndighed
+    term: Restanceinddrivelsesmyndighed
+    en: Public Debt Collection Authority
+    definition: >
+      Part, der efter overdragelse forestår inddrivelse af offentlige fordringer
+      efter gældende regler og kan sende underretningsmeddelelser til
+      fordringshaver om handlinger på restancer.
+    specialization_of: part
+    area: Aktører og roller
+    relationships:
+      - target: inddrivelsesskridt
+        label: iværksætter
+      - target: daekning
+        label: opnår
+      - target: underretningsmeddelelse
+        label: sender
+    implementation:
+      service: case-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen entity eller API; implicit systemrolle uden eksplicit
+        domænerepræsentation.
+
+  # === Krav og status ===
+
+  - id: kravgrundlag
+    term: Kravgrundlag
+    en: Basis of Claim
+    definition: >
+      Det retlige eller faktiske grundlag, der begrunder en fordring.
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen entity, intet felt, ingen API; skal modelleres som sporbar
+        baggrund for en fordring.
+
+  - id: fordring
+    term: Fordring
+    en: Claim
+    definition: >
+      Et krav på betaling, som en fordringshaver har mod en eller flere
+      skyldnere.
+    area: Krav og status
+    relationships:
+      - target: kravgrundlag
+        label: er begrundet i
+      - target: betalingsfrist
+        label: har
+      - target: foraeldelse
+        label: har
+      - target: fordringsart
+        label: er klassificeret som
+      - target: fordringstype
+        label: har
+      - target: fordring
+        label: er underfordring af
+    implementation:
+      service: debt-service
+      entity: DebtEntity
+      api: /api/debts
+      status: partial
+      notes: >
+        DebtEntity bærer fordringsdata men er navngivet og livscyklusstyret som
+        generisk debt; hæftelse, overdragelse og indsigelse mangler.
+
+  - id: restance
+    term: Restance
+    en: Overdue Claim
+    definition: >
+      Fordring, hvis betalingsfrist er overskredet uden rettidig betaling.
+    specialization_of: fordring
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Begrebet findes kun implicit som tilstand i DebtEntity, ikke som tydelig
+        specialisering af Fordring med egne livscyklusregler.
+
+  - id: betalingsfrist
+    term: Betalingsfrist
+    en: Payment Deadline
+    definition: >
+      Det tidspunkt eller den periode, inden for hvilken fordringen skal være
+      betalt.
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Findes som felt DebtEntity.dueDate, ikke som selvstændigt begreb eller
+        regelobjekt med forretningsregler.
+
+  - id: foraeldelse
+    term: Forældelse
+    en: Limitation
+    definition: >
+      Det tidspunkt, hvor fordringen mister retskraft og ikke længere kan gøres
+      gældende.
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Forældelsesdato er ikke modelleret som selvstændigt begreb; ingen
+        valideringsregler for forældelsesafbrydelse er implementeret.
+
+  - id: fordringsart
+    term: Fordringsart
+    en: Claim Art
+    definition: >
+      Overordnet klassifikation af en fordring, der bestemmer det grundlæggende
+      behandlingsregime. Kendte værdier er INDR (inddrivelse) og MODR (kun
+      modregning).
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Klassifikation ikke modelleret; styrer tilgængelige inddrivelsesskridt.
+
+  - id: fordringstype
+    term: Fordringstype
+    en: Claim Type
+    definition: >
+      Specifik klassifikation af en fordring baseret på det retlige grundlag,
+      der bestemmer valideringsregler, renteberegningsregler,
+      indgangsfilterregler og tilladt adfærd.
+    area: Krav og status
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Fordringstype ikke modelleret; bestemmer bl.a. om fordringen er
+        civilretlig med begrænsede inddrivelsesmuligheder.
+
+  # === Kravstruktur ===
+
+  - id: fordringskompleks
+    term: Fordringskompleks
+    en: Claim Complex
+    definition: >
+      Sammensætning af en hovedfordring og tilknyttede fordringer
+      (underfordringer), der i størst muligt omfang behandles som én samlet
+      fordring.
+    area: Kravstruktur
+    relationships:
+      - target: fordring
+        label: består af
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Strukturel sammenhæng mellem hoved- og underfordringer ikke modelleret;
+        automatisk tilbagekald af kompleks ikke understøttet.
+
+  # === Livscyklus ===
+
+  - id: overdragelse-til-inddrivelse
+    term: Overdragelse til inddrivelse
+    en: Transfer for Debt Collection
+    definition: >
+      Den handling, hvorved fordringshaver sender en restance til
+      restanceinddrivelsesmyndigheden med henblik på videre inddrivelse.
+    area: Livscyklus
+    relationships:
+      - target: restance
+        label: omfatter
+      - target: restanceinddrivelsesmyndighed
+        label: sker til
+      - target: hoering
+        label: kan resultere i
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Overdragelseshandlingen og audit-sporet mangler; readinessStatus i
+        DebtEntity er en stub og ikke koblet til formel overdragelseslogik.
+
+  - id: hoering
+    term: Høring
+    en: Hearing
+    definition: >
+      Livscyklustilstand, hvor en indsendt fordring afventer fordringshaveres
+      stillingtagen, fordi stamdata afviger fra indgangsfilterets regler.
+    area: Livscyklus
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Høring-tilstanden er ikke modelleret som eksplicit livscyklustilstand;
+        ingen workflow eller API for fordringshaveres godkendelse.
+
+  - id: regulering
+    term: Regulering
+    en: Claim Adjustment
+    definition: >
+      Abstrakt begreb for en fordringshaver-handling, der justerer saldoen på
+      en allerede overdraget restance.
+    abstract: true
+    area: Livscyklus
+    relationships:
+      - target: restance
+        label: vedrører
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Op- og nedskrivning ikke modelleret som selvstændige handlinger med
+        årsagskoder.
+
+  - id: opskrivning
+    term: Opskrivning
+    en: Write-up
+    definition: >
+      Regulering, der forhøjer saldoen på en overdraget restance.
+    specialization_of: regulering
+    area: Livscyklus
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: Ikke modelleret.
+
+  - id: nedskrivning
+    term: Nedskrivning
+    en: Write-down
+    definition: >
+      Regulering, der nedsætter saldoen på en overdraget restance.
+    specialization_of: regulering
+    area: Livscyklus
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: Ikke modelleret.
+
+  - id: tilbagekald
+    term: Tilbagekald
+    en: Withdrawal
+    definition: >
+      Den handling, hvorved fordringshaver trækker en overdraget restance
+      tilbage fra inddrivelse.
+    area: Livscyklus
+    relationships:
+      - target: restance
+        label: vedrører
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Tilbagekald med årsagskoder (BORD, BORT, FEJL, HENS, KLAG) og
+        differentierede virkninger på dækninger og renter er ikke modelleret.
+
+  - id: genindsendelse
+    term: Genindsendelse
+    en: Resubmission
+    definition: >
+      Fornyet indsendelse af en tidligere tilbagekaldt restance til inddrivelse.
+    area: Livscyklus
+    relationships:
+      - target: restance
+        label: vedrører
+      - target: tilbagekald
+        label: følger af
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Kun mulig efter KLAG- eller HENS-tilbagekald; ikke modelleret.
+
+  # === Finansiel ===
+
+  - id: daekning
+    term: Dækning
+    en: Recovery
+    definition: >
+      Betaling opnået under inddrivelse af en restance.
+    area: Finansiel
+    relationships:
+      - target: restance
+        label: vedrører
+    implementation:
+      service: payment-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Dækning og dækningsrækkefølge (rente dækkes forud for hovedstol) ikke
+        modelleret som selvstændigt begreb.
+
+  - id: inddrivelsesrente
+    term: Inddrivelsesrente
+    en: Recovery Interest
+    definition: >
+      Rente tilskrevet en restance under inddrivelse.
+    area: Finansiel
+    relationships:
+      - target: restance
+        label: tilskrives
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Renteberegning (dag-til-dag, p.t. 5,75 % p.a.) ikke modelleret;
+        rentestop og undtagelser for specifikke fordringstyper ikke
+        implementeret.
+
+  # === Kommunikation ===
+
+  - id: underretning
+    term: Underretning
+    en: Notification
+    definition: >
+      Abstrakt begreb for formel meddelelse til en relevant part om en fordring,
+      dens status eller dens behandling.
+    abstract: true
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen fælles Underretning-model; kun LetterDto-typer uden fælles
+        afsender-, modtager- og dokumentstatusstruktur.
+
+  - id: skyldnerunderretning
+    term: Skyldnerunderretning
+    en: Debtor Notice
+    definition: >
+      Abstrakt underbegreb for formel meddelelse til skyldner om
+      betalingsforpligtelse eller konsekvenser af manglende betaling.
+    abstract: true
+    specialization_of: underretning
+    area: Kommunikation
+    relationships:
+      - target: skyldner
+        label: tilgår
+      - target: fordring
+        label: vedrører
+    implementation:
+      service: letter-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen fælles abstraktion for skyldnerunderretninger med kanal,
+        dokumentstatus og relation til fordring.
+
+  - id: paakrav
+    term: Påkrav
+    en: Demand for Payment
+    definition: >
+      Skyldnerunderretning, der formelt anmoder skyldner om at opfylde
+      betalingsforpligtelsen inden en angivet frist.
+    specialization_of: skyldnerunderretning
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Bruges begrebsmæssigt i OCR-baseret betalingsflow (payment-service), men
+        ikke som eksplicit entity eller API.
+
+  - id: rykker
+    term: Rykker
+    en: Reminder Notice
+    definition: >
+      Skyldnerunderretning, der meddeler, at betaling ikke er sket rettidigt,
+      og at yderligere handling kan følge.
+    specialization_of: skyldnerunderretning
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: Ingen særskilt entity eller API.
+
+  - id: underretningsmeddelelse
+    term: Underretningsmeddelelse
+    en: Creditor Notification
+    definition: >
+      Abstrakt underbegreb for formel meddelelse fra
+      restanceinddrivelsesmyndigheden til fordringshaver om nye handlinger på
+      en overdraget restance.
+    abstract: true
+    specialization_of: underretning
+    area: Kommunikation
+    relationships:
+      - target: fordringshaver
+        label: tilgår
+      - target: restance
+        label: vedrører
+    implementation:
+      service: letter-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen fælles Underretningsmeddelelse-model med undertyperne fra
+        PSRM-specifikationen.
+
+  - id: afregningsunderretning
+    term: Afregningsunderretning
+    en: Settlement Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om månedlig
+      afregning af modtagne indbetalinger på en eller flere restancer.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: Ikke modelleret.
+
+  - id: udligningsunderretning
+    term: Udligningsunderretning
+    en: Reconciliation Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om bevægelser på
+      en restance, som påvirker saldoen.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: >
+        Ikke modelleret; gensidigt eksklusiv med Allokeringsunderretning.
+
+  - id: allokeringsunderretning
+    term: Allokeringsunderretning
+    en: Allocation Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om, hvordan
+      saldoændringer fordeles mellem hovedstol, renter og andre finansielle
+      komponenter.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: >
+        Ikke modelleret; gensidigt eksklusiv med Udligningsunderretning.
+
+  - id: renteunderretning
+    term: Renteunderretning
+    en: Interest Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om
+      rentetilskrivning på en restance.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: >
+        Ikke modelleret; gensidigt eksklusiv med Detaljeret renteunderretning.
+
+  - id: detaljeret-renteunderretning
+    term: Detaljeret renteunderretning
+    en: Detailed Interest Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver detaljeret om nye
+      renteposteringer, typisk pr. døgn.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: >
+        Kun tilgængelig for system-til-system-løsning; ikke modelleret.
+
+  - id: afskrivningsunderretning
+    term: Afskrivningsunderretning
+    en: Write-off Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om, at en restance
+      er afskrevet.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: Ikke modelleret.
+
+  - id: tilbagesendelsesunderretning
+    term: Tilbagesendelsesunderretning
+    en: Return-to-Creditor Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om, at en restance
+      tilbagesendes til fordringshaver.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: Ikke modelleret.
+
+  - id: returneringsunderretning
+    term: Returneringsunderretning
+    en: Returned Claim Notification
+    definition: >
+      Underretningsmeddelelse, der orienterer fordringshaver om, at en restance
+      returneres, eller at der er opstået saldorelateret opfølgning på en
+      tidligere tilbagekaldt fordring.
+    specialization_of: underretningsmeddelelse
+    area: Kommunikation
+    implementation:
+      service: letter-service
+      status: missing
+      notes: Ikke modelleret.
+
+  # === Reaktion og tvist ===
+
+  - id: indsigelse
+    term: Indsigelse
+    en: Objection
+    definition: >
+      Skyldners bestridelse af fordringens eksistens, størrelse, grundlag eller
+      behandling.
+    area: Reaktion og tvist
+    relationships:
+      - target: fordring
+        label: vedrører
+    implementation:
+      service: case-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen entity, ingen API, ingen workflow-tilstand; mangler helt som
+        forretningsobjekt.
+
+  - id: haeftelse
+    term: Hæftelse
+    en: Liability
+    definition: >
+      Det retlige og forretningsmæssige forhold, der knytter en skyldner til en
+      fordring og beskriver arten og omfanget af betalingsansvaret.
+    area: Reaktion og tvist
+    relationships:
+      - target: fordring
+        label: vedrører
+      - target: skyldner
+        label: vedrører
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen entity; én skyldner pr. DebtEntity; blokerer korrekt modellering
+        af flerpartshæftelse.
+
+  - id: eneheftelse
+    term: Enehæftelse
+    en: Sole Liability
+    definition: >
+      Hæftelse, hvor en fordring kun er knyttet til én skyldner som ansvarlig
+      part.
+    specialization_of: haeftelse
+    area: Reaktion og tvist
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: Ingen subtype eller typekode.
+
+  - id: solidarisk-haeftelse
+    term: Solidarisk hæftelse
+    en: Joint and Several Liability
+    definition: >
+      Hæftelse, hvor flere skyldnere hæfter for samme fordring på en måde, så
+      kravet kan gøres gældende efter de regler, der gælder for solidarisk
+      ansvar.
+    specialization_of: haeftelse
+    area: Reaktion og tvist
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen subtype eller typekode; PSRM understøtter kun solidarisk
+        hæftelse i praksis.
+
+  - id: delt-haeftelse
+    term: Delt hæftelse
+    en: Several Liability
+    definition: >
+      Hæftelse, hvor flere skyldnere hæfter for adskilte eller fordelte andele
+      af samme fordring eller kravkompleks.
+    specialization_of: haeftelse
+    area: Reaktion og tvist
+    implementation:
+      service: debt-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Kræver i PSRM at fordringshaver fordeler fordringen som separate
+        fordringer pr. skyldner.
+
+  # === Myndighedsudøvelse ===
+
+  - id: inddrivelsesskridt
+    term: Inddrivelsesskridt
+    en: Debt Collection Measure
+    definition: >
+      Abstrakt begreb for retlige eller administrative skridt, der iværksættes
+      for at opnå betaling af en overdraget restance.
+    abstract: true
+    area: Myndighedsudøvelse
+    relationships:
+      - target: restance
+        label: vedrører
+    implementation:
+      service: case-service
+      entity: CollectionStrategy
+      api: ~
+      status: partial
+      notes: >
+        Findes som CollectionStrategy-enum, ikke som fælles abstrakt
+        domæneobjekt med livscyklus og egne regler.
+
+  - id: modregning
+    term: Modregning
+    en: Set-off
+    definition: >
+      Inddrivelsesskridt, hvor et offentligt tilgodehavende søges dækket
+      gennem modregning i et modgående krav eller beløb efter gældende regler.
+    specialization_of: inddrivelsesskridt
+    area: Myndighedsudøvelse
+    implementation:
+      service: payment-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Findes som konto-/bogføringsoperation (BookkeepingService.recordOffsetting
+        og CollectionStrategy.OFFSETTING), ikke som selvstændigt skridtobjekt.
+
+  - id: loenindeholdelse
+    term: Lønindeholdelse
+    en: Wage Garnishment
+    definition: >
+      Inddrivelsesskridt, hvor betaling søges opnået gennem indeholdelse i
+      skyldners løn eller anden indkomst efter gældende regler.
+    specialization_of: inddrivelsesskridt
+    area: Myndighedsudøvelse
+    implementation:
+      service: wage-garnishment-service
+      entity: ~
+      api: ~
+      status: partial
+      notes: >
+        Findes som CollectionStrategy.WAGE_GARNISHMENT og LetterDto-type, ikke
+        som objekt med livscyklus og egne regler.
+
+  - id: udlaeg
+    term: Udlæg
+    en: Attachment
+    definition: >
+      Inddrivelsesskridt, hvor der foretages udlæg efter de regler, der gælder
+      for tvangsfuldbyrdelse og offentlig inddrivelse.
+    specialization_of: inddrivelsesskridt
+    area: Myndighedsudøvelse
+    implementation:
+      service: ~
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ingen service, entity eller API; fremtidig enforcement-funktion.
+
+  - id: afdragsordning
+    term: Afdragsordning
+    en: Instalment Arrangement
+    definition: >
+      Inddrivelsesskridt, hvor der indgås en betalingsaftale med skyldner om
+      afdragsvis indfrielse af restancen.
+    specialization_of: inddrivelsesskridt
+    area: Myndighedsudøvelse
+    implementation:
+      service: case-service
+      entity: ~
+      api: ~
+      status: missing
+      notes: >
+        Ikke modelleret som selvstændigt skridtobjekt med egne
+        forretningsregler.

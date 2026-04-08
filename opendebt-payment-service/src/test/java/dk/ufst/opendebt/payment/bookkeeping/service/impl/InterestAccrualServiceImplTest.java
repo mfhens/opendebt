@@ -17,14 +17,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import dk.ufst.opendebt.payment.bookkeeping.entity.DebtEventEntity;
-import dk.ufst.opendebt.payment.bookkeeping.model.InterestPeriod;
-import dk.ufst.opendebt.payment.bookkeeping.repository.DebtEventRepository;
+import dk.ufst.bookkeeping.domain.EventType;
+import dk.ufst.bookkeeping.domain.FinancialEvent;
+import dk.ufst.bookkeeping.model.InterestPeriod;
+import dk.ufst.bookkeeping.port.FinancialEventStore;
+import dk.ufst.bookkeeping.service.impl.InterestAccrualServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class InterestAccrualServiceImplTest {
 
-  @Mock private DebtEventRepository debtEventRepository;
+  @Mock private FinancialEventStore financialEventStore;
 
   private InterestAccrualServiceImpl service;
 
@@ -33,7 +35,7 @@ class InterestAccrualServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new InterestAccrualServiceImpl(debtEventRepository);
+    service = new InterestAccrualServiceImpl(financialEventStore);
   }
 
   @Test
@@ -42,10 +44,9 @@ class InterestAccrualServiceImplTest {
     LocalDate to = LocalDate.of(2026, 1, 1);
     BigDecimal principal = new BigDecimal("50000");
 
-    DebtEventEntity registration =
-        buildEvent(DebtEventEntity.EventType.DEBT_REGISTERED, from, principal);
+    FinancialEvent registration = buildEvent(EventType.DEBT_REGISTERED, from, principal);
 
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(List.of(registration));
 
     List<InterestPeriod> periods =
@@ -80,12 +81,10 @@ class InterestAccrualServiceImplTest {
     BigDecimal principal = new BigDecimal("50000");
     BigDecimal payment = new BigDecimal("20000");
 
-    DebtEventEntity registration =
-        buildEvent(DebtEventEntity.EventType.DEBT_REGISTERED, from, principal);
-    DebtEventEntity paymentEvent =
-        buildEvent(DebtEventEntity.EventType.PAYMENT_RECEIVED, paymentDate, payment);
+    FinancialEvent registration = buildEvent(EventType.DEBT_REGISTERED, from, principal);
+    FinancialEvent paymentEvent = buildEvent(EventType.PAYMENT_RECEIVED, paymentDate, payment);
 
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(List.of(registration, paymentEvent));
 
     List<InterestPeriod> periods =
@@ -110,13 +109,12 @@ class InterestAccrualServiceImplTest {
     LocalDate to = LocalDate.of(2026, 3, 1);
     LocalDate correctionDate = LocalDate.of(2025, 12, 1);
 
-    DebtEventEntity registration =
-        buildEvent(DebtEventEntity.EventType.DEBT_REGISTERED, from, new BigDecimal("50000"));
-    DebtEventEntity correction =
-        buildEvent(
-            DebtEventEntity.EventType.UDLAEG_CORRECTED, correctionDate, new BigDecimal("-20000"));
+    FinancialEvent registration =
+        buildEvent(EventType.DEBT_REGISTERED, from, new BigDecimal("50000"));
+    FinancialEvent correction =
+        buildEvent(EventType.UDLAEG_CORRECTED, correctionDate, new BigDecimal("-20000"));
 
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(List.of(registration, correction));
 
     List<InterestPeriod> periods =
@@ -135,7 +133,7 @@ class InterestAccrualServiceImplTest {
 
   @Test
   void noEvents_returnsEmptyPeriods() {
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(Collections.emptyList());
 
     List<InterestPeriod> periods =
@@ -151,13 +149,12 @@ class InterestAccrualServiceImplTest {
     LocalDate to = LocalDate.of(2026, 1, 1);
     LocalDate paymentDate = LocalDate.of(2025, 11, 1);
 
-    DebtEventEntity registration =
-        buildEvent(DebtEventEntity.EventType.DEBT_REGISTERED, from, new BigDecimal("10000"));
-    DebtEventEntity fullPayment =
-        buildEvent(
-            DebtEventEntity.EventType.PAYMENT_RECEIVED, paymentDate, new BigDecimal("10000"));
+    FinancialEvent registration =
+        buildEvent(EventType.DEBT_REGISTERED, from, new BigDecimal("10000"));
+    FinancialEvent fullPayment =
+        buildEvent(EventType.PAYMENT_RECEIVED, paymentDate, new BigDecimal("10000"));
 
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(List.of(registration, fullPayment));
 
     List<InterestPeriod> periods =
@@ -174,20 +171,14 @@ class InterestAccrualServiceImplTest {
     LocalDate from = LocalDate.of(2025, 10, 1);
     LocalDate to = LocalDate.of(2026, 1, 1);
 
-    DebtEventEntity registration =
-        buildEvent(DebtEventEntity.EventType.DEBT_REGISTERED, from, new BigDecimal("100000"));
-    DebtEventEntity payment1 =
-        buildEvent(
-            DebtEventEntity.EventType.PAYMENT_RECEIVED,
-            LocalDate.of(2025, 11, 1),
-            new BigDecimal("30000"));
-    DebtEventEntity payment2 =
-        buildEvent(
-            DebtEventEntity.EventType.PAYMENT_RECEIVED,
-            LocalDate.of(2025, 12, 1),
-            new BigDecimal("20000"));
+    FinancialEvent registration =
+        buildEvent(EventType.DEBT_REGISTERED, from, new BigDecimal("100000"));
+    FinancialEvent payment1 =
+        buildEvent(EventType.PAYMENT_RECEIVED, LocalDate.of(2025, 11, 1), new BigDecimal("30000"));
+    FinancialEvent payment2 =
+        buildEvent(EventType.PAYMENT_RECEIVED, LocalDate.of(2025, 12, 1), new BigDecimal("20000"));
 
-    when(debtEventRepository.findPrincipalAffectingEvents(DEBT_ID))
+    when(financialEventStore.findPrincipalAffectingEvents(DEBT_ID))
         .thenReturn(List.of(registration, payment1, payment2));
 
     List<InterestPeriod> periods =
@@ -206,9 +197,8 @@ class InterestAccrualServiceImplTest {
     assertThat(totalInterest).isGreaterThan(BigDecimal.ZERO);
   }
 
-  private DebtEventEntity buildEvent(
-      DebtEventEntity.EventType type, LocalDate effectiveDate, BigDecimal amount) {
-    return DebtEventEntity.builder()
+  private FinancialEvent buildEvent(EventType type, LocalDate effectiveDate, BigDecimal amount) {
+    return FinancialEvent.builder()
         .id(UUID.randomUUID())
         .debtId(DEBT_ID)
         .eventType(type)

@@ -82,10 +82,14 @@ public class Petition057Steps {
   }
 
   @Given("the payment-service rule engine is active")
-  public void thePaymentServiceRuleEngineIsActive() {}
+  public void thePaymentServiceRuleEngineIsActive() {
+    // Precondition verified by Spring context loading; no runtime check required.
+  }
 
   @Given("the sagsbehandler portal is running")
-  public void theSagsbehandlerPortalIsRunning() {}
+  public void theSagsbehandlerPortalIsRunning() {
+    // Caseworker portal availability is a deployment precondition; no in-process check required.
+  }
 
   // =========================================================================
   // SEED helpers

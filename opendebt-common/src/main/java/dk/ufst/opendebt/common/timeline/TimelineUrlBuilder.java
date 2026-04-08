@@ -1,6 +1,8 @@
 package dk.ufst.opendebt.common.timeline;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -79,25 +81,24 @@ public final class TimelineUrlBuilder {
       boolean includeFrom,
       boolean includeTo,
       boolean includeDebt) {
-    StringBuilder sb = new StringBuilder(baseUrl);
-    boolean first = true;
+    List<String> params = new ArrayList<>();
     for (EventCategory cat : filters.getEventCategories()) {
       if (!cat.equals(excludedCat)) {
-        sb.append(first ? "?" : "&").append(PARAM_EVENT_CATEGORY).append(cat.name());
-        first = false;
+        params.add(PARAM_EVENT_CATEGORY + cat.name());
       }
     }
     if (includeFrom && filters.getFromDate() != null) {
-      sb.append(first ? "?" : "&").append(PARAM_FROM_DATE).append(filters.getFromDate());
-      first = false;
+      params.add(PARAM_FROM_DATE + filters.getFromDate());
     }
     if (includeTo && filters.getToDate() != null) {
-      sb.append(first ? "?" : "&").append(PARAM_TO_DATE).append(filters.getToDate());
-      first = false;
+      params.add(PARAM_TO_DATE + filters.getToDate());
     }
     if (includeDebt && filters.getDebtId() != null) {
-      sb.append(first ? "?" : "&").append(PARAM_DEBT_ID).append(filters.getDebtId());
+      params.add(PARAM_DEBT_ID + filters.getDebtId());
     }
-    return sb.toString();
+    if (params.isEmpty()) {
+      return baseUrl;
+    }
+    return baseUrl + "?" + String.join("&", params);
   }
 }

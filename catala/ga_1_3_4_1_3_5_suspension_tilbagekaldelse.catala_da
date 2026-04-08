@@ -1,0 +1,250 @@
+# G.A.1.3.4–1.3.5 — Suspension pga. datafejl og tilbagekaldelse af fordringer
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Juridisk grundlag: Gæld.bekendtg. § 4 (datafejl og suspension);
+                      Gæld.bekendtg. § 6 (tilbagekaldelse)
+   Formål: Formalisering af reglerne for suspension af en fordring, når PSRM
+           registrerer datafejl (G.A.1.3.4), samt reglerne for tilbagekaldelse
+           af en fordring fra inddrivelse af fordringshaveren (G.A.1.3.5).
+   Petition: P055 — Suspension pga. datafejl og tilbagekaldelse (G.A.1.3.4–1.3.5)
+   Status: CI-gated compliance artefakt
+
+   JURIDISK-USIKKERHED: Præcise stykke- og punkthenvisninger (§ 4 og § 6) er
+   baseret på G.A.1.3-sektionens placering i bekendtgørelsesstrukturen forud for
+   § 7 (opskrivning/nedskrivning). Referencerne skal verificeres mod den faktiske
+   Gæld.bekendtg.-tekst i G.A. snapshot v3.16 (2026-01-30), når petition055.md
+   er udarbejdet. Se petitions/program-status.yaml escalations for detaljer. *)
+
+---
+
+## Artikel: G.A.1.3.4 — Suspension pga. datafejl
+
+### Baggrund
+
+Ifølge G.A.1.3.4 (G.A. snapshot v3.16, 2026-01-30) skal en fordring under
+inddrivelse suspenderes, når PSRM-systemet registrerer en datafejl på fordringen.
+En datafejl opstår, når et obligatorisk felt mangler, eller når CVR- eller
+CPR-nummeret er ugyldigt. Alle inddrivelsesskridt blokeres, indtil fordringshaveren
+retter fejlen (Gæld.bekendtg. § 4).
+
+---
+
+## Enumeration — DatafejlType
+
+```catala
+declaration enumeration DatafejlType:
+  -- MANGLENDE_OBLIGATORISK_FELT
+  -- UGYLDIG_CVR
+  -- UGYLDIG_CPR
+  -- INGEN_FEJL
+```
+
+---
+
+## Omfangsdeklaration — DatafejlSuspension
+
+```catala
+declaration scope DatafejlSuspension:
+  context datafejlType content DatafejlType
+  context output erDatafejl content boolean
+  context output erSuspenderet content boolean
+  context output inddrivelsesBlokeret content boolean
+```
+
+---
+
+## § 4, nr. 1 — Gæld.bekendtg. § 4, nr. 1
+
+**Datafejl: manglende obligatorisk felt (FR-1.1a)**
+
+Er et obligatorisk felt i fordringens stamdata ikke udfyldt, anses fordringen
+for at have en datafejl, og den skal suspenderes (Gæld.bekendtg. § 4, nr. 1).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.1a: MANGLENDE_OBLIGATORISK_FELT — obligatorisk felt mangler
+  # Ankerpunkt: Gæld.bekendtg. § 4, nr. 1
+  # JURIDISK-USIKKERHED: § 4, nr. 1 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  rule erDatafejl
+    under condition datafejlType = MANGLENDE_OBLIGATORISK_FELT
+    consequence fulfilled
+```
+
+---
+
+## § 4, nr. 2 — Gæld.bekendtg. § 4, nr. 2
+
+**Datafejl: ugyldigt CVR-nummer (FR-1.1b)**
+
+Er fordringens CVR-nummer ugyldigt eller ikke-eksisterende, anses fordringen
+for at have en datafejl, og den skal suspenderes (Gæld.bekendtg. § 4, nr. 2).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.1b: UGYLDIG_CVR — ugyldigt CVR-nummer
+  # Ankerpunkt: Gæld.bekendtg. § 4, nr. 2
+  # JURIDISK-USIKKERHED: § 4, nr. 2 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  rule erDatafejl
+    under condition datafejlType = UGYLDIG_CVR
+    consequence fulfilled
+```
+
+---
+
+## § 4, nr. 3 — Gæld.bekendtg. § 4, nr. 3
+
+**Datafejl: ugyldigt CPR-nummer (FR-1.1c)**
+
+Er fordringens CPR-nummer ugyldigt eller ikke-eksisterende, anses fordringen
+for at have en datafejl, og den skal suspenderes (Gæld.bekendtg. § 4, nr. 3).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.1c: UGYLDIG_CPR — ugyldigt CPR-nummer
+  # Ankerpunkt: Gæld.bekendtg. § 4, nr. 3
+  # JURIDISK-USIKKERHED: § 4, nr. 3 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  rule erDatafejl
+    under condition datafejlType = UGYLDIG_CPR
+    consequence fulfilled
+```
+
+---
+
+## § 4 — Ingen datafejl (INGEN_FEJL)
+
+**Ingen datafejl registreret (FR-1.1d)**
+
+Foreligger ingen af de ovenfor angivne fejltyper, anses fordringen for at
+være datafejlfri, og suspension-flagget er ikke aktiveret (Gæld.bekendtg. § 4).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.1d: INGEN_FEJL — ingen datafejl; erDatafejl = false
+  # Ankerpunkt: Gæld.bekendtg. § 4
+  rule erDatafejl
+    under condition datafejlType = INGEN_FEJL
+    consequence not fulfilled
+```
+
+---
+
+## § 4 — Suspensionsregel (FR-1.2)
+
+**Suspension udløses af datafejl**
+
+Er fordringen registreret med en datafejl (erDatafejl = true), skal fordringen
+suspenderes — erSuspenderet sættes til true (Gæld.bekendtg. § 4).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.2: suspension udløses direkte af datafejl
+  # Ankerpunkt: Gæld.bekendtg. § 4
+  definition erSuspenderet equals erDatafejl
+```
+
+---
+
+## § 4 — Blokering af inddrivelsesskridt (FR-1.3)
+
+**Inddrivelsesblokering under suspension**
+
+Så længe fordringen er suspenderet (erSuspenderet = true), er alle
+inddrivelsesskridt blokeret — inddrivelsesBlokeret sættes til true.
+Blokaden ophører automatisk, når datafejlen er rettet og suspension ophæves
+(Gæld.bekendtg. § 4).
+
+```catala
+scope DatafejlSuspension:
+  # FR-1.3: inddrivelsesskridt blokeres under suspension
+  # Ankerpunkt: Gæld.bekendtg. § 4
+  definition inddrivelsesBlokeret equals erSuspenderet
+```
+
+---
+
+## Artikel: G.A.1.3.5 — Tilbagekaldelse af fordring
+
+### Baggrund
+
+Ifølge G.A.1.3.5 (G.A. snapshot v3.16, 2026-01-30) kan fordringshaveren til
+enhver tid tilbagekalde (recall) en fordring fra inddrivelse hos PSRM. En
+tilbagekaldelse medfører, at fordringens status sættes til TILBAGEKALDT, og at
+alle relaterede inddrivelsesdata arkiveres. Alle aktive inddrivelsesskridt
+blokeres permanent (Gæld.bekendtg. § 6).
+
+---
+
+## Omfangsdeklaration — TilbagekaldelseFordring
+
+```catala
+declaration scope TilbagekaldelseFordring:
+  context erTilbagekaldtAfFordringshaver content boolean
+  context output erTilbagekaldt content boolean
+  context output inddrivelsesAktivitetBlokeret content boolean
+  context output kravArkivering content boolean
+```
+
+---
+
+## § 6, stk. 1 — Gæld.bekendtg. § 6, stk. 1
+
+**Tilbagekaldelse udløst af fordringshaver (FR-2.1)**
+
+En fordring anses for tilbagekaldt, når fordringshaveren har anmodet PSRM om
+tilbagekaldelse. Det er en betingelse, at anmodningen stammer fra den
+fordringshaver, der har oversendt fordringen til inddrivelse
+(Gæld.bekendtg. § 6, stk. 1).
+
+```catala
+scope TilbagekaldelseFordring:
+  # FR-2.1: tilbagekaldelse — udløst af fordringshaver
+  # Ankerpunkt: Gæld.bekendtg. § 6, stk. 1
+  # JURIDISK-USIKKERHED: § 6, stk. 1 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  definition erTilbagekaldt equals erTilbagekaldtAfFordringshaver
+```
+
+---
+
+## § 6, stk. 2 — Gæld.bekendtg. § 6, stk. 2
+
+**Blokering af inddrivelsesaktivitet ved tilbagekaldelse (FR-2.2)**
+
+Er fordringen tilbagekaldt (erTilbagekaldt = true), blokeres alle aktive og
+fremtidige inddrivelsesaktiviteter permanent
+(Gæld.bekendtg. § 6, stk. 2).
+
+```catala
+scope TilbagekaldelseFordring:
+  # FR-2.2: inddrivelsesaktivitet blokeres permanent ved tilbagekaldelse
+  # Ankerpunkt: Gæld.bekendtg. § 6, stk. 2
+  # JURIDISK-USIKKERHED: § 6, stk. 2 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  definition inddrivelsesAktivitetBlokeret equals erTilbagekaldt
+```
+
+---
+
+## § 6, stk. 3 — Gæld.bekendtg. § 6, stk. 3
+
+**Arkiveringspligt for inddrivelsesdata ved tilbagekaldelse (FR-2.3)**
+
+Ved tilbagekaldelse (erTilbagekaldt = true) skal alle relaterede
+inddrivelsesdata arkiveres. Arkiveringspligten (kravArkivering) er opfyldt
+automatisk, når tilbagekaldelse er registreret
+(Gæld.bekendtg. § 6, stk. 3).
+
+```catala
+scope TilbagekaldelseFordring:
+  # FR-2.3: arkiveringspligt opstår ved tilbagekaldelse
+  # Ankerpunkt: Gæld.bekendtg. § 6, stk. 3
+  # JURIDISK-USIKKERHED: § 6, stk. 3 er en provisorisk reference — verificer mod G.A. snapshot v3.16
+  definition kravArkivering equals erTilbagekaldt
+```
+
+---
+
+(* Filende: ga_1_3_4_1_3_5_suspension_tilbagekaldelse.catala_da
+   G.A. snapshot v3.16, dated 2026-01-30
+   Dialect: catala_da
+   Scopes: DatafejlSuspension (G.A.1.3.4), TilbagekaldelseFordring (G.A.1.3.5)
+   FR coverage: FR-1.1a, FR-1.1b, FR-1.1c, FR-1.1d, FR-1.2, FR-1.3, FR-2.1, FR-2.2, FR-2.3 *)
