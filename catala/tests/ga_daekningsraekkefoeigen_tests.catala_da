@@ -1,5 +1,7 @@
 # Testfil — G.A.2.3.2.1 Dækningsrækkefølge Catala-testpakke
 
+> Include: ../ga_2_3_2_1_daekningsraekkefoeigen.catala_da
+
 (* Catala kildedialekt: catala_da
    G.A. snapshot v3.16, dated 2026-03-28
    Testpakke for: ga_2_3_2_1_daekningsraekkefoeigen.catala_da
@@ -16,8 +18,9 @@
    - FR-4.1 + FR-4.2: timingregel (DaekningTest9)
    - FR-5.1 + FR-5.2: opskrivningsfordring FIFO-arv (DaekningTest10)
 
-   Verificeringskommando:
-   catala test-doc catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
+   Verificeringskommando (typecheck):
+   catala typecheck --language en --no-stdlib \
+     catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
    Forventet exitkode: 0; alle tests rapporterer PASS. *)
 
 ---
@@ -29,11 +32,14 @@ GIL § 6a, stk. 1; GIL § 6a, stk. 12: Rimelige omkostninger er kategori 1 — d
 forud for alle øvrige fordringer. prioritetRang skal være 1.
 
 ```catala
-# Test: FR-1.1 RIMELIGE_OMKOSTNINGER → prioritetRang = 1
-# Ref: petition069 TC-1 / DaekningTest1
-scope Test DaekningTest1:
-  definition kategori equals RIMELIGE_OMKOSTNINGER
-  assertion prioritetRang = 1
+declaration scope DaekningTest1:
+  comp scope PrioritetKategoriRang
+
+scope DaekningTest1:
+  # Test: FR-1.1 RIMELIGE_OMKOSTNINGER → prioritetRang = 1
+  # Ref: petition069 TC-1 / DaekningTest1
+  definition comp.kategori equals RIMELIGE_OMKOSTNINGER
+  assertion comp.prioritetRang = 1
 ```
 
 ---
@@ -45,11 +51,14 @@ GIL § 10b; Lov nr. 288/2022 § 2, nr. 1: Bøder og tvangsbøder er kategori 2.
 prioritetRang skal være 2.
 
 ```catala
-# Test: FR-1.2 BOEDER_TVANGSBOEEDER_TILBAGEBETALING → prioritetRang = 2
-# Ref: petition069 TC-2 / DaekningTest2
-scope Test DaekningTest2:
-  definition kategori equals BOEDER_TVANGSBOEEDER_TILBAGEBETALING
-  assertion prioritetRang = 2
+declaration scope DaekningTest2:
+  comp scope PrioritetKategoriRang
+
+scope DaekningTest2:
+  # Test: FR-1.2 BOEDER_TVANGSBOEEDER_TILBAGEBETALING → prioritetRang = 2
+  # Ref: petition069 TC-2 / DaekningTest2
+  definition comp.kategori equals BOEDER_TVANGSBOEEDER_TILBAGEBETALING
+  assertion comp.prioritetRang = 2
 ```
 
 ---
@@ -61,12 +70,15 @@ GIL § 4, stk. 1, nr. 2: Privatretlige underholdsbidrag er kategori 3, ordning 1
 (dækkes forud for offentlige underholdsbidrag inden for kategori 3).
 
 ```catala
-# Test: FR-1.3 UNDERHOLDSBIDRAG_PRIVATRETLIG → prioritetRang = 3, underholdsbidragOrdning = 1
-# Ref: petition069 TC-3 / DaekningTest3
-scope Test DaekningTest3:
-  definition kategori equals UNDERHOLDSBIDRAG_PRIVATRETLIG
-  assertion prioritetRang = 3
-  assertion underholdsbidragOrdning = 1
+declaration scope DaekningTest3:
+  comp scope PrioritetKategoriRang
+
+scope DaekningTest3:
+  # Test: FR-1.3 UNDERHOLDSBIDRAG_PRIVATRETLIG → prioritetRang = 3, underholdsbidragOrdning = 1
+  # Ref: petition069 TC-3 / DaekningTest3
+  definition comp.kategori equals UNDERHOLDSBIDRAG_PRIVATRETLIG
+  assertion comp.prioritetRang = 3
+  assertion comp.underholdsbidragOrdning = 1
 ```
 
 ---
@@ -78,11 +90,14 @@ GIL § 4, stk. 1, nr. 3: Andre fordringer er kategori 4 (laveste prioritet).
 prioritetRang skal være 4.
 
 ```catala
-# Test: FR-1.4 ANDRE_FORDRINGER → prioritetRang = 4
-# Ref: petition069 TC-12 / DaekningTest11
-scope Test DaekningTest11:
-  definition kategori equals ANDRE_FORDRINGER
-  assertion prioritetRang = 4
+declaration scope DaekningTest11:
+  comp scope PrioritetKategoriRang
+
+scope DaekningTest11:
+  # Test: FR-1.4 ANDRE_FORDRINGER → prioritetRang = 4
+  # Ref: petition069 TC-12 / DaekningTest11
+  definition comp.kategori equals ANDRE_FORDRINGER
+  assertion comp.prioritetRang = 4
 ```
 
 ---
@@ -94,13 +109,16 @@ GIL § 4, stk. 2, 1. pkt.: Når harLegacyModtagelsesdato = false, bruges
 fordringens modtagelsesdato direkte som FIFO-sorteringsnøgle.
 
 ```catala
-# Test: FR-2.1 FIFO-grundregel — ingen legacy-dato
-# Ref: petition069 TC-5 / DaekningTest4
-scope Test DaekningTest4:
-  definition harLegacyModtagelsesdato equals false
-  definition modtagelsesdato equals |2024-01-15|
-  definition legacyModtagelsesdato equals |2024-01-15|
-  assertion fifoSortKey = |2024-01-15|
+declaration scope DaekningTest4:
+  comp scope FifoSortNøgle
+
+scope DaekningTest4:
+  # Test: FR-2.1 FIFO-grundregel — ingen legacy-dato
+  # Ref: petition069 TC-5 / DaekningTest4
+  definition comp.harLegacyModtagelsesdato equals false
+  definition comp.modtagelsesdato equals |2024-01-15|
+  definition comp.legacyModtagelsesdato equals |2024-01-15|
+  assertion comp.fifoSortKey = |2024-01-15|
 ```
 
 ---
@@ -112,13 +130,16 @@ GIL § 4, stk. 2, 5. pkt.: Når harLegacyModtagelsesdato = true og
 legacyModtagelsesdato < 2013-09-01, bruges legacyModtagelsesdato som FIFO-nøgle.
 
 ```catala
-# Test: FR-2.2 pre-2013 FIFO-undtagelse — legacyModtagelsesdato < 2013-09-01
-# Ref: petition069 TC-6 / DaekningTest5
-scope Test DaekningTest5:
-  definition harLegacyModtagelsesdato equals true
-  definition legacyModtagelsesdato equals |2012-08-15|
-  definition modtagelsesdato equals |2024-01-15|
-  assertion fifoSortKey = |2012-08-15|
+declaration scope DaekningTest5:
+  comp scope FifoSortNøgle
+
+scope DaekningTest5:
+  # Test: FR-2.2 pre-2013 FIFO-undtagelse — legacyModtagelsesdato < 2013-09-01
+  # Ref: petition069 TC-6 / DaekningTest5
+  definition comp.harLegacyModtagelsesdato equals true
+  definition comp.legacyModtagelsesdato equals |2012-08-15|
+  definition comp.modtagelsesdato equals |2024-01-15|
+  assertion comp.fifoSortKey = |2012-08-15|
 ```
 
 ---
@@ -129,12 +150,15 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest
 Gæld.bekendtg. § 4, stk. 3, pos. 1: Opkrævningsrenter er sub-position 1.
 
 ```catala
-# Test: FR-2.4 sub-position 1 OPKRAEVANINGSRENTER
-# Ref: petition069 TC-7 / DaekningTest6a
-scope Test DaekningTest6a:
-  definition komponent equals OPKRAEVANINGSRENTER
-  assertion subPositionRang = 1
-  assertion erRente = true
+declaration scope DaekningTest6a:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6a:
+  # Test: FR-2.4 sub-position 1 OPKRAEVANINGSRENTER
+  # Ref: petition069 TC-7 / DaekningTest6a
+  definition comp.komponent equals OPKRAEVANINGSRENTER
+  assertion comp.subPositionRang = 1
+  assertion comp.erRente = true
 ```
 
 ---
@@ -144,17 +168,20 @@ scope Test DaekningTest6a:
 Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest6b
 Gæld.bekendtg. § 9, stk. 3, 2./4. pkt.: Inddrivelsesrenter (fordringshaver) er sub-position 2.
 
-> Diskrepans: P057 bruger token INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 i Scenario FR-3.
-> Catala-koden bruger INDDRIVELSESRENTER_FORDRINGSHAVER jf. Gæld.bekendtg. § 9, stk. 3.
-> Se SPIKE-REPORT-069.md, afsnit Discrepancies.
+NOTE: Diskrepans: P057 bruger token INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 i Scenario FR-3.
+NOTE: Catala-koden bruger INDDRIVELSESRENTER_FORDRINGSHAVER jf. Gæld.bekendtg. § 9, stk. 3.
+NOTE: Se SPIKE-REPORT-069.md, afsnit Discrepancies.
 
 ```catala
-# Test: FR-2.4 sub-position 2 INDDRIVELSESRENTER_FORDRINGSHAVER
-# Ref: petition069 TC-7 / DaekningTest6b
-scope Test DaekningTest6b:
-  definition komponent equals INDDRIVELSESRENTER_FORDRINGSHAVER
-  assertion subPositionRang = 2
-  assertion erRente = true
+declaration scope DaekningTest6b:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6b:
+  # Test: FR-2.4 sub-position 2 INDDRIVELSESRENTER_FORDRINGSHAVER
+  # Ref: petition069 TC-7 / DaekningTest6b
+  definition comp.komponent equals INDDRIVELSESRENTER_FORDRINGSHAVER
+  assertion comp.subPositionRang = 2
+  assertion comp.erRente = true
 ```
 
 ---
@@ -165,12 +192,15 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest
 Gæld.bekendtg. § 8, stk. 3: Inddrivelsesrenter (før tilbageføersel) er sub-position 3.
 
 ```catala
-# Test: FR-2.4 sub-position 3 INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
-# Ref: petition069 TC-7 / DaekningTest6c
-scope Test DaekningTest6c:
-  definition komponent equals INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
-  assertion subPositionRang = 3
-  assertion erRente = true
+declaration scope DaekningTest6c:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6c:
+  # Test: FR-2.4 sub-position 3 INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
+  # Ref: petition069 TC-7 / DaekningTest6c
+  definition comp.komponent equals INDDRIVELSESRENTER_FOER_TILBAGEFOERSEL
+  assertion comp.subPositionRang = 3
+  assertion comp.erRente = true
 ```
 
 ---
@@ -181,12 +211,15 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest
 Gæld.bekendtg. § 9, stk. 1: Inddrivelsesrenter (stk. 1) er sub-position 4.
 
 ```catala
-# Test: FR-2.4 sub-position 4 INDDRIVELSESRENTER_STK1
-# Ref: petition069 TC-7 / DaekningTest6d
-scope Test DaekningTest6d:
-  definition komponent equals INDDRIVELSESRENTER_STK1
-  assertion subPositionRang = 4
-  assertion erRente = true
+declaration scope DaekningTest6d:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6d:
+  # Test: FR-2.4 sub-position 4 INDDRIVELSESRENTER_STK1
+  # Ref: petition069 TC-7 / DaekningTest6d
+  definition comp.komponent equals INDDRIVELSESRENTER_STK1
+  assertion comp.subPositionRang = 4
+  assertion comp.erRente = true
 ```
 
 ---
@@ -197,12 +230,15 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest
 Gæld.bekendtg. § 9, stk. 3, 1./3. pkt.: Øvrige renter (PSRM) er sub-position 5.
 
 ```catala
-# Test: FR-2.4 sub-position 5 OEVRIGE_RENTER_PSRM
-# Ref: petition069 TC-7 / DaekningTest6e
-scope Test DaekningTest6e:
-  definition komponent equals OEVRIGE_RENTER_PSRM
-  assertion subPositionRang = 5
-  assertion erRente = true
+declaration scope DaekningTest6e:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6e:
+  # Test: FR-2.4 sub-position 5 OEVRIGE_RENTER_PSRM
+  # Ref: petition069 TC-7 / DaekningTest6e
+  definition comp.komponent equals OEVRIGE_RENTER_PSRM
+  assertion comp.subPositionRang = 5
+  assertion comp.erRente = true
 ```
 
 ---
@@ -213,12 +249,15 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-7 / DaekningTest
 Gæld.bekendtg. § 4, stk. 3, pos. 6: Hovedfordringen er sub-position 6 og er IKKE et rentekrav.
 
 ```catala
-# Test: FR-2.4 sub-position 6 HOVEDFORDRING
-# Ref: petition069 TC-7 / DaekningTest6f
-scope Test DaekningTest6f:
-  definition komponent equals HOVEDFORDRING
-  assertion subPositionRang = 6
-  assertion erRente = false
+declaration scope DaekningTest6f:
+  comp scope RenteKomponentRang
+
+scope DaekningTest6f:
+  # Test: FR-2.4 sub-position 6 HOVEDFORDRING
+  # Ref: petition069 TC-7 / DaekningTest6f
+  definition comp.komponent equals HOVEDFORDRING
+  assertion comp.subPositionRang = 6
+  assertion comp.erRente = false
 ```
 
 ---
@@ -231,13 +270,16 @@ og GIL § 4, stk. 3 finder anvendelse (gaelderGIL4Stk3 = true).
 modtagerIndsatsDaekning skal derfor være true.
 
 ```catala
-# Test: FR-3.1 lønindeholdelse, indsats-fordring → modtagerIndsatsDaekning = true
-# Ref: petition069 TC-8 / DaekningTest7
-scope Test DaekningTest7:
-  definition inddrivelsesindsatsType equals LOENINDEHOLDELSE
-  definition fordringErIndsatsFordring equals true
-  assertion modtagerIndsatsDaekning = true
-  assertion gaelderGIL4Stk3 = true
+declaration scope DaekningTest7:
+  comp scope InddrivelsesindsatsAnvendelse
+
+scope DaekningTest7:
+  # Test: FR-3.1 lønindeholdelse, indsats-fordring → modtagerIndsatsDaekning = true
+  # Ref: petition069 TC-8 / DaekningTest7
+  definition comp.inddrivelsesindsatsType equals LOENINDEHOLDELSE
+  definition comp.fordringErIndsatsFordring equals true
+  assertion comp.modtagerIndsatsDaekning = true
+  assertion comp.gaelderGIL4Stk3 = true
 ```
 
 ---
@@ -249,13 +291,16 @@ Retsplejelovens § 507: Ved udlæg finder GIL § 4, stk. 3 IKKE anvendelse.
 gaelderGIL4Stk3 skal være false. udlaegSurplus skal være true (surplus forbliver hos udlægget).
 
 ```catala
-# Test: FR-3.4 udlæg-undtagelse — gaelderGIL4Stk3 = false, udlaegSurplus = true
-# Ref: petition069 TC-9 / DaekningTest8
-scope Test DaekningTest8:
-  definition inddrivelsesindsatsType equals UDLAEG
-  definition fordringErIndsatsFordring equals true
-  assertion gaelderGIL4Stk3 = false
-  assertion udlaegSurplus = true
+declaration scope DaekningTest8:
+  comp scope InddrivelsesindsatsAnvendelse
+
+scope DaekningTest8:
+  # Test: FR-3.4 udlæg-undtagelse — gaelderGIL4Stk3 = false, udlaegSurplus = true
+  # Ref: petition069 TC-9 / DaekningTest8
+  definition comp.inddrivelsesindsatsType equals UDLAEG
+  definition comp.fordringErIndsatsFordring equals true
+  assertion comp.gaelderGIL4Stk3 = false
+  assertion comp.udlaegSurplus = true
 ```
 
 ---
@@ -266,17 +311,20 @@ Ref: petition069-catala-spike-daekningsraekkefoeigen.feature TC-10 / DaekningTes
 GIL § 4, stk. 4, 1. pkt.: raekkefoelgeFastlagtVed = applikationstidspunkt (2025-01-10).
 GIL § 4, stk. 4, 2. pkt.: daekningVirkerFra = betalingstidspunkt (2025-01-09).
 
-> FLAG-D: Catala date type mangler tidspræcision. P057 Gherkin bruger ISO-8601 datetime
-> (f.eks. "2025-01-10T09:00:00Z"). Catala-koden bruger date. Se SPIKE-REPORT-069.md, N-1.
+NOTE: FLAG-D: Catala date type mangler tidspræcision. P057 Gherkin bruger ISO-8601 datetime
+NOTE: (f.eks. "2025-01-10T09:00:00Z"). Catala-koden bruger date. Se SPIKE-REPORT-069.md, N-1.
 
 ```catala
-# Test: FR-4.1 + FR-4.2 timingregel
-# Ref: petition069 TC-10 / DaekningTest9
-scope Test DaekningTest9:
-  definition applikationstidspunkt equals |2025-01-10|
-  definition betalingstidspunkt equals |2025-01-09|
-  assertion raekkefoelgeFastlagtVed = |2025-01-10|
-  assertion daekningVirkerFra = |2025-01-09|
+declaration scope DaekningTest9:
+  comp scope TimingRegel
+
+scope DaekningTest9:
+  # Test: FR-4.1 + FR-4.2 timingregel
+  # Ref: petition069 TC-10 / DaekningTest9
+  definition comp.applikationstidspunkt equals |2025-01-10|
+  definition comp.betalingstidspunkt equals |2025-01-09|
+  assertion comp.raekkefoelgeFastlagtVed = |2025-01-10|
+  assertion comp.daekningVirkerFra = |2025-01-09|
 ```
 
 ---
@@ -289,13 +337,16 @@ stamfordringens FIFO-nøgle (stamfordringFifoNoegle = |2024-01-10|).
 fifoSortKey skal være |2024-01-10| — IKKE egnModtagelsesdato (|2024-06-01|).
 
 ```catala
-# Test: FR-5.1 + FR-5.2 opskrivningsfordring arver stamfordringens FIFO-nøgle
-# Ref: petition069 TC-11 / DaekningTest10
-scope Test DaekningTest10:
-  definition erOpskrivningsfordring equals true
-  definition stamfordringFifoNoegle equals |2024-01-10|
-  definition egnModtagelsesdato equals |2024-06-01|
-  assertion fifoSortKey = |2024-01-10|
+declaration scope DaekningTest10:
+  comp scope OpskrivningFifoNøgle
+
+scope DaekningTest10:
+  # Test: FR-5.1 + FR-5.2 opskrivningsfordring arver stamfordringens FIFO-nøgle
+  # Ref: petition069 TC-11 / DaekningTest10
+  definition comp.erOpskrivningsfordring equals true
+  definition comp.stamfordringFifoNoegle equals |2024-01-10|
+  definition comp.egnModtagelsesdato equals |2024-06-01|
+  assertion comp.fifoSortKey = |2024-01-10|
 ```
 
 ---

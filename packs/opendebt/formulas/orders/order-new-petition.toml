@@ -1,0 +1,17 @@
+# Order: new-petition-scaffold
+#
+# Fires when a bead labelled "petition" AND "ready" appears in the store.
+# Automatically pours mol-petition-scaffold on the triggering bead.
+#
+# The backlog-planner agent applies this order after inspecting program-status.yaml
+# and creating petition beads for newly ready_for_implementation petitions.
+#
+# Required bead metadata:
+#   metadata.service        — target service (e.g. rules-engine)
+#   metadata.petition_path  — relative path to petition markdown
+#   metadata.catala_tier    — A, B, or C
+
+[[order]]
+name = "new-petition-scaffold"
+formula = "mol-petition-scaffold"
+gate = "bead_label:ready:petition"
