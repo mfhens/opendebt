@@ -89,7 +89,24 @@ Qualiware (BPMN 2.0)          Excel (gældstype-regler)
 
 **Vigtigt:** Ændringer i regler (Excel) eller processer (BPMN) kræver begge re-deploy af den respektive service, da de indlæses ved opstart. Der er ingen hot-reload i den nuværende arkitektur.
 
-## 4. Webtilgængelighed for alle UI-løsninger
+## 4. Finansielle transaktioner og hovedbog (ADR-0018)
+
+**Kilde:** Arkitekturbeslutning `architecture/adr/0018-double-entry-bookkeeping.md` (ændring #3, 2026-04-05).
+
+### Invariant
+
+Enhver ny funktionalitet der **flytter penge** eller **ændrer økonomisk stilling** (f.eks. betaling, modregning, rente, gebyr, udlæg, nedskrivning, refusion, korrektion) skal **bogføres i dobbelt bogholderi** i **payment-service** (`BookkeepingService`, `ledger_entries`), medmindre arkitekturen eksplicit undtages i en ADR.
+
+Tabeller i andre services (f.eks. rente-journal i debt-service) kan understøtte beregning og visning, men **erstatte ikke** hovedbogs-posteringer, hvor ADR-0018 gælder.
+
+### Processen ved ny udvikling
+
+1. **Spørgsmål i design/review:** *Hvor er posteringen til hovedbogen?* (eller: hvor er ADR-undtagelsen dokumenteret?)
+2. **Petition / løsningsarkitektur:** Beskriv ledger-påvirkning og integration (HTTP til payment-service, events, eller port til `ufst-bookkeeping-core`).
+3. **Kode:** Brug eksisterende bookkeeping-API’er; undgå at introducere nye «økonomiske sandheder» kun i en enkelt services database.
+4. **Teknisk gæld:** Se f.eks. TB-055 (wire af `LedgerServiceClient` fra debt-service) og TB-010 (balance-validering).
+
+## 5. Webtilgængelighed for alle UI-løsninger
 
 **Kilde:** Digitaliseringsstyrelsens vejledning om webtilgængelighed. Offentlige websteder og mobilapplikationer skal leve op til webtilgængelighedsloven og den harmoniserede standard **EN 301 549 v3.2.1**. For webprojekter bruges **WCAG 2.1 AA** som praktisk baseline, suppleret med øvrige relevante EN 301 549-krav.
 

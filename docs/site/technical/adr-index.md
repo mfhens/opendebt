@@ -19,7 +19,7 @@
 | 0015 | Drools rules engine | Drools for business rule evaluation |
 | 0016 | Flowable workflow engine | Flowable BPMN for case management workflows |
 | 0017 | Smooks EDIFACT CREMUL/DEBMUL | Smooks for parsing SKB payment files |
-| 0018 | Double-entry bookkeeping | Double-entry bookkeeping for all financial transactions |
+| 0018 | Double-entry bookkeeping | All financial effects post to payment-service ledger (amendment #3); local journals supplementary |
 | 0019 | Orchestration over event-driven | Prefer orchestration (REST calls) over async events |
 | 0020 | Creditor channel and master data | Channel binding and access resolution architecture |
 | 0021 | UI accessibility compliance | WCAG 2.1 AA and webtilgaengelighed.dk compliance |

@@ -93,7 +93,7 @@ declaration scope UdskydelsesBeregning:
   context kildesystem content KildesystemType
   context registreringsDato content date
   context inddrivelsesdato content date
-  context udskydelseDato content date
+  context output udskydelseDato content date
   context psrmUdskydelseDato content date
   context dmiUdskydelseDato content date
 ```
@@ -181,9 +181,9 @@ declaration scope ForaeldelseFristBeregning:
   context afbrydelseDato content date
   context retsgrundlag content RetsgrundlagType
   context erUdlaeg content boolean
-  context fristStartDato content date
-  context fristVarighed content integer
-  context nyFristUdloeber content date
+  context output fristStartDato content date
+  context output fristVarighed content integer
+  context output nyFristUdloeber content date
 ```
 
 ---
@@ -276,9 +276,26 @@ declaration scope AfbrydelseValidering:
   context retsgrundlag content RetsgrundlagType
   context inaktivSiden content date
   context harInaktivSiden content boolean
-  context afbrydelseResultat content AfbrydelseResultat
-  context nyAfbrydelseDato content date
-  context nyFristUdloeber content date
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyAfbrydelseDato content date
+  context output nyFristUdloeber content date
+```
+
+---
+
+## Sentinel-standarder — ingen ny fristdato for AFVIST-resultater
+
+For afbrydelsetyper der ikke medfører en ny forældelsesfrist (AFVIST_VARSEL_ALENE) fastsættes
+ingen ny dato. nyAfbrydelseDato og nyFristUdloeber sættes til sentinel-værdien |1970-01-01|.
+Disse sentinel-standarder fungerer som base for alle øvrige undtagelsesregler (A-1 til A-5).
+
+```catala
+scope AfbrydelseValidering:
+  # Sentinel defaults — ingen ny dato for AFVIST-resultater
+  label afbrydelse_dato_base
+  definition nyAfbrydelseDato equals |1970-01-01|
+  label frist_udloeber_base
+  definition nyFristUdloeber equals |1970-01-01|
 ```
 
 ---
@@ -301,11 +318,13 @@ scope AfbrydelseValidering:
       and kildesystem = PSRM
     consequence equals NY_FRIST_3_AAR
 
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
     consequence equals eventDate
 
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = BEROSTILLELSE
       and kildesystem = PSRM
@@ -361,13 +380,15 @@ scope AfbrydelseValidering:
       and afgoerelseRegistreret
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  label afbrydelse_dato_loend
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
     consequence equals underretningsDato
 
-  exception
+  label frist_loend_3
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and afgoerelseRegistreret
@@ -396,14 +417,14 @@ scope AfbrydelseValidering:
       and (eventDate - inaktivSiden) >= 365 day
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  exception afbrydelse_dato_loend
   definition nyAfbrydelseDato
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
       and (eventDate - inaktivSiden) >= 365 day
     consequence equals inaktivSiden
 
-  exception
+  exception frist_loend_3
   definition nyFristUdloeber
     under condition afbrydelseType = LOENINDEHOLDELSE_AFGOERELSE
       and harInaktivSiden
@@ -433,12 +454,12 @@ scope AfbrydelseValidering:
       and retsgrundlag = ORDINARY
     consequence equals NY_FRIST_3_AAR
 
-  exception
+  exception afbrydelse_dato_base
   definition nyAfbrydelseDato
     under condition afbrydelseType = UDLAEG
     consequence equals eventDate
 
-  exception
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = ORDINARY
@@ -452,7 +473,7 @@ scope AfbrydelseValidering:
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
     consequence equals NY_FRIST_10_AAR
 
-  exception
+  exception frist_udloeber_base
   definition nyFristUdloeber
     under condition afbrydelseType = UDLAEG
       and retsgrundlag = SAERLIGT_RETSGRUNDLAG
@@ -479,8 +500,8 @@ declaration scope Fordringskompleks:
   context antalMedlemmer content integer
   context sharedNyFrist content date
   context harAfbrydelse content boolean
-  context propagationFuldstaendig content boolean
-  context kompleksNyFristUdloeber content date
+  context output propagationFuldstaendig content boolean
+  context output kompleksNyFristUdloeber content date
 ```
 
 ---
@@ -573,8 +594,8 @@ declaration scope TillaegsfristBeregning:
   context eventDate content date
   context udskydelseDato content date
   context erTomt content boolean
-  context afbrydelseResultat content AfbrydelseResultat
-  context nyFristUdloeber content date
+  context output afbrydelseResultat content AfbrydelseResultat
+  context output nyFristUdloeber content date
 ```
 
 ---

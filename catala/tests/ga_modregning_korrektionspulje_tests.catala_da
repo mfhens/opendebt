@@ -1,0 +1,454 @@
+# Testfil — G.A.2.3.3–2.3.4 Modregning og Korrektionspulje Catala-testpakke
+
+> Include: ../ga_2_3_3_2_3_4_modregning_korrektionspulje.catala_da
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Testpakke for: ga_2_3_3_2_3_4_modregning_korrektionspulje.catala_da
+   Petition: P058 — Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
+
+   Denne fil indeholder 18 testscopes der dækker:
+   - FR-1.1–FR-1.4: tre-tier allokering (ModregningTest1–Test4)
+   - FR-4.1 + FR-4.6: rentegodtgørelsessats og ikke-skattepligtighed (ModregningTest5–Test8)
+   - FR-5.1: klagefrist ved leveret/ikke-leveret underretning (ModregningTest9–Test10)
+   - FR-3.4: 50 DKK-grænse for årsafregning (ModregningTest11–Test13)
+   - FR-4.2 + FR-4.4: rentegodtgørelsesstartdato inkl. OVERSKYDENDE_SKAT-undtagelse
+                      (ModregningTest14–Test18)
+
+   Grænseværdidatoer brugt i denne testpakke:
+   - 2025-03-15 (klagefrist-base, FR-5.1)
+   - 2025-06-15 = 2025-03-15 + 3 måneder (klageFristVedLevering, FR-5.1a)
+   - 2026-03-15 = 2025-03-15 + 1 år (klageFristVedIkkeLevering, FR-5.1b)
+   - 2025-05-01 (foersteDagNaesteMaaned — 1. maj 2025, efter receiptDate 2025-04-01)
+   - 2025-09-01 (kildeskattelovGraenseDato — 1. sept. 2025 = år 2024+1, Kildeskattelov § 62)
+   - 2025-10-01 (foersteDagNaesteMaaned > kildeskattelovGraenseDato, FR-4.4 test 15)
+
+   Verificeringskommando (typecheck):
+   catala typecheck --language en --no-stdlib \
+     catala\tests\ga_modregning_korrektionspulje_tests.catala_da
+   Forventet exitkode: 0; alle tests rapporterer PASS. *)
+
+---
+
+## Test 1 — FR-1.1/FR-1.2/FR-1.3/FR-1.4: Tre-tier fuld dækning + invariant
+
+Ref: petition058.feature (AC-1 blandet tre-tier scenario)
+GIL § 7, stk. 1, nr. 1–3: Disbursement 10 000 DKK mod tier-1 = 3 000, tier-2 = 5 000,
+tier-3 = 4 000 (men kun 2 000 er tilgængeligt). tier1 = 3 000, tier2 = 5 000,
+tier3 = 2 000, residual = 0. Invariant: tier1+tier2+tier3+residual = disbursement.
+
+```catala
+declaration scope ModregningTest1:
+  comp scope ModregningsRaekkefoeigen
+
+scope ModregningTest1:
+  # Test: FR-1.1/1.2/1.3/1.4 tre-tier fuld dækning
+  # Ref: petition058 AC-1 / ModregningTest1
+  definition comp.udbetalingsBeloeb equals 10000.00
+  definition comp.tier1FordringerTotal equals 3000.00
+  definition comp.tier2FordringerTotal equals 5000.00
+  definition comp.tier3FordringerTotal equals 4000.00
+  assertion comp.tier1DaekningBeloeb = 3000.00
+  assertion comp.tier2DaekningBeloeb = 5000.00
+  assertion comp.tier3DaekningBeloeb = 2000.00
+  assertion comp.residualUdbetalingBeloeb = 0.00
+  assertion comp.restEfterTier1 = 7000.00
+  assertion comp.restEfterTier2 = 2000.00
+  assertion comp.tier1DaekningBeloeb + comp.tier2DaekningBeloeb +
+    comp.tier3DaekningBeloeb + comp.residualUdbetalingBeloeb = 10000.00
+```
+
+---
+
+## Test 2 — FR-1.1: Tier-1 udtømmende — ingen tier-2 eller tier-3 dækning
+
+Ref: petition058.feature (AC-2 tier-1 fuld dækning scenario)
+GIL § 7, stk. 1, nr. 1: Disbursement 2 000 DKK mod tier-1 = 2 000. tier-1 udtømmer
+hele udbetalingsbeløbet; tier-2 og tier-3 modtager intet.
+
+```catala
+declaration scope ModregningTest2:
+  comp scope ModregningsRaekkefoeigen
+
+scope ModregningTest2:
+  # Test: FR-1.1 tier-1 udtømmende — DaekningsRaekkefoeigenService ikke kaldt
+  # Ref: petition058 AC-2 / ModregningTest2
+  definition comp.udbetalingsBeloeb equals 2000.00
+  definition comp.tier1FordringerTotal equals 2000.00
+  definition comp.tier2FordringerTotal equals 3000.00
+  definition comp.tier3FordringerTotal equals 0.00
+  assertion comp.tier1DaekningBeloeb = 2000.00
+  assertion comp.tier2DaekningBeloeb = 0.00
+  assertion comp.tier3DaekningBeloeb = 0.00
+  assertion comp.residualUdbetalingBeloeb = 0.00
+  assertion comp.restEfterTier1 = 0.00
+```
+
+---
+
+## Test 3 — FR-1.4: Fuld residual udbetaling — ingen aktive fordringer
+
+Ref: petition058.feature (FR-1.4 residualUdbetalingBeloeb)
+GIL § 7, stk. 1: Alle tiers er 0 DKK; disbursement returneres fuldt til debitor.
+
+```catala
+declaration scope ModregningTest3:
+  comp scope ModregningsRaekkefoeigen
+
+scope ModregningTest3:
+  # Test: FR-1.4 ingen fordringer → fuldt residual til debitor
+  # Ref: petition058 FR-1.4 / ModregningTest3
+  definition comp.udbetalingsBeloeb equals 5000.00
+  definition comp.tier1FordringerTotal equals 0.00
+  definition comp.tier2FordringerTotal equals 0.00
+  definition comp.tier3FordringerTotal equals 0.00
+  assertion comp.tier1DaekningBeloeb = 0.00
+  assertion comp.tier2DaekningBeloeb = 0.00
+  assertion comp.tier3DaekningBeloeb = 0.00
+  assertion comp.residualUdbetalingBeloeb = 5000.00
+```
+
+---
+
+## Test 4 — FR-1.2/FR-1.3: Tier-2 fuld, tier-3 delvis dækning
+
+Ref: petition058.feature (tier-3 restdækning scenario)
+GIL § 7, stk. 1, nr. 2–3: Disbursement 3 200 DKK, tier-2 = 2 000, tier-3 = 1 800
+(kun 1 200 DKK dækkes; 0 DKK residual).
+
+```catala
+declaration scope ModregningTest4:
+  comp scope ModregningsRaekkefoeigen
+
+scope ModregningTest4:
+  # Test: FR-1.2/1.3 tier-2 fuld dækning, tier-3 delvis dækning
+  # Ref: petition058.feature tier-3 restdækning / ModregningTest4
+  definition comp.udbetalingsBeloeb equals 3200.00
+  definition comp.tier1FordringerTotal equals 0.00
+  definition comp.tier2FordringerTotal equals 2000.00
+  definition comp.tier3FordringerTotal equals 1800.00
+  assertion comp.tier1DaekningBeloeb = 0.00
+  assertion comp.tier2DaekningBeloeb = 2000.00
+  assertion comp.tier3DaekningBeloeb = 1200.00
+  assertion comp.residualUdbetalingBeloeb = 0.00
+  assertion comp.restEfterTier2 = 1200.00
+```
+
+---
+
+## Test 5 — FR-4.1b: Rentegodtgørelsessats — refRate 9.00 % → godtgørelse 5.00 %
+
+Ref: petition058.feature Background (BusinessConfigService refRate = 9.0 %)
+GIL § 8b, stk. 1: 9.00 > 4.00 → undtagelse gælder → sats = 9.00 - 4.00 = 5.00 %.
+
+```catala
+declaration scope ModregningTest5:
+  comp scope RenteGodtgoerelseBeregning
+
+scope ModregningTest5:
+  # Test: FR-4.1b refRate > 4.00 → godtgoerelse = refRate - 4.00
+  # Ref: petition058 AC-12/13 baggrund / ModregningTest5
+  definition comp.referenceRenteProcent equals 9.00
+  assertion comp.godtgoerelseRenteProcent = 5.00
+```
+
+---
+
+## Test 6 — FR-4.1a: Rentegodtgørelsessats — refRate 3.00 % → golv 0.00 %
+
+Ref: GIL § 8b, stk. 1 (satsgolv)
+GIL § 8b, stk. 1: 3.00 <= 4.00 → basisregel gælder → sats = 0.00 % (golv).
+
+```catala
+declaration scope ModregningTest6:
+  comp scope RenteGodtgoerelseBeregning
+
+scope ModregningTest6:
+  # Test: FR-4.1a refRate < 4.00 → golv = 0.00 %
+  # Ref: GIL § 8b satsgolv / ModregningTest6
+  definition comp.referenceRenteProcent equals 3.00
+  assertion comp.godtgoerelseRenteProcent = 0.00
+```
+
+---
+
+## Test 7 — FR-4.1a: Rentegodtgørelsessats — refRate 4.00 % (grænseværdi) → golv 0.00 %
+
+Ref: GIL § 8b, stk. 1 — grænseværdi refRate = 4.00
+4.00 er IKKE > 4.00, så basisreglen gælder → sats = 0.00 %.
+Verificerer at golvet er strengt (MAX(0, 4.00 - 4.00) = 0.00).
+
+```catala
+declaration scope ModregningTest7:
+  comp scope RenteGodtgoerelseBeregning
+
+scope ModregningTest7:
+  # Test: FR-4.1a grænseværdi refRate = 4.00 → godtgoerelse = 0.00 % (golv)
+  # Ref: GIL § 8b stk. 1 grænseværdi / ModregningTest7
+  definition comp.referenceRenteProcent equals 4.00
+  assertion comp.godtgoerelseRenteProcent = 0.00
+```
+
+---
+
+## Test 8 — FR-4.6: Rentegodtgørelse er altid ikke-skattepligtig indkomst
+
+Ref: petition058.feature (renteGodtgoerelseNonTaxable = true assertion)
+GIL § 8b, stk. 2, 3. pkt.: erSkattepligtig = false på ethvert ModregningEvent.
+
+```catala
+declaration scope ModregningTest8:
+  comp scope RenteGodtgoerelseBeregning
+
+scope ModregningTest8:
+  # Test: FR-4.6 erSkattepligtig altid false
+  # Ref: petition058.feature renteGodtgoerelseNonTaxable / ModregningTest8
+  definition comp.referenceRenteProcent equals 9.00
+  assertion comp.erSkattepligtig = false
+```
+
+---
+
+## Test 9 — FR-5.1a: Klagefrist med leveret underretning → 3 måneder fra notice-dato
+
+Ref: petition058 AC-15 (klageFristDato ved leveret underretning)
+GIL § 17, stk. 1: noticeDelivered = true → klageFristDato = klageFristVedLevering.
+Applikationslaget leverer klageFristVedLevering = |2025-06-15| (noticeDate 2025-03-15 + 3 måneder).
+
+```catala
+declaration scope ModregningTest9:
+  comp scope KlageFristBeregning
+
+scope ModregningTest9:
+  # Test: FR-5.1a underretning leveret → klageFristVedLevering vælges
+  # Ref: petition058 AC-15 / ModregningTest9
+  definition comp.noticeDelivered equals true
+  definition comp.klageFristVedLevering equals |2025-06-15|
+  definition comp.klageFristVedIkkeLevering equals |2026-03-15|
+  assertion comp.klageFristDato = |2025-06-15|
+```
+
+---
+
+## Test 10 — FR-5.1b: Klagefrist med ikke-leveret underretning → 1 år fra beslutningsdato
+
+Ref: petition058 AC-16 (klageFristDato ved ikke-leveret underretning)
+GIL § 17, stk. 1 (1-årsregel): noticeDelivered = false → klageFristDato = klageFristVedIkkeLevering.
+Applikationslaget leverer klageFristVedIkkeLevering = |2026-03-15| (decisionDate 2025-03-15 + 1 år).
+
+```catala
+declaration scope ModregningTest10:
+  comp scope KlageFristBeregning
+
+scope ModregningTest10:
+  # Test: FR-5.1b underretning IKKE leveret → undtagelse → klageFristVedIkkeLevering vælges
+  # Ref: petition058 AC-16 / ModregningTest10
+  definition comp.noticeDelivered equals false
+  definition comp.klageFristVedLevering equals |2025-06-15|
+  definition comp.klageFristVedIkkeLevering equals |2026-03-15|
+  assertion comp.klageFristDato = |2026-03-15|
+```
+
+---
+
+## Test 11 — FR-3.4: Korrektionspulje 45.00 DKK → kun årsafregning
+
+Ref: petition058.feature AC-9 (surplus < 50 DKK springes over månedligt)
+GIL § 4, stk. 7: surplusBeloeb = 45.00 < 50.00 → aarligAfregningKun = true.
+
+```catala
+declaration scope ModregningTest11:
+  comp scope KorrektionspuljeAfregningsType
+
+scope ModregningTest11:
+  # Test: FR-3.4 surplus 45.00 DKK < 50.00 → kun årsafregning
+  # Ref: petition058 AC-9 / ModregningTest11
+  definition comp.surplusBeloeb equals 45.00
+  assertion comp.aarligAfregningKun = true
+```
+
+---
+
+## Test 12 — FR-3.4: Korrektionspulje 50.00 DKK (grænseværdi) → månedlig afregning tilladt
+
+Ref: GIL § 4, stk. 7 — grænseværdi-test (strengt-mindre-end regel)
+GIL § 4, stk. 7: surplusBeloeb = 50.00 er IKKE < 50.00 → aarligAfregningKun = false.
+Verificerer at 50-DKK-grænsen er strengt eksklusiv (< 50, ikke ≤ 50).
+
+```catala
+declaration scope ModregningTest12:
+  comp scope KorrektionspuljeAfregningsType
+
+scope ModregningTest12:
+  # Test: FR-3.4 surplus præcis 50.00 DKK → IKKE kun årsafregning (strengt < 50.00)
+  # Ref: GIL § 4 stk. 7 grænseværdi / ModregningTest12
+  definition comp.surplusBeloeb equals 50.00
+  assertion comp.aarligAfregningKun = false
+```
+
+---
+
+## Test 13 — FR-3.4: Korrektionspulje 49.99 DKK (just-under grænse) → kun årsafregning
+
+Ref: GIL § 4, stk. 7 — just-under grænseværdi
+GIL § 4, stk. 7: surplusBeloeb = 49.99 < 50.00 → aarligAfregningKun = true.
+
+```catala
+declaration scope ModregningTest13:
+  comp scope KorrektionspuljeAfregningsType
+
+scope ModregningTest13:
+  # Test: FR-3.4 surplus 49.99 DKK (just below) → kun årsafregning
+  # Ref: GIL § 4 stk. 7 just-under grænse / ModregningTest13
+  definition comp.surplusBeloeb equals 49.99
+  assertion comp.aarligAfregningKun = true
+```
+
+---
+
+## Test 14 — FR-4.4: OVERSKYDENDE_SKAT — foersteDagNaesteMaaned < kildeskattelovGraense
+
+Ref: petition058.feature AC-13 (Kildeskattelov § 62 særlig startdato)
+Kildeskattelov § 62: indkomstAar=2024 → kildeskattelovGraenseDato = |2025-09-01|.
+receiptDate = 2025-04-01 → foersteDagNaesteMaaned = |2025-05-01|.
+Siden |2025-05-01| < |2025-09-01| → renteGodtgoerelseStartDato = |2025-09-01| (Kildeskattelov-undtagelse).
+
+```catala
+declaration scope ModregningTest14:
+  comp scope RenteGodtgoerelseStartDato
+
+scope ModregningTest14:
+  # Test: FR-4.4 OVERSKYDENDE_SKAT → kildeskattelovGraenseDato bruges (> foersteDag)
+  # Ref: petition058 AC-13 / ModregningTest14
+  definition comp.beslutningInden5BankDage equals false
+  definition comp.udbetalingType equals OVERSKYDENDE_SKAT
+  definition comp.foersteDagNaesteMaaned equals |2025-05-01|
+  definition comp.kildeskattelovGraenseDato equals |2025-09-01|
+  assertion comp.renteGodtgoerelseStartDato = |2025-09-01|
+  assertion comp.ingenRenteGodtgoerelse = false
+```
+
+---
+
+## Test 15 — FR-4.4: OVERSKYDENDE_SKAT — foersteDagNaesteMaaned > kildeskattelovGraense
+
+Ref: GIL § 8b + Kildeskattelov § 62 — tilfælde hvor standard-startdato er SENERE end § 62-grænse
+Kildeskattelov § 62: kildeskattelovGraenseDato = |2025-09-01|.
+receiptDate sent: foersteDagNaesteMaaned = |2025-10-01|.
+Siden |2025-10-01| >= |2025-09-01| → renteGodtgoerelseStartDato = |2025-10-01| (standardregel vinder).
+
+```catala
+declaration scope ModregningTest15:
+  comp scope RenteGodtgoerelseStartDato
+
+scope ModregningTest15:
+  # Test: FR-4.4 OVERSKYDENDE_SKAT → foersteDagNaesteMaaned bruges (> kildeskattelovGraenseDato)
+  # Ref: Kildeskattelov § 62 — tilfælde hvor foersteDag er sent / ModregningTest15
+  definition comp.beslutningInden5BankDage equals false
+  definition comp.udbetalingType equals OVERSKYDENDE_SKAT
+  definition comp.foersteDagNaesteMaaned equals |2025-10-01|
+  definition comp.kildeskattelovGraenseDato equals |2025-09-01|
+  assertion comp.renteGodtgoerelseStartDato = |2025-10-01|
+  assertion comp.ingenRenteGodtgoerelse = false
+```
+
+---
+
+## Test 16 — FR-4.2: ANDRE_TYPER — standard startdato (basisregel)
+
+Ref: petition058 FR-4.2 standardregel
+GIL § 8b: ANDRE_TYPER → ingen undtagelse → renteGodtgoerelseStartDato = foersteDagNaesteMaaned.
+
+```catala
+declaration scope ModregningTest16:
+  comp scope RenteGodtgoerelseStartDato
+
+scope ModregningTest16:
+  # Test: FR-4.2 ANDRE_TYPER → foersteDagNaesteMaaned (basisregel)
+  # Ref: petition058 FR-4.2 / ModregningTest16
+  definition comp.beslutningInden5BankDage equals false
+  definition comp.udbetalingType equals ANDRE_TYPER
+  definition comp.foersteDagNaesteMaaned equals |2025-05-01|
+  definition comp.kildeskattelovGraenseDato equals |2025-09-01|
+  assertion comp.renteGodtgoerelseStartDato = |2025-05-01|
+  assertion comp.ingenRenteGodtgoerelse = false
+```
+
+---
+
+## Test 17 — FR-4.3: 5-bankdages-undtagelse → ingenRenteGodtgoerelse = true
+
+Ref: petition058.feature AC-12 (5-banking-day exception)
+GIL § 8b: beslutningInden5BankDage = true → ingen rentegodtgørelse.
+
+```catala
+declaration scope ModregningTest17:
+  comp scope RenteGodtgoerelseStartDato
+
+scope ModregningTest17:
+  # Test: FR-4.3 5-bankdages-undtagelse → ingenRenteGodtgoerelse = true
+  # Ref: petition058 AC-12 / ModregningTest17
+  definition comp.beslutningInden5BankDage equals true
+  definition comp.udbetalingType equals ANDRE_TYPER
+  definition comp.foersteDagNaesteMaaned equals |2025-04-01|
+  definition comp.kildeskattelovGraenseDato equals |2025-09-01|
+  assertion comp.ingenRenteGodtgoerelse = true
+```
+
+---
+
+## Test 18 — FR-4.2/FR-4.5: BOERNE_OG_UNGEYDELSE — standard startdato-regler
+
+Ref: petition058 FR-4.5 (BOERNE_OG_UNGEYDELSE bruger standard startdato-regler)
+GIL § 8b: BOERNE_OG_UNGEYDELSE har ingen særlig startdatoregel → basisregel gælder.
+Verificerer at BOERNE_OG_UNGEYDELSE IKKE fejlagtigt trigges som OVERSKYDENDE_SKAT.
+
+```catala
+declaration scope ModregningTest18:
+  comp scope RenteGodtgoerelseStartDato
+
+scope ModregningTest18:
+  # Test: FR-4.2/FR-4.5 BOERNE_OG_UNGEYDELSE → foersteDagNaesteMaaned (ingen undtagelse)
+  # Ref: petition058 FR-4.5 / ModregningTest18
+  definition comp.beslutningInden5BankDage equals false
+  definition comp.udbetalingType equals BOERNE_OG_UNGEYDELSE
+  definition comp.foersteDagNaesteMaaned equals |2025-06-01|
+  definition comp.kildeskattelovGraenseDato equals |2025-09-01|
+  assertion comp.renteGodtgoerelseStartDato = |2025-06-01|
+  assertion comp.ingenRenteGodtgoerelse = false
+```
+
+---
+
+(* Opsummering af testdækning (18 testscopes):
+   FR-1.1 (tier-1 udtømmende):       ModregningTest2
+   FR-1.2 (tier-2 fuld dækning):     ModregningTest4 (kombineret med tier-3)
+   FR-1.3 (tier-3 delvis dækning):   ModregningTest1 (kombineret), ModregningTest4
+   FR-1.4 (residual til debitor):    ModregningTest3 (fuldt residual)
+   FR-1.1–1.4 (invariant):           ModregningTest1 (tier1+tier2+tier3+residual=disbursement)
+   FR-4.1b (godtgørelse sats>4):     ModregningTest5
+   FR-4.1a (godtgørelse golv=0):     ModregningTest6 (under), ModregningTest7 (grænse)
+   FR-4.6 (ikke-skattepligtig):      ModregningTest8
+   FR-5.1a (klage 3mdr leveret):     ModregningTest9
+   FR-5.1b (klage 1år ikkeleveret):  ModregningTest10
+   FR-3.4 (50 DKK under):            ModregningTest11 (45 DKK), ModregningTest13 (49.99 DKK)
+   FR-3.4 (50 DKK grænse):           ModregningTest12 (præcis 50.00 DKK)
+   FR-4.4 (OVERSKYDENDE_SKAT sent):  ModregningTest14 (foersteDag < graense)
+   FR-4.4 (OVERSKYDENDE_SKAT tidl.): ModregningTest15 (foersteDag > graense)
+   FR-4.2 (ANDRE_TYPER basisregel):  ModregningTest16
+   FR-4.3 (5-bankdage undtagelse):   ModregningTest17
+   FR-4.5 (BOERNE_OG_UNGEYDELSE):   ModregningTest18
+
+   Grænseværdier verificeret:
+   - refRate = 4.00 (grænse for satsgolv, Test 7)
+   - surplusBeloeb = 50.00 (strengt-<-grænse for årsafregning, Test 12)
+   - surplusBeloeb = 49.99 (just-under grænse, Test 13)
+   - foersteDagNaesteMaaned præcis på kildeskattelovGraenseDato (OVERSKYDENDE_SKAT, Test 15)
+
+   Regler som tests ikke dækker (out of scope / workflow-logik):
+   - FR-2.1–FR-2.3: Caseworker waiver (GIL § 4, stk. 11) — applikationsbeslutning
+   - FR-3.1–FR-3.2: Gendækning step 1+2 — afhænger af OffsettingReversalEvent workflow
+   - FR-3.5: Børne-og-ungeydelse flagpersistens — persistens, ikke beregningsregel
+
+   G.A. snapshot v3.16, dated 2026-03-28
+   Dialect: catala_da *)

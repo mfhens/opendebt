@@ -27,6 +27,12 @@ $PgPort = 5432
 $PgUser = "opendebt"
 $PgPass = "opendebt"
 
+# AES-256 key for person-registry (Base64 of 32 bytes). Same default as docker-compose.yml — dev/local only.
+# Inherited by java child processes (person-registry reads ENCRYPTION_KEY via application.yml).
+if (-not $env:ENCRYPTION_KEY) {
+    $env:ENCRYPTION_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY="
+}
+
 $DockerInfraServices = @("postgres", "keycloak", "otel-collector", "tempo", "loki", "promtail", "prometheus", "grafana", "immudb")
 $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
@@ -279,8 +285,9 @@ Start-Service -Name "person-registry" `
     -JarPattern "opendebt-person-registry\target\opendebt-person-registry-*.jar" `
     -Profile $backendProfile -DbName "opendebt_person" `
     -ExtraArgs @{
-        "KEYCLOAK_ISSUER_URI" = $KeycloakIssuerUri
-        "KEYCLOAK_JWK_URI" = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        "KEYCLOAK_ISSUER_URI"     = $KeycloakIssuerUri
+        "KEYCLOAK_JWK_URI"        = "$KeycloakIssuerUri/protocol/openid-connect/certs"
+        "opendebt.encryption.key" = $env:ENCRYPTION_KEY
     }
 
 

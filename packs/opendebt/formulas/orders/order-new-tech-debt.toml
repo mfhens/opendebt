@@ -1,0 +1,15 @@
+# Order: new-tech-debt
+#
+# Fires when a bead labelled "tech-debt" AND "ready" appears in the store.
+# Automatically pours mol-tech-debt on the triggering bead.
+#
+# The backlog-planner agent applies this order after finding TB items
+# with status 'open' in program-status.yaml technical_backlog.
+#
+# Required bead metadata:
+#   metadata.tb_id  — the TB item ID (e.g. TB-002)
+
+[[order]]
+name = "new-tech-debt"
+formula = "mol-tech-debt"
+gate = "bead_label:ready:tech-debt"
