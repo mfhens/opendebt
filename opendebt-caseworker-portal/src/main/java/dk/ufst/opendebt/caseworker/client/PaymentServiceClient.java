@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import dk.ufst.opendebt.caseworker.dto.DaekningsraekkefoelgePositionDto;
 import dk.ufst.opendebt.caseworker.dto.PortalDebtEventDto;
 import dk.ufst.opendebt.caseworker.dto.PortalLedgerEntryDto;
 import dk.ufst.opendebt.caseworker.dto.PortalLedgerSummaryDto;
@@ -229,6 +230,56 @@ public class PaymentServiceClient {
       throw wcre;
     }
     log.warn("Circuit breaker fallback triggered for getDebtEventsByCase: {}", t.getMessage());
+    return List.of();
+  }
+
+  /** Retrieves the GIL § 4 payment application order for a debtor. Returns empty list on 404. */
+  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getDaekningsraekkefoelgeFallback")
+  @Retry(name = CIRCUIT_BREAKER_NAME)
+  public List<DaekningsraekkefoelgePositionDto> getDaekningsraekkefoelge(String debtorId) {
+    log.debug("Getting daekningsraekkefoelge for debtor: {}", debtorId);
+
+    return webClient
+        .get()
+        .uri("/payment-service/api/v1/debtors/{debtorId}/daekningsraekkefoelge", debtorId)
+        .retrieve()
+        .onStatus(
+            HttpStatusCode::is4xxClientError,
+            response ->
+                response
+                    .bodyToMono(String.class)
+                    .flatMap(
+                        body ->
+                            Mono.error(
+                                new OpenDebtException(
+                                    ERR_CLIENT_PREFIX + body, ERROR_CODE_CLIENT))))
+        .onStatus(
+            HttpStatusCode::is5xxServerError,
+            response ->
+                Mono.error(
+                    new OpenDebtException(
+                        ERR_SERVICE_UNAVAILABLE,
+                        ERROR_CODE_UNAVAILABLE,
+                        OpenDebtException.ErrorSeverity.CRITICAL)))
+        .bodyToMono(new ParameterizedTypeReference<List<DaekningsraekkefoelgePositionDto>>() {})
+        .block();
+  }
+
+  private List<DaekningsraekkefoelgePositionDto> getDaekningsraekkefoelgeFallback(
+      String debtorId, Throwable t) {
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().value() == 404) {
+      return List.of();
+    }
+    if (t
+            instanceof
+            org.springframework.web.reactive.function.client.WebClientResponseException wcre
+        && wcre.getStatusCode().is4xxClientError()) {
+      throw wcre;
+    }
+    log.warn("Circuit breaker fallback triggered for getDaekningsraekkefoelge: {}", t.getMessage());
     return List.of();
   }
 

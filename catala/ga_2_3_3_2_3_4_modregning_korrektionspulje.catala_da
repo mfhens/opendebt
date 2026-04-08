@@ -1,0 +1,428 @@
+# G.A.2.3.3–2.3.4 — Modregning og Korrektionspulje — GIL §§ 7, 8b, 4 stk. 5–11, 17
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-03-28
+   Juridisk grundlag: GIL §§ 4 stk. 5–11, 7 stk. 1–2, 8b, 9a, 17 stk. 1;
+                      Nemkonto § 16 stk. 1; Gæld.bekendtg. § 7 stk. 4;
+                      Kildeskattelov §§ 62, 62A; Lov om børne- og ungeydelse § 11 stk. 2
+   Formål: Formalisering af de juridiske beslutningsregler for modregning i
+           udbetalinger fra det offentlige (G.A.2.3.3) og korrektionspulje-
+           afregningstypen (G.A.2.3.4): tre-tier modregningsrækkefølge (GIL § 7),
+           rentegodtgørelse-startdato og -sats (GIL § 8b), klagefrist (GIL § 17),
+           og 50 DKK-grænse for årsafregning (GIL § 4, stk. 7).
+   Petition: P058 — Modregning fuld spec + korrektionspulje (G.A.2.3.3–2.3.4)
+   Status: CI-gated compliance artefakt
+
+   FLAG-A: Monetære beløb (DKK) er kodet som `decimal` da `money`-typens
+           møntnotation ($) ikke afspejler DKK-domænet. Dette er et bevidst valg
+           som dokumenteret for P057/P069 (SPIKE-REPORT-069.md FLAG-A).
+   FLAG-B: `3 month` bruges til 3-måneders klagefrist (GIL § 17, stk. 1). Catala
+           1.1.0 understøtter `month` som varighed. Hvis typecheck fejler i CI,
+           erstat med `91 day` og tilføj en JURIDISK-NOTE om kalenderafrunding.
+           KlageFristBeregning-scopen accepterer i stedet to forudberegnede
+           kandidatdatoer for at undgå månedspræcisionsproblemer — FLAG-B gælder
+           ikke for den nuværende implementering (se KlageFristBeregning nedenfor).
+   FLAG-C: `365 day` bruges for "1 år" (GIL § 17, stk. 1 1-årsregel) i overensstemmelse
+           med den eksisterende repo-konvention (ga_2_4_foraeldelse.catala_da). Dette er
+           præcist for ikke-skudår men kan afvige med ±1 dag i skudår.
+           KlageFristBeregning accepterer forudberegnede datoer — FLAG-C gælder ikke
+           for den nuværende implementering.
+   FLAG-D: `foersteDagNaesteMaaned` og `kildeskattelovGraenseDato` er kalender-
+           aritmetik der beregnes af applikationslaget (Java LocalDate.plusMonths,
+           withDayOfMonth) og leveres som input til RenteGodtgoerelseStartDato-scopen.
+           Dette svarer til P057's behandling af bankdagsberegning
+           (DanishBankingCalendar-service). *)
+
+---
+
+## Enumerationer — Juridisk grundlag: Nemkonto § 16, stk. 1; GIL § 4, stk. 7, nr. 3
+
+### ENUM-1: UdbetalingType — Nemkonto § 16, stk. 1
+
+Udbetaling fra det offentlige klassificeres efter type, da typen afgør særlige
+regler for rentegodtgørelsesstartdato (Kildeskattelov §§ 62/62A for overskydende skat)
+og boerneYdelseRestriction (Lov om børne- og ungeydelse § 11, stk. 2).
+
+```catala
+declaration enumeration UdbetalingType:
+  -- OVERSKYDENDE_SKAT
+  -- BOERNE_OG_UNGEYDELSE
+  -- ANDRE_TYPER
+```
+
+---
+
+## Artikel: G.A.2.3.3 — Modregning i udbetalinger fra det offentlige
+
+### Baggrund
+
+Ifølge G.A.2.3.3 (G.A. snapshot v3.16, 2026-03-28) pålægger GIL § 7, stk. 1
+RIM at anvende en modtaget offentlig udbetaling mod debitors udestående fordringer
+i en strengt fastsat tre-tier rækkefølge. Beløbet allokeres til tier-1-fordringer
+(opkrævning hos den udbetalende myndighed) forud for tier-2-fordringer (inddrivelse
+hos RIM, ved GIL § 4-rækkefølge via P057), som igen dækkes forud for tier-3-fordringer
+(andre fordringer under opkrævning i registreringsorden). Et restbeløb efter fuld
+dækning af alle tre tiers udbetales til debitor via Nemkonto.
+
+Dette Catala-program formaliserer de tre tiers allokerings-arithmetik i ét scope.
+
+---
+
+## GIL § 7, stk. 1, nr. 1–3 — Tre-tier modregningsrækkefølge
+
+**FR-1.1, FR-1.2, FR-1.3, FR-1.4: Allokering af udbetalingsbeløb**
+
+GIL § 7, stk. 1, nr. 1 prioriterer tier-1-fordringer (fordringer under opkrævning
+hos den udbetalende myndighed der er forhåndsregistreret hos RIM).
+GIL § 7, stk. 1, nr. 2 anvender residualbeløbet fra tier-1 på tier-2-fordringer
+(fordringer under inddrivelse hos RIM — P057-rækkefølgen gælder for delvis dækning).
+GIL § 7, stk. 1, nr. 3 anvender residualbeløbet fra tier-2 på tier-3-fordringer
+(andre fordringer under opkrævning i RIMs fordringregister, i registreringsorden).
+Overskydende beløb efter fuld dækning af alle tiers returneres til debitor.
+
+### Omfangsdeklaration — ModregningsRaekkefoeigen
+
+```catala
+declaration scope ModregningsRaekkefoeigen:
+  context udbetalingsBeloeb content decimal
+  context tier1FordringerTotal content decimal
+  context tier2FordringerTotal content decimal
+  context tier3FordringerTotal content decimal
+  context output tier1DaekningBeloeb content decimal
+  context output restEfterTier1 content decimal
+  context output tier2DaekningBeloeb content decimal
+  context output restEfterTier2 content decimal
+  context output tier3DaekningBeloeb content decimal
+  context output residualUdbetalingBeloeb content decimal
+```
+
+---
+
+## GIL § 7, stk. 1, nr. 1 — Tier-1: Fordringer under opkrævning hos den udbetalende myndighed
+
+**FR-1.1: Tier-1 fordringer dækkes forud for alle øvrige**
+
+Tier-1-fordringer (fordringer som den udbetalende myndighed har registreret hos RIM
+til forhåndsindeholdelse) dækkes fuldt ud inden noget beløb overføres til tier-2
+eller tier-3. Ankerpunkt: GIL § 7, stk. 1, nr. 1.
+
+```catala
+scope ModregningsRaekkefoeigen:
+  # FR-1.1: tier-1-dækning = min(udbetalingsBeloeb, tier1FordringerTotal)
+  # Ankerpunkt: GIL § 7, stk. 1, nr. 1
+  definition tier1DaekningBeloeb equals
+    if udbetalingsBeloeb >= tier1FordringerTotal
+    then tier1FordringerTotal
+    else udbetalingsBeloeb
+
+  # Mellemresultat: rest efter tier-1 (input til tier-2-beregning)
+  definition restEfterTier1 equals udbetalingsBeloeb - tier1DaekningBeloeb
+```
+
+---
+
+## GIL § 7, stk. 1, nr. 2 — Tier-2: Fordringer under inddrivelse hos RIM
+
+**FR-1.2: Residual fra tier-1 anvendes på tier-2-fordringer**
+
+Residualbeløbet efter tier-1-dækning anvendes på fordringer under inddrivelse hos
+RIM (tier-2). Ved fuld dækning dækkes hver fordring fuldt ud i GIL § 4-rækkefølgen
+(P057). Ved delvis dækning delegeres allokering til DaekningsRaekkefoeigenService
+(P057). Catala-scopen beregner det samlede tier-2-dækningsbeløb; P057 håndterer
+den interne fordeling. Ankerpunkt: GIL § 7, stk. 1, nr. 2; GIL § 7, stk. 2, 1. pkt.
+
+```catala
+scope ModregningsRaekkefoeigen:
+  # FR-1.2: tier-2-dækning = min(restEfterTier1, tier2FordringerTotal)
+  # Ankerpunkt: GIL § 7, stk. 1, nr. 2
+  definition tier2DaekningBeloeb equals
+    if restEfterTier1 >= tier2FordringerTotal
+    then tier2FordringerTotal
+    else restEfterTier1
+
+  # Mellemresultat: rest efter tier-2 (input til tier-3-beregning)
+  definition restEfterTier2 equals restEfterTier1 - tier2DaekningBeloeb
+```
+
+---
+
+## GIL § 7, stk. 1, nr. 3 — Tier-3: Andre fordringer under opkrævning
+
+**FR-1.3: Residual fra tier-2 anvendes på tier-3-fordringer i registreringsorden**
+
+Residualbeløbet efter tier-2-dækning anvendes på andre fordringer under opkrævning
+der er registreret i RIMs fordringregister, i ascending registreringsdato-orden.
+Kun fordringer eksplicit registreret i RIMs fordringregister er berettigede.
+Catala-scopen beregner det samlede tier-3-dækningsbeløb; applikationslaget
+håndterer FIFO-sorteringen inden for tier-3. Ankerpunkt: GIL § 7, stk. 1, nr. 3.
+
+**FR-1.4: Residual efter alle tiers udbetales til debitor**
+
+Beløb der overstiger samtlige aktive fordringers tilgodehavender returneres til
+debitor via Nemkonto. Ankerpunkt: GIL § 7, stk. 1 (restbeløb-princip).
+
+```catala
+scope ModregningsRaekkefoeigen:
+  # FR-1.3: tier-3-dækning = min(restEfterTier2, tier3FordringerTotal)
+  # Ankerpunkt: GIL § 7, stk. 1, nr. 3
+  definition tier3DaekningBeloeb equals
+    if restEfterTier2 >= tier3FordringerTotal
+    then tier3FordringerTotal
+    else restEfterTier2
+
+  # FR-1.4: residual udbetales til debitor via Nemkonto
+  # Ankerpunkt: GIL § 7, stk. 1 (restbeløb-princip)
+  definition residualUdbetalingBeloeb equals restEfterTier2 - tier3DaekningBeloeb
+```
+
+---
+
+## Artikel: G.A.2.3.3 — Rentegodtgørelse (GIL § 8b)
+
+### Baggrund
+
+GIL § 8b forpligter RIM til at yde rentegodtgørelse til debitor for perioden fra
+modtagelsen af udbetalingsbeløbet til modregningsbeslutningen træffes. Satsen er
+referencerenten fra rentelov § 5, stk. 1+2 minus 4 procentpoint (med golv ved 0 %).
+Rentegodtgørelse er ikke skattepligtig indkomst (GIL § 8b, stk. 2, 3. pkt.).
+5-bankdages-undtagelsen: Træffes beslutningen inden 5 bankdage efter modtagelse,
+bortfalder rentegodtgørelsesgrunden. Kildeskattelov § 62/62A: For overskydende skat
+starter rentegodtgørelse tidligst 1. september i året efter indkomståret.
+
+---
+
+## GIL § 8b, stk. 1 — Rentegodtgørelsessats
+
+**FR-4.1: Sats = referencerente − 4 procentpoint (golv ved 0 %)**
+
+Rentegodtgørelsessatsen beregnes som den halvårligt offentliggjorte referencerente
+(rentelov § 5, stk. 1+2) minus 4 procentpoint. Satsen kan ikke blive negativ.
+Ankerpunkt: GIL § 8b, stk. 1.
+
+**FR-4.6: Rentegodtgørelse er aldrig skattepligtig indkomst**
+
+`erSkattepligtig = false` på ethvert ModregningEvent.
+Ankerpunkt: GIL § 8b, stk. 2, 3. pkt.
+
+### Omfangsdeklaration — RenteGodtgoerelseBeregning
+
+```catala
+declaration scope RenteGodtgoerelseBeregning:
+  context referenceRenteProcent content decimal
+  context output godtgoerelseRenteProcent content decimal
+  context output erSkattepligtig content boolean
+```
+
+---
+
+## GIL § 8b, stk. 1 — Satsformel og ikke-skattepligtighed
+
+**FR-4.1 og FR-4.6: Beregning af godtgørelsessats**
+
+Grundreglen (bund ved 0.00 %) gælder, når referencerenten er ≤ 4.00 procentpoint;
+satsen er da 0.00. Undtagelsen gælder, når referencerenten er > 4.00 procentpoint,
+og satsen er da referencerente minus 4.00. Ankerpunkt: GIL § 8b, stk. 1.
+
+```catala
+scope RenteGodtgoerelseBeregning:
+  # FR-4.1a: basisregel — satsgolv ved 0.00 % (refRate <= 4.00)
+  # Ankerpunkt: GIL § 8b, stk. 1
+  definition godtgoerelseRenteProcent equals 0.00
+
+  # FR-4.1b: undtagelse — refRate > 4.00 → sats = refRate - 4.00
+  # Ankerpunkt: GIL § 8b, stk. 1
+  exception
+  definition godtgoerelseRenteProcent
+    under condition referenceRenteProcent > 4.00
+    consequence equals referenceRenteProcent - 4.00
+
+  # FR-4.6: rentegodtgørelse er altid ikke-skattepligtig indkomst
+  # Ankerpunkt: GIL § 8b, stk. 2, 3. pkt.
+  definition erSkattepligtig equals false
+```
+
+---
+
+## GIL § 8b — Rentegodtgørelsesstartdato
+
+**FR-4.2, FR-4.3, FR-4.4: Startdato for rentegodtgørelse**
+
+Grundregel (FR-4.2): Rentegodtgørelse starter fra den 1. i måneden efter modtagelsesdatoen.
+5-bankdages-undtagelse (FR-4.3): Træffes modregningsbeslutningen inden 5 bankdage
+efter modtagelsesdatoen, bortfalder rentegodtgørelsesgrunden (ingenRenteGodtgoerelse = true).
+Kildeskattelov-undtagelse (FR-4.4): For `paymentType = OVERSKYDENDE_SKAT` starter
+rentegodtgørelse ikke før den 1. september i året efter indkomståret (Kildeskattelov § 62, § 62A).
+
+Kalenderaritmetik (foersteDagNaesteMaaned og kildeskattelovGraenseDato) beregnes af
+applikationslaget (Java LocalDate) og leveres som input til dette scope, jf. FLAG-D.
+
+### Omfangsdeklaration — RenteGodtgoerelseStartDato
+
+```catala
+declaration scope RenteGodtgoerelseStartDato:
+  context beslutningInden5BankDage content boolean
+  context foersteDagNaesteMaaned content date
+  context udbetalingType content UdbetalingType
+  context kildeskattelovGraenseDato content date
+  context output ingenRenteGodtgoerelse content boolean
+  context output renteGodtgoerelseStartDato content date
+```
+
+---
+
+## GIL § 8b — Betingelser for startdato og 5-bankdages-undtagelse
+
+**FR-4.2, FR-4.3, FR-4.4: Regler for rentegodtgørelsesstartdato**
+
+Grundregel: Startdato = den 1. i måneden efter modtagelsesdatoen (foersteDagNaesteMaaned).
+Undtagelse OVERSKYDENDE_SKAT: Startdatoen er det seneste af foersteDagNaesteMaaned og
+kildeskattelovGraenseDato (1. september i indkomstår+1), jf. Kildeskattelov § 62/62A.
+5-bankdages-flag: Hvis beslutning træffes inden 5 bankdage, sættes
+ingenRenteGodtgoerelse = true; startdatoen beregnes fortsat men ignoreres af
+applikationslaget, når flaget er sat.
+
+```catala
+scope RenteGodtgoerelseStartDato:
+  # FR-4.3: 5-bankdages-undtagelse — modregning inden 5 bankdage → ingen rentegodtgørelse
+  # Ankerpunkt: GIL § 8b (implicit — 5-bankdages-undtagelse)
+  definition ingenRenteGodtgoerelse equals beslutningInden5BankDage
+
+  # FR-4.2: basisregel — startdato = 1. dag i måneden efter modtagelsesdatoen
+  # Ankerpunkt: GIL § 8b
+  definition renteGodtgoerelseStartDato equals foersteDagNaesteMaaned
+
+  # FR-4.4: undtagelse — OVERSKYDENDE_SKAT → startdato tidligst 1. sept. i år efter indkomstår
+  # Ankerpunkt: Kildeskattelov § 62; Kildeskattelov § 62A
+  exception
+  definition renteGodtgoerelseStartDato
+    under condition udbetalingType = OVERSKYDENDE_SKAT
+    consequence equals
+      if foersteDagNaesteMaaned >= kildeskattelovGraenseDato
+      then foersteDagNaesteMaaned
+      else kildeskattelovGraenseDato
+```
+
+---
+
+## Artikel: G.A.2.3.3 — Klagefrist (GIL § 17, stk. 1)
+
+### Baggrund
+
+Ifølge GIL § 17, stk. 1 har debitor ret til at klage over en modregningsbeslutning
+inden for en lovbestemt frist: 3 måneder fra underretningsdatoen (noticeDeliveryDate),
+eller — hvis underretning ikke kunne leveres — 1 år fra beslutningsdatoen. Fristen
+beregnes og registreres på ModregningEvent.klageFristDato.
+
+Kalenderaritmetik (klageFristVedLevering og klageFristVedIkkeLevering) beregnes af
+applikationslaget (Java LocalDate.plusMonths(3) og plusYears(1)) og leveres som input,
+jf. FLAG-D.
+
+---
+
+## GIL § 17, stk. 1 — Klagefristberegning
+
+**FR-5.1: Klagefrist**
+
+Basisregel: Underretning leveret → klagefrist = 3 måneder fra noticeDeliveryDate.
+Undtagelse: Underretning ikke leveret → klagefrist = 1 år fra decisionDate.
+Ankerpunkt: GIL § 17, stk. 1.
+
+### Omfangsdeklaration — KlageFristBeregning
+
+```catala
+declaration scope KlageFristBeregning:
+  context noticeDelivered content boolean
+  context klageFristVedLevering content date
+  context klageFristVedIkkeLevering content date
+  context output klageFristDato content date
+```
+
+---
+
+## GIL § 17, stk. 1 — Valg af klagefristdato
+
+**FR-5.1a og FR-5.1b: Betinget valg af klagefristdato**
+
+Grundregel: Underretning leveret → klageFristDato = klageFristVedLevering
+(3 måneder fra noticeDeliveryDate, beregnet af applikationslaget).
+Undtagelse: Underretning ikke leveret → klageFristDato = klageFristVedIkkeLevering
+(1 år fra decisionDate, beregnet af applikationslaget).
+
+```catala
+scope KlageFristBeregning:
+  # FR-5.1a: basisregel — underretning leveret → klagefrist = 3 måneder fra underretningsdato
+  # Ankerpunkt: GIL § 17, stk. 1
+  definition klageFristDato equals klageFristVedLevering
+
+  # FR-5.1b: undtagelse — underretning ikke leveret → klagefrist = 1 år fra beslutningsdato
+  # Ankerpunkt: GIL § 17, stk. 1 (1-årsregel)
+  exception
+  definition klageFristDato
+    under condition not noticeDelivered
+    consequence equals klageFristVedIkkeLevering
+```
+
+---
+
+## Artikel: G.A.2.3.4 — Korrektionspulje afregningstype (GIL § 4, stk. 7)
+
+### Baggrund
+
+Ifølge G.A.2.3.4 og GIL § 4, stk. 7 skal en KorrektionspuljeEntry afregnes månedligt,
+medmindre beløbet er under 50 DKK — i så fald afregnes den kun ved årsafregningen.
+Denne 50 DKK-grænse er et lovfastsat tærskelkriterie.
+
+---
+
+## GIL § 4, stk. 7 — Korrektionspulje 50 DKK-grænse
+
+**FR-3.4: Månedlig vs. årsafregning**
+
+Hvis surplusBeloeb < 50.00 DKK (strengt mindre end), markeres puljepositionen
+til kun årsafregning (aarligAfregningKun = true) og springes over i månedlige
+afregningskørsler. Ankerpunkt: GIL § 4, stk. 7.
+
+### Omfangsdeklaration — KorrektionspuljeAfregningsType
+
+```catala
+declaration scope KorrektionspuljeAfregningsType:
+  context surplusBeloeb content decimal
+  context output aarligAfregningKun content boolean
+```
+
+---
+
+## GIL § 4, stk. 7 — Afregningstype baseret på surplus-tærskel
+
+**FR-3.4: 50 DKK-tærskelregel**
+
+```catala
+scope KorrektionspuljeAfregningsType:
+  # FR-3.4: surplusBeloeb < 50.00 DKK → kun årsafregning
+  # Ankerpunkt: GIL § 4, stk. 7
+  definition aarligAfregningKun equals surplusBeloeb < 50.00
+```
+
+---
+
+(* Oversigt over scopes og juridiske ankerpunkter:
+   Scope 1: ModregningsRaekkefoeigen — GIL § 7, stk. 1, nr. 1–3
+            (tre-tier allokering af udbetalingsbeløb)
+   Scope 2: RenteGodtgoerelseBeregning — GIL § 8b, stk. 1; GIL § 8b, stk. 2, 3. pkt.
+            (satsmaksimering og ikke-skattepligtighed)
+   Scope 3: RenteGodtgoerelseStartDato — GIL § 8b; Kildeskattelov §§ 62, 62A
+            (startdato med OVERSKYDENDE_SKAT-undtagelse og 5-bankdages-flag)
+   Scope 4: KlageFristBeregning — GIL § 17, stk. 1
+            (valg af klagefristdato baseret på underretningsstatus)
+   Scope 5: KorrektionspuljeAfregningsType — GIL § 4, stk. 7
+            (50 DKK-grænse for månedlig vs. årsafregning)
+
+   Regler der IKKE er modelleret i Catala (workflow-logik / applikationslag):
+   - GIL § 4, stk. 11: RIM-fravalg af tier-2 (caseworker-beslutning, ikke beregningsregel)
+   - GIL § 4, stk. 5–6: Gendækning og opt-out-betingelser (afhænger af OffsettingReversalEvent)
+   - GIL § 9a: Digital Post-underretningspligt (teknisk notifikation, ikke beregningsregel)
+   - Nemkonto § 16, stk. 1: Interceptionshjemmel (systemintegration)
+   - GIL § 4, stk. 9: DMI-pulje-routing (flag alene, ingen beregningstrin)
+
+   G.A. snapshot v3.16, dated 2026-03-28
+   Dialect: catala_da *)

@@ -7,9 +7,7 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.CurrentTimestamp;
-import org.hibernate.annotations.SourceType;
-import org.hibernate.generator.EventType;
+import dk.ufst.opendebt.common.audit.AuditableEntity;
 
 import lombok.*;
 
@@ -30,7 +28,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DebtEntity {
+public class DebtEntity extends AuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -138,6 +136,42 @@ public class DebtEntity {
   @Column(name = "p_number", length = 20)
   private String pNumber;
 
+  // --- P057 / TB-040: PSRM dækningsrækkefølge fields ---
+
+  /**
+   * Application order within a debtor's portfolio for dækningsrækkefølge (P057). Null means not yet
+   * assigned; ordering falls back to receivedAt for FIFO tie-breaking.
+   */
+  @Column(name = "sekvens_nummer")
+  private Integer sekvensNummer;
+
+  /** GIL legal paragraph, e.g. {@code "GIL § 4, stk. 1"}. */
+  @Column(name = "gil_paragraf", length = 100)
+  private String gilParagraf;
+
+  /** Opkrævningsrenter component (STK2 rate) stored at claim receipt time. */
+  @Column(name = "beloeb_opkraevningsrenter", precision = 15, scale = 2)
+  private BigDecimal beloebOpkraevningsrenter;
+
+  /**
+   * Inddrivelsesrenter – fordringshaver component. Previously referred to as _STK3; renamed per GIL
+   * terminology alignment (TB-040).
+   */
+  @Column(name = "beloeb_inddrivelsesrenter_fordringshaver", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterFordringshaver;
+
+  /** Inddrivelsesrenter accrued before any reversal / tilbageføring. */
+  @Column(name = "beloeb_inddrivelsesrenter_foer_tilbagefoersel", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterFoerTilbagefoersel;
+
+  /** Inddrivelsesrenter – stk. 1 component. */
+  @Column(name = "beloeb_inddrivelsesrenter_stk1", precision = 15, scale = 2)
+  private BigDecimal beloebInddrivelsesrenterStk1;
+
+  /** Øvrige renter from PSRM legacy system (carried over on migration). */
+  @Column(name = "beloeb_oevrige_renter_psrm", precision = 15, scale = 2)
+  private BigDecimal beloebOevrigeRenterPsrm;
+
   /**
    * When true, this fordring is temporarily ikkeinddrivelsesparat (e.g., pending stamdata
    * correction) and must be excluded from interest accrual (P043 / G.A.2.4.3).
@@ -149,6 +183,10 @@ public class DebtEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "lifecycle_state", length = 20)
   private ClaimLifecycleState lifecycleState;
+
+  /** Modregning tier (1=paying authority, 2=RIM inddrivelse, 3=other). Null if not assigned. */
+  @Column(name = "modregning_tier")
+  private Integer modregningTier;
 
   @Column(name = "received_at")
   private LocalDateTime receivedAt;
@@ -170,18 +208,8 @@ public class DebtEntity {
   @Column(name = "readiness_validated_by", length = 100)
   private String readinessValidatedBy;
 
-  @CurrentTimestamp(event = EventType.INSERT, source = SourceType.VM)
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private LocalDateTime createdAt;
-
-  @CurrentTimestamp(source = SourceType.VM)
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
-
-  @Column(name = "created_by", length = 100)
-  private String createdBy;
-
-  @Version private Long version;
+  // Audit fields inherited from AuditableEntity (createdAt, updatedAt, createdBy, updatedBy,
+  // version)
 
   public enum DebtStatus {
     PENDING,

@@ -24,12 +24,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Seeds demo crossing-transaction data for the caseworker portal. Activated only with the "dev"
- * Spring profile. Seeding is idempotent — if data already exists for Debt A it is skipped.
+ * Seeds demo crossing-transaction data for the caseworker portal. Activated for all local dev
+ * profiles (dev, local, demo, demo-auth). Seeding is idempotent — if data already exists for Debt A
+ * it is skipped.
  */
 @Slf4j
 @Component
-@Profile("dev")
+@Profile("dev | local | demo | demo-auth")
 @RequiredArgsConstructor
 public class DemoDataSeeder implements ApplicationRunner {
 

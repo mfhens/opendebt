@@ -20,6 +20,29 @@ En nedskrivning reducerer fordringens hovedstol. Det kan f.eks. skyldes:
 - Korrektion af det oprindelige beløb
 - Aftalt eftergivelse
 
+### Årsagskode for nedskrivning
+
+Når du foretager en nedskrivning i portalen, skal du vælge én af følgende årsagskoder:
+
+| Kode | Dansk betegnelse | Hvornår bruges den? |
+|------|-----------------|---------------------|
+| `NED_INDBETALING` | Indbetaling modtaget direkte | Skyldneren har betalt direkte til fordringshaveren, og beløbet skal fratrækkes fordringen. |
+| `NED_FEJL_OVERSENDELSE` | Fejl ved oversendelse | Fordringen er oversendt med et forkert beløb, og der korrigeres for oversendelsesfejlen. |
+| `NED_GRUNDLAG_AENDRET` | Grundlag ændret | Det juridiske eller faktiske grundlag for fordringen er ændret, f.eks. ved klagenævnsafgørelse. |
+
+Årsagskoderne er fastsat i gæld.bekendtg. § 7 stk. 2. Valget er obligatorisk — nedskrivning kan ikke indsendes uden en årsagskode.
+
+!!! note "RIM-interne koder ikke tilgængelige"
+    Koderne DINDB, OMPL og AFSK er interne RIM-koder (G.A.2.3.4.4) og kan ikke vælges i fordringshaverportalen. De håndteres udelukkende af PSRM/RIM internt.
+
+### Tilbagedateret nedskrivning
+
+Hvis du angiver en virkningsdato der ligger før dags dato, viser portalen automatisk en vejledning om, at nedskrivningen er tilbagedateret. En tilbagedateret nedskrivning kan påvirke allerede beregnede inddrivelsesrenter og posteringer.
+
+### Tværgående indefrysningsadvisering
+
+Når nedskrivningen er godkendt og kvitteringssiden vises, kan der fremgå en advisering om, at nedskrivningen har udløst en indefrysning i et andet system (GIL § 18 k). Adviseringen vises kun, når debt-service returnerer `crossSystemRetroactiveApplies = true` i kvitteringssvaret.
+
 ## Tilbagekald
 
 Fordringshaveren kan tilbagekalde en fordring der er under inddrivelse. Ved tilbagekald skal der angives en årsagskode:

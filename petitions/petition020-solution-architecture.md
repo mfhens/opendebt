@@ -710,7 +710,7 @@ graph LR
 | T2.6 | 2 pts | PII audit: verify no PII in traces, logs, or metrics |
 | T2.7 | 3 pts | Performance validation: measure p99 latency with/without tracing |
 | T2.8 | 2 pts | Update ConfigMap with OTEL_EXPORTER_OTLP_ENDPOINT |
-| T2.9 | 1 pt | Update docs/architecture-overview.md with observability section |
+| T2.9 | 1 pt | Update architecture/overview.md with observability section |
 
 ### Sprint 3: Polish + Acceptance
 

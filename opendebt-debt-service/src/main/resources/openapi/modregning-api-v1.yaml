@@ -1,0 +1,573 @@
+openapi: "3.1.0"
+info:
+  title: "OpenDebt Modregning API"
+  description: |
+    REST API for the Modregning og Korrektionspulje feature (P058).
+
+    **Legal basis:** GIL § 7, stk. 1 (three-tier offsetting allocation),
+    GIL § 8b (rentegodtgørelse), GIL § 17 (klagefrist).
+
+    **Authentication:** All endpoints require a valid OAuth2 Bearer JWT issued by Keycloak.
+    Endpoints are protected by Spring Security `@PreAuthorize` scope checks (ARCH-011 / ADR-0005).
+    Unauthenticated requests receive HTTP 401. Requests lacking the required scope receive HTTP 403.
+
+    **API-First:** This specification is the contract. Implementation MUST NOT diverge from it.
+    (ARCH-010 / ADR-0004)
+  version: "1.0.0"
+  contact:
+    name: "OpenDebt Platform Team"
+  license:
+    name: "EUPL-1.2"
+
+servers:
+  - url: "https://opendebt.ufst.dk/api/v1"
+    description: "Production (UFST)"
+  - url: "https://opendebt-staging.ufst.dk/api/v1"
+    description: "Staging"
+  - url: "http://localhost:8080/api/v1"
+    description: "Local development"
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: modregning
+    description: "Modregning (offsetting) lifecycle — event query and tier-2 waiver management"
+
+paths:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # GET /debtors/{debtorId}/modregning-events
+  # FR-5: Read model — paginated list of ModregningEventSummary per debtor.
+  # Requires scope modregning:read OR modregning:waiver (SA-058 §6.1, Appendix B).
+  # ──────────────────────────────────────────────────────────────────────────
+  /debtors/{debtorId}/modregning-events:
+    get:
+      operationId: getModregningEvents
+      summary: "List modregning events for a debtor"
+      description: |
+        Returns a paginated list of `ModregningEventSummary` records for the given debtor.
+
+        **Required scope:** `modregning:read` OR `modregning:waiver`.
+
+        The debtor is identified by their internal technical UUID (`debtorId`). CPR lookup
+        is performed by Person Registry; CPR numbers are never accepted as path parameters
+        (ARCH-008 / ADR-0014 — PII isolation).
+
+        Results are ordered by `decisionDate` descending by default. Use the `sort` parameter
+        to override.
+      tags:
+        - modregning
+      security:
+        - BearerAuth:
+            - "modregning:read"
+      parameters:
+        - name: debtorId
+          in: path
+          required: true
+          description: "Internal technical UUID of the debtor (skyldner). Never a CPR number."
+          schema:
+            type: string
+            format: uuid
+            example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+        - name: from
+          in: query
+          required: false
+          description: |
+            Filter events with `decisionDate` on or after this date (inclusive).
+            ISO 8601 date format (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+
+        - name: to
+          in: query
+          required: false
+          description: |
+            Filter events with `decisionDate` on or before this date (inclusive).
+            ISO 8601 date format (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+            example: "2025-12-31"
+
+        - name: page
+          in: query
+          required: false
+          description: "Zero-based page index."
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+            example: 0
+
+        - name: size
+          in: query
+          required: false
+          description: "Number of records per page. Maximum 100."
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+
+        - name: sort
+          in: query
+          required: false
+          description: |
+            Sort field and direction. Format: `{field},{asc|desc}`.
+            Supported fields: `decisionDate`, `totalOffsetAmount`.
+          schema:
+            type: string
+            default: "decisionDate,desc"
+            example: "decisionDate,desc"
+
+      responses:
+        "200":
+          description: "Paginated list of modregning event summaries."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedModregningEventSummary"
+              example:
+                content:
+                  - eventId: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                    decisionDate: "2025-04-15"
+                    totalOffsetAmount: 12500.00
+                    tier1Amount: 5000.00
+                    tier2Amount: 6500.00
+                    tier3Amount: 1000.00
+                    residualPayoutAmount: 0.00
+                    klageFristDato: "2026-04-15"
+                    noticeDelivered: true
+                    tier2WaiverApplied: false
+                    renteGodtgoerelseNonTaxable: true
+                    renteGodtgoerelseStartDate: "2025-04-20"
+                totalElements: 1
+                totalPages: 1
+                number: 0
+                size: 20
+
+        "400":
+          description: "Invalid query parameters (e.g. `from` after `to`, negative page)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+        "403":
+          description: "Missing required OAuth2 scope (`modregning:read` or `modregning:waiver`)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+        "404":
+          description: "`debtorId` not found in Person Registry."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # POST /debtors/{debtorId}/modregning-events/{eventId}/tier2-waiver
+  # FR-2: Caseworker-initiated tier-2 waiver. Triggers re-run of the allocation
+  # engine with skipTier2=true. Requires scope modregning:waiver.
+  # (SA-058 §6.1, Appendix B)
+  # ──────────────────────────────────────────────────────────────────────────
+  /debtors/{debtorId}/modregning-events/{eventId}/tier2-waiver:
+    post:
+      operationId: applyTier2Waiver
+      summary: "Apply a caseworker tier-2 waiver to a modregning event"
+      description: |
+        Applies a caseworker-initiated tier-2 waiver (`skipTier2 = true`) to an existing
+        modregning event, then re-runs the three-tier allocation engine without tier-2
+        fordringer. Returns the updated `ModregningResult` reflecting the new allocation.
+
+        **Required scope:** `modregning:waiver`.
+
+        **Idempotency:** If `tier2WaiverApplied` is already `true` on the event, the
+        operation returns HTTP 409 — no second waiver is applied.
+
+        **Legal basis:** GIL § 7, stk. 1, nr. 2 (caseworker discretion for tier-2 waiver).
+      tags:
+        - modregning
+      security:
+        - BearerAuth:
+            - "modregning:waiver"
+      parameters:
+        - name: debtorId
+          in: path
+          required: true
+          description: "Internal technical UUID of the debtor (skyldner)."
+          schema:
+            type: string
+            format: uuid
+            example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+        - name: eventId
+          in: path
+          required: true
+          description: "UUID of the `ModregningEvent` to apply the tier-2 waiver to."
+          schema:
+            type: string
+            format: uuid
+            example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Tier2WaiverRequest"
+            example:
+              waiverReason: "Skyldner er under aktiv betalingsordning — tier-2 fravalgt jf. sagsbehandlervurdering."
+              caseworkerId: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+
+      responses:
+        "200":
+          description: |
+            Tier-2 waiver applied successfully. Returns the updated `ModregningResult`
+            with the recalculated allocation (tier-1 and tier-3 only, tier-2 zero).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModregningResult"
+              example:
+                eventId: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                decisionDate: "2025-04-15"
+                totalOffsetAmount: 12500.00
+                tier1Amount: 5000.00
+                tier2Amount: 0.00
+                tier3Amount: 7500.00
+                residualPayoutAmount: 0.00
+                klageFristDato: "2026-04-15"
+                noticeDelivered: false
+                tier2WaiverApplied: true
+                renteGodtgoerelseNonTaxable: true
+                renteGodtgoerelseStartDate: "2025-04-20"
+
+        "400":
+          description: |
+            Request body validation failure.
+            - `waiverReason` is blank or exceeds 500 characters.
+            - `caseworkerId` is missing or not a valid UUID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+        "403":
+          description: "Missing required OAuth2 scope (`modregning:waiver`)."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+        "404":
+          description: "Debtor or modregning event not found."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+        "409":
+          description: |
+            `tier2WaiverApplied` is already `true` on this event.
+            A second waiver cannot be applied to the same `ModregningEvent`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Components
+# ──────────────────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        OAuth2 Bearer JWT issued by Keycloak. Token must contain the relevant
+        scope claim (`modregning:read` or `modregning:waiver`).
+        See ADR-0005 and SA-058 Appendix B for the full scope matrix.
+
+  schemas:
+
+    # ── Tier2WaiverRequest ─────────────────────────────────────────────────
+    Tier2WaiverRequest:
+      type: object
+      required:
+        - waiverReason
+        - caseworkerId
+      properties:
+        waiverReason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: |
+            Caseworker-supplied justification for waiving tier-2 offsetting.
+            Persisted on `ModregningEvent.tier2WaiverReason`. Legally required
+            audit trail entry. Must not be blank.
+          example: "Skyldner er under aktiv betalingsordning — tier-2 fravalgt jf. sagsbehandlervurdering."
+        caseworkerId:
+          type: string
+          format: uuid
+          description: |
+            UUID of the caseworker (sagsbehandler) applying the waiver.
+            Must match an active caseworker in Keycloak. Persisted for audit purposes.
+          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+
+    # ── ModregningEventSummary ─────────────────────────────────────────────
+    # Returned by GET /modregning-events (read model, FR-5).
+    # Fields mandated by SA-058 §6.1.
+    ModregningEventSummary:
+      type: object
+      required:
+        - eventId
+        - decisionDate
+        - totalOffsetAmount
+        - tier1Amount
+        - tier2Amount
+        - tier3Amount
+        - residualPayoutAmount
+        - klageFristDato
+        - noticeDelivered
+        - tier2WaiverApplied
+        - renteGodtgoerelseNonTaxable
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: "Unique identifier of the `ModregningEvent`."
+          example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        decisionDate:
+          type: string
+          format: date
+          description: "Date the modregning decision was made (ISO 8601 date)."
+          example: "2025-04-15"
+        totalOffsetAmount:
+          type: number
+          format: decimal
+          description: "Total amount offset across all three tiers (DKK)."
+          example: 12500.00
+        tier1Amount:
+          type: number
+          format: decimal
+          description: "Amount offset against tier-1 fordringer (GIL § 7, stk. 1, nr. 1) (DKK)."
+          example: 5000.00
+        tier2Amount:
+          type: number
+          format: decimal
+          description: "Amount offset against tier-2 fordringer (GIL § 7, stk. 1, nr. 2) (DKK). Zero if tier-2 waiver applied."
+          example: 6500.00
+        tier3Amount:
+          type: number
+          format: decimal
+          description: "Amount offset against tier-3 fordringer (GIL § 7, stk. 1, nr. 3) (DKK)."
+          example: 1000.00
+        residualPayoutAmount:
+          type: number
+          format: decimal
+          description: "Residual amount paid out to debtor after full offsetting (DKK). Zero if fully offset."
+          example: 0.00
+        klageFristDato:
+          type: string
+          format: date
+          description: |
+            Complaint deadline (klagefrist) for this modregning decision.
+            Computed as `noticeDeliveryDate + 4 weeks`. If notice not yet delivered,
+            falls back to `decisionDate + 1 year` (GIL § 17).
+          example: "2026-04-15"
+        noticeDelivered:
+          type: boolean
+          description: "Whether the Digital Post notice (modregningsmeddelelse) has been successfully delivered to the debtor."
+          example: true
+        tier2WaiverApplied:
+          type: boolean
+          description: "Whether a caseworker tier-2 waiver has been applied to this event (FR-2)."
+          example: false
+        renteGodtgoerelseNonTaxable:
+          type: boolean
+          description: |
+            Whether the rentegodtgørelse for this event is non-taxable.
+            Determined by kildeskattelov § 62/62A exception logic in `RenteGodtgoerelseService`.
+          example: true
+        renteGodtgoerelseStartDate:
+          type: string
+          format: date
+          nullable: true
+          description: |
+            Start date for rentegodtgørelse accrual (GIL § 8b).
+            Five banking days after `decisionDate` unless kildeskattelov § 62/62A exception applies.
+            Null if not applicable.
+          example: "2025-04-20"
+
+    # ── ModregningResult ───────────────────────────────────────────────────
+    # Returned by POST /tier2-waiver (FR-2 success response).
+    # Full event record reflecting the updated allocation after waiver re-run.
+    ModregningResult:
+      type: object
+      required:
+        - eventId
+        - decisionDate
+        - totalOffsetAmount
+        - tier1Amount
+        - tier2Amount
+        - tier3Amount
+        - residualPayoutAmount
+        - klageFristDato
+        - noticeDelivered
+        - tier2WaiverApplied
+        - renteGodtgoerelseNonTaxable
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: "Unique identifier of the `ModregningEvent`."
+          example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        decisionDate:
+          type: string
+          format: date
+          description: "Original decision date (unchanged by waiver re-run)."
+          example: "2025-04-15"
+        totalOffsetAmount:
+          type: number
+          format: decimal
+          description: "Total amount offset after waiver re-run (DKK). May differ from original if tier-2 waived."
+          example: 12500.00
+        tier1Amount:
+          type: number
+          format: decimal
+          description: "Amount offset against tier-1 fordringer after waiver re-run (DKK)."
+          example: 5000.00
+        tier2Amount:
+          type: number
+          format: decimal
+          description: "Always 0.00 when tier-2 waiver is applied."
+          example: 0.00
+        tier3Amount:
+          type: number
+          format: decimal
+          description: "Amount offset against tier-3 fordringer after waiver re-run (DKK). Increases when tier-2 is waived."
+          example: 7500.00
+        residualPayoutAmount:
+          type: number
+          format: decimal
+          description: "Residual amount paid out to debtor after full offsetting (DKK)."
+          example: 0.00
+        klageFristDato:
+          type: string
+          format: date
+          description: "Complaint deadline, recomputed after waiver re-run."
+          example: "2026-04-15"
+        noticeDelivered:
+          type: boolean
+          description: "Notice delivery status. May be reset to false if a new notice is dispatched after the waiver."
+          example: false
+        tier2WaiverApplied:
+          type: boolean
+          description: "Always `true` in a successful POST /tier2-waiver response."
+          example: true
+        renteGodtgoerelseNonTaxable:
+          type: boolean
+          description: "Whether the rentegodtgørelse is non-taxable (unchanged by waiver)."
+          example: true
+        renteGodtgoerelseStartDate:
+          type: string
+          format: date
+          nullable: true
+          description: "Rentegodtgørelse accrual start date (unchanged by waiver)."
+          example: "2025-04-20"
+
+    # ── PagedModregningEventSummary ────────────────────────────────────────
+    # Spring Data Page wrapper for the GET modregning-events response.
+    PagedModregningEventSummary:
+      type: object
+      required:
+        - content
+        - totalElements
+        - totalPages
+        - number
+        - size
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModregningEventSummary"
+          description: "The page content — list of `ModregningEventSummary` for the current page."
+        totalElements:
+          type: integer
+          format: int64
+          description: "Total number of `ModregningEvent` records matching the query."
+          example: 42
+        totalPages:
+          type: integer
+          format: int32
+          description: "Total number of pages for the given page size."
+          example: 3
+        number:
+          type: integer
+          format: int32
+          description: "Current page number (zero-based)."
+          example: 0
+        size:
+          type: integer
+          format: int32
+          description: "Number of records per page."
+          example: 20
+        first:
+          type: boolean
+          description: "Whether this is the first page."
+          example: true
+        last:
+          type: boolean
+          description: "Whether this is the last page."
+          example: false
+        empty:
+          type: boolean
+          description: "Whether the content list is empty."
+          example: false
+
+    # ── ProblemDetail ──────────────────────────────────────────────────────
+    # RFC 7807 / RFC 9457 Problem Detail. Used for all 4xx/5xx error responses.
+    # Spring Boot 3.x produces this format by default.
+    ProblemDetail:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: "URI reference identifying the problem type."
+          example: "https://opendebt.ufst.dk/problems/waiver-already-applied"
+        title:
+          type: string
+          description: "Short, human-readable summary of the problem type."
+          example: "Tier-2 waiver already applied"
+        status:
+          type: integer
+          format: int32
+          description: "HTTP status code."
+          example: 409
+        detail:
+          type: string
+          description: "Human-readable explanation specific to this occurrence."
+          example: "ModregningEvent 7c9e6679-7425-40de-944b-e07fc1f90ae7 already has tier2WaiverApplied=true."
+        instance:
+          type: string
+          format: uri
+          description: "URI reference identifying the specific occurrence of the problem."
+          example: "/api/v1/debtors/3fa85f64-5717-4562-b3fc-2c963f66afa6/modregning-events/7c9e6679-7425-40de-944b-e07fc1f90ae7/tier2-waiver"

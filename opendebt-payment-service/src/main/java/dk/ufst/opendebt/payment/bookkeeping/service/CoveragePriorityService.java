@@ -3,7 +3,7 @@ package dk.ufst.opendebt.payment.bookkeeping.service;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import dk.ufst.opendebt.payment.bookkeeping.model.CoverageAllocation;
+import dk.ufst.bookkeeping.model.CoverageAllocation;
 
 /**
  * Applies dækningsrækkefølge: inddrivelsesrente is always covered before hovedstol. Given a payment
