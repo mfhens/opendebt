@@ -29,6 +29,10 @@ The two formulas in this project are:
 - **`mol-petition-scaffold`** — Phase 1: translates a petition into outcome contract + Gherkin + implementation spec, then pauses for human review.
 - **`mol-petition-implement`** — Phase 2: runs TDD implementation, code review, optional Catala encoding, doc-sync, and a final merge gate.
 
+### Relationship to Claude `pipeline-conductor`
+
+Gas City formulas are a **narrower** automation than the full graph in `~/.claude/agents/pipeline-conductor.agent.md`. The conductor adds quality gates (architecture, C4 compliance, specifications as YAML, optional Catala **before** specs for legal-footprint work when using that flow), **Phase 5** routing to `playwright-test-generator` vs `bdd-test-generator` (this repo sets `test_framework: playwright` in `.factory/project.yaml` so Playwright E2E in `opendebt-e2e/` is chosen), and **Phase 6.5** E2E acceptance via `user-testing-flow-validator` when a `validation-contract.md` exists. Gas City does **not** spawn separate formula steps for those agents today — use `@pipeline-conductor` (or run those agents manually) when you need that full path. Catala ordering also differs: formulas run **catala-encode after code review**; the conductor places Catala encoding **after architecture and before specifications** when following the full pipeline. See ADR 0034 and the agents README.
+
 ---
 
 ## Prerequisites
