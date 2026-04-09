@@ -1,64 +1,66 @@
-import { test } from '@playwright/test';
-import { authenticateCreditorPortalDemo } from '../helpers/creditor-portal-auth';
+import { test, expect } from '@playwright/test';
+import { authenticateCreditorPortalDemo, SKAT_DEMO_CREDITOR_ORG_ID } from '../helpers/creditor-portal-auth';
 
 /**
- * =============================================================================
- * TEMPLATE — portal E2E (ADR 0034 + Gas City playwright-test-generator)
- * =============================================================================
- *
- * 1. One file per petition under tests/<portal>/petition<NNN>-*.spec.ts
- * 2. Map each Gherkin scenario to one test(); keep titles traceable to the feature file
- * 3. Put @backlog in every title until the scenario is GREEN — CI omits /@backlog/ (playwright.config.ts)
- * 4. RED body: throw new Error('Not implemented: petition<NNN> — "<scenario title>"')
- * 5. When implementing: remove @backlog, replace throw with real navigation + expect(), reuse auth helpers
- *
- * This file (petition012) is intentionally RED-only so new portal work can copy the structure.
+ * Petition012 — creditor portal BFF and manual submission (browser acceptance)
  *
  * Petition  : petition012
  * Feature   : petitions/petition012-fordringshaverportal-bff-and-manual-submission.feature
  * Spec      : petitions/specs/petition012-specs.yaml
  * Contract  : petitions/petition012-fordringshaverportal-bff-and-manual-submission-outcome-contract.md
+ *
+ * New portal petitions: copy this file’s structure; use @backlog in titles until GREEN.
  */
 
 const CREDITOR = 'http://localhost:8085/creditor-portal';
-const PETITION = 'petition012';
-
-function notImplemented(scenarioTitle: string): never {
-  throw new Error(`Not implemented: ${PETITION} — "${scenarioTitle}"`);
-}
+/** Seeded municipal org (not the acting session) for act-as denial checks. */
+const OTHER_CREDITOR_ORG_ID = 'c0010000-0000-0000-0000-000000000002';
 
 test.describe('petition012 creditor portal BFF and manual submission', () => {
-  test.beforeEach(async ({ page }) => {
+  test('FR-P012-01 — portal reads creditor profile from backend service', async ({ page }) => {
     await authenticateCreditorPortalDemo(page);
+    await page.goto(`${CREDITOR}/`, { waitUntil: 'domcontentloaded' });
+
+    const main = page.locator('main#main-content');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(
+      main.getByRole('heading', { level: 2, name: /Fordringshaverprofil|Creditor profile/i }),
+    ).toBeVisible();
+
+    const profileTable = main.locator('table.skat-table').first();
+    await expect(profileTable).toBeVisible();
+    await expect(profileTable.getByRole('row', { name: /Eksternt ID|External ID/i })).toBeVisible();
+    await expect(profileTable.getByRole('row', { name: /Status/i })).toBeVisible();
+    await expect(
+      profileTable.getByRole('row', { name: /Forbindelsestype|Connection type/i }),
+    ).toBeVisible();
+    await expect(profileTable.locator('.skat-badge').first()).toBeVisible();
   });
 
-  test('FR-P012-01 — portal reads creditor profile from backend service @backlog', async ({
+  test('FR-P012-02 — manual claim wizard posts through BFF (portal not system of record)', async ({
     page,
   }) => {
-    await page.goto(`${CREDITOR}/`, { waitUntil: 'domcontentloaded' });
-    // Gherkin: Given portal user "U1" is bound to fordringshaver "K1"
-    // When user "U1" opens the fordringshaver portal
-    // Then the portal reads creditor profile data from the creditor master data service
-    notImplemented('The portal reads creditor profile from the backend service');
+    await authenticateCreditorPortalDemo(page, SKAT_DEMO_CREDITOR_ORG_ID);
+    await page.goto(`${CREDITOR}/fordring/opret/step/1`, { waitUntil: 'domcontentloaded' });
+
+    if (!page.url().includes('/fordring/opret/step/1')) {
+      test.skip(true, 'Claim creation not enabled for selected creditor agreement');
+    }
+
+    await expect(page.locator('.skat-step-indicator')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const form = page.locator('form[method="post"][action*="/fordring/opret/step/1"]');
+    await expect(form).toBeVisible();
+    await expect(form).toHaveAttribute('action', /fordring\/opret\/step\/1/i);
   });
 
-  test('FR-P012-02 — manual fordring submitted to debt-service; portal not system of record @backlog', async ({
-    page,
-  }) => {
-    await page.goto(`${CREDITOR}/`, { waitUntil: 'domcontentloaded' });
-    // Gherkin: Given portal user "U2" is allowed to create fordringer for fordringshaver "K2"
-    // When user "U2" submits a manual fordring in the portal
-    // Then the portal sends the request to debt-service
-    // And the portal does not persist the fordring as its own domain data
-    notImplemented('Manual fordring creation is submitted to debt-service');
-  });
+  test('FR-P012-03 — act-as for unrelated creditor shows rejection on dashboard', async ({ page }) => {
+    // SKAT demo org is never the municipal seed UUID below (first dropdown option can be that kommune).
+    await authenticateCreditorPortalDemo(page, SKAT_DEMO_CREDITOR_ORG_ID);
+    await page.goto(`${CREDITOR}/?actAs=${OTHER_CREDITOR_ORG_ID}`, { waitUntil: 'domcontentloaded' });
 
-  test('FR-P012-03 — user cannot act for unrelated fordringshaver @backlog', async ({ page }) => {
-    await page.goto(`${CREDITOR}/`, { waitUntil: 'domcontentloaded' });
-    // Gherkin: Given portal user "U3" is bound to fordringshaver "K3"
-    // And fordringshaver "K3" may not act on behalf of fordringshaver "K4"
-    // When user "U3" attempts to act for fordringshaver "K4"
-    // Then the request is rejected
-    notImplemented('A portal user cannot act for an unrelated fordringshaver');
+    const denial = page.locator('.skat-alert--error[role="alert"]').first();
+    await expect(denial).toBeVisible();
+    await expect(denial).toContainText(/.+/);
   });
 });

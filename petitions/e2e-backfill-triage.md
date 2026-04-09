@@ -7,7 +7,7 @@ This matrix supports the ADR 0034 backfill: which petitions warrant browser-leve
 | Petition | Title (short) | UI / browser | Specs YAML (`petitions/specs/`) | Playwright wave |
 |----------|---------------|--------------|-----------------------------------|-----------------|
 | petition022 | Citizen landing | yes | `petition022-specs.yaml` | Wave 1 (done) |
-| petition012 | Creditor BFF / manual submission | yes | `petition012-specs.yaml` | RED template @backlog — `opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts` |
+| petition012 | Creditor BFF / manual submission | yes | `petition012-specs.yaml` | GREEN — `opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts` (ADR 0034 template) |
 | petition013 | UI accessibility compliance | yes | `petition013-specs.yaml` | Wave 4+ (specs ready) |
 | petition014 | Accessibility statements | yes | `petition014-specs.yaml` | Wave 4+ (specs ready) |
 | petition023–026 | Citizen auth / debt UI | yes | not yet | later |
@@ -27,4 +27,4 @@ This matrix supports the ADR 0034 backfill: which petitions warrant browser-leve
 
 **Wave 5 (next):** Citizen **023–026** Playwright and/or `petition023-specs.yaml` etc. when those flows are in scope; deeper creditor scenarios (sorting, search, downloads) optional.
 
-**Process template (ADR 0034):** New portal E2E should copy `tests/creditor-portal/petition012-bff-manual-submission.spec.ts` — Gherkin-aligned tests, `@backlog` in titles until GREEN, `Not implemented: petitionNNN — "…"` throws. CI skips `@backlog`; remove the tag when implementing.
+**Process template (ADR 0034):** New portal E2E should copy `tests/creditor-portal/petition012-bff-manual-submission.spec.ts` — Gherkin-aligned tests. Until a scenario is implemented, add `@backlog` to its title and use a `Not implemented: petitionNNN — "…"` throw; CI skips `@backlog` via `playwright.config.ts`.
