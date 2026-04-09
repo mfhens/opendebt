@@ -609,53 +609,18 @@ public class DebtServiceClient {
    * Submits a new claim via the portal wizard and returns a structured result indicating the
    * outcome (UDFOERT, AFVIST, or HOERING). Unlike {@link #createDebt}, this method captures
    * validation errors instead of throwing, so the wizard can display them inline.
+   *
+   * <p>Not wrapped in {@link CircuitBreaker}: a 5xx or transport error must become an AFVIST result
+   * for the wizard, not a recorded CB failure (which would eventually invoke a misleading
+   * fallback). Downstream outages are surfaced as structured errors on the result step.
    */
-  @CircuitBreaker(name = CIRCUIT_BREAKER_WRITE, fallbackMethod = "submitClaimWizardFallback")
   public ClaimSubmissionResultDto submitClaimWizard(PortalDebtDto request) {
     log.debug("Submitting claim via wizard for creditor: {}", request.getCreditorOrgId());
 
     try {
       DebtDto submitRequest = toWizardSubmitDebtDto(request);
 
-      ClaimSubmissionApiResponse api =
-          webClient
-              .post()
-              .uri("/debt-service/api/v1/debts/submit")
-              .bodyValue(submitRequest)
-              .exchangeToMono(
-                  response -> {
-                    HttpStatusCode status = response.statusCode();
-                    int code = status.value();
-                    if (code == HttpStatus.CREATED.value()
-                        || code == HttpStatus.UNPROCESSABLE_ENTITY.value()) {
-                      return response
-                          .bodyToMono(ClaimSubmissionApiResponse.class)
-                          .switchIfEmpty(
-                              Mono.error(
-                                  new OpenDebtException(
-                                      "Empty response body from debt-service submit",
-                                      ERROR_CODE_CLIENT)));
-                    }
-                    if (status.is4xxClientError()) {
-                      return response
-                          .bodyToMono(String.class)
-                          .defaultIfEmpty("")
-                          .flatMap(
-                              body ->
-                                  Mono.error(
-                                      new OpenDebtException(
-                                          ERR_CLIENT_MSG + body, ERROR_CODE_CLIENT)));
-                    }
-                    if (status.is5xxServerError()) {
-                      return Mono.error(
-                          new OpenDebtException(
-                              ERR_UNAVAILABLE_MSG,
-                              ERROR_CODE_UNAVAILABLE,
-                              OpenDebtException.ErrorSeverity.CRITICAL));
-                    }
-                    return response.createException().flatMap(Mono::error);
-                  })
-              .block();
+      ClaimSubmissionApiResponse api = postClaimSubmitWithRetry(submitRequest);
 
       if (api == null) {
         return ClaimSubmissionResultDto.builder()
@@ -684,7 +649,97 @@ public class DebtServiceClient {
                         .build()))
             .build();
       }
-      throw ex;
+      int errorCode = ERROR_CODE_UNAVAILABLE.equals(ex.getErrorCode()) ? 503 : 502;
+      return ClaimSubmissionResultDto.builder()
+          .outcome(STATUS_AFVIST)
+          .processingStatus(STATUS_REJECTED)
+          .errors(
+              java.util.Collections.singletonList(
+                  ValidationErrorDto.builder()
+                      .errorCode(errorCode)
+                      .description(ex.getMessage())
+                      .build()))
+          .build();
+    } catch (Exception ex) {
+      log.error("Claim wizard submit failed: {}", ex.getMessage(), ex);
+      return ClaimSubmissionResultDto.builder()
+          .outcome(STATUS_AFVIST)
+          .processingStatus("SUBMIT_FAILED")
+          .errors(
+              java.util.Collections.singletonList(
+                  ValidationErrorDto.builder()
+                      .errorCode(503)
+                      .description(
+                          ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName())
+                      .build()))
+          .build();
+    }
+  }
+
+  /**
+   * One retry on HTTP 5xx from submit — Docker/CI stacks occasionally return a transient error
+   * while debt-service or dependencies finish warming up.
+   */
+  private ClaimSubmissionApiResponse postClaimSubmitWithRetry(DebtDto submitRequest) {
+    for (int attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return webClient
+            .post()
+            .uri("/debt-service/api/v1/debts/submit")
+            .bodyValue(submitRequest)
+            .exchangeToMono(
+                response -> {
+                  HttpStatusCode status = response.statusCode();
+                  int code = status.value();
+                  if (code == HttpStatus.CREATED.value()
+                      || code == HttpStatus.UNPROCESSABLE_ENTITY.value()) {
+                    return response
+                        .bodyToMono(ClaimSubmissionApiResponse.class)
+                        .switchIfEmpty(
+                            Mono.error(
+                                new OpenDebtException(
+                                    "Empty response body from debt-service submit",
+                                    ERROR_CODE_CLIENT)));
+                  }
+                  if (status.is4xxClientError()) {
+                    return response
+                        .bodyToMono(String.class)
+                        .defaultIfEmpty("")
+                        .flatMap(
+                            body ->
+                                Mono.error(
+                                    new OpenDebtException(
+                                        ERR_CLIENT_MSG + body, ERROR_CODE_CLIENT)));
+                  }
+                  if (status.is5xxServerError()) {
+                    return Mono.error(
+                        new OpenDebtException(
+                            ERR_UNAVAILABLE_MSG,
+                            ERROR_CODE_UNAVAILABLE,
+                            OpenDebtException.ErrorSeverity.CRITICAL));
+                  }
+                  return response.createException().flatMap(Mono::error);
+                })
+            .block();
+      } catch (OpenDebtException ex) {
+        if (attempt < 2 && ERROR_CODE_UNAVAILABLE.equals(ex.getErrorCode())) {
+          log.warn(
+              "Debt-service claim submit returned 5xx (attempt {}); retrying once after short delay",
+              attempt);
+          sleepQuietly(750);
+          continue;
+        }
+        throw ex;
+      }
+    }
+    throw new IllegalStateException("postClaimSubmitWithRetry: exhausted attempts without result");
+  }
+
+  private static void sleepQuietly(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -983,30 +1038,6 @@ public class DebtServiceClient {
     }
     log.warn("Circuit breaker fallback triggered for createDebt: {}", t.getMessage());
     return null;
-  }
-
-  private ClaimSubmissionResultDto submitClaimWizardFallback(PortalDebtDto request, Throwable t) {
-    if (t
-            instanceof
-            org.springframework.web.reactive.function.client.WebClientResponseException wcre
-        && wcre.getStatusCode().is4xxClientError()) {
-      throw wcre;
-    }
-    log.warn("Circuit breaker fallback triggered for submitClaimWizard: {}", t.getMessage(), t);
-    return ClaimSubmissionResultDto.builder()
-        .outcome(STATUS_AFVIST)
-        .processingStatus("SERVICE_UNAVAILABLE")
-        .errors(
-            java.util.Collections.singletonList(
-                ValidationErrorDto.builder()
-                    .errorCode(503)
-                    .description(
-                        "Debt service call failed (resilience fallback). Cause: "
-                            + (t.getMessage() != null
-                                ? t.getMessage()
-                                : t.getClass().getSimpleName()))
-                    .build()))
-        .build();
   }
 
   private AdjustmentReceiptDto submitAdjustmentFallback(
