@@ -24,7 +24,8 @@ public class CreditorServiceClient {
   public CreditorServiceClient(
       WebClient.Builder webClientBuilder,
       @Value("${opendebt.services.creditor-service.url:http://localhost:8092}") String baseUrl) {
-    this.webClient = webClientBuilder.baseUrl(baseUrl).build();
+    this.webClient =
+        webClientBuilder.filter(JwtBearerPropagationFilter.create()).baseUrl(baseUrl).build();
   }
 
   @CircuitBreaker(name = "creditor-service", fallbackMethod = "validateActionFallback")

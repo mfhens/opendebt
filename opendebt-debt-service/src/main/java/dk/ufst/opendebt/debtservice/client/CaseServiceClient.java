@@ -22,7 +22,8 @@ public class CaseServiceClient {
   public CaseServiceClient(
       WebClient.Builder webClientBuilder,
       @Value("${opendebt.services.case-service.url:http://localhost:8081}") String baseUrl) {
-    this.webClient = webClientBuilder.baseUrl(baseUrl).build();
+    this.webClient =
+        webClientBuilder.filter(JwtBearerPropagationFilter.create()).baseUrl(baseUrl).build();
   }
 
   @CircuitBreaker(name = "case-service", fallbackMethod = "assignDebtToCaseFallback")

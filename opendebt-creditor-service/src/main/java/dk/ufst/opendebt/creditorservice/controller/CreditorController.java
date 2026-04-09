@@ -60,7 +60,7 @@ public class CreditorController {
   }
 
   @PostMapping("/{creditorOrgId}/validate-action")
-  @PreAuthorize("hasRole('SERVICE') or hasRole('CASEWORKER')")
+  @PreAuthorize("hasAnyRole('SERVICE', 'CASEWORKER', 'CREDITOR')")
   @Operation(
       summary = "Validate creditor status and permission for an action",
       description =
