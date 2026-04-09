@@ -50,12 +50,13 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v3
+        uses: ocaml/setup-ocaml@fefd9c240b9d934d5d25aa9c2a8caae6c7b40079  # v3
         with:
           ocaml-compiler: "4.14.2"
-
-      - name: Install Catala 1.1.0
-        run: opam install catala.1.1.0 -y
+          # Including catala here puts it inside the switch cache: subsequent runs
+          # with a cache hit skip all opam downloads entirely, making the job
+          # resilient to transient failures on erratique.ch (cmdliner source).
+          opam-packages: catala.1.1.0
 
       - name: Typecheck Catala compliance files
         # catala typecheck accepts exactly one file per invocation.
