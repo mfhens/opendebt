@@ -94,7 +94,8 @@ test.describe('petition030-038 creditor portal surfaces', () => {
       await page.goto(`${CREDITOR}/underretninger`, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.locator('form[action*="/underretninger/search"]')).toBeVisible();
-      await expect(page.locator('#notification-results')).toBeVisible();
+      // Results region is in the DOM before first search but has no content — zero height, so not "visible".
+      await expect(page.locator('#notification-results')).toBeAttached();
     });
 
     test('petition036 — reconciliation list shell', async ({ page }) => {
