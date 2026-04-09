@@ -1,0 +1,43 @@
+# Module specs — petition029 (creditor portal claims lists and counts)
+# Source: petitions/petition029-fordringshaverportal-fordringer-oversigt.md,
+#         petitions/petition029-fordringshaverportal-fordringer-oversigt-outcome-contract.md,
+#         petitions/petition029-fordringshaverportal-fordringer-oversigt.feature
+
+spec_id: SPEC-P029
+petition: petition029
+title: Creditor portal claims in recovery, zero-balance lists, and counts
+module: opendebt-creditor-portal
+feature_file: petitions/petition029-fordringshaverportal-fordringer-oversigt.feature
+
+routes:
+  recovery_list: GET /fordringer
+  zero_balance_list: GET /fordringer/nulfordringer
+  counts: GET /fordringer/optaellinger
+  recovery_fragment: GET /api/claims/recovery
+  zero_balance_fragment: GET /api/claims/zero-balance
+
+functional_requirements:
+  - id: FR-P029-01
+    summary: Recovery list shell with HTMX-loaded table; 13 columns; pagination via BFF
+    scenarios:
+      - Recovery list displays paginated claims for the acting creditor
+      - Each claim row displays all 13 required columns
+      - HTMX progressive loading with loading indicator
+  - id: FR-P029-02
+    summary: Zero-balance list mirrors recovery layout and HTMX loading
+    scenarios:
+      - Zero-balance list displays paginated zero-balance claims
+  - id: FR-P029-03
+    summary: Claims counts page with optional date filter
+    scenarios:
+      - Portal displays count of active claims in recovery
+      - Portal displays count of zero-balance claims
+  - id: FR-P029-04
+    summary: Unauthenticated access denied via OAuth redirect
+    scenarios:
+      - Unauthenticated user cannot access claims lists
+  - id: FR-P029-05
+    summary: SKAT layout, semantic table, skip link and main landmark
+    scenarios:
+      - Claims list pages use the SKAT standardlayout
+      - Data tables use semantic HTML with accessible structure

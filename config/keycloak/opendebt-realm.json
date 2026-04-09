@@ -72,10 +72,12 @@
       "directAccessGrantsEnabled": true,
       "redirectUris": [
         "http://localhost:8085/*",
+        "http://127.0.0.1:8085/*",
         "https://creditor.opendebt.dk/*"
       ],
       "webOrigins": [
         "http://localhost:8085",
+        "http://127.0.0.1:8085",
         "https://creditor.opendebt.dk"
       ]
     },

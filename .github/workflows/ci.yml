@@ -326,6 +326,11 @@ jobs:
             fi
           done
 
+      # Spring OAuth redirects use http://keycloak:8080 — that hostname exists only on the Docker
+      # network. Map it on the runner so Playwright can complete the browser login flow.
+      - name: Map Keycloak hostname for Playwright OAuth
+        run: echo '127.0.0.1 keycloak' | sudo tee -a /etc/hosts
+
       - name: Install Playwright dependencies
         working-directory: opendebt-e2e
         run: npm ci && npx playwright install --with-deps chromium

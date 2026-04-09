@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-04-09
-  updated_by: e2e backfill wave 1 — petition022 Playwright + validation contract
+  updated_by: e2e backfill wave 2 — petition029 creditor claims Playwright + Keycloak CI hosts
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -681,13 +681,18 @@ program:
       depends_on:
         - petition012
         - petition038
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition029-creditor-claims.spec.ts; helper opendebt-e2e/tests/helpers/creditor-portal-auth.ts (Keycloak user + demo creditor session)
+        - Module specs — petitions/specs/petition029-specs.yaml
+        - Validation mapping — petitions/validation/petition029/validation-contract.md (VAL-P029-*)
+        - CI — `.github/workflows/ci.yml` maps `keycloak` to 127.0.0.1 for OAuth; `config/keycloak/opendebt-realm.json` allows `http://127.0.0.1:8085/*` redirect for creditor portal
       notes: >
         Paginated, sortable, searchable list views for claims in recovery (fordringer i inddrivelse)
         and zero-balance claims (nulfordringer), plus count views. Data from debt-service via BFF.
         Replaces legacy PSRM DKGetClaimsForClaimant / DKGetZeroClaimsCountForClaimant.
-        Requires CREDITOR_VIEWER or CREDITOR_EDITOR roles. Uses HTMX for progressive loading.
-      next_step: Implement after petition038 (navigation structure) establishes the portal page routing.
+        Uses HTMX for progressive loading. E2E backfill covers OAuth gate, post-login list shells, 13-column table, counts page, and layout landmarks; deeper scenarios (sorting, search, role matrix) remain for Cucumber or future Playwright expansion.
+      next_step: Extend Playwright to petition030+ or add sorting/search assertions; optional user-testing-flow-validator for VAL-P029-*.
 
     petition030:
       title: Fordringshaverportal -- Claim detail view
