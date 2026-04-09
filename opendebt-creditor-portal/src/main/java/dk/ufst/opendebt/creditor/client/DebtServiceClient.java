@@ -17,6 +17,7 @@ import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.ClaimDetailDto;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
 import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
+import dk.ufst.opendebt.creditor.dto.ClaimSubmissionApiResponse;
 import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.HearingApproveRequestDto;
 import dk.ufst.opendebt.creditor.dto.HearingClaimDetailDto;
@@ -641,18 +642,41 @@ public class DebtServiceClient {
       submitRequest.put("claimNote", request.getClaimNote());
       submitRequest.put("customerNote", request.getCustomerNote());
 
-      java.util.Map<String, Object> response =
+      ClaimSubmissionApiResponse api =
           webClient
               .post()
               .uri("/debt-service/api/v1/debts/submit")
               .bodyValue(submitRequest)
-              .retrieve()
-              .bodyToMono(
-                  new org.springframework.core.ParameterizedTypeReference<
-                      java.util.Map<String, Object>>() {})
+              .exchangeToMono(
+                  response -> {
+                    HttpStatusCode status = response.statusCode();
+                    int code = status.value();
+                    if (code == HttpStatus.CREATED.value()
+                        || code == HttpStatus.UNPROCESSABLE_ENTITY.value()) {
+                      return response.bodyToMono(ClaimSubmissionApiResponse.class);
+                    }
+                    if (status.is4xxClientError()) {
+                      return response
+                          .bodyToMono(String.class)
+                          .defaultIfEmpty("")
+                          .flatMap(
+                              body ->
+                                  Mono.error(
+                                      new OpenDebtException(
+                                          ERR_CLIENT_MSG + body, ERROR_CODE_CLIENT)));
+                    }
+                    if (status.is5xxServerError()) {
+                      return Mono.error(
+                          new OpenDebtException(
+                              ERR_UNAVAILABLE_MSG,
+                              ERROR_CODE_UNAVAILABLE,
+                              OpenDebtException.ErrorSeverity.CRITICAL));
+                    }
+                    return response.createException().flatMap(Mono::error);
+                  })
               .block();
 
-      if (response == null) {
+      if (api == null) {
         return ClaimSubmissionResultDto.builder()
             .outcome(STATUS_AFVIST)
             .processingStatus("No response from debt-service")
@@ -660,42 +684,7 @@ public class DebtServiceClient {
             .build();
       }
 
-      String outcome = (String) response.get("outcome");
-
-      if (STATUS_AFVIST.equals(outcome)) {
-        @SuppressWarnings("unchecked")
-        var rawErrors = (java.util.List<java.util.Map<String, Object>>) response.get("errors");
-        java.util.List<ValidationErrorDto> validationErrors = java.util.Collections.emptyList();
-        if (rawErrors != null) {
-          validationErrors =
-              rawErrors.stream()
-                  .map(
-                      e ->
-                          ValidationErrorDto.builder()
-                              .errorCode(0)
-                              .description(
-                                  e.getOrDefault("errorCode", "")
-                                      + ": "
-                                      + e.getOrDefault("description", ""))
-                              .build())
-                  .toList();
-        }
-        return ClaimSubmissionResultDto.builder()
-            .outcome(STATUS_AFVIST)
-            .processingStatus(STATUS_REJECTED)
-            .errors(validationErrors)
-            .build();
-      }
-
-      String claimIdStr =
-          response.get("claimId") != null ? response.get("claimId").toString() : null;
-      UUID claimId = claimIdStr != null ? UUID.fromString(claimIdStr) : null;
-
-      return ClaimSubmissionResultDto.builder()
-          .outcome(outcome != null ? outcome : "UDFOERT")
-          .claimId(claimId)
-          .processingStatus(outcome != null ? outcome : "ACCEPTED")
-          .build();
+      return mapClaimSubmissionApiResponse(api);
     } catch (OpenDebtException ex) {
       if ("DEBT_VALIDATION_ERROR".equals(ex.getErrorCode())) {
         return ClaimSubmissionResultDto.builder()
@@ -711,6 +700,38 @@ public class DebtServiceClient {
       }
       throw ex;
     }
+  }
+
+  private ClaimSubmissionResultDto mapClaimSubmissionApiResponse(ClaimSubmissionApiResponse api) {
+    if (api.getOutcome() == ClaimSubmissionApiResponse.Outcome.AFVIST) {
+      java.util.List<ValidationErrorDto> validationErrors = java.util.Collections.emptyList();
+      if (api.getErrors() != null && !api.getErrors().isEmpty()) {
+        validationErrors =
+            api.getErrors().stream()
+                .map(
+                    e ->
+                        ValidationErrorDto.builder()
+                            .errorCode(0)
+                            .description(
+                                (e.getErrorCode() != null ? e.getErrorCode() : "")
+                                    + ": "
+                                    + (e.getDescription() != null ? e.getDescription() : ""))
+                            .build())
+                .toList();
+      }
+      return ClaimSubmissionResultDto.builder()
+          .outcome(STATUS_AFVIST)
+          .processingStatus(STATUS_REJECTED)
+          .errors(validationErrors)
+          .build();
+    }
+
+    String outcomeName = api.getOutcome() != null ? api.getOutcome().name() : "UDFOERT";
+    return ClaimSubmissionResultDto.builder()
+        .outcome(outcomeName)
+        .claimId(api.getClaimId())
+        .processingStatus(api.getOutcome() != null ? outcomeName : "ACCEPTED")
+        .build();
   }
 
   /** Submits a claim adjustment (write-up or write-down) to debt-service (petition 034). */

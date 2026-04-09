@@ -118,13 +118,13 @@ paths:
               $ref: '#/components/schemas/AccessResolutionRequest'
       responses:
         '200':
-          description: Access resolution result
+          description: >
+            Access resolution result. Inspect `allowed`: `false` means the channel identity may not
+            act as the represented creditor (business denial), not an HTTP authorization failure.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccessResolutionResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
 
 components:
   securitySchemes:

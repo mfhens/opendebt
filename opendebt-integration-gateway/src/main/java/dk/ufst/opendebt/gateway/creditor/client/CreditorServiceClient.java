@@ -1,7 +1,6 @@
 package dk.ufst.opendebt.gateway.creditor.client;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -42,26 +41,15 @@ public class CreditorServiceClient {
         .retrieve()
         .onStatus(
             HttpStatusCode::is4xxClientError,
-            response -> {
-              if (response.statusCode() == HttpStatus.FORBIDDEN) {
-                return response
+            response ->
+                response
                     .bodyToMono(String.class)
                     .flatMap(
                         body ->
                             Mono.error(
                                 new OpenDebtException(
-                                    "Access resolution denied: " + body,
-                                    "ACCESS_DENIED",
-                                    OpenDebtException.ErrorSeverity.WARNING)));
-              }
-              return response
-                  .bodyToMono(String.class)
-                  .flatMap(
-                      body ->
-                          Mono.error(
-                              new OpenDebtException(
-                                  "Access resolution failed: " + body, "ACCESS_RESOLUTION_ERROR")));
-            })
+                                    "Access resolution failed: " + body,
+                                    "ACCESS_RESOLUTION_ERROR"))))
         .onStatus(
             HttpStatusCode::is5xxServerError,
             response ->

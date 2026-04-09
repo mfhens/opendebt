@@ -33,9 +33,8 @@ public class AccessResolutionController {
   public ResponseEntity<AccessResolutionResponse> resolveAccess(
       @Valid @RequestBody AccessResolutionRequest request) {
     AccessResolutionResponse response = channelBindingService.resolveAccess(request);
-    if (!response.isAllowed()) {
-      return ResponseEntity.status(403).body(response);
-    }
+    // Always HTTP 200: denial is a normal resolution outcome (allowed=false), not an HTTP-layer
+    // authorization failure. Clients read {@link AccessResolutionResponse#isAllowed()}.
     return ResponseEntity.ok(response);
   }
 }

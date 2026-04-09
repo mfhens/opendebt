@@ -995,7 +995,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 - `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference
 - `GET /api/v1/creditors/by-external-id/{externalCreditorId}` - Resolve creditor by legacy external ID
 - `POST /api/v1/creditors/{creditorOrgId}/validate-action` - Validate creditor status and permissions
-- `POST /api/v1/creditors/access/resolve` - Resolve acting and represented creditor for a channel request (petition010)
+- `POST /api/v1/creditors/access/resolve` - Resolve acting and represented creditor for a channel request (petition010); HTTP 200 with `allowed: false` for business denial (portal BFF reads body; not HTTP 403)
 
 ---
 
