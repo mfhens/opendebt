@@ -345,8 +345,8 @@ program:
         - 48 tests pass (39 unit + 9 BDD)
         - Portal starts with dev profile and serves all pages
         - Thymeleaf + HTMX + SKAT standardlayout fully operational
-        - Playwright E2E (GREEN) — opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts (profile from BFF, manual wizard POST path, act-as denial); ADR 0034 file layout template for new petitions
-      next_step: Optional deeper E2E (full wizard submit to debt-service, umbrella allowed act-as). Phase 9 feature pages (029-038) remain the detailed UI surface.
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts (profile from BFF, wizard shell, full wizard submit to debt-service with demo CPR + SKAT creditor, act-as denial); ADR 0034 file layout template for new petitions
+      next_step: Optional E2E (umbrella allowed act-as). Phase 9 feature pages (029-038) remain the detailed UI surface.
 
     petition013:
       title: UI webtilgaengelighed compliance

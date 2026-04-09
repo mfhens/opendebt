@@ -16,6 +16,25 @@ const CREDITOR = 'http://localhost:8085/creditor-portal';
 /** Seeded municipal org (not the acting session) for act-as denial checks. */
 const OTHER_CREDITOR_ORG_ID = 'c0010000-0000-0000-0000-000000000002';
 
+/** Demo natural person — matches `DemoPersonSeeder` when person-registry runs with demo seed. */
+const DEMO_CPR_DEBTOR = {
+  cpr: '0503581234',
+  firstName: 'Lars',
+  lastName: 'Andersen',
+} as const;
+
+function isoDateYearsFromNow(years: number): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + years);
+  return d.toISOString().slice(0, 10);
+}
+
+function isoDateDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 test.describe('petition012 creditor portal BFF and manual submission', () => {
   test('FR-P012-01 — portal reads creditor profile from backend service', async ({ page }) => {
     await authenticateCreditorPortalDemo(page);
@@ -52,6 +71,56 @@ test.describe('petition012 creditor portal BFF and manual submission', () => {
     const form = page.locator('form[method="post"][action*="/fordring/opret/step/1"]');
     await expect(form).toBeVisible();
     await expect(form).toHaveAttribute('action', /fordring\/opret\/step\/1/i);
+  });
+
+  /**
+   * Full happy path: wizard step 1 → person-registry CPR check → step 2 → review → POST to debt-service
+   * `/debts/submit` via BFF, then receipt (UDFOERT). Portal-side claim persistence is still an architectural
+   * invariant (no claim entities in creditor-portal), not something this browser test can prove alone.
+   */
+  test('FR-P012-02b — manual claim wizard completes submit and shows debt-service receipt', async ({
+    page,
+  }) => {
+    await authenticateCreditorPortalDemo(page, SKAT_DEMO_CREDITOR_ORG_ID);
+    await page.goto(`${CREDITOR}/fordring/opret/step/1`, { waitUntil: 'domcontentloaded' });
+
+    if (!page.url().includes('/fordring/opret/step/1')) {
+      test.skip(true, 'Claim creation not enabled for selected creditor agreement');
+    }
+
+    await page.selectOption('#debtorType', 'CPR');
+    await page.locator('#debtorIdentifier').fill(DEMO_CPR_DEBTOR.cpr);
+    await page.locator('#debtorFirstName').fill(DEMO_CPR_DEBTOR.firstName);
+    await page.locator('#debtorLastName').fill(DEMO_CPR_DEBTOR.lastName);
+    await page.getByRole('button', { name: /Next|Næste/i }).click();
+    await page.waitForURL(/fordring\/opret\/step\/2/, { timeout: 60_000 });
+
+    await page.selectOption('#claimType', 'SKAT');
+    await page.locator('#amount').fill('1250.50');
+    await page.locator('#principalAmount').fill('1000.00');
+    await page.locator('#creditorReference').fill(`E2E-P012-${Date.now()}`);
+    await page.locator('#dueDate').fill(isoDateDaysAgo(30));
+    await page.locator('#limitationDate').fill(isoDateYearsFromNow(5));
+    await page.selectOption('#estateProcessing', 'false');
+    await page.getByRole('button', { name: /Next|Næste/i }).click();
+    await page.waitForURL(/fordring\/opret\/step\/3/, { timeout: 60_000 });
+
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: /Submit claim|Indsend fordring/i }).click();
+    await page.waitForURL(/fordring\/opret\/step\/4/, { timeout: 120_000 });
+
+    await expect(page.locator('.skat-alert--success[role="status"]')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Claim accepted|Fordring accepteret/i }),
+    ).toBeVisible();
+    const claimIdDd = page
+      .locator('dl.skat-description-list dt')
+      .filter({ hasText: /Claim ID|Fordrings-ID/i });
+    await expect(claimIdDd).toBeVisible();
+    const row = claimIdDd.locator('xpath=following-sibling::dd[1]');
+    await expect(row).toHaveText(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
   });
 
   test('FR-P012-03 — act-as for unrelated creditor shows rejection on dashboard', async ({ page }) => {
