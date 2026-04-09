@@ -1,0 +1,14 @@
+# Profile: local (Docker Compose). Full-stack E2E on CI shares one creditor-portal JVM with cold
+# downstream services; a few slow or failed debt-service writes must not open debt-service-write or
+# the claim wizard surfaces AFVIST with an empty error list (circuit breaker fallback).
+resilience4j:
+  circuitbreaker:
+    instances:
+      debt-service-write:
+        baseConfig: default
+        slidingWindowSize: 50
+        minimumNumberOfCalls: 30
+        failureRateThreshold: 90
+        # Do not open the breaker on slow calls — submit can legitimately exceed a few seconds.
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 120s

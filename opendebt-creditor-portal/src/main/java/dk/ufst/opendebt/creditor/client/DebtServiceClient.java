@@ -661,7 +661,12 @@ public class DebtServiceClient {
         return ClaimSubmissionResultDto.builder()
             .outcome(STATUS_AFVIST)
             .processingStatus("No response from debt-service")
-            .errors(java.util.Collections.emptyList())
+            .errors(
+                java.util.Collections.singletonList(
+                    ValidationErrorDto.builder()
+                        .errorCode(502)
+                        .description("No response body from debt-service submit endpoint")
+                        .build()))
             .build();
       }
 
@@ -727,6 +732,14 @@ public class DebtServiceClient {
                                     + (e.getDescription() != null ? e.getDescription() : ""))
                             .build())
                 .toList();
+      }
+      if (validationErrors.isEmpty()) {
+        validationErrors =
+            java.util.Collections.singletonList(
+                ValidationErrorDto.builder()
+                    .errorCode(422)
+                    .description("Claim rejected by debt-service with no error details in response")
+                    .build());
       }
       return ClaimSubmissionResultDto.builder()
           .outcome(STATUS_AFVIST)
@@ -979,11 +992,20 @@ public class DebtServiceClient {
         && wcre.getStatusCode().is4xxClientError()) {
       throw wcre;
     }
-    log.warn("Circuit breaker fallback triggered for submitClaimWizard: {}", t.getMessage());
+    log.warn("Circuit breaker fallback triggered for submitClaimWizard: {}", t.getMessage(), t);
     return ClaimSubmissionResultDto.builder()
         .outcome(STATUS_AFVIST)
         .processingStatus("SERVICE_UNAVAILABLE")
-        .errors(java.util.Collections.emptyList())
+        .errors(
+            java.util.Collections.singletonList(
+                ValidationErrorDto.builder()
+                    .errorCode(503)
+                    .description(
+                        "Debt service call failed (resilience fallback). Cause: "
+                            + (t.getMessage() != null
+                                ? t.getMessage()
+                                : t.getClass().getSimpleName()))
+                    .build()))
         .build();
   }
 
