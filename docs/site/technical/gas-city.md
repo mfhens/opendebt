@@ -35,6 +35,8 @@ The two formulas in this project are:
 
 **Retroactive E2E backfill:** Petitions implemented before Playwright wiring may need GREEN tests instead of RED generator output. In `opendebt-e2e/playwright.config.ts`, when `CI` is set, tests whose titles contain `@backlog` are excluded (`grepInvert`) so unfinished Playwright work does not fail GitHub Actions. See `petitions/e2e-backfill-triage.md`. Creditor-portal flows that complete Keycloak in the browser need the runner to resolve the hostname `keycloak` (the E2E job appends `127.0.0.1 keycloak` to `/etc/hosts`). Wave 4 adds `petition030-038-creditor-portal-surfaces.spec.ts` for Phase 9 shells (detail, hearing, rejected, wizard, adjustment, notifications, reconciliation, reports, dashboard, settings).
 
+**ADR 0034 TDD template:** Copy `opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts` for new portal petitions — one test per Gherkin scenario, `@backlog` in the title until GREEN, body throws `Not implemented: petitionNNN — "…"`.
+
 ---
 
 ## Prerequisites

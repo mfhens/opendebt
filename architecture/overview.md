@@ -1056,7 +1056,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | Focus management JS | Done | `static/js/a11y.js` — HTMX afterSwap focus management for screen readers |
 | **Unit tests** | **Done** | 39 unit tests across 9 test classes |
 | **BDD acceptance tests** | **Done** | 9 Cucumber scenarios: petition012 (3), petition013 (3), petition014 (3) |
-| **E2E Playwright (ADR 0034)** | **Done** | petition029 — `opendebt-e2e/tests/petition029-creditor-claims.spec.ts`; petition030–038 — `opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts`; shared helper `tests/helpers/creditor-portal-auth.ts`; CI adds `keycloak` to `/etc/hosts` for OAuth redirects |
+| **E2E Playwright (ADR 0034)** | **Done** | petition029 — `opendebt-e2e/tests/petition029-creditor-claims.spec.ts`; petition030–038 — `opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts`; **petition012 RED template** — `opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts` (`@backlog` until GREEN); shared helper `tests/helpers/creditor-portal-auth.ts`; CI adds `keycloak` to `/etc/hosts` for OAuth redirects |
 | **Module specs YAML (retrofit wave 3)** | **Done** | `petitions/specs/petition012`–`014` and `petition030`–`038` — FR buckets aligned to Gherkin (or petition038 markdown where no `.feature` exists) |
 | SecurityConfig (permissive) | Done | Permits all requests for dev/demo without Keycloak (ADR-0023 browser flow TBD) |
 | logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |

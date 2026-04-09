@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-04-09
-  updated_by: e2e backfill wave 4 — Playwright petition030-038 creditor portal surfaces
+  updated_by: petition012 RED Playwright template (creditor-portal/) + @backlog for ADR 0034 TDD
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -339,13 +339,14 @@ program:
         - petition010
         - petition013
         - petition014
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
       evidence:
         - 3 Cucumber scenarios pass
         - 48 tests pass (39 unit + 9 BDD)
         - Portal starts with dev profile and serves all pages
         - Thymeleaf + HTMX + SKAT standardlayout fully operational
-      next_step: Foundation for Phase 9 creditor portal feature pages (petitions 029-038).
+        - Playwright RED skeleton (ADR 0034 template) — opendebt-e2e/tests/creditor-portal/petition012-bff-manual-submission.spec.ts; titles include @backlog (omitted in CI until GREEN)
+      next_step: Implement browser-level assertions per Gherkin; drop @backlog from each test as scenarios go GREEN. Phase 9 feature pages (029-038) remain the detailed UI surface.
 
     petition013:
       title: UI webtilgaengelighed compliance
