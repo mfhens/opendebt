@@ -1,0 +1,39 @@
+# Creditor portal claim creation wizard (petition033)
+
+spec_id: SPEC-P033
+petition: petition033
+title: Creditor portal claim creation wizard
+module: opendebt-creditor-portal
+feature_file: petitions/petition033-fordringshaverportal-opret-fordring.feature
+
+functional_requirements:
+  - id: FR-P033-01
+    summary: Wizard structure — four steps; role and agreement gates
+    scenarios:
+      - Wizard provides a multi-step form for creating a new claim
+      - Wizard requires CREDITOR_EDITOR role and agreement permissions
+      - User without CREDITOR_EDITOR role cannot access the wizard
+
+  - id: FR-P033-02
+    summary: Step 1 — debtor type CPR/CVR/SE/AKR; person-registry verification
+    scenarios:
+      - Step 1 allows selecting debtor type CPR, CVR, SE, or AKR
+      - CPR debtor verification succeeds when names match
+
+  - id: FR-P033-03
+    summary: Steps 2–3 — claim data entry and review
+    scenarios:
+      - Step 2 collects claim details per agreement-allowed types
+      - Step 3 review shows summary before submission
+
+  - id: FR-P033-04
+    summary: Submission to debt-service via BFF; success and error handling
+    scenarios:
+      - Successful submission creates claim via BFF
+      - Validation errors from debt-service are shown on the wizard
+
+  - id: FR-P033-05
+    summary: HTMX progression, accessibility, Danish locale formatting
+    scenarios:
+      - Wizard steps advance without full page reload where specified
+      - Monetary amounts and dates use Danish locale formatting

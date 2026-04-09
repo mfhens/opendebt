@@ -1,0 +1,32 @@
+# Creditor portal rejected claims (petition032)
+
+spec_id: SPEC-P032
+petition: petition032
+title: Creditor portal rejected claims list and detail view
+module: opendebt-creditor-portal
+feature_file: petitions/petition032-fordringshaverportal-afviste-fordringer.feature
+
+functional_requirements:
+  - id: FR-P032-01
+    summary: Rejected list — pagination; same patterns as petition029 lists
+    scenarios:
+      - Rejected claims list displays paginated rejected claims for the acting creditor
+      - Rejected claims list uses the same patterns as other list views
+
+  - id: FR-P032-02
+    summary: Sort, search, date range, row navigation to detail
+    scenarios:
+      - Rejected claims list supports server-side sorting by any column
+      - Clicking a rejected claim row navigates to the detail view
+
+  - id: FR-P032-03
+    summary: Rejected detail — error display, debtor masking, BFF-only debt-service access
+    scenarios:
+      - Rejected detail displays rejection reasons from debt-service via BFF
+      - CPR numbers are censored in display
+
+  - id: FR-P032-04
+    summary: Access control and layout/a11y parity with other list surfaces
+    scenarios:
+      - CREDITOR_VIEWER can access rejected list and detail
+      - Unauthenticated user cannot access rejected claims list

@@ -1,0 +1,33 @@
+# Creditor portal write-up and write-down (petition034)
+
+spec_id: SPEC-P034
+petition: petition034
+title: Creditor portal write-up and write-down on existing claims
+module: opendebt-creditor-portal
+feature_file: petitions/petition034-fordringshaverportal-opskrivning-nedskrivning.feature
+
+functional_requirements:
+  - id: FR-P034-01
+    summary: Initiate write-up/write-down from detail; submit via BFF to debt-service
+    scenarios:
+      - Editor can initiate a write-up from the claim detail page
+      - Editor can initiate a write-down from the claim detail page
+      - Updates are submitted to debt-service through the BFF
+
+  - id: FR-P034-02
+    summary: Supported write-down types per agreement configuration
+    scenarios:
+      - Portal supports write-down type NEDSKRIV
+      - Portal supports write-down type NEDSKRIVNING_INDBETALING
+
+  - id: FR-P034-03
+    summary: Write-up constraints (e.g. rentefordring rules), validation, receipts
+    scenarios:
+      - Write-up form validates allowed principal and interest rules
+      - After submission user can open adjustment receipt when offered
+
+  - id: FR-P034-04
+    summary: Access control — editor vs viewer; agreement flags
+    scenarios:
+      - CREDITOR_EDITOR can open write-up/write-down when agreement allows
+      - CREDITOR_VIEWER cannot submit write-up or write-down

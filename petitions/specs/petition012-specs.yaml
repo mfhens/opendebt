@@ -1,0 +1,23 @@
+# Creditor portal BFF and manual submission (petition012)
+
+spec_id: SPEC-P012
+petition: petition012
+title: Fordringshaverportal as BFF and manual submission channel
+module: opendebt-creditor-portal
+feature_file: petitions/petition012-fordringshaverportal-bff-and-manual-submission.feature
+
+functional_requirements:
+  - id: FR-P012-01
+    summary: Portal loads creditor profile from creditor-service via BFF
+    scenarios:
+      - The portal reads creditor profile from the backend service
+
+  - id: FR-P012-02
+    summary: Manual claim submission proxied to debt-service; portal is not system of record
+    scenarios:
+      - Manual fordring creation is submitted to debt-service
+
+  - id: FR-P012-03
+    summary: Acting-on-behalf-of and channel binding prevent cross-creditor access
+    scenarios:
+      - A portal user cannot act for an unrelated fordringshaver

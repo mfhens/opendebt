@@ -1,0 +1,40 @@
+# Creditor portal claim detail view (petition030)
+
+spec_id: SPEC-P030
+petition: petition030
+title: Creditor portal claim detail view
+module: opendebt-creditor-portal
+feature_file: petitions/petition030-fordringshaverportal-fordring-detaljevisning.feature
+
+functional_requirements:
+  - id: FR-P030-01
+    summary: Claim information section — identifiers, dates, category, single vs multi-debtor rules
+    scenarios:
+      - Detail view displays claim information fields
+      - Single-debtor claim displays additional date fields
+      - Multi-debtor claim does not display single-debtor-only fields
+
+  - id: FR-P030-02
+    summary: Financial breakdown — categories, recovery interest, collection charges
+    scenarios:
+      - Detail view displays financial breakdown table with debt category rows
+      - Financial breakdown table includes recovery interest row
+
+  - id: FR-P030-03
+    summary: Write-ups and write-downs sections on detail page
+    scenarios:
+      - Detail view displays write-ups section when write-ups exist
+      - Detail view displays write-downs section when write-downs exist
+
+  - id: FR-P030-04
+    summary: Related claims, debtor info, court decisions, receipts, errors, access control
+    scenarios:
+      - Related claims section lists underfordringer when present
+      - Detail view displays debtor information for single-debtor claims
+      - Unauthenticated user cannot access claim detail
+
+  - id: FR-P030-05
+    summary: HTMX/data loading, SKAT layout, semantic structure, locale formatting
+    scenarios:
+      - Claim detail data is loaded from debt-service through the BFF
+      - Detail page uses SKAT standardlayout with skip link and landmarks

@@ -1057,6 +1057,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | **Unit tests** | **Done** | 39 unit tests across 9 test classes |
 | **BDD acceptance tests** | **Done** | 9 Cucumber scenarios: petition012 (3), petition013 (3), petition014 (3) |
 | **E2E Playwright (ADR 0034)** | **Done** | petition029 — `opendebt-e2e/tests/petition029-creditor-claims.spec.ts` + `tests/helpers/creditor-portal-auth.ts`; CI adds `keycloak` to `/etc/hosts` for OAuth redirects |
+| **Module specs YAML (retrofit wave 3)** | **Done** | `petitions/specs/petition012`–`014` and `petition030`–`038` — FR buckets aligned to Gherkin (or petition038 markdown where no `.feature` exists) |
 | SecurityConfig (permissive) | Done | Permits all requests for dev/demo without Keycloak (ADR-0023 browser flow TBD) |
 | logback-spring.xml | Done | Structured JSON logging with traceId/spanId (ADR-0024) |
 | Thymeleaf layout + HTMX | Done | `spring-boot-starter-thymeleaf`, `thymeleaf-layout-dialect`, `htmx.org` WebJar (ADR-0023) |

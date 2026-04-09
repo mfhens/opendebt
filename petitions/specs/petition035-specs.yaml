@@ -1,0 +1,27 @@
+# Creditor portal notifications (petition035)
+
+spec_id: SPEC-P035
+petition: petition035
+title: Creditor portal notification search and download
+module: opendebt-creditor-portal
+feature_file: petitions/petition035-fordringshaverportal-underretninger.feature
+
+functional_requirements:
+  - id: FR-P035-01
+    summary: Notification search page — date range, types, result counts
+    scenarios:
+      - Notification search page is available to creditors
+      - Search parameters include date range and notification types
+      - Search result displays count of matching notifications
+
+  - id: FR-P035-02
+    summary: Download matching notifications — PDF/XML options and packaging
+    scenarios:
+      - Creditor can download matching notifications
+      - Download format options include PDF and XML
+
+  - id: FR-P035-03
+    summary: BFF integration, errors, access control, a11y and layout
+    scenarios:
+      - Search uses notification-service (or configured backend) via BFF
+      - CREDITOR_RECONCILIATION cannot access notification search when denied by policy

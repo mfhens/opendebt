@@ -1,0 +1,26 @@
+# Creditor portal reports (petition037)
+
+spec_id: SPEC-P037
+petition: petition037
+title: Creditor portal report browsing and downloading
+module: opendebt-creditor-portal
+feature_file: petitions/petition037-fordringshaverportal-rapporter.feature
+
+functional_requirements:
+  - id: FR-P037-01
+    summary: Reports list by year/month; filter reconciliation summaries from catalog
+    scenarios:
+      - Reports page displays a list of reports for the selected year and month
+      - Reconciliation summary files are filtered out from the report list
+
+  - id: FR-P037-02
+    summary: Download individual or bulk reports; format and naming rules
+    scenarios:
+      - Creditor downloads an individual report
+      - Bulk download packages multiple reports when supported
+
+  - id: FR-P037-03
+    summary: reporting-service via BFF; empty states; access control
+    scenarios:
+      - Reports list is empty when no reports exist for the selected period
+      - Data is retrieved from reporting-service through the BFF

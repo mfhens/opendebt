@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-04-09
-  updated_by: e2e backfill wave 2 — petition029 creditor claims Playwright + Keycloak CI hosts
+  updated_by: e2e backfill wave 3 — petition012-014 + petition030-038 module specs YAML
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]

@@ -1,0 +1,23 @@
+# UI accessibility compliance (petition013) — cross-portal NFRs
+
+spec_id: SPEC-P013
+petition: petition013
+title: UI accessibility compliance (WCAG-oriented release gates)
+module: opendebt-creditor-portal, opendebt-citizen-portal, opendebt-caseworker-portal
+feature_file: petitions/petition013-ui-webtilgaengelighed-compliance.feature
+
+functional_requirements:
+  - id: FR-P013-01
+    summary: Core flows operable with keyboard only
+    scenarios:
+      - A core portal flow can be completed by keyboard only
+
+  - id: FR-P013-02
+    summary: Form validation errors exposed to assistive tech; not color-only
+    scenarios:
+      - Form validation is accessible
+
+  - id: FR-P013-03
+    summary: Accessibility checks in release readiness
+    scenarios:
+      - Accessibility is part of release readiness

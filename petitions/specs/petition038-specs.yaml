@@ -1,0 +1,42 @@
+# Creditor portal dashboard, navigation, settings (petition038)
+# No Gherkin feature file in-repo; trace to petition markdown + outcome contract.
+
+spec_id: SPEC-P038
+petition: petition038
+title: Fordringshaverportal — dashboard, navigation, settings
+module: opendebt-creditor-portal
+feature_file: null
+primary_artifacts:
+  - petitions/petition038-fordringshaverportal-dashboard-og-navigation.md
+  - petitions/petition038-fordringshaverportal-dashboard-og-navigation-outcome-contract.md
+
+functional_requirements:
+  - id: FR-P038-01
+    summary: Dashboard homepage — HTMX-loaded counts linking to list routes
+    scenarios:
+      - Homepage displays summary counts for recovery, hearing, rejected, zero-balance claims
+      - Each count links to the corresponding list page
+
+  - id: FR-P038-02
+    summary: Secondary navigation — role/permission visibility matrix and external links
+    scenarios:
+      - Navigation provides routes per role matrix (Forside, lists, wizard, notifications, reports, reconciliation, settings)
+      - External links (agreement material, contact, guides) are configurable via properties
+
+  - id: FR-P038-03
+    summary: Post-login landing — default route by role; umbrella claimant selection
+    scenarios:
+      - After login, CREDITOR_VIEWER lands on dashboard
+      - CREDITOR_RECONCILIATION-only user lands on reconciliation entry route
+      - Umbrella users can select acting creditor on vaelg-fordringshaver flow
+
+  - id: FR-P038-04
+    summary: Settings — agreement display, notification email CRUD via creditor-service, audit
+    scenarios:
+      - Settings page shows agreement configuration summary
+      - Editors can update notification email through BFF with audit logging
+
+  - id: FR-P038-05
+    summary: System status / operational indicators when configured
+    scenarios:
+      - System status indicator reflects configured upstream health signals when enabled

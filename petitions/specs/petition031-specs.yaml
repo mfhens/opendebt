@@ -1,0 +1,34 @@
+# Creditor portal claims in hearing (petition031)
+
+spec_id: SPEC-P031
+petition: petition031
+title: Creditor portal claims in hearing list and detail view
+module: opendebt-creditor-portal
+feature_file: petitions/petition031-fordringshaverportal-fordringer-i-hoering.feature
+
+functional_requirements:
+  - id: FR-P031-01
+    summary: Hearing list — pagination, 10 columns, fejl column semantics
+    scenarios:
+      - Hearing list displays paginated claims in hearing for the acting creditor
+      - Each hearing claim row displays all 10 required columns
+      - Fejl column shows count when multiple errors exist
+
+  - id: FR-P031-02
+    summary: Server-side sort, search (Fordrings-ID, CPR, CVR, SE), date filters, HTMX
+    scenarios:
+      - Hearing list supports server-side sorting by any column
+      - Hearing list supports search by Fordrings-ID
+      - Pagination uses HTMX without full page reload
+
+  - id: FR-P031-03
+    summary: Hearing detail — approve / withdraw flows and display rules
+    scenarios:
+      - Hearing detail displays validation errors and hearing status
+      - Editor can approve hearing claim with justification
+
+  - id: FR-P031-04
+    summary: Access control — viewer/editor vs reconciliation; unauthenticated redirect
+    scenarios:
+      - CREDITOR_VIEWER can access hearing list and detail
+      - Unauthenticated user cannot access hearing list

@@ -1,0 +1,32 @@
+# Creditor portal reconciliation (petition036)
+
+spec_id: SPEC-P036
+petition: petition036
+title: Creditor portal reconciliation list, detail, and response submission
+module: opendebt-creditor-portal
+feature_file: petitions/petition036-fordringshaverportal-afstemning.feature
+
+functional_requirements:
+  - id: FR-P036-01
+    summary: Reconciliation list — periods, filters, summary columns
+    scenarios:
+      - Reconciliation list displays reconciliation periods for the acting creditor
+      - Reconciliation list supports filtering by status
+      - Each reconciliation entry shows summary information
+
+  - id: FR-P036-02
+    summary: Detail view — status, period, prior response, line items
+    scenarios:
+      - Detail view displays reconciliation status, year/month, and previous response
+
+  - id: FR-P036-03
+    summary: Response submission and file upload via BFF
+    scenarios:
+      - Creditor can submit reconciliation response for open period
+      - Response payload is sent to debt-service through the BFF
+
+  - id: FR-P036-04
+    summary: Role gating — CREDITOR_RECONCILIATION; deny claim-focused roles where specified
+    scenarios:
+      - CREDITOR_RECONCILIATION can access reconciliation list
+      - CREDITOR_VIEWER cannot access reconciliation list when policy denies
