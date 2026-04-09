@@ -1,0 +1,210 @@
+wing: opendebt
+rooms:
+- name: api_specs
+  description: Files from api-specs/
+  keywords:
+  - api_specs
+  - api-specs
+- name: architecture
+  description: Files from architecture/
+  keywords:
+  - architecture
+  - architecture
+- name: audit_trail_commons
+  description: Files from audit-trail-commons/
+  keywords:
+  - audit_trail_commons
+  - audit-trail-commons
+- name: catala
+  description: Files from catala/
+  keywords:
+  - catala
+  - catala
+- name: compliance
+  description: Files from compliance/
+  keywords:
+  - compliance
+  - compliance
+- name: configuration
+  description: Files from config/
+  keywords:
+  - configuration
+  - config
+- name: design
+  description: Files from design/
+  keywords:
+  - design
+  - design
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: domain
+  description: Files from domain/
+  keywords:
+  - domain
+  - domain
+- name: k8s
+  description: Files from k8s/
+  keywords:
+  - k8s
+  - k8s
+- name: keycloak_oauth2_starter
+  description: Files from keycloak-oauth2-starter/
+  keywords:
+  - keycloak_oauth2_starter
+  - keycloak-oauth2-starter
+- name: load_testing
+  description: Files from load-testing/
+  keywords:
+  - load_testing
+  - load-testing
+- name: marptemplate
+  description: Files from marptemplate/
+  keywords:
+  - marptemplate
+  - marptemplate
+- name: oces3_certificate_parser
+  description: Files from oces3-certificate-parser/
+  keywords:
+  - oces3_certificate_parser
+  - oces3-certificate-parser
+- name: opendebt_case_service
+  description: Files from opendebt-case-service/
+  keywords:
+  - opendebt_case_service
+  - opendebt-case-service
+- name: opendebt_caseworker_portal
+  description: Files from opendebt-caseworker-portal/
+  keywords:
+  - opendebt_caseworker_portal
+  - opendebt-caseworker-portal
+- name: opendebt_citizen_portal
+  description: Files from opendebt-citizen-portal/
+  keywords:
+  - opendebt_citizen_portal
+  - opendebt-citizen-portal
+- name: opendebt_common
+  description: Files from opendebt-common/
+  keywords:
+  - opendebt_common
+  - opendebt-common
+- name: opendebt_creditor_portal
+  description: Files from opendebt-creditor-portal/
+  keywords:
+  - opendebt_creditor_portal
+  - opendebt-creditor-portal
+- name: opendebt_creditor_service
+  description: Files from opendebt-creditor-service/
+  keywords:
+  - opendebt_creditor_service
+  - opendebt-creditor-service
+- name: opendebt_debt_service
+  description: Files from opendebt-debt-service/
+  keywords:
+  - opendebt_debt_service
+  - opendebt-debt-service
+- name: opendebt_e2e
+  description: Files from opendebt-e2e/
+  keywords:
+  - opendebt_e2e
+  - opendebt-e2e
+- name: opendebt_integration_gateway
+  description: Files from opendebt-integration-gateway/
+  keywords:
+  - opendebt_integration_gateway
+  - opendebt-integration-gateway
+- name: opendebt_letter_service
+  description: Files from opendebt-letter-service/
+  keywords:
+  - opendebt_letter_service
+  - opendebt-letter-service
+- name: opendebt_payment_service
+  description: Files from opendebt-payment-service/
+  keywords:
+  - opendebt_payment_service
+  - opendebt-payment-service
+- name: opendebt_person_registry
+  description: Files from opendebt-person-registry/
+  keywords:
+  - opendebt_person_registry
+  - opendebt-person-registry
+- name: opendebt_rules_engine
+  description: Files from opendebt-rules-engine/
+  keywords:
+  - opendebt_rules_engine
+  - opendebt-rules-engine
+- name: opendebt_wage_garnishment_service
+  description: Files from opendebt-wage-garnishment-service/
+  keywords:
+  - opendebt_wage_garnishment_service
+  - opendebt-wage-garnishment-service
+- name: orders
+  description: Files from orders/
+  keywords:
+  - orders
+  - orders
+- name: packs
+  description: Files from packs/
+  keywords:
+  - packs
+  - packs
+- name: petitions
+  description: Files from petitions/
+  keywords:
+  - petitions
+  - petitions
+- name: prompts
+  description: Files from prompts/
+  keywords:
+  - prompts
+  - prompts
+- name: rules_dmn
+  description: Files from rules-dmn/
+  keywords:
+  - rules_dmn
+  - rules-dmn
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: site
+  description: Files from site/
+  keywords:
+  - site
+  - site
+- name: skat_design_system
+  description: Files from skat-design-system/
+  keywords:
+  - skat_design_system
+  - skat-design-system
+- name: steerco
+  description: Files from steerco/
+  keywords:
+  - steerco
+  - steerco
+- name: target
+  description: Files from target/
+  keywords:
+  - target
+  - target
+- name: ufst_bookkeeping_core
+  description: Files from ufst-bookkeeping-core/
+  keywords:
+  - ufst_bookkeeping_core
+  - ufst-bookkeeping-core
+- name: testing
+  description: Files from tests/
+  keywords:
+  - testing
+  - tests
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []
