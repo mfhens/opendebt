@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.common.exception.OpenDebtException;
 import dk.ufst.opendebt.creditor.dto.AdjustmentReceiptDto;
 import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentRequestDto;
@@ -614,33 +615,7 @@ public class DebtServiceClient {
     log.debug("Submitting claim via wizard for creditor: {}", request.getCreditorOrgId());
 
     try {
-      // Build a full DebtDto for the submit endpoint
-      java.util.Map<String, Object> submitRequest = new java.util.LinkedHashMap<>();
-      submitRequest.put(
-          "debtorId",
-          request.getDebtorPersonId() != null ? request.getDebtorPersonId().toString() : null);
-      submitRequest.put(
-          PARAM_CREDITOR_ID,
-          request.getCreditorOrgId() != null ? request.getCreditorOrgId().toString() : null);
-      submitRequest.put("debtTypeCode", request.getDebtTypeCode());
-      submitRequest.put("principalAmount", request.getPrincipalAmount());
-      submitRequest.put("outstandingBalance", request.getOutstandingBalance());
-      submitRequest.put("dueDate", request.getDueDate());
-      submitRequest.put("description", request.getDescription());
-      submitRequest.put("claimArt", "INDR");
-      submitRequest.put("creditorReference", request.getCreditorReference());
-      submitRequest.put("periodFrom", request.getPeriodFrom());
-      submitRequest.put("periodTo", request.getPeriodTo());
-      submitRequest.put("inceptionDate", request.getInceptionDate());
-      submitRequest.put("limitationDate", request.getLimitationDate());
-      submitRequest.put("estateProcessing", request.getEstateProcessing());
-      submitRequest.put("judgmentDate", request.getJudgmentDate());
-      submitRequest.put("settlementDate", request.getSettlementDate());
-      submitRequest.put("interestRule", request.getInterestRule());
-      submitRequest.put("interestRateCode", request.getInterestRateCode());
-      submitRequest.put("additionalInterestRate", request.getAdditionalInterestRate());
-      submitRequest.put("claimNote", request.getClaimNote());
-      submitRequest.put("customerNote", request.getCustomerNote());
+      DebtDto submitRequest = toWizardSubmitDebtDto(request);
 
       ClaimSubmissionApiResponse api =
           webClient
@@ -653,7 +628,13 @@ public class DebtServiceClient {
                     int code = status.value();
                     if (code == HttpStatus.CREATED.value()
                         || code == HttpStatus.UNPROCESSABLE_ENTITY.value()) {
-                      return response.bodyToMono(ClaimSubmissionApiResponse.class);
+                      return response
+                          .bodyToMono(ClaimSubmissionApiResponse.class)
+                          .switchIfEmpty(
+                              Mono.error(
+                                  new OpenDebtException(
+                                      "Empty response body from debt-service submit",
+                                      ERROR_CODE_CLIENT)));
                     }
                     if (status.is4xxClientError()) {
                       return response
@@ -700,6 +681,34 @@ public class DebtServiceClient {
       }
       throw ex;
     }
+  }
+
+  private static DebtDto toWizardSubmitDebtDto(PortalDebtDto request) {
+    return DebtDto.builder()
+        .debtorId(
+            request.getDebtorPersonId() != null ? request.getDebtorPersonId().toString() : null)
+        .creditorId(
+            request.getCreditorOrgId() != null ? request.getCreditorOrgId().toString() : null)
+        .debtTypeCode(request.getDebtTypeCode())
+        .principalAmount(request.getPrincipalAmount())
+        .outstandingBalance(request.getOutstandingBalance())
+        .dueDate(request.getDueDate())
+        .description(request.getDescription())
+        .claimArt("INDR")
+        .creditorReference(request.getCreditorReference())
+        .periodFrom(request.getPeriodFrom())
+        .periodTo(request.getPeriodTo())
+        .inceptionDate(request.getInceptionDate())
+        .limitationDate(request.getLimitationDate())
+        .estateProcessing(request.getEstateProcessing())
+        .judgmentDate(request.getJudgmentDate())
+        .settlementDate(request.getSettlementDate())
+        .interestRule(request.getInterestRule())
+        .interestRateCode(request.getInterestRateCode())
+        .additionalInterestRate(request.getAdditionalInterestRate())
+        .claimNote(request.getClaimNote())
+        .customerNote(request.getCustomerNote())
+        .build();
   }
 
   private ClaimSubmissionResultDto mapClaimSubmissionApiResponse(ClaimSubmissionApiResponse api) {

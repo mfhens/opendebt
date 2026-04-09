@@ -31,12 +31,6 @@ function formatLocalYmd(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function localDateYearsFromNow(years: number): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + years);
-  return formatLocalYmd(d);
-}
-
 function localDateDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -107,8 +101,12 @@ test.describe('petition012 creditor portal BFF and manual submission', () => {
     await page.locator('#amount').fill('1250.50');
     await page.locator('#principalAmount').fill('1000.00');
     await page.locator('#creditorReference').fill(`E2E-P012-${Date.now()}`);
-    await page.locator('#dueDate').fill(localDateDaysAgo(30));
-    await page.locator('#limitationDate').fill(localDateYearsFromNow(5));
+    const dueYmd = localDateDaysAgo(30);
+    await page.locator('#dueDate').fill(dueYmd);
+    await expect(page.locator('#dueDate')).toHaveValue(dueYmd);
+    // Fixed calendar date avoids CI timezone / Date#setFullYear edge cases vs debt-service validation
+    await page.locator('#limitationDate').fill('2035-12-31');
+    await expect(page.locator('#limitationDate')).toHaveValue('2035-12-31');
     await page.selectOption('#estateProcessing', 'false');
     await page.getByRole('button', { name: /Next|Næste/i }).click();
     await page.waitForURL(/fordring\/opret\/step\/3/, { timeout: 60_000 });
@@ -117,7 +115,7 @@ test.describe('petition012 creditor portal BFF and manual submission', () => {
     await page.getByRole('button', { name: /Submit claim|Indsend fordring/i }).click();
     await page.waitForURL(/fordring\/opret\/step\/4/, { timeout: 120_000 });
 
-    await expect(page.locator('.skat-alert--success[role="status"]')).toBeVisible();
+    await expect(page.locator('.skat-alert--success[role="status"]')).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByRole('heading', { name: /Claim accepted|Fordring accepteret/i }),
     ).toBeVisible();

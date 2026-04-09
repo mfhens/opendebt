@@ -30,12 +30,12 @@
     </nav>
 
     <!-- UDFOERT: Accepted / Receipt -->
-    <div th:if="${result.outcome == 'UDFOERT'}" class="skat-alert skat-alert--success" role="status">
+    <div th:if="${#strings.equals(result.outcome, 'UDFOERT')}" class="skat-alert skat-alert--success" role="status">
       <h2 th:text="#{wizard.result.accepted.heading}">Claim accepted</h2>
       <p th:text="#{wizard.result.accepted.message}">Your claim has been accepted for collection.</p>
     </div>
 
-    <div th:if="${result.outcome == 'UDFOERT'}">
+    <div th:if="${#strings.equals(result.outcome, 'UDFOERT')}">
       <h3 th:text="#{wizard.result.receipt.heading}">Receipt</h3>
       <dl class="skat-description-list">
         <dt th:text="#{wizard.result.receipt.claimId}">Claim ID</dt>
@@ -66,12 +66,12 @@
     </div>
 
     <!-- AFVIST: Rejected -->
-    <div th:if="${result.outcome == 'AFVIST'}" class="skat-alert skat-alert--error" role="alert">
+    <div th:if="${#strings.equals(result.outcome, 'AFVIST')}" class="skat-alert skat-alert--error" role="alert">
       <h2 th:text="#{wizard.result.rejected.heading}">Claim rejected</h2>
       <p th:text="#{wizard.result.rejected.message}">Your claim was rejected. Please review the errors below.</p>
     </div>
 
-    <div th:if="${result.outcome == 'AFVIST' and result.errors != null and !result.errors.isEmpty()}">
+    <div th:if="${#strings.equals(result.outcome, 'AFVIST') and result.errors != null and !result.errors.isEmpty()}">
       <h3 th:text="#{wizard.result.rejected.errors.heading}">Validation errors</h3>
       <ul class="skat-error-list">
         <li th:each="err : ${result.errors}">
@@ -86,12 +86,12 @@
     </div>
 
     <!-- HOERING: Hearing -->
-    <div th:if="${result.outcome == 'HOERING'}" class="skat-alert skat-alert--info" role="status">
+    <div th:if="${#strings.equals(result.outcome, 'HOERING')}" class="skat-alert skat-alert--info" role="status">
       <h2 th:text="#{wizard.result.hearing.heading}">Claim in hearing</h2>
       <p th:text="#{wizard.result.hearing.message}">Your claim is pending review.</p>
     </div>
 
-    <div th:if="${result.outcome == 'HOERING'}">
+    <div th:if="${#strings.equals(result.outcome, 'HOERING')}">
       <dl class="skat-description-list">
         <dt th:text="#{wizard.result.receipt.claimId}">Claim ID</dt>
         <dd th:text="${result.claimId}">uuid</dd>
