@@ -13,11 +13,21 @@ const portals = [
 
 for (const { name, port, contextPath } of portals) {
   test(`${name} portal actuator health is UP`, async ({ request }) => {
-    const response = await request.get(
-      `http://127.0.0.1:${port}${contextPath}/actuator/health`,
-    );
-    expect(response.ok(), `GET /actuator/health on port ${port}`).toBeTruthy();
-    const body = await response.json();
-    expect(body.status, `health status on port ${port}`).toBe('UP');
+    const url = `http://127.0.0.1:${port}${contextPath}/actuator/health`;
+    // Do not follow redirects: OAuth portals return 302 to Keycloak using the docker hostname
+    // `keycloak`, which does not resolve on the GitHub Actions host (EAI_AGAIN).
+    const response = await request.get(url, { maxRedirects: 0 });
+    const status = response.status();
+
+    if (status === 200) {
+      const body = await response.json();
+      expect(body.status, `health status on port ${port}`).toBe('UP');
+      return;
+    }
+
+    // Non-dev profiles require login; same as `curl -sf` in CI (302 counts as "reachable").
+    expect(status, `GET ${url}`).toBe(302);
+    const location = response.headers().location ?? '';
+    expect(location, 'redirect to OAuth login').toMatch(/oauth2|authorization/i);
   });
 }
