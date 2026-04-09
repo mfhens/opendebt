@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-04-09
-  updated_by: e2e backfill wave 3 — petition012-014 + petition030-038 module specs YAML
+  updated_by: e2e backfill wave 4 — Playwright petition030-038 creditor portal surfaces
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -692,7 +692,7 @@ program:
         and zero-balance claims (nulfordringer), plus count views. Data from debt-service via BFF.
         Replaces legacy PSRM DKGetClaimsForClaimant / DKGetZeroClaimsCountForClaimant.
         Uses HTMX for progressive loading. E2E backfill covers OAuth gate, post-login list shells, 13-column table, counts page, and layout landmarks; deeper scenarios (sorting, search, role matrix) remain for Cucumber or future Playwright expansion.
-      next_step: Extend Playwright to petition030+ or add sorting/search assertions; optional user-testing-flow-validator for VAL-P029-*.
+      next_step: Add sorting/search assertions or optional user-testing-flow-validator for VAL-P029-*; citizen flows wave 5 per petitions/e2e-backfill-triage.md.
 
     petition030:
       title: Fordringshaverportal -- Claim detail view
@@ -702,12 +702,14 @@ program:
       depends_on:
         - petition029
         - petition012
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (claim detail / not-found alert)
       notes: >
         Comprehensive claim detail page: claim info, financial breakdown, write-ups, write-downs,
         related claims (underfordringer), debtor info, court decisions. Collapsible sections.
         Replaces legacy PSRM DKClaimDetails. Accessed by clicking a row in petition029 list.
-      next_step: Implement after petition029 claims list provides the navigation path.
+      next_step: Expand E2E with a known seeded claim id for full section visibility; optional user-testing-flow-validator for VAL-P030-*.
 
     petition031:
       title: Fordringshaverportal -- Claims in hearing
@@ -717,14 +719,16 @@ program:
       depends_on:
         - petition012
         - petition038
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (hearing list HTMX table)
       notes: >
         List and detail views for claims in hearing (hoering). Editors can approve (with justification)
         or withdraw hearing claims. Status transitions to Afventer-Gaeldsstyrelsen after approval.
         14-day SLA tracking. Requires hearing backend (W7-HEAR-01) for full functionality.
       backend_dependencies:
         - W7-HEAR-01 (hearing workflow in debt-service)
-      next_step: Implement portal views after petition038 navigation is in place. Full functionality requires Wave 7 hearing backend.
+      next_step: Full hearing workflow E2E when W7-HEAR-01 data is available; optional VAL-P031-* validator.
 
     petition032:
       title: Fordringshaverportal -- Rejected claims
@@ -738,12 +742,14 @@ program:
         - petition016
         - petition017
         - petition018
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (rejected list HTMX table)
       notes: >
         List and detail views for rejected claims. Shows validation error codes and descriptions
         from petitions 015-018. Displays debtor info, caseworker remarks, rejection reasons.
         Replaces legacy NyMF AfvistAktionerSoeg.
-      next_step: Implement portal views. Validation rules (petition015-018) are already implemented.
+      next_step: Rejected-claim detail E2E with seeded data; optional VAL-P032-* validator.
 
     petition033:
       title: Fordringshaverportal -- Claim creation wizard
@@ -756,7 +762,9 @@ program:
         - petition008
         - petition009
         - petition023
-      last_reviewed: 2026-04-28
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (wizard step 1 when agreement allows; skipped otherwise)
       notes: >
         Multi-step wizard: debtor validation (CPR/CVR/SE/AKR), claim data entry (field visibility
         driven by creditor agreement), review, and submission. Submission outcomes: UDFOERT/AFVIST/HOERING.
@@ -765,7 +773,7 @@ program:
         All 3 functional gaps now closed: (1) real person-registry lookup via WebClient (TB-021),
         (2) all 20 wizard fields forwarded to debt-service, (3) FR 22 audit logging via ClsAuditClient
         (non-PII only; failure-safe). CPR throttling (FR 6) deferred as separate TB item.
-      next_step: Done. CPR throttling to be raised as new TB item (FR 6).
+      next_step: End-to-end submission Playwright when stable test data exists. CPR throttling to be raised as new TB item (FR 6).
 
     petition034:
       title: Fordringshaverportal -- Write-up and write-down submission
@@ -777,7 +785,9 @@ program:
         - petition030
         - petition008
         - petition012
-      last_reviewed: 2026-03-28
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (adjustment page permission gate or form shell; baseline before petition053 completion)
       notes: >
         Rudimentary implementation exists: 8 ClaimAdjustmentType values, permission gate,
         basic form, forwarded to debt-service. Superseded by petition053 which provides a
@@ -795,14 +805,16 @@ program:
         - petition012
         - petition038
         - petition004
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (notifications search page shell)
       notes: >
         Search notifications by date range and type (7 PSRM types). Download as PDF/XML zip.
         Notification types governed by creditor agreement preferences. Requires backend notification
         storage (petition004 / W7-UND-01) for full functionality.
       backend_dependencies:
         - W7-UND-01 (notification domain model)
-      next_step: Implement portal views after petition038 navigation. Full data requires Wave 7 notification backend.
+      next_step: Search results and download E2E when W7-UND-01 data is available.
 
     petition036:
       title: Fordringshaverportal -- Reconciliation
@@ -813,7 +825,9 @@ program:
         - petition012
         - petition038
         - petition008
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (reconciliation list shell)
       notes: >
         Reconciliation period list, detail with basis data (tilgang, tilbagekaldt, opskrevet,
         nedskrevet), and response submission (forklaret/uforklaret difference). Requires
@@ -821,7 +835,7 @@ program:
         module (not yet defined as a petition).
       backend_dependencies:
         - Reconciliation module in debt-service (not yet petitioned)
-      next_step: Implement portal views. Backend reconciliation module needs its own petition.
+      next_step: Detail and response submission E2E when reconciliation API data exists; backend module petition.
 
     petition037:
       title: Fordringshaverportal -- Monthly reports
@@ -832,13 +846,15 @@ program:
         - petition012
         - petition038
         - petition008
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (reports selector and list region)
       notes: >
         Year/month browser for creditor reports. Download as zip. Server-side access control
         replaces legacy AES key encryption scheme. Requires backend reporting/storage module.
       backend_dependencies:
         - Reporting service/module (not yet petitioned)
-      next_step: Implement portal views. Backend reporting module needs its own petition.
+      next_step: Report download E2E when reporting backend returns rows; backend reporting module petition.
 
     petition038:
       title: Fordringshaverportal -- Dashboard, navigation, and settings
@@ -851,14 +867,16 @@ program:
         - petition009
         - petition010
         - petition021
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts (dashboard HTMX claim counts + settings page shell)
       notes: >
         Dashboard homepage with summary counts (claims in recovery, hearing, rejected, zero-balance).
         Portal navigation with 10+ sections (role-based visibility). Default landing logic by role.
         Umbrella-user claimant selection. Settings page with creditor agreement view and contact
         email management. System status indicator. This is the ENTRY POINT for Phase 9 -- establishes
         the navigation structure all other portal feature pages plug into.
-      next_step: Implement FIRST in Phase 9. All other petition029-037 pages depend on this navigation structure.
+      next_step: Role-matrix navigation coverage and umbrella claimant selection E2E as needed.
 
     # --- Phase 10+: Caseworker portal, batch, and advanced features ---
 

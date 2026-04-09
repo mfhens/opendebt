@@ -12,7 +12,7 @@ This matrix supports the ADR 0034 backfill: which petitions warrant browser-leve
 | petition014 | Accessibility statements | yes | `petition014-specs.yaml` | Wave 4+ (specs ready) |
 | petition023–026 | Citizen auth / debt UI | yes | not yet | later |
 | petition029 | Creditor claims lists / counts | yes | `petition029-specs.yaml` | Wave 2 (done) |
-| petition030–038 | Creditor portal (detail, hearing, …) | yes | `petition030`–`petition038-specs.yaml` | Wave 4+ (specs ready) |
+| petition030–038 | Creditor portal (detail, hearing, …) | yes | `petition030`–`petition038-specs.yaml` | Wave 4 (done) |
 | petition001 | OCR payment matching | no | skip | skip |
 | petition008–010 | Creditor master data / binding | no | skip | skip |
 | petition015–018 | Drools validation rules | no | skip | skip |
@@ -23,4 +23,6 @@ This matrix supports the ADR 0034 backfill: which petitions warrant browser-leve
 
 **Wave 3 (done):** Module specs YAML for **petition012–014** and **petition030–038** (twelve files). Petition038 has no Gherkin feature in-repo; YAML references the petition + outcome contract markdown.
 
-**Wave 4 (next):** Extend Playwright to petition030+ (reuse auth helper), and/or citizen **023–026**; add `petition023-specs.yaml` etc. when those flows are in scope.
+**Wave 4 (done):** Creditor portal shells **petition030–038** — `opendebt-e2e/tests/petition030-038-creditor-portal-surfaces.spec.ts` (OAuth gate, HTMX tables, wizard step 1 when enabled, adjustment shell, notifications, reconciliation, reports, dashboard counts, settings).
+
+**Wave 5 (next):** Citizen **023–026** Playwright and/or `petition023-specs.yaml` etc. when those flows are in scope; deeper creditor scenarios (sorting, search, downloads) optional.
