@@ -29,16 +29,19 @@ test.describe('petition029 creditor claims lists', () => {
       await page.goto(`${CREDITOR}/fordringer`, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.locator('#claims-search-form')).toBeVisible();
-      await expect(page.locator('#claims-table-container')).toBeVisible();
-      await expect(page.locator('table.skat-table thead th[scope="col"]')).toHaveCount(13, { timeout: 45_000 });
-      await expect(page.locator('table.skat-table caption')).toBeAttached();
+      // HTMX swap can briefly duplicate id="claims-table-container" (target + fragment); assert on the table in main.
+      const claimTable = page.locator('main#main-content table.skat-table').first();
+      await expect(claimTable).toBeVisible({ timeout: 45_000 });
+      await expect(claimTable.locator('thead th[scope="col"]')).toHaveCount(13, { timeout: 45_000 });
+      await expect(claimTable.locator('caption')).toBeAttached();
     });
 
     test('Zero-balance list page shell loads', async ({ page }) => {
       await page.goto(`${CREDITOR}/fordringer/nulfordringer`, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await expect(page.locator('#claims-table-container')).toBeVisible();
-      await expect(page.locator('table.skat-table thead th[scope="col"]')).toHaveCount(13, { timeout: 45_000 });
+      const claimTable = page.locator('main#main-content table.skat-table').first();
+      await expect(claimTable).toBeVisible({ timeout: 45_000 });
+      await expect(claimTable.locator('thead th[scope="col"]')).toHaveCount(13, { timeout: 45_000 });
     });
 
     test('Claims counts page renders', async ({ page }) => {

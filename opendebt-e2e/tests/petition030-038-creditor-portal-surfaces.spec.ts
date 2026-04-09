@@ -49,8 +49,9 @@ test.describe('petition030-038 creditor portal surfaces', () => {
       await page.goto(`${CREDITOR}/fordringer/hoering`, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.locator('#hearing-search-form')).toBeVisible();
-      await expect(page.locator('#hearing-table-container')).toBeVisible();
-      await expect(page.locator('table.skat-table thead th[scope="col"]')).toHaveCount(11, {
+      const hearingTable = page.locator('main#main-content table.skat-table').first();
+      await expect(hearingTable).toBeVisible({ timeout: 45_000 });
+      await expect(hearingTable.locator('thead th[scope="col"]')).toHaveCount(11, {
         timeout: 45_000,
       });
     });
@@ -60,8 +61,9 @@ test.describe('petition030-038 creditor portal surfaces', () => {
       await expect(page).toHaveURL(/afviste/);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.locator('#claims-search-form')).toBeVisible();
-      await expect(page.locator('#claims-table-container')).toBeVisible();
-      await expect(page.locator('table.skat-table thead th[scope="col"]')).toHaveCount(10, {
+      const rejectedTable = page.locator('main#main-content table.skat-table').first();
+      await expect(rejectedTable).toBeVisible({ timeout: 45_000 });
+      await expect(rejectedTable.locator('thead th[scope="col"]')).toHaveCount(10, {
         timeout: 45_000,
       });
     });
