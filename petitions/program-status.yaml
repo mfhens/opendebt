@@ -2868,6 +2868,28 @@ program:
         ledger postings for accrued interest, not only `interest_journal_entries` in debt-service
         — align with `ufst-bookkeeping-core` / BookkeepingService interest paths (ADR-0033).
 
+    - id: TB-056
+      title: "Bind CREDITOR validate-action to JWT creditor org (no cross-tenant probing)"
+      status: open
+      priority: medium
+      created: 2026-04-09
+      petitions: [petition012]
+      description: |
+        Interim fix (commit cf6d753): `POST /api/v1/creditors/{creditorOrgId}/validate-action` allows
+        `ROLE_CREDITOR` so debt-service can forward the portal user JWT and complete the claim wizard.
+        That role alone does not restrict `{creditorOrgId}` to the caller’s organization — an
+        authenticated creditor could in theory enumerate other creditors’ UUIDs.
+
+        Hardening:
+        - Resolve the acting creditor organization from the JWT (realm claim / custom mapper — align
+          with creditor-portal `PortalSessionService` and debt-service `CreditorAccessChecker` patterns).
+        - Enforce `path creditorOrgId == resolved organization id` for `ROLE_CREDITOR` (SERVICE/CASEWORKER
+          may retain broader access for operations).
+        - Add integration tests: creditor A token + creditor B UUID → 403; same org → 200.
+        - Document the claim name in Keycloak realm export if a new mapper is required.
+
+        Effort: SMALL (1–2 days). Risk: LOW if aligned with existing access-check infrastructure.
+
 escalations:
   - id: ESC-055
     petition: P055
