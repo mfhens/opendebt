@@ -33,6 +33,8 @@ The two formulas in this project are:
 
 `mol-petition-implement` (v3) now includes **`playwright-test-generator`** and **`user-testing-flow-validator`** beads aligned with the conductor’s Phase 5 and 6.5. The full graph in `~/.claude/agents/pipeline-conductor.agent.md` is still richer: architecture / C4 gates, specifications as YAML, optional Catala **before** specs for legal-footprint work, BDD routing when not Playwright, deployment drift gates, release-manager, etc. Use `@pipeline-conductor` when you need that end-to-end path. **Catala ordering still differs:** Gas City runs **catala-encode after code review**; the conductor places Catala encoding **after architecture and before specifications** in the full pipeline. See ADR 0034 and the agents README.
 
+**Retroactive E2E backfill:** Petitions implemented before Playwright wiring may need GREEN tests instead of RED generator output. In `opendebt-e2e/playwright.config.ts`, when `CI` is set, tests whose titles contain `@backlog` are excluded (`grepInvert`) so unfinished Playwright work does not fail GitHub Actions. See `petitions/e2e-backfill-triage.md`.
+
 ---
 
 ## Prerequisites

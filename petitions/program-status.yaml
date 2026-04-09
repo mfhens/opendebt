@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-04-05
-  updated_by: copilot (TB-055 — Wire LedgerServiceClient to payment-service ledger API)
+  updated_at: 2026-04-09
+  updated_by: e2e backfill wave 1 — petition022 Playwright + validation contract
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -586,12 +586,18 @@ program:
         - petition013
         - petition014
         - petition021
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-09
+      evidence:
+        - Playwright E2E (GREEN) — opendebt-e2e/tests/petition022-citizen-landing.spec.ts (ADR 0034 backfill)
+        - Module specs — petitions/specs/petition022-specs.yaml
+        - Phase 6.5 validation mapping — petitions/validation/petition022/validation-contract.md (VAL-P022-*)
+        - Triage matrix — petitions/e2e-backfill-triage.md
       notes: >
-        All dependencies are now validated. Implementation can begin immediately.
-        Wave 6 execution backlog (W6-CP-01 through W6-CP-12) is fully planned.
-        opendebt-citizen-portal module exists as skeleton (Spring Boot app, no UI templates yet).
-      next_step: Execute Wave 6 (W6-CP-01 through W6-CP-12) to build the citizen portal landing page.
+        Landing page, FAQ, i18n, accessibility statement (/was), and configurable external links are
+        implemented in opendebt-citizen-portal. Browser E2E tests and validation contract IDs were added
+        retroactively (pipeline Phase 5/6.5 artifacts). CI excludes tests tagged @backlog in titles; these
+        tests are not tagged backlog.
+      next_step: Optionally run user-testing-flow-validator against VAL-P022-* when the full stack is available; extend E2E to petition023+ citizen flows per petitions/e2e-backfill-triage.md Wave 2.
 
     # --- Phase 7: Citizen authentication and backend APIs ---
 

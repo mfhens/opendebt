@@ -1120,6 +1120,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
 | DashboardController | Done | `GET /dashboard` for authenticated citizens |
 | **Tests** | **Done** | LandingPageControllerTest, DashboardControllerTest, SecurityConfigTest, CitizenOidcUserServiceTest, PersonRegistryClientTest, ArchitectureTest |
+| **E2E (Playwright)** | **Done** | `opendebt-e2e/tests/petition022-citizen-landing.spec.ts` — citizen landing + WAS (petition022, ADR 0034); CI omits `@backlog`-tagged tests |
 | **Case detail and timeline (petition050)** | **Done** | |
 | CaseDetailController | Done | `GET /cases/{caseId}` — case detail page with timeline tab |
 | CitizenTimelineController | Done | `GET /cases/{caseId}/tidslinje` + `GET /cases/{caseId}/tidslinje/entries` — citizen-filtered timeline (FINANCIAL, CASE, DEBT_LIFECYCLE categories) |

@@ -1,0 +1,66 @@
+# Module specs — petition022 (citizen portal landing page)
+# Source: petitions/petition022-skyldnerportal-landing-page.md,
+#         petitions/petition022-skyldnerportal-landing-page-outcome-contract.md,
+#         petitions/petition022-skyldnerportal-landing-page.feature
+
+spec_id: SPEC-P022
+petition: petition022
+title: Citizen portal landing page
+module: opendebt-citizen-portal
+feature_file: petitions/petition022-skyldnerportal-landing-page.feature
+
+functional_requirements:
+  - id: FR-P022-01
+    summary: Public landing route returns HTTP 200 and debt-overview heading
+    scenarios:
+      - Landing page is served at the portal root
+
+  - id: FR-P022-02
+    summary: FAQ section exposes seven collapsible items
+    scenarios:
+      - Landing page displays FAQ with 7 items
+
+  - id: FR-P022-03
+    summary: Primary self-service CTA links to configured Mit debt overview URL
+    scenarios:
+      - Landing page includes a link to MitID self-service
+
+  - id: FR-P022-04
+    summary: Snapshot / daily interest notice is visible on landing
+    scenarios:
+      - Landing page explains interest accrues daily
+
+  - id: FR-P022-05
+    summary: Debt errors notice block with configurable external link
+    scenarios:
+      - Landing page displays debt errors section
+
+  - id: FR-P022-06
+    summary: Danish and English locales render correct landing heading
+    scenarios:
+      - Landing page supports Danish and English
+
+  - id: FR-P022-07
+    summary: Accessibility statement available at /was
+    scenarios:
+      - Accessibility statement page is served
+
+  - id: FR-P022-08
+    summary: Skip link and main landmark for WCAG navigation
+    scenarios:
+      - Landing page includes skip link and landmark roles
+
+  - id: FR-P022-09
+    summary: Language selector navigates supported locales
+    scenarios:
+      - Landing page includes language selector
+
+  - id: FR-P022-10
+    summary: Footer links to accessibility statement
+    scenarios:
+      - Footer links to accessibility statement
+
+  - id: FR-P022-11
+    summary: External URLs resolved from opendebt.citizen.external-links configuration
+    scenarios:
+      - External URLs are configurable
