@@ -8,6 +8,8 @@ const isCi = !!process.env.CI;
  */
 export default defineConfig({
   testDir: './tests',
+  /** Wizard + Keycloak login can exceed Playwright's default 30s on CI; keep headroom for step-4 assertions. */
+  timeout: isCi ? 180_000 : 120_000,
   fullyParallel: true,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,

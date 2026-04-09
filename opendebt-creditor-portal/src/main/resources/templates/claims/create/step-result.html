@@ -30,7 +30,9 @@
     </nav>
 
     <!-- UDFOERT: Accepted / Receipt -->
-    <div th:if="${#strings.equals(result.outcome, 'UDFOERT')}" class="skat-alert skat-alert--success" role="status">
+    <div th:if="${#strings.equals(result.outcome, 'UDFOERT')}"
+         data-testid="wizard-result-accepted"
+         class="skat-alert skat-alert--success" role="status">
       <h2 th:text="#{wizard.result.accepted.heading}">Claim accepted</h2>
       <p th:text="#{wizard.result.accepted.message}">Your claim has been accepted for collection.</p>
     </div>
@@ -66,7 +68,9 @@
     </div>
 
     <!-- AFVIST: Rejected -->
-    <div th:if="${#strings.equals(result.outcome, 'AFVIST')}" class="skat-alert skat-alert--error" role="alert">
+    <div th:if="${#strings.equals(result.outcome, 'AFVIST')}"
+         data-testid="wizard-result-rejected"
+         class="skat-alert skat-alert--error" role="alert">
       <h2 th:text="#{wizard.result.rejected.heading}">Claim rejected</h2>
       <p th:text="#{wizard.result.rejected.message}">Your claim was rejected. Please review the errors below.</p>
     </div>

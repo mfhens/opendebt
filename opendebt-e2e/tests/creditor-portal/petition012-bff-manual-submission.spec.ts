@@ -115,7 +115,14 @@ test.describe('petition012 creditor portal BFF and manual submission', () => {
     await page.getByRole('button', { name: /Submit claim|Indsend fordring/i }).click();
     await page.waitForURL(/fordring\/opret\/step\/4/, { timeout: 120_000 });
 
-    await expect(page.locator('.skat-alert--success[role="status"]')).toBeVisible({ timeout: 30_000 });
+    const accepted = page.getByTestId('wizard-result-accepted');
+    const rejected = page.getByTestId('wizard-result-rejected');
+    await expect(accepted.or(rejected)).toBeVisible({ timeout: 60_000 });
+    if (await rejected.isVisible()) {
+      const errors = await page.locator('.skat-error-list').innerText().catch(() => '(no error list)');
+      throw new Error(`E2E expected UDFOERT but portal showed AFVIST. Validation: ${errors}`);
+    }
+    await expect(accepted).toBeVisible();
     await expect(
       page.getByRole('heading', { name: /Claim accepted|Fordring accepteret/i }),
     ).toBeVisible();
