@@ -192,11 +192,15 @@ services:
       DEBT_SERVICE_URL: http://debt-service:8082
       CASE_SERVICE_URL: http://case-service:8081
       CREDITOR_SERVICE_URL: http://creditor-service:8092
+      # Wizard step 1 CPR/CVR verification — must use Docker service hostname, not localhost
+      PERSON_REGISTRY_URL: http://person-registry:8090
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       keycloak:
         condition: service_healthy
       creditor-service:
+        condition: service_started
+      person-registry:
         condition: service_started
 
   caseworker-portal:

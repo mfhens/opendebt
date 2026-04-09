@@ -23,16 +23,24 @@ const DEMO_CPR_DEBTOR = {
   lastName: 'Andersen',
 } as const;
 
-function isoDateYearsFromNow(years: number): string {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + years);
-  return d.toISOString().slice(0, 10);
+/** YYYY-MM-DD in local calendar (avoids UTC shift from `toISOString()` on non-UTC hosts). */
+function formatLocalYmd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
-function isoDateDaysAgo(days: number): string {
+function localDateYearsFromNow(years: number): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + years);
+  return formatLocalYmd(d);
+}
+
+function localDateDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
+  return formatLocalYmd(d);
 }
 
 test.describe('petition012 creditor portal BFF and manual submission', () => {
@@ -99,8 +107,8 @@ test.describe('petition012 creditor portal BFF and manual submission', () => {
     await page.locator('#amount').fill('1250.50');
     await page.locator('#principalAmount').fill('1000.00');
     await page.locator('#creditorReference').fill(`E2E-P012-${Date.now()}`);
-    await page.locator('#dueDate').fill(isoDateDaysAgo(30));
-    await page.locator('#limitationDate').fill(isoDateYearsFromNow(5));
+    await page.locator('#dueDate').fill(localDateDaysAgo(30));
+    await page.locator('#limitationDate').fill(localDateYearsFromNow(5));
     await page.selectOption('#estateProcessing', 'false');
     await page.getByRole('button', { name: /Next|Næste/i }).click();
     await page.waitForURL(/fordring\/opret\/step\/3/, { timeout: 60_000 });

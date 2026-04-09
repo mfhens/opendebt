@@ -2,9 +2,12 @@ package dk.ufst.opendebt.creditor.steps;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.mockito.ArgumentCaptor;
@@ -19,6 +22,7 @@ import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.controller.DashboardController;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionRequest;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionResponse;
+import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 import dk.ufst.opendebt.creditor.dto.PortalDebtDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
@@ -108,49 +112,57 @@ public class Petition012Steps {
     assertThat(creditor.getCreditorOrgId()).isEqualTo(boundCreditorOrgId);
   }
 
-  // Scenario 2: Manual fordring creation is submitted to debt-service via BFF
+  // Scenario 2: Manual fordring uses submitClaimWizard (debt-service /debts/submit) via BFF
 
   @Given("portal user {string} is allowed to create fordringer for fordringshaver {string}")
   public void portalUserAllowedToCreateFordringer(String userId, String creditorAlias) {
     boundCreditorOrgId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     session.setAttribute("actingCreditorOrgId", boundCreditorOrgId);
 
-    when(debtServiceClient.createDebt(any(PortalDebtDto.class)))
-        .thenAnswer(
-            invocation -> {
-              return invocation.getArgument(0);
-            });
+    when(debtServiceClient.submitClaimWizard(any(PortalDebtDto.class)))
+        .thenReturn(
+            ClaimSubmissionResultDto.builder()
+                .outcome("UDFOERT")
+                .claimId(UUID.randomUUID())
+                .processingStatus("ACCEPTED")
+                .build());
   }
 
   @When("user {string} submits a manual fordring in the portal")
   public void userSubmitsManualFordring(String userId) {
-    // The portal delegates to debt-service via DebtServiceClient.
-    // We verify the delegation directly since the wizard controller has multiple
-    // steps and the BFF contract is what matters here.
+    // Same BFF entry point as ClaimCreateController: DebtServiceClient.submitClaimWizard
+    // (debt-service POST /api/v1/debts/submit), not createDebt (/api/v1/debts).
+    LocalDate today = LocalDate.now();
     PortalDebtDto request =
         PortalDebtDto.builder()
             .creditorOrgId(boundCreditorOrgId)
-            .debtorPersonId(UUID.randomUUID())
+            .debtorPersonId(UUID.fromString("d0000000-0000-0000-0000-000000000001"))
             .debtTypeCode("SKAT")
-            .principalAmount(new java.math.BigDecimal("10000.00"))
+            .principalAmount(new BigDecimal("10000.00"))
+            .outstandingBalance(new BigDecimal("12500.00"))
+            .dueDate(today.minusDays(30))
+            .limitationDate(today.plusYears(5))
+            .estateProcessing(false)
             .build();
-    debtServiceClient.createDebt(request);
+    debtServiceClient.submitClaimWizard(request);
   }
 
-  @Then("the portal sends the request to debt-service")
-  public void portalSendsRequestToDebtService() {
+  @Then("the portal sends the claim submit request to debt-service")
+  public void portalSendsClaimSubmitRequestToDebtService() {
     ArgumentCaptor<PortalDebtDto> captor = ArgumentCaptor.forClass(PortalDebtDto.class);
-    verify(debtServiceClient).createDebt(captor.capture());
+    verify(debtServiceClient).submitClaimWizard(captor.capture());
     PortalDebtDto sent = captor.getValue();
     assertThat(sent.getCreditorOrgId()).isEqualTo(boundCreditorOrgId);
     assertThat(sent.getPrincipalAmount()).isNotNull();
+    assertThat(sent.getDebtorPersonId()).isNotNull();
   }
 
   @And("the portal does not persist the fordring as its own domain data")
   public void portalDoesNotPersistFordring() {
     // The portal has no JPA repositories and no database of its own.
-    // Verification: the only data interaction is via DebtServiceClient (already verified above).
+    // Verification: delegation is via submitClaimWizard only (no local persistence API).
     assertThat(boundCreditorOrgId).isNotNull();
+    verify(debtServiceClient, never()).createDebt(any(PortalDebtDto.class));
   }
 
   // Scenario 3: A portal user cannot act for an unrelated fordringshaver

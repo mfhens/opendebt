@@ -5,10 +5,10 @@ Feature: Fordringshaverportal as BFF and manual submission channel
     When user "U1" opens the fordringshaver portal
     Then the portal reads creditor profile data from the creditor master data service
 
-  Scenario: Manual fordring creation is submitted to debt-service
+  Scenario: Manual fordring submission uses debt-service claim submit API
     Given portal user "U2" is allowed to create fordringer for fordringshaver "K2"
     When user "U2" submits a manual fordring in the portal
-    Then the portal sends the request to debt-service
+    Then the portal sends the claim submit request to debt-service
     And the portal does not persist the fordring as its own domain data
 
   Scenario: A portal user cannot act for an unrelated fordringshaver

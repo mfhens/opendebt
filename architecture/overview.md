@@ -1362,7 +1362,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | PortalSessionServiceTest | creditor-portal | 11 | Acting creditor resolution, access allowed/denied, backend fallback, session management |
 | FordringMapperTest | creditor-portal | 2 | Full field mapping, null description handling |
 | AccessibilityControllerTest | creditor-portal | 1 | Accessibility statement view name |
-| RunCucumberTest (petition012) | creditor-portal | 3 | Portal reads creditor profile, manual fordring submission to debt-service, unrelated fordringshaver rejection |
+| RunCucumberTest (petition012) | creditor-portal | 3 | Portal reads creditor profile, manual claim submit API via BFF, unrelated fordringshaver rejection |
 | RunCucumberTest (petition013) | creditor-portal | 3 | Keyboard-only navigation structure, accessible form validation with aria, accessibility release gate |
 | RunCucumberTest (petition014) | creditor-portal | 3 | Discoverable accessibility statement link, accessible contact path without MitID, statement maintenance date |
 | AccessResolutionMetricsTest | creditor-service | 4 | Counter registration, allowed/denied increments, independence |

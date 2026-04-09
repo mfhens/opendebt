@@ -15,7 +15,7 @@ functional_requirements:
   - id: FR-P012-02
     summary: Manual claim submission proxied to debt-service; portal is not system of record
     scenarios:
-      - Manual fordring creation is submitted to debt-service
+      - Manual fordring submission uses debt-service claim submit API
 
   - id: FR-P012-03
     summary: Acting-on-behalf-of and channel binding prevent cross-creditor access
