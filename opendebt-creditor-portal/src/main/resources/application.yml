@@ -110,9 +110,13 @@ resilience4j:
     instances:
       debt-service-read:
         baseConfig: default
+      debt-service-write:
+        baseConfig: default
       case-service:
         baseConfig: default
       creditor-service:
+        baseConfig: default
+      creditor-service-resolve:
         baseConfig: default
       person-registry:
         baseConfig: default
@@ -132,9 +136,13 @@ resilience4j:
     instances:
       debt-service-read:
         baseConfig: default
+      debt-service-write:
+        baseConfig: default
       case-service:
         baseConfig: default
       creditor-service:
+        baseConfig: default
+      creditor-service-resolve:
         baseConfig: default
       person-registry:
         baseConfig: default

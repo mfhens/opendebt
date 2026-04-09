@@ -311,6 +311,7 @@ jobs:
         run: |
           # Paths must match server.servlet.context-path per portal (actuator is behind context path)
           for url in \
+            "http://localhost:8082/debt-service/actuator/health" \
             "http://localhost:8085/creditor-portal/actuator/health" \
             "http://localhost:8086/borger/actuator/health" \
             "http://localhost:8087/caseworker-portal/actuator/health"; do

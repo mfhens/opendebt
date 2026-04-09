@@ -28,6 +28,10 @@ import reactor.core.publisher.Mono;
 public class CreditorServiceClient {
 
   private static final String CIRCUIT_BREAKER_NAME = "creditor-service";
+
+  /** Isolated so heavy read traffic does not open the circuit for access resolution (act-as). */
+  private static final String CIRCUIT_BREAKER_RESOLVE = "creditor-service-resolve";
+
   private static final String ERR_SERVICE_UNAVAILABLE = "Creditor service unavailable";
   private static final String ERROR_CODE_UNAVAILABLE = "CREDITOR_SERVICE_UNAVAILABLE";
 
@@ -169,8 +173,8 @@ public class CreditorServiceClient {
         .block();
   }
 
-  @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "resolveAccessFallback")
-  @Retry(name = CIRCUIT_BREAKER_NAME)
+  @CircuitBreaker(name = CIRCUIT_BREAKER_RESOLVE, fallbackMethod = "resolveAccessFallback")
+  @Retry(name = CIRCUIT_BREAKER_RESOLVE)
   public AccessResolutionResponse resolveAccess(AccessResolutionRequest request) {
     log.debug("Resolving access for channel: {}", request.getChannelType());
 

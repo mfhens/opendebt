@@ -1045,7 +1045,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
 | PersonRegistryClient | Done | REST client for person-registry CPR/CVR/SE verification (`verifyCpr`, `verifyCvr`, `verifySe`) with circuit-breaker/retry fallback (TB-021) |
 | CreditorServiceClient | Done | REST client for creditor-service (getByCreditorOrgId, resolveAccess) |
-| DebtServiceClient | Done | REST client for debt-service (listDebts, createDebt) |
+| DebtServiceClient | Done | REST client for debt-service (listDebts, createDebt); `debt-service-write` circuit for `createDebt` / `submitClaimWizard` so read-path failures do not trip claim submission |
 | CaseServiceClient | Done | REST client for case-service (listCases) |
 | Portal DTOs | Done | PortalCreditorDto, PortalDebtDto, PortalCaseDto, FordringFormDto, AccessResolutionRequest/Response, RestPage |
 | FordringMapper | Done | Maps FordringFormDto + creditorOrgId → PortalDebtDto for DebtServiceClient |

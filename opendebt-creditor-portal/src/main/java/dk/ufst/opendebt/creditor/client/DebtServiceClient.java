@@ -36,6 +36,10 @@ import reactor.core.publisher.Mono;
 public class DebtServiceClient {
 
   private static final String CIRCUIT_BREAKER_READ = "debt-service-read";
+
+  /** Isolated from read traffic so list/get failures do not trip claim submission (E2E / CI). */
+  private static final String CIRCUIT_BREAKER_WRITE = "debt-service-write";
+
   private static final String ERR_CLIENT_MSG = "Debt service client error: ";
   private static final String ERR_UNAVAILABLE_MSG = "Debt service unavailable";
   private static final String ERROR_CODE_CLIENT = "DEBT_CLIENT_ERROR";
@@ -557,7 +561,7 @@ public class DebtServiceClient {
         .block();
   }
 
-  @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "createDebtFallback")
+  @CircuitBreaker(name = CIRCUIT_BREAKER_WRITE, fallbackMethod = "createDebtFallback")
   public PortalDebtDto createDebt(PortalDebtDto request) {
     log.debug("Creating debt for creditor: {}", request.getCreditorOrgId());
 
@@ -604,7 +608,7 @@ public class DebtServiceClient {
    * outcome (UDFOERT, AFVIST, or HOERING). Unlike {@link #createDebt}, this method captures
    * validation errors instead of throwing, so the wizard can display them inline.
    */
-  @CircuitBreaker(name = CIRCUIT_BREAKER_READ, fallbackMethod = "submitClaimWizardFallback")
+  @CircuitBreaker(name = CIRCUIT_BREAKER_WRITE, fallbackMethod = "submitClaimWizardFallback")
   public ClaimSubmissionResultDto submitClaimWizard(PortalDebtDto request) {
     log.debug("Submitting claim via wizard for creditor: {}", request.getCreditorOrgId());
 
