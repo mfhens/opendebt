@@ -307,11 +307,14 @@ jobs:
       - name: Start full stack
         run: docker compose up -d
 
-      - name: Wait for portals to be healthy
+      - name: Wait for portals and core backend services
         run: |
-          # Paths must match server.servlet.context-path per portal (actuator is behind context path)
+          # Paths must match server.servlet.context-path (actuator is behind context path).
+          # debt-service POST /debts/submit calls creditor-service validate-action — if creditor-service
+          # is not up yet, the wizard gets HTTP 503 from debt-service and E2E fails (FR-P012-02b).
           for url in \
             "http://localhost:8082/debt-service/actuator/health" \
+            "http://localhost:8092/creditor-service/actuator/health" \
             "http://localhost:8085/creditor-portal/actuator/health" \
             "http://localhost:8086/borger/actuator/health" \
             "http://localhost:8087/caseworker-portal/actuator/health"; do

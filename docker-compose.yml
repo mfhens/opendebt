@@ -97,6 +97,8 @@ services:
         condition: service_healthy
       person-registry:
         condition: service_started
+      creditor-service:
+        condition: service_started
 
   payment-service:
     build: ./opendebt-payment-service
