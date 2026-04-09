@@ -11,7 +11,11 @@ permissions:
 
 env:
   JAVA_VERSION: '21'
-  MAVEN_OPTS: '-Xmx1024m'
+  # Retry Maven Central downloads (mitigates transient "Connection reset" on large artifacts, e.g. smooks-core in integration-gateway).
+  MAVEN_OPTS: >-
+    -Xmx1024m
+    -Dmaven.wagon.http.retryHandler.count=5
+    -Dmaven.wagon.http.retryHandler.requestSentEnabled=true
 
 jobs:
   validate:
