@@ -19,7 +19,6 @@
         <module>skat-design-system</module>
         <module>opendebt-common</module>
         <module>opendebt-person-registry</module>
-        <module>opendebt-rules-engine</module>
         <module>opendebt-case-service</module>
         <module>opendebt-debt-service</module>
         <module>opendebt-creditor-service</module>
@@ -27,6 +26,7 @@
         <module>opendebt-caseworker-portal</module>
         <module>opendebt-citizen-portal</module>
         <module>ufst-bookkeeping-core</module>
+        <module>ufst-rules-lib</module>
         <module>opendebt-payment-service</module>
         <module>opendebt-letter-service</module>
         <module>opendebt-wage-garnishment-service</module>
@@ -85,6 +85,11 @@
             <dependency>
                 <groupId>dk.ufst</groupId>
                 <artifactId>ufst-bookkeeping-core</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>dk.ufst</groupId>
+                <artifactId>ufst-rules-lib</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>

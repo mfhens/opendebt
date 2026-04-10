@@ -1,0 +1,99 @@
+package dk.ufst.rules
+
+import dk.ufst.rules.model.DebtReadinessRequest
+import dk.ufst.rules.model.DebtReadinessResult
+import dk.ufst.rules.model.DebtReadinessResult.ReadinessStatus
+
+global DebtReadinessResult result
+
+// Rule: Debtor must be identified
+rule "Debtor Not Identified"
+    when
+        $request : DebtReadinessRequest(debtorIdentified == false)
+    then
+        result.addError("Skyldner er ikke identificeret (debtor not identified)");
+        result.setStatus(ReadinessStatus.NOT_READY);
+end
+
+// Rule: Documentation must be complete
+rule "Documentation Incomplete"
+    when
+        $request : DebtReadinessRequest(documentationComplete == false)
+    then
+        result.addError("Dokumentation er ufuldstaendig (documentation incomplete)");
+        result.setStatus(ReadinessStatus.NOT_READY);
+end
+
+// Rule: No active disputes allowed
+rule "Active Dispute Blocks Collection"
+    when
+        $request : DebtReadinessRequest(activeDispute == true)
+    then
+        result.addError("Aktiv tvist blokerer inddrivelse (active dispute)");
+        result.setStatus(ReadinessStatus.BLOCKED);
+end
+
+// Rule: Appeal blocks collection
+rule "Under Appeal Blocks Collection"
+    when
+        $request : DebtReadinessRequest(underAppeal == true)
+    then
+        result.addError("Sagen er under klage (under appeal)");
+        result.setStatus(ReadinessStatus.BLOCKED);
+end
+
+// Rule: Debt must be past due
+rule "Debt Not Yet Due"
+    when
+        $request : DebtReadinessRequest(daysPastDue <= 0)
+    then
+        result.addError("Gaelden er endnu ikke forfalden (debt not yet due)");
+        result.setStatus(ReadinessStatus.NOT_READY);
+end
+
+// Rule: Large debts require manual review
+rule "Large Debt Requires Manual Review"
+    when
+        $request : DebtReadinessRequest(
+            principalAmount != null,
+            principalAmount.compareTo(new java.math.BigDecimal("100000")) > 0
+        )
+    then
+        result.requireManualReview("Gaeld over 100.000 kr kraever manuel gennemgang");
+end
+
+// Rule: Very old debts require manual review
+rule "Old Debt Requires Review"
+    when
+        $request : DebtReadinessRequest(daysPastDue > 1825) // 5 years
+    then
+        result.addWarning("Gaeld er over 5 aar gammel - kontroller foraeldelse");
+        result.requireManualReview("Kontroller foraeldelse for gammel gaeld");
+end
+
+// Rule: Multiple collection attempts require review
+rule "Multiple Collection Attempts"
+    when
+        $request : DebtReadinessRequest(previousCollectionAttempts >= 3)
+    then
+        result.addWarning("Flere tidligere inddrivelsesforsog uden resultat");
+        result.requireManualReview("Vurder alternativ inddrivelsesstrategi");
+end
+
+// Rule: Ready for collection if no blockers
+rule "Ready For Collection"
+    salience -100 // Run last
+    when
+        $request : DebtReadinessRequest(
+            debtorIdentified == true,
+            documentationComplete == true,
+            activeDispute == false,
+            underAppeal == false,
+            daysPastDue > 0
+        )
+        eval(result.getValidationErrors().isEmpty())
+        eval(!result.isRequiresManualReview())
+    then
+        result.setReady(true);
+        result.setStatus(ReadinessStatus.READY_FOR_COLLECTION);
+end

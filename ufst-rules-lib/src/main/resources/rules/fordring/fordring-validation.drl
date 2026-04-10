@@ -1,0 +1,1367 @@
+package dk.ufst.rules.fordring
+
+// Fordring (claim action) validation rules
+// Implements core validation from petition015
+// Extension points for petition016, petition017, petition018
+
+import dk.ufst.opendebt.common.dto.fordring.FordringValidationRequest
+import dk.ufst.opendebt.common.dto.fordring.FordringValidationResult
+import dk.ufst.opendebt.common.dto.fordring.FordringErrorCode
+
+global FordringValidationResult validationResult
+
+// ============================================================
+// Structure Validation Rules (petition015)
+// ============================================================
+
+rule "OPRETFORDRING requires MFOpretFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPRETFORDRING",
+            mfOpretFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPRETFORDRING_STRUKTUR, "MFOpretFordringStruktur");
+end
+
+rule "GENINDSENDFORDRING requires MFGenindsendFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            mfGenindsendFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_STRUCTURE_MISSING, "MFGenindsendFordringStruktur");
+end
+
+rule "NEDSKRIV requires MFNedskrivFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            mfNedskrivFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_STRUKTUR_MISSING, "MFNedskrivFordringStruktur");
+end
+
+rule "TILBAGEKALD requires MFTilbagekaldFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            mfTilbagekaldFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.TILBAGEKALD_STRUKTUR_MISSING, "MFTilbagekaldFordringStruktur");
+end
+
+rule "AENDRFORDRING requires MFAendrFordringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            mfAendrFordringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.AENDRFORDRING_STRUKTUR_MISSING, "MFAendrFordringStruktur");
+end
+
+rule "OPSKRIVNINGREGULERING requires MFOpskrivningReguleringStruktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGREGULERING",
+            mfOpskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_REGULERING_STRUKTUR, "MFOpskrivningReguleringStruktur");
+end
+
+rule "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING",
+            mfOpskrivningAnnulleretNedskrivningIndbetalingStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_ANNULLERET_NEDSKRIV_INDBETALING_STRUKTUR, "MFOpskrivningAnnulleretNedskrivningIndbetalingStruktur");
+end
+
+rule "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+            mfOpskrivningOmgjortNedskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIV_OMGJORT_NEDSKRIV_REGULERING_STRUKTUR, "MFOpskrivningOmgjortNedskrivningReguleringStruktur");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            mfNedskrivningAnnulleretOpskrivningReguleringStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_ANNULLERET_OPSKRIV_REGULERING_STRUKTUR, "MFNedskrivningAnnulleretOpskrivningReguleringStruktur");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING requires struktur"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING",
+            mfNedskrivningAnnulleretOpskrivningIndbetalingStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_ANNULLERET_OPSKRIV_INDBETALING_STRUKTUR, "MFNedskrivningAnnulleretOpskrivningIndbetalingStruktur");
+end
+
+// ============================================================
+// Currency Validation Rules (petition015)
+// ============================================================
+
+rule "Currency must be DKK"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            valutaKode != null,
+            valutaKode != "DKK",
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING", "NEDSKRIV",
+                           "OPSKRIVNINGREGULERING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+                           "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING")
+        )
+    then
+        validationResult.addError(FordringErrorCode.INVALID_CURRENCY, "ValutaKode");
+end
+
+// ============================================================
+// Art Type Validation Rules (petition015)
+// ============================================================
+
+rule "Art type must be INDR or MODR for OPRETFORDRING and GENINDSENDFORDRING"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            artType != null,
+            artType not in ("INDR", "MODR")
+        )
+    then
+        validationResult.addError(FordringErrorCode.FORDRING_TYPE_ERROR, "ArtType");
+end
+
+// ============================================================
+// Interest Rate Validation Rules (petition015)
+// ============================================================
+
+rule "Interest rate must not be negative"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            merRenteSats != null,
+            merRenteSats.signum() < 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEGATIVE_INTEREST_RATE, "MerRenteSats");
+end
+
+// ============================================================
+// Date Validation Rules (petition015)
+// ============================================================
+
+rule "VirkningsDato is required when flagged"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDatoRequired == true,
+            virkningsDato == null
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_MISSING, "VirkningsDato");
+end
+
+rule "VirkningsDato must not be later than ModtagelsesTidspunkt"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            modtagelsesTidspunkt != null,
+            virkningsDato.isAfter(modtagelsesTidspunkt.toLocalDate())
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_SENERE_END_MODTAGELSE, "VirkningsDato");
+end
+
+rule "Withdrawal VirkningsDato must not be before main claim ModtagelsesTidspunkt"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            virkningsDato != null,
+            hovedfordringModtagelsesTidspunkt != null,
+            virkningsDato.isBefore(hovedfordringModtagelsesTidspunkt.toLocalDate())
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_FOER_HOVEDFORDRING_MODTAGELSE, "VirkningsDato");
+end
+
+rule "VirkningsDato must not be in the future"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            virkningsDato.isAfter(java.time.LocalDate.now())
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_FUTURE_VIRKNINGDATO, "VirkningsDato");
+end
+
+rule "No dates before year 1900"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            virkningsDato != null,
+            virkningsDato.isBefore(java.time.LocalDate.of(1900, 1, 1))
+        )
+    then
+        validationResult.addError(FordringErrorCode.TIDLIGST_MULIG_DATO, "VirkningsDato");
+end
+
+rule "PeriodeFra must not be after PeriodeTil"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            periodeFra != null,
+            periodeTil != null,
+            periodeFra.isAfter(periodeTil)
+        )
+    then
+        validationResult.addError(FordringErrorCode.PERIODE_TIL_EFTER_PERIODE_FRA, "PeriodeFra");
+end
+
+// ============================================================
+// Agreement Validation Rules (petition015)
+// ============================================================
+
+rule "Agreement must exist"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            agreementFound == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_AGREEMENT_FOUND, "FordringhaveraftaleID");
+end
+
+rule "Claim type must be allowed by agreement"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            agreementFound == true,
+            claimTypeAllowedByAgreement == false,
+            dmiFordringTypeKode != null
+        )
+    then
+        validationResult.addError(FordringErrorCode.TYPE_AGREEMENT_MISSING, "DMIFordringTypeKode");
+end
+
+rule "System-to-system requires MFAftaleSystemIntegration"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            systemToSystem == true,
+            mfAftaleSystemIntegration == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NO_SYSTEM_TO_SYSTEM_INTEGRATION, "MFAftaleSystemIntegration");
+end
+
+// ============================================================
+// Debtor Validation Rules (petition015)
+// ============================================================
+
+rule "Debtor ID must not be zero"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            debtorId != null,
+            debtorId == "0"
+        )
+    then
+        validationResult.addError(FordringErrorCode.DEBTOR_NOT_FOUND, "debtorId");
+end
+
+rule "Debtor ID must not be all zeros UUID"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            debtorId != null,
+            debtorId == "00000000-0000-0000-0000-000000000000"
+        )
+    then
+        validationResult.addError(FordringErrorCode.DEBTOR_NOT_FOUND, "debtorId");
+end
+
+// ============================================================
+// Claimant Authorization Rules (petition016)
+// ============================================================
+
+rule "System reporter must be authorized for fordringshaver"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            systemToSystem == true,
+            systemReporterId != null,
+            systemReporterAuthorized == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.SYSTEM_REPORTER_UNAUTHORIZED, "SystemReporterId");
+end
+
+rule "INDR claims require INDR permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            artType == "INDR",
+            hasIndrPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.INDR_PERMISSION_MISSING, "ArtType");
+end
+
+rule "MODR claims require MODR permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            artType == "MODR",
+            hasModrPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.MODR_PERMISSION_MISSING, "ArtType");
+end
+
+rule "NEDSKRIV requires nedskriv permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            hasNedskrivPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "TILBAGEKALD requires tilbagekald permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            hasTilbagekaldPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.TILBAGEKALD_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "Portal submission requires portal agreement"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            portalSubmission == true,
+            hasPortalAgreement == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.PORTAL_AGREEMENT_MISSING, "portalSubmission");
+end
+
+rule "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING requires OANI permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING",
+            hasOaniPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OANI_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "OPSKRIVNINGREGULERING requires opskrivning regulering permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGREGULERING",
+            hasOpskrivningReguleringPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIVNING_REGULERING_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING requires OONR permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+            hasOonrPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.OONR_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING requires NAOR permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            hasNaorPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOR_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING requires NAOI permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING",
+            hasNaoiPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOI_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "AENDRFORDRING modifying hovedstol requires hovedstol permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            modifyingHovedstol == true,
+            hasHovedstolPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.HOVEDSTOL_PERMISSION_MISSING, "hovedstol");
+end
+
+rule "GENINDSENDFORDRING requires genindsend permission"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            hasGenindsendPermission == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_PERMISSION_MISSING, "aktionKode");
+end
+
+rule "Portal submission requires valid SSO access"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            portalSubmission == true,
+            portalUserId != null,
+            validSsoAccess == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.SSO_ACCESS_INVALID, "portalUserId");
+end
+
+// ============================================================
+// Lifecycle / Reference Rules (petition017)
+// ============================================================
+
+// ----- Genindsend (Resubmit) Rules -----
+
+rule "GENINDSENDFORDRING requires claim to be withdrawn"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            originalClaimWithdrawn == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_NOT_WITHDRAWN, "FordringID");
+end
+
+rule "GENINDSENDFORDRING requires valid withdrawal reason (HENS, KLAG, BORD, HAFT)"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            originalClaimWithdrawn == true,
+            originalWithdrawalReason != null,
+            originalWithdrawalReason not in ("HENS", "KLAG", "BORD", "HAFT")
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_INVALID_WITHDRAWAL_REASON, "TilbagekaldÅrsagKode");
+end
+
+rule "GENINDSENDFORDRING requires same fordringshaver as original"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            originalClaimWithdrawn == true,
+            fordringshaverKode != null,
+            originalFordringshaverKode != null,
+            fordringshaverKode != originalFordringshaverKode
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_DIFFERENT_FORDRINGSHAVER, "FordringshaverKode");
+end
+
+rule "GENINDSENDFORDRING requires stamdata to match original"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            originalClaimWithdrawn == true,
+            stamdataMatchesOriginal == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_STAMDATA_MISMATCH, "Stamdata");
+end
+
+rule "GENINDSENDFORDRING not allowed for MODR claims"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "GENINDSENDFORDRING",
+            originalClaimIsModr == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.GENINDSEND_MODR_NOT_ALLOWED, "ArtType");
+end
+
+// ----- Tilbagekald (Withdrawal) Rules -----
+
+rule "Action on claim withdrawn during conversion is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            withdrawnDuringConversion == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.WITHDRAWN_DURING_CONVERSION, "FordringID");
+end
+
+rule "TILBAGEKALD with BORT reason not allowed for DMI claims"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            routedToDmi == true,
+            tilbagekaldAarsagKode == "BORT"
+        )
+    then
+        validationResult.addError(FordringErrorCode.BORT_NOT_ALLOWED_FOR_DMI, "TilbagekaldÅrsagKode");
+end
+
+rule "TILBAGEKALD with FEJL reason must not have VirkningsDato"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            tilbagekaldAarsagKode == "FEJL",
+            virkningsDato != null
+        )
+    then
+        validationResult.addError(FordringErrorCode.TILBAGEKALD_FEJL_WITH_VIRKNINGSDATO, "VirkningsDato");
+end
+
+rule "Eftersendt claim referencing withdrawn hovedfordring is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            hovedfordringWithdrawn == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.EFTERSENDT_REFERENCES_WITHDRAWN, "HovedfordringID");
+end
+
+rule "TILBAGEKALD of hovedfordring with un-withdrawn divided claims is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "TILBAGEKALD",
+            hasUnwithdrawDividedClaims == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.TILBAGEKALD_HOVEDFORDRING_WITH_UNDIVIDED, "HovedfordringID");
+end
+
+// ----- Action Reference Rules -----
+
+rule "Action while previous action pending is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasPendingAction == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.PENDING_ACTION_EXISTS, "AktionID");
+end
+
+rule "Reference to unknown AktionID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            referencedAktionExists == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.UNKNOWN_AKTION_ID, "AktionID");
+end
+
+rule "Invalid MFAktionIDRef is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            mfAktionIdRefExists == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.MF_AKTION_ID_REF_NOT_FOUND, "MFAktionIDRef");
+end
+
+rule "OANI without MFAktionIDRef when FordringID known is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING",
+            mfAktionIdRefRequired == true,
+            mfAktionIdRef == null
+        )
+    then
+        validationResult.addError(FordringErrorCode.OANI_MISSING_AKTION_ID_REF, "MFAktionIDRef");
+end
+
+rule "Reference to withdrawn claim/action is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            referencedClaimWithdrawn == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.REFERENCED_CLAIM_WITHDRAWN, "MFAktionIDRef");
+end
+
+// ----- Opskrivning/Nedskrivning Reference Rules -----
+
+rule "OANI/OONR with mismatched beloeb is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"),
+            opskrivningBeloeb != null,
+            referencedNedskrivningBeloeb != null,
+            opskrivningBeloeb.compareTo(referencedNedskrivningBeloeb) != 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.BELOEB_MISMATCH, "OpskrivningBeløb");
+end
+
+rule "Action with mismatched VirkningsDato is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            virkningsDato != null,
+            referencedVirkningFra != null,
+            virkningsDato.compareTo(referencedVirkningFra) != 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.VIRKNINGSDATO_MISMATCH, "VirkningsDato");
+end
+
+rule "OANI referencing nedskrivning without INDB reason is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING",
+            referencedNedskrivningAarsagKode != null,
+            referencedNedskrivningAarsagKode != "INDB"
+        )
+    then
+        validationResult.addError(FordringErrorCode.OANI_WRONG_AARSAGKODE, "FordringNedskrivningÅrsagKode");
+end
+
+rule "OANI/OONR not referencing nedskriv action is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"),
+            mfAktionIdRef != null,
+            referencedActionType != null,
+            referencedActionType != "NEDSKRIV"
+        )
+    then
+        validationResult.addError(FordringErrorCode.NOT_REFERENCING_NEDSKRIV, "MFAktionIDRef");
+end
+
+rule "Opskrivning on interest claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGREGULERING", "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"),
+            claimIsRente == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIVNING_ON_RENTE, "FordringID");
+end
+
+rule "OONR referencing nedskrivning without REGU reason is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+            referencedNedskrivningAarsagKode != null,
+            referencedNedskrivningAarsagKode != "REGU"
+        )
+    then
+        validationResult.addError(FordringErrorCode.OONR_WRONG_AARSAGKODE, "FordringNedskrivningÅrsagKode");
+end
+
+rule "Reference to rejected opskrivning/nedskrivning is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            referencedActionRejected == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.REFERENCED_ACTION_REJECTED, "MFAktionIDRef");
+end
+
+rule "Action with mismatched FordringID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            mfAktionIdRef != null,
+            referencedFordringId != null,
+            fordringhaveraftaleId != null,
+            fordringhaveraftaleId != referencedFordringId
+        )
+    then
+        validationResult.addError(FordringErrorCode.FORDRING_ID_MISMATCH, "FordringID");
+end
+
+rule "NAOR not referencing OR or OONR type is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            referencedActionType != null,
+            referencedActionType not in ("OPSKRIVNINGREGULERING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING")
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOR_WRONG_REFERENCE_TYPE, "MFAktionIDRef");
+end
+
+rule "Annullering when prior annullering exists is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING", "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING"),
+            existingAnnulleringForAction == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.ANNULLERING_ALREADY_EXISTS, "MFAktionIDRef");
+end
+
+rule "NAOR with mismatched beloeb is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            nedskrivningBeloeb != null,
+            referencedOpskrivningBeloeb != null,
+            nedskrivningBeloeb.compareTo(referencedOpskrivningBeloeb) != 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOR_BELOEB_MISMATCH, "NedskrivningBeløb");
+end
+
+rule "NAOI not referencing OANI type is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING",
+            referencedActionType != null,
+            referencedActionType != "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING"
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOI_WRONG_REFERENCE_TYPE, "MFAktionIDRef");
+end
+
+// ----- State Validation Rules -----
+
+rule "Reference to rejected FordringID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            referencedFordringRejected == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.REFERENCED_FORDRING_REJECTED, "FordringID");
+end
+
+rule "Annullering of DMI action not yet UDFØRT is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING", "NEDSKRIVNINGANNULLERETOPSKRIVNINGINDBETALING"),
+            referencedActionInDmiNotUdfoert == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DMI_ACTION_NOT_UDFOERT, "MFAktionIDRef");
+end
+
+rule "Opskrivning on withdrawn original claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGREGULERING", "OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING"),
+            originalClaimForOpskrivningWithdrawn == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.OPSKRIVNING_ON_WITHDRAWN, "FordringID");
+end
+
+rule "Nedskrivning on withdrawn FordringID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            fordringIdForNedskrivningWithdrawn == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIVNING_ON_WITHDRAWN, "FordringID");
+end
+
+// ============================================================
+// Content Validation Rules (petition018)
+// ============================================================
+
+// ----- Document and Note Validation -----
+
+rule "Document exceeding max size is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            maxDocumentSizeBytes != null,
+            maxAllowedDocumentSizeBytes != null,
+            maxDocumentSizeBytes > maxAllowedDocumentSizeBytes
+        )
+    then
+        validationResult.addError(FordringErrorCode.DOCUMENT_SIZE_EXCEEDED, "Dokument");
+end
+
+rule "Too many documents is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            documentCount != null,
+            maxAllowedDocuments != null,
+            documentCount > maxAllowedDocuments
+        )
+    then
+        validationResult.addError(FordringErrorCode.DOCUMENT_COUNT_EXCEEDED, "Dokumenter");
+end
+
+rule "Empty note is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasEmptyNote == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.EMPTY_NOTE, "Sagsbemærkninger");
+end
+
+rule "Note exceeding max length is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            noteLength != null,
+            maxAllowedNoteLength != null,
+            noteLength > maxAllowedNoteLength
+        )
+    then
+        validationResult.addError(FordringErrorCode.NOTE_LENGTH_EXCEEDED, "Sagsbemærkninger");
+end
+
+rule "Disallowed document type is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasDisallowedDocumentType == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DISALLOWED_DOCUMENT_TYPE, "Dokument");
+end
+
+rule "OANI/OONR/OpRegu with documents on underlying fordring is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGANNULLERETNEDSKRIVNINGINDBETALING", 
+                           "OPSKRIVNINGOMGJORTNEDSKRIVNINGREGULERING",
+                           "OPSKRIVNINGREGULERING"),
+            underlyingFordringHasDocuments == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DOCUMENTS_ON_UNDERLYING_FORDRING, "Dokumenter");
+end
+
+// ----- Claim Amount Validation -----
+
+rule "Hovedfordring without category HF is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPRETFORDRING", "GENINDSENDFORDRING"),
+            hovedfordringHasKategoriHf == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.HOVEDFORDRING_KATEGORI_MISSING, "FordringTypeKategori");
+end
+
+rule "Claim with amount below lower limit is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            claimAmount != null,
+            claimAmountLowerLimit != null,
+            claimAmount.compareTo(claimAmountLowerLimit) <= 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.CLAIM_AMOUNT_BELOW_LIMIT, "Fordringsbeløb");
+end
+
+rule "Opskrivning/Nedskrivning with zero correction amount is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode in ("OPSKRIVNINGREGULERING", "NEDSKRIV"),
+            hasZeroCorrectionAmount == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.ZERO_CORRECTION_AMOUNT, "KorrektionBeløb");
+end
+
+rule "NEDSKRIV with zero or negative amount is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            nedskrivningBeloebValue != null,
+            nedskrivningBeloebValue.signum() <= 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_BELOEB_NOT_POSITIVE, "NedskrivningBeløb");
+end
+
+rule "Multiple hovedfordringer in one action is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hovedfordringCount != null,
+            hovedfordringCount > 1
+        )
+    then
+        validationResult.addError(FordringErrorCode.MULTIPLE_HOVEDFORDRINGER, "Hovedfordringer");
+end
+
+// ----- Sub-Claim Validation -----
+
+rule "Sub-claim with different art type from hovedfordring is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasSubclaimArtTypeMismatch == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.SUBCLAIM_ART_TYPE_MISMATCH, "ArtType");
+end
+
+rule "Sub-claim type not allowed for fordringshaver is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            subclaimTypeAllowed == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.SUBCLAIM_TYPE_NOT_ALLOWED, "UnderfordringsType");
+end
+
+rule "Related claim without HovedfordringID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            relatedClaimMissingHovedfordringId == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.RELATED_CLAIM_MISSING_HOVEDFORDRING_ID, "HovedfordringID");
+end
+
+rule "Related claim with HovedfordringID filled by fordringshaver is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hovedfordringIdFilledByFordringshaver == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.HOVEDFORDRING_ID_FILLED_BY_FORDRINGSHAVER, "HovedfordringID");
+end
+
+// ----- Interest Validation -----
+
+rule "MerRenteSats with invalid RenteSatsKode is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "OPRETFORDRING",
+            merRenteSats != null,
+            merRenteSats.signum() > 0,
+            renteSatsKode != null,
+            renteSatsKode not in ("03", "04", "07")
+        )
+    then
+        validationResult.addError(FordringErrorCode.MER_RENTESATS_INVALID_FOR_KODE, "MerRenteSats");
+end
+
+rule "RenteRegel 002 with invalid combination is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            renteRegel == "002",
+            renteRegel002InvalidCombination == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.RENTE_REGEL_002_INVALID_COMBINATION, "RenteRegel");
+end
+
+rule "Invalid RenteSatsKode for PSRM is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            targetsPsrm == true,
+            renteSatsKodeInvalidForPsrm == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.RENTE_SATS_KODE_INVALID_FOR_PSRM, "RenteSatsKode");
+end
+
+rule "Interest on non-interest-bearing claim type is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            interestOnNonBearingType == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.INTEREST_ON_NON_BEARING_TYPE, "Rente");
+end
+
+// ----- Nedskriv Reason Validation -----
+
+rule "ÅrsagKode REGU at hæftelse level is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            reguAtHaeftelseLevel == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.REGU_AT_HAEFTELSE_LEVEL, "ÅrsagKode");
+end
+
+rule "Nedskrivning requiring debtor without debtor is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            nedskrivRequiresDebtor == true,
+            nedskrivDebtorProvided == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEDSKRIV_REQUIRES_DEBTOR, "Skyldner");
+end
+
+rule "REGU nedskrivning with VirkningsDato is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            nedskrivAarsagKode == "REGU",
+            virkningsDato != null
+        )
+    then
+        validationResult.addError(FordringErrorCode.REGU_WITH_VIRKNINGSDATO, "VirkningsDato");
+end
+
+rule "ÅrsagKode FAST for PSRM claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIV",
+            nedskrivAarsagKode == "FAST",
+            targetsPsrm == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.FAST_FOR_PSRM_CLAIM, "ÅrsagKode");
+end
+
+// ----- Hovedstol Validation -----
+
+rule "New hovedstol not higher than previous is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            modifyingHovedstol == true,
+            currentHovedstol != null,
+            newHovedstol != null,
+            newHovedstol.compareTo(currentHovedstol) <= 0
+        )
+    then
+        validationResult.addError(FordringErrorCode.NEW_HOVEDSTOL_NOT_HIGHER, "Hovedstol");
+end
+
+rule "Hovedstol change for DMI claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            modifyingHovedstol == true,
+            routedToDmi == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.HOVEDSTOL_CHANGE_FOR_DMI, "Hovedstol");
+end
+
+rule "AENDRFORDRING without FHI struktur is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            modifyingHovedstol == true,
+            fhiStrukturPresent == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.FHI_STRUKTUR_MISSING, "FejlagtigHovedstolIndberetningStruktur");
+end
+
+rule "Hovedstol change on withdrawn claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "AENDRFORDRING",
+            modifyingHovedstol == true,
+            claimIsWithdrawn == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.HOVEDSTOL_CHANGE_ON_WITHDRAWN, "Hovedstol");
+end
+
+// ----- Hæftelse Validation -----
+
+rule "Duplicate hæftere is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasDuplicateHaeftere == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DUPLICATE_HAEFTERE, "Hæftere");
+end
+
+rule "HaeftelseDomId without date is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            haeftelseDomIdWithoutDate == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.HAEFTELSE_DOM_ID_WITHOUT_DATE, "HaeftelseDomId");
+end
+
+rule "HaeftelseDomDato without id is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            haeftelseDomDateWithoutId == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.HAEFTELSE_DOM_DATE_WITHOUT_ID, "HaeftelseDomDato");
+end
+
+rule "Future DomsDato or ForligsDato is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            hasFutureDomDate == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.FUTURE_DOM_DATE, "DomsDato");
+end
+
+rule "DMI claim with mismatched SRB/Forfald across hæftere is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            routedToDmi == true,
+            dmiMismatchedSrbForfald == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DMI_MISMATCHED_SRB_FORFALD, "Hæftere");
+end
+
+rule "DMI claim with hæftelse-level documents is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            routedToDmi == true,
+            dmiHaeftelseDocuments == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DMI_HAEFTELSE_DOCUMENTS, "Dokumenter");
+end
+
+// ----- Routing Validation -----
+
+rule "Synchronous portal action for DMI claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            syncPortalActionForDmi == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.SYNC_PORTAL_DMI, "Aktion");
+end
+
+rule "NAOR to DMI is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aktionKode == "NEDSKRIVNINGANNULLERETOPSKRIVNINGREGULERING",
+            routedToDmi == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.NAOR_TO_DMI, "Aktion");
+end
+
+rule "DMI claim with invalid AKR length is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            routedToDmi == true,
+            akrLengthExceedsForDmi == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.DMI_INVALID_AKR_LENGTH, "AKR");
+end
+
+rule "ForeløbigFastsat claim to PSRM is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            foreloebigFastsatToPsrm == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.FORELOEBIG_FASTSAT_TO_PSRM, "ForeløbigFastsat");
+end
+
+// ----- Claim Type Validation -----
+
+rule "Unknown FordringID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            fordringIdKnown == false
+        )
+    then
+        validationResult.addError(FordringErrorCode.UNKNOWN_FORDRING_ID, "FordringID");
+end
+
+rule "AENDRFORDRING on INDR claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            aendrfordringOnIndr == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.AENDRFORDRING_ON_INDR, "ArtType");
+end
+
+rule "Missing required stamdata is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            missingRequiredStamdata == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.MISSING_REQUIRED_STAMDATA, "Stamdata");
+end
+
+rule "Inactive claim type in PSRM is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            targetsPsrm == true,
+            claimTypeInactiveInPsrm == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.INACTIVE_CLAIM_TYPE_PSRM, "FordringType");
+end
+
+rule "Missing required BFE field is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            missingRequiredBfe == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.MISSING_REQUIRED_BFE, "BFE");
+end
+
+// ----- Identifier Validation -----
+
+rule "Non-unique FordringshaverRefID is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            nonUniqueFordringshaverRefId == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.NON_UNIQUE_FORDRINGSHAVER_REF_ID, "FordringshaverRefID");
+end
+
+rule "Modification of error-withdrawn claim is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            alreadyWithdrawnWithFejl == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.MODIFICATION_OF_ERROR_WITHDRAWN, "FordringID");
+end
+
+rule "Non-FEJL withdrawal after HENS/KLAG/BORD is rejected"
+    agenda-group "fordring-validation"
+    when
+        $req : FordringValidationRequest(
+            nonFejlWithdrawalAfterHensKlagBord == true
+        )
+    then
+        validationResult.addError(FordringErrorCode.NON_FEJL_WITHDRAWAL_AFTER_HENS_KLAG_BORD, "TilbagekaldÅrsagKode");
+end
