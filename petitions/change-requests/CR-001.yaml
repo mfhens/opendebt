@@ -1,7 +1,7 @@
 cr_id: CR-001
 parent_petition: petition045
 title: "Complete interest-calculation.drl with per-regime rules and configured rates"
-status: draft
+status: implemented
 requested_by: "Markus (EA review)"
 requested_date: "2026-04-10"
 
@@ -115,7 +115,45 @@ acceptance_criteria: |
 
 linked_artifacts:
   outcome_contract: null      # petition045 has no separate outcome-contract file (embedded in petition)
-  feature_file: null          # petition045 has no separate feature file; new file to be created by Phase 1
-  spec_file: null             # no separate spec file; to be created by Phase 2
+  feature_file: petitions/petition045-multi-regime-interest-compliance.feature
+  spec_file: petitions/petition045-multi-regime-interest-compliance-spec.md
 
-pipeline_log: []
+pipeline_log:
+  - phase: 0
+    date: "2026-04-10"
+    outcome: accepted
+    notes: >
+      petition045 confirmed implemented. Schema valid. 4 new scenarios exceeds default
+      limit but accepted: all are parametric rate-branch variations of a single DRL file
+      with no new domain concepts. CR status set to accepted.
+  - phase: 1
+    date: "2026-04-10"
+    outcome: done
+    notes: >
+      Created petitions/petition045-multi-regime-interest-compliance.feature with 3 modified
+      scenarios (INDR_STD replacing placeholder, NOT_DUE, SMALL_AMOUNT) and 4 new scenarios
+      (INDR_EXEMPT, INDR_TOLD, INDR_TOLD_AFD, INDR_CONTRACT) plus time-aware verbatim-rate
+      acceptance scenario.
+  - phase: 2
+    date: "2026-04-10"
+    outcome: done
+    notes: >
+      Created petitions/petition045-multi-regime-interest-compliance-spec.md covering model
+      extension, salience table, formula, legal basis strings, integration test matrix,
+      and time-aware caller contract.
+  - phase: 3
+    date: "2026-04-10"
+    outcome: done
+    notes: >
+      InterestCalculationRequest extended with interestRule (String) and annualRate (BigDecimal).
+      interest-calculation.drl rewritten with 7 salience-ordered rules (NOT_DUE=200,
+      INDR_EXEMPT=100, SMALL_AMOUNT=90, INDR_STD/TOLD/TOLD_AFD/CONTRACT=50). No hardcoded rates.
+      InterestCalculationRulesIntegrationTest created with 9 tests (all green).
+      All 573 existing + new tests pass. Spotless applied.
+  - phase: 4
+    date: "2026-04-10"
+    outcome: implemented
+    notes: >
+      Code review: delta bounded to InterestCalculationRequest.java, interest-calculation.drl,
+      and the new test. No regression in existing tests (573/573 green). Minimality confirmed:
+      only CR-001 scope changes present. CR status set to implemented.

@@ -1774,8 +1774,8 @@ program:
     CR-001:
       parent: petition045
       title: "Complete interest-calculation.drl with per-regime rules and configured rates"
-      status: draft
-      phase: 0
+      status: implemented
+      phase: 4
       requested_date: "2026-04-10"
       file: petitions/change-requests/CR-001.yaml
 
