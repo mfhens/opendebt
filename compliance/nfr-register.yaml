@@ -1,0 +1,613 @@
+# compliance/nfr-register.yaml
+#
+# Cross-cutting Non-Functional Requirements (NFR) Register
+#
+# PURPOSE
+# -------
+# Single source of truth for NFRs that apply across multiple petitions.
+# The agent pipeline reads this file at Phase 2.7 (NFR Alignment) and injects
+# applicable NFRs into the architecture (Phase 3) and specifications (Phase 4).
+# No per-petition duplication of NFRs is needed — manage them here once.
+#
+# USAGE — NEW PROJECT
+# -------------------
+# project-bootstrap copies this file to compliance/nfr-register.yaml.
+# Review every entry, set `project:` and `last_updated:`, remove or adjust
+# entries that do not apply to your context, and add project-specific NFRs.
+#
+# USAGE — EXISTING PROJECT (RETROFIT)
+# ------------------------------------
+# See: ~/.claude/agents/README.md § 11 "Cross-Cutting NFRs — Retrofit Guide"
+#
+# HOW applies_to WORKS
+# --------------------
+# all               — applies to every petition regardless of components
+# tags: [...]       — applies when the petition touches components with ANY of those tags
+# components: [...] — applies when the petition explicitly names those component IDs
+# When applies_to is omitted the entry is treated as applies_to: all
+#
+# SEVERITY
+# --------
+# must   — hard requirement; pipeline will flag its absence as a blocking gap
+# should — expected; flagged as a warning if absent
+# may    — optional enhancement; informational only
+#
+# VERIFIED_BY
+# -----------
+# automated_test  — must have a test; code-reviewer-strict will check
+# audit           — verified by a compliance auditor agent or human audit
+# review          — verified at code-review phase by the reviewer agent
+#
+# TEST_HOOK
+# ---------
+# The agent (or ~) best placed to validate compliance with this NFR.
+# pipeline-conductor Phase 2.7 surfaces NFRs with test_hook: ~ and severity: must
+# as register gaps requiring a manual review plan.
+
+schema_version: "1.1"
+project: opendebt
+last_updated: "2026-04-10"
+
+nfrs:
+
+  # ───────────────────────────────────────────────────────────
+  # SECURITY
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-SEC-001
+    concern: security
+    title: "Authentication required on all non-public endpoints"
+    description: >
+      Every API endpoint exposed outside the service boundary must require a
+      valid JWT or OIDC token. Unauthenticated requests must return 401 with a
+      structured error body. Public (unauthenticated) endpoints must be
+      explicitly annotated and reviewed.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [security]
+
+  - id: NFR-SEC-002
+    concern: security
+    title: "Role-based authorisation enforced at method level"
+    description: >
+      Service methods that create, modify, or delete state must carry an
+      explicit authorisation annotation (@PreAuthorize, @RolesAllowed, or
+      equivalent). Authorisation must be checked before business logic
+      executes. Missing annotations on state-mutating endpoints are a
+      blocking code-review finding.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [security]
+
+  - id: NFR-SEC-003
+    concern: security
+    title: "No secrets in source code or application logs"
+    description: >
+      Credentials, API keys, tokens, and passwords must be injected via
+      environment variables or a dedicated secrets manager. Source code,
+      configuration files committed to version control, and application logs
+      must never contain plaintext secrets. Violation is a blocking finding.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [security]
+
+  - id: NFR-SEC-004
+    concern: security
+    title: "All inter-service and external communication over TLS"
+    description: >
+      HTTP communication between services and to external systems must use
+      HTTPS. Internal endpoints must reject or redirect unencrypted
+      connections. Legacy M2M ingress requires mutual TLS (mTLS).
+      TLS termination must be documented in the architecture.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: c4-architecture-governor
+    verified_by: review
+    tags: [security, infrastructure]
+
+  - id: NFR-SEC-005
+    concern: security
+    title: "Input validation on all API boundaries"
+    description: >
+      All inputs received at service boundaries must be validated for type,
+      length, format, and range before processing. Validation failures must
+      return 400 with a structured error response — never 500. Validation
+      rules must be specified in the petition specs.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: bdd-test-generator
+    verified_by: automated_test
+    tags: [security]
+
+  - id: NFR-SEC-006
+    concern: security
+    title: "Dependency vulnerability scan passes in CI"
+    description: >
+      The CI pipeline must include a dependency vulnerability check (e.g.,
+      OWASP Dependency-Check, Snyk, or Dependabot). Builds with known HIGH or
+      CRITICAL CVEs must fail. A suppression must be filed and reviewed for
+      any accepted risk.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0036-security-baseline.md"
+    test_hook: ~
+    verified_by: review
+    tags: [security, ci]
+
+  # ───────────────────────────────────────────────────────────
+  # PRIVACY / GDPR
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-GDPR-001
+    concern: gdpr
+    title: "PII must not appear in application logs"
+    description: >
+      Log statements must never include CPR numbers, names, addresses, email
+      addresses, phone numbers, or other personal data as defined by GDPR
+      Art. 4(1). Use an opaque person identifier (e.g., UUID) in all log
+      output. Violations are a blocking finding in code review.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0014-gdpr-data-isolation.md"
+    test_hook: gdpr-database-compliance-auditor
+    verified_by: audit
+    tags: [gdpr, privacy]
+
+  - id: NFR-GDPR-002
+    concern: gdpr
+    title: "PII isolated in the designated PII silo; all others use UUID"
+    description: >
+      Personal data (CPR/SSN, CVR, name, address, contact details) may only
+      be stored in the designated PII silo service. All other services store
+      only an opaque person_id UUID. No direct database access across service
+      boundaries. No JOIN-based PII reconstruction outside the silo.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0014-gdpr-data-isolation.md"
+    test_hook: gdpr-database-compliance-auditor
+    verified_by: audit
+    tags: [gdpr, privacy, architecture]
+
+  - id: NFR-GDPR-003
+    concern: gdpr
+    title: "Lawful basis documented for every personal data category"
+    description: >
+      Every table storing personal data must have a documented lawful basis
+      under GDPR Art. 6 (or Art. 9 for special-category data). The project
+      GDPR register (compliance/gdpr-register.csv) must be updated whenever a
+      new personal data category is introduced by a petition.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0014-gdpr-data-isolation.md"
+    test_hook: gdpr-database-compliance-auditor
+    verified_by: audit
+    tags: [gdpr, privacy]
+
+  - id: NFR-GDPR-004
+    concern: gdpr
+    title: "Data retention policy enforced at the storage layer"
+    description: >
+      Tables holding personal or transactional data must have a defined
+      retention period documented in compliance/gdpr-register.csv. Automated
+      deletion or archival must be implemented and covered by a test.
+      Retention periods must be reviewed against any statutory minimum.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0014-gdpr-data-isolation.md"
+    test_hook: gdpr-database-compliance-auditor
+    verified_by: audit
+    tags: [gdpr, privacy]
+
+  - id: NFR-GDPR-005
+    concern: gdpr
+    title: "Data subject access and erasure APIs available"
+    description: >
+      The system must provide internal APIs to export all data held for a
+      given person_id (Data Subject Access Request — DSAR) and to delete or
+      anonymise it (Right to Erasure / Art. 17), except where statutory
+      retention obligations apply. APIs must be tested.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0014-gdpr-data-isolation.md"
+    test_hook: bdd-test-generator
+    verified_by: automated_test
+    tags: [gdpr, privacy]
+
+  # ───────────────────────────────────────────────────────────
+  # AUDIT TRAIL
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-AUDIT-001
+    concern: audit-trail
+    title: "All state-changing operations emit a structured audit event"
+    description: >
+      Every operation that creates, updates, or deletes a domain entity must
+      produce an immutable audit record containing: UTC timestamp, actor
+      identity (service account or user_id), operation type, entity type,
+      entity_id, and before/after state where applicable. Audit records must
+      not be deletable by application code.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0022-shared-audit-infrastructure.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [audit, compliance]
+
+  - id: NFR-AUDIT-002
+    concern: audit-trail
+    title: "Financial events use double-entry bookkeeping"
+    description: >
+      Every financial operation must produce a balanced journal entry
+      (debit + credit). Financial state must be fully reconstructable from
+      the ledger alone. Direct balance mutations outside the bookkeeping
+      layer are prohibited.
+    applies_to:
+      tags: [financial]
+    severity: must
+    source: "architecture/adr/0022-shared-audit-infrastructure.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [audit, financial]
+
+  - id: NFR-AUDIT-003
+    concern: audit-trail
+    title: "Financial ledger is tamper-evident"
+    description: >
+      Financial journal entries must be written to a cryptographically
+      immutable ledger. The ledger must detect and reject any attempt to
+      modify past entries. Ledger integrity verification must be part of
+      the operational runbook and tested in the integration test suite.
+    applies_to:
+      tags: [financial]
+    severity: must
+    source: "architecture/adr/0029-immudb-for-financial-ledger-integrity.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [audit, financial, security]
+
+  # ───────────────────────────────────────────────────────────
+  # COMPLIANCE — DANISH NATIONAL ARCHIVES (RIGSARKIVET)
+  # ───────────────────────────────────────────────────────────
+  # Remove this section for non-Danish-public-sector projects.
+
+  - id: NFR-RIGS-001
+    concern: rigsarkivet
+    title: "Public administrative decisions preserved for archival"
+    description: >
+      Records documenting statutory decisions (e.g., debt creation, write-off,
+      garnishment authorisation) must be preserved in a format suitable for
+      transfer to the Danish National Archives (Rigsarkivet) under Arkivloven.
+      Format and retention requirements must be assessed via
+      rigsarkivet-compliance-data-assessor before delivery.
+    applies_to: all
+    severity: must
+    source: "https://www.retsinformation.dk/eli/lta/2016/1201"
+    test_hook: rigsarkivet-compliance-data-assessor
+    verified_by: audit
+    tags: [rigsarkivet, compliance, danish-public-sector]
+
+  - id: NFR-RIGS-002
+    concern: rigsarkivet
+    title: "Archival metadata complete for all statutory records"
+    description: >
+      All records subject to archival must carry: creation timestamp (UTC),
+      actor identity, document type, and a stable reference ID. Metadata
+      must survive the full statutory retention period without loss or
+      schema change.
+    applies_to: all
+    severity: must
+    source: "https://www.retsinformation.dk/eli/lta/2016/1201"
+    test_hook: rigsarkivet-compliance-data-assessor
+    verified_by: audit
+    tags: [rigsarkivet, compliance, danish-public-sector]
+
+  # ───────────────────────────────────────────────────────────
+  # PERFORMANCE
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-PERF-001
+    concern: performance
+    title: "Synchronous API response time: p95 < 500 ms under normal load"
+    description: >
+      All synchronous API endpoints must respond within 500 ms at the 95th
+      percentile under the defined normal load profile. Endpoints expected to
+      exceed this threshold must be flagged in the specs and reviewed for
+      caching, async offloading, or query optimisation before delivery.
+    applies_to: all
+    severity: should
+    source: "architecture/adr/0037-performance-sla.md"
+    test_hook: ~
+    verified_by: review
+    tags: [performance]
+
+  - id: NFR-PERF-002
+    concern: performance
+    title: "Database queries use indexed columns and include pagination"
+    description: >
+      All new database queries must: use indexed columns in WHERE and JOIN
+      clauses, include LIMIT/pagination for collection results, and avoid
+      N+1 patterns. Unbounded queries on large tables are a blocking
+      code-review finding.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0037-performance-sla.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [performance, database]
+
+  - id: NFR-PERF-003
+    concern: performance
+    title: "Long-running operations must be asynchronous"
+    description: >
+      Operations estimated to take longer than 1 second must execute
+      asynchronously (background thread, job queue, or scheduled task) and
+      must not block the HTTP request thread. The petition specs must define
+      the async mechanism and the status-feedback pattern.
+    applies_to: all
+    severity: should
+    source: "architecture/adr/0037-performance-sla.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [performance]
+
+  # ───────────────────────────────────────────────────────────
+  # RESILIENCE / AVAILABILITY
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-RES-001
+    concern: resilience
+    title: "Circuit breaker on all inter-service HTTP calls"
+    description: >
+      Every outbound HTTP call to another service must be wrapped with a
+      circuit breaker (e.g., Resilience4j). Open-circuit fallback behaviour
+      (default response or graceful error) must be defined in the petition
+      specs and covered by a test.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0026-inter-service-resilience.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [resilience, availability]
+
+  - id: NFR-RES-002
+    concern: resilience
+    title: "Retry with exponential backoff on transient failures"
+    description: >
+      Transient HTTP failures (5xx, network timeout) must trigger a retry
+      with exponential backoff and jitter. Maximum retry count and base
+      delay must be configurable per integration. Retry storms must be
+      prevented by circuit-breaker coordination.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0026-inter-service-resilience.md"
+    test_hook: code-reviewer-strict
+    verified_by: automated_test
+    tags: [resilience, availability]
+
+  - id: NFR-RES-003
+    concern: resilience
+    title: "Health and readiness endpoints on every service"
+    description: >
+      Every service must expose a health endpoint (e.g., /actuator/health)
+      returning a machine-readable liveness and readiness status. Probes must
+      be configured in deployment manifests. Health endpoints must not require
+      authentication.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0026-inter-service-resilience.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [resilience, availability, observability]
+
+  # ───────────────────────────────────────────────────────────
+  # OBSERVABILITY
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-OBS-001
+    concern: observability
+    title: "Structured JSON logging at all log levels"
+    description: >
+      All log output must be structured JSON (never plaintext). Required
+      fields: timestamp (ISO 8601 UTC), level, service name, traceId,
+      spanId, message. Exception stack traces belong in ERROR/WARN entries
+      only, as a structured field — not concatenated into the message string.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0024-observability-backend-stack.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [observability, operations]
+
+  - id: NFR-OBS-002
+    concern: observability
+    title: "Distributed tracing headers propagated across all calls"
+    description: >
+      Every inbound request must propagate W3C trace context
+      (traceparent/tracestate) to all outbound calls. Trace IDs must appear
+      in all log entries for that request. The OpenTelemetry SDK must be
+      configured on every service. Missing trace propagation on new HTTP
+      clients is a blocking review finding.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0024-observability-backend-stack.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [observability, operations]
+
+  - id: NFR-OBS-003
+    concern: observability
+    title: "Key business events exposed as Prometheus metrics"
+    description: >
+      Each service must expose domain-relevant counters and histograms
+      (e.g., requests processed, error rates by type, queue depths) via a
+      /metrics endpoint in Prometheus format. When a petition introduces a
+      new business event, a corresponding metric must be added and the
+      operations dashboard updated.
+    applies_to:
+      tags: [service]
+    severity: should
+    source: "architecture/adr/0024-observability-backend-stack.md"
+    test_hook: ~
+    verified_by: review
+    tags: [observability, operations]
+
+  # ───────────────────────────────────────────────────────────
+  # API DESIGN
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-API-001
+    concern: api-design
+    title: "API-first: OpenAPI 3.1 spec committed alongside code"
+    description: >
+      Every new or modified API must have an OpenAPI 3.1 specification
+      committed alongside the implementation. The spec is the contract —
+      undocumented endpoints are prohibited. The spec must be published
+      to the developer portal or SwaggerUI before the petition is closed.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0004-api-first-design-with-openapi.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [api, design]
+
+  - id: NFR-API-002
+    concern: api-design
+    title: "Breaking changes require a new API version"
+    description: >
+      Changes to existing API endpoints must be backward compatible
+      (additive only: new optional fields, new endpoints). Breaking changes
+      (field removal, type change, mandatory field addition, endpoint
+      removal) require a new API version. Deprecation notices must span
+      at least one release cycle.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0004-api-first-design-with-openapi.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [api, design]
+
+  # ───────────────────────────────────────────────────────────
+  # ACCESSIBILITY
+  # ───────────────────────────────────────────────────────────
+  # Applies to portals and citizen-facing interfaces only.
+
+  - id: NFR-ACC-001
+    concern: accessibility
+    title: "Public portals meet WCAG 2.1 Level AA"
+    description: >
+      All HTML rendered by public-facing portals must meet WCAG 2.1 Level
+      AA. New UI components must be tested for: keyboard navigation, screen
+      reader compatibility, colour contrast ratio ≥ 4.5:1 (text) / 3:1
+      (large text), and programmatic focus management on dynamic content.
+    applies_to:
+      tags: [portal, citizen]
+    severity: must
+    source: "architecture/adr/0021-ui-accessibility-and-webtilgaengelighed-compliance.md"
+    test_hook: ~
+    verified_by: review
+    tags: [accessibility, ux]
+
+  - id: NFR-ACC-002
+    concern: accessibility
+    title: "Form labels, error messages, and ARIA attributes present"
+    description: >
+      All form inputs must have associated labels (explicit or aria-label).
+      Error messages must be programmatically associated with the relevant
+      input field via aria-describedby. ARIA roles and live regions must be
+      used where semantic HTML is insufficient.
+    applies_to:
+      tags: [portal]
+    severity: should
+    source: "architecture/adr/0021-ui-accessibility-and-webtilgaengelighed-compliance.md"
+    test_hook: ~
+    verified_by: review
+    tags: [accessibility, ux]
+
+  # ───────────────────────────────────────────────────────────
+  # CROSS-CUTTING ARCHITECTURE (OpenDebt-specific)
+  # ───────────────────────────────────────────────────────────
+
+  - id: NFR-ARCH-001
+    concern: architecture
+    title: "No direct cross-service database access"
+    description: >
+      Services must access data in other service domains exclusively via REST
+      APIs. Direct JDBC/JPA connections to another service's PostgreSQL schema
+      are prohibited regardless of network reachability. Violations are a
+      blocking finding at the C4 architecture gate and code review.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0007-no-direct-database-connections.md"
+    test_hook: c4-architecture-governor
+    verified_by: review
+    tags: [architecture, database]
+
+  - id: NFR-ARCH-002
+    concern: architecture
+    title: "Fællesoffentlige Arkitekturprincipper compliance"
+    description: >
+      All services and their interactions must comply with the eight Danish
+      public sector architecture principles: business-driven, flexible,
+      coherent, data-reuse, integrated security, privacy-by-design,
+      interoperable, and open. ADR-0010 maps each principle to concrete
+      design decisions in this project.
+    applies_to: all
+    severity: must
+    source: "architecture/adr/0010-faellesoffentlige-arkitekturprincipper-compliance.md"
+    test_hook: c4-architecture-governor
+    verified_by: audit
+    tags: [architecture, danish-public-sector, compliance]
+
+  - id: NFR-ARCH-003
+    concern: architecture
+    title: "Business rules expressed as .drl files in ufst-rules-lib"
+    description: >
+      Calculatory and statutory business rules (interest accrual, write-off
+      thresholds, garnishment limits) must be expressed as Drools rule files
+      (.drl) in the shared ufst-rules-lib module — not embedded as Java logic
+      in individual services. Services consume rules by declaring a compile
+      dependency on ufst-rules-lib. Rule changes do not require individual
+      service releases.
+    applies_to:
+      tags: [service]
+    severity: must
+    source: "architecture/adr/0035-embed-drools-as-shared-library.md"
+    test_hook: code-reviewer-strict
+    verified_by: review
+    tags: [architecture, rules-engine]
+
+  - id: NFR-ARCH-004
+    concern: architecture
+    title: "Statutory calculations with a legal mandate must have a Catala formal spec"
+    description: >
+      Business logic that directly implements a statutory calculation or
+      decision rule (e.g., interest accrual under G.A. §5, write-off under
+      G.A. §16) must have a companion Catala (.catala_da) specification
+      generated by catala-encoder at pipeline Phase 2.5. The Catala spec is
+      the compliance reference for that calculation and must be committed
+      alongside the implementation.
+    applies_to:
+      tags: [service, legal]
+    severity: must
+    source: "architecture/adr/0032-catala-formal-compliance-layer.md"
+    test_hook: catala-encoder
+    verified_by: audit
+    tags: [architecture, legal, compliance]
