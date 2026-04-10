@@ -1,0 +1,15 @@
+id: ufst-bookkeeping-core
+name: "UFST Bookkeeping Core"
+description: >
+  Shared double-entry bookkeeping library (ADR-0018, ADR-0033). Provides
+  journal entry creation, ledger balance queries, and immudb-backed tamper-
+  evident storage for financial records. Used by debt-service and
+  payment-service to record all financial state changes as balanced journal
+  entries. No service may mutate financial state outside this library.
+type: library
+module: ufst-bookkeeping-core
+tags:
+  - library
+  - financial
+api_spec: ~
+owner_team: ~

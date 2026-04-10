@@ -1,0 +1,13 @@
+id: creditor-portal
+name: "Creditor Portal"
+description: >
+  Self-service web UI for creditors (fordringshavere). Provides debt portfolio
+  overview, batch upload of new fordringer, and status tracking. Authenticated
+  via Keycloak with OCES3 certificate or username/password depending on
+  creditor channel configuration.
+type: portal
+module: opendebt-creditor-portal
+tags:
+  - portal
+api_spec: ~
+owner_team: ~

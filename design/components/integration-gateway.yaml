@@ -1,0 +1,14 @@
+id: integration-gateway
+name: "Integration Gateway"
+description: >
+  SOAP/legacy adapter that translates between OpenDebt's REST/JSON internal
+  APIs and the SOAP/XML interfaces of external systems (DUPLA, PSP, legacy EFI).
+  Implements the Strangler Fig pattern for gradual legacy migration. Handles
+  OCES3 certificate-based mTLS for M2M authentication.
+type: gateway
+module: opendebt-integration-gateway
+tags:
+  - service
+  - gateway
+api_spec: ~
+owner_team: ~

@@ -1,0 +1,14 @@
+id: payment-service
+name: "Payment Service"
+description: >
+  Processes incoming payments (indbetalinger) and distributes them across
+  fordringer according to the coverage order (dækningsrækkefølge). Integrates
+  with the GRPC-based payment network and coordinates double-entry bookkeeping
+  via ufst-bookkeeping-core. Handles overpayments and refund triggers.
+type: service
+module: opendebt-payment-service
+tags:
+  - service
+  - financial
+api_spec: opendebt-payment-service/src/main/resources/openapi.yaml
+owner_team: ~

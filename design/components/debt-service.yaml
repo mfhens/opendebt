@@ -1,0 +1,16 @@
+id: debt-service
+name: "Debt Service"
+description: >
+  Manages fordringer (claims/debts). Responsible for claim creation, write-up
+  (opskrivning), write-down (nedskrivning), interest accrual, suspension,
+  offsetting, and enforcement-type classification. Implements statutory
+  calculations under G.A. including interest rate application and retroactive
+  adjustments. The authoritative owner of fordring state.
+type: service
+module: opendebt-debt-service
+tags:
+  - service
+  - financial
+  - legal
+api_spec: opendebt-debt-service/src/main/resources/openapi.yaml
+owner_team: ~

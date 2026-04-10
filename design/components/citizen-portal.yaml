@@ -1,0 +1,14 @@
+id: citizen-portal
+name: "Citizen Portal"
+description: >
+  Self-service web UI for citizens (skyldnere). Provides a read-only view of
+  outstanding debts, payment history, and correspondence. Supports voluntary
+  payment initiation. Authenticated via NemID/MitID through Keycloak. Must
+  meet WCAG 2.1 AA and Webtilgængelighed requirements.
+type: portal
+module: opendebt-citizen-portal
+tags:
+  - portal
+  - citizen
+api_spec: ~
+owner_team: ~

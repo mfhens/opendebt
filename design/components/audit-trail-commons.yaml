@@ -1,0 +1,14 @@
+id: audit-trail-commons
+name: "Audit Trail Commons"
+description: >
+  Shared audit infrastructure library (ADR-0022). Provides the AuditEvent
+  domain model, AuditEventPublisher, and Spring auto-configuration for
+  structured audit logging. All services include this library and call
+  AuditEventPublisher for every state-changing operation. Audit records are
+  immutable and stored in the centralised audit schema.
+type: library
+module: audit-trail-commons
+tags:
+  - library
+api_spec: ~
+owner_team: ~

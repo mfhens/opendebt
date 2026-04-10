@@ -1,0 +1,13 @@
+id: letter-service
+name: "Letter Service"
+description: >
+  Generates and dispatches statutory correspondence (breve) to debtors and
+  creditors. Produces PDF letters via template rendering, records dispatch
+  events, and integrates with Digital Post (e-Boks) for citizen delivery.
+  Manages letter templates and i18n content.
+type: service
+module: opendebt-letter-service
+tags:
+  - service
+api_spec: opendebt-letter-service/src/main/resources/openapi.yaml
+owner_team: ~

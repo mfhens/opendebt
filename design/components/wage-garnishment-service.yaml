@@ -1,0 +1,16 @@
+id: wage-garnishment-service
+name: "Wage Garnishment Service"
+description: >
+  Manages lønindeholdelse (wage garnishment) processes. Implements statutory
+  rules for garnishment calculation, exemption thresholds, and employer
+  notification under G.A. and related legislation. Coordinates with
+  debt-service for fordring state updates and with integration-gateway for
+  employer communication.
+type: service
+module: opendebt-wage-garnishment-service
+tags:
+  - service
+  - financial
+  - legal
+api_spec: opendebt-wage-garnishment-service/src/main/resources/openapi.yaml
+owner_team: ~

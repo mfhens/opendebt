@@ -1,0 +1,12 @@
+id: creditor-service
+name: "Creditor Service"
+description: >
+  Manages creditor (fordringshaver) master data and creditor group configuration.
+  Handles CREMUL/DEBMUL ingestion of batch debt files from creditors via
+  Smooks/EDIFACT. Provides the creditor onboarding and channel configuration API.
+type: service
+module: opendebt-creditor-service
+tags:
+  - service
+api_spec: opendebt-creditor-service/src/main/resources/openapi.yaml
+owner_team: ~

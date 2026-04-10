@@ -1,0 +1,15 @@
+id: person-registry
+name: "Person Registry"
+description: >
+  The designated PII silo for all personal data. Stores CPR numbers, CVR numbers,
+  names, addresses, and contact details in encrypted form. All other services
+  reference persons exclusively via an opaque person_id UUID. Provides DSAR
+  (Data Subject Access Request) and right-to-erasure APIs. No other service
+  may persist personal identifying information.
+type: service
+module: opendebt-person-registry
+tags:
+  - service
+  - gdpr-pii
+api_spec: opendebt-person-registry/src/main/resources/openapi.yaml
+owner_team: ~

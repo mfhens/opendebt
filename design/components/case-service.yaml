@@ -1,0 +1,13 @@
+id: case-service
+name: "Case Service"
+description: >
+  Manages debt collection cases (sager). Coordinates the lifecycle of a case
+  from creation through hearing (høring), decision, and closure. Orchestrates
+  workflows via Flowable and delegates domain operations to debt-service,
+  letter-service, and wage-garnishment-service.
+type: service
+module: opendebt-case-service
+tags:
+  - service
+api_spec: opendebt-case-service/src/main/resources/openapi.yaml
+owner_team: ~

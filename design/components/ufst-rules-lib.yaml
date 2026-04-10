@@ -1,0 +1,15 @@
+id: ufst-rules-lib
+name: "UFST Rules Library"
+description: >
+  Shared Drools rules library embedded in consuming services at compile time
+  (ADR-0035). Contains .drl rule files for interest calculation (including
+  time-aware rate periods), write-off thresholds, garnishment limits, and
+  coverage-order prioritisation. Services declare a Maven dependency and
+  instantiate a KieSession locally — no remote rules engine call.
+type: library
+module: ufst-rules-lib
+tags:
+  - library
+  - rules-engine
+api_spec: ~
+owner_team: ~

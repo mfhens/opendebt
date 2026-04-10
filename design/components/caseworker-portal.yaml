@@ -1,0 +1,14 @@
+id: caseworker-portal
+name: "Caseworker Portal"
+description: >
+  Server-side rendered web UI for caseworkers (sagsbehandlere). Built with
+  Spring Boot + Thymeleaf + HTMX. Provides the full debt collection workflow:
+  case overview, fordring management, write-up/write-down, garnishment
+  initiation, hearing management, and payment status. Consumes REST APIs of
+  case-service, debt-service, payment-service, and person-registry.
+type: portal
+module: opendebt-caseworker-portal
+tags:
+  - portal
+api_spec: ~
+owner_team: ~
