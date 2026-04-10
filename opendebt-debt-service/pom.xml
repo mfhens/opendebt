@@ -26,6 +26,10 @@
             <artifactId>opendebt-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>dk.ufst</groupId>
+            <artifactId>ufst-rules-lib</artifactId>
+        </dependency>
+        <dependency>
             <groupId>dk.ufst.opendebt</groupId>
             <artifactId>opendebt-common</artifactId>
             <type>test-jar</type>

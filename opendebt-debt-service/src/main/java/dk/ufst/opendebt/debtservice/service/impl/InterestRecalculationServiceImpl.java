@@ -22,6 +22,9 @@ import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
 import dk.ufst.opendebt.debtservice.service.InterestRecalculationService;
+import dk.ufst.rules.model.InterestCalculationRequest;
+import dk.ufst.rules.model.InterestCalculationResult;
+import dk.ufst.rules.service.RulesService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +53,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class InterestRecalculationServiceImpl implements InterestRecalculationService {
 
-  private static final BigDecimal DAYS_IN_YEAR = new BigDecimal("365");
   private static final BigDecimal FALLBACK_ANNUAL_RATE = new BigDecimal("0.0575");
   private static final InterestRuleCode DEFAULT_RULE = InterestRuleCode.INDR_STD;
 
   private final DebtRepository debtRepository;
   private final InterestJournalEntryRepository interestRepository;
   private final BusinessConfigService configService;
+  private final RulesService rulesService;
 
   @Override
   @Transactional
@@ -95,7 +98,17 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
 
     // Resolve per-debt rate key using the same order as the batch job.
     String configKey = resolveConfigKey(debt);
-    BigDecimal initialRate = resolveInitialRate(configKey, from, debtId);
+    InterestRuleCode ruleCode = resolveRuleCode(debt);
+    BigDecimal initialRate;
+    if (ruleCode.usesContractualRate()) {
+      InterestSelectionEmbeddable sel = debt.getInterestSelection();
+      initialRate =
+          (sel != null && sel.getAdditionalInterestRate() != null)
+              ? sel.getAdditionalInterestRate()
+              : BigDecimal.ZERO;
+    } else {
+      initialRate = resolveInitialRate(configKey, from, debtId);
+    }
 
     // Step 1: delete all journal entries in the disrupted window [from, today)
     int deleted = interestRepository.deleteByDebtIdFromDate(debtId, from);
@@ -141,8 +154,19 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
         }
       }
 
-      BigDecimal dailyInterest =
-          balance.multiply(currentRate).divide(DAYS_IN_YEAR, 2, RoundingMode.HALF_UP);
+      InterestCalculationResult ruleResult =
+          rulesService.calculateInterest(
+              InterestCalculationRequest.builder()
+                  .interestRule(resolveRuleCode(debt).name())
+                  .annualRate(currentRate)
+                  .principalAmount(balance)
+                  .daysPastDue(1)
+                  .build());
+      BigDecimal dailyInterest = ruleResult.getInterestAmount();
+      if (dailyInterest.signum() == 0) {
+        cursor = cursor.plusDays(1);
+        continue;
+      }
 
       entries.add(
           InterestJournalEntry.builder()
@@ -182,6 +206,22 @@ public class InterestRecalculationServiceImpl implements InterestRecalculationSe
         .balanceUsed(balance)
         .totalInterestRecalculated(total)
         .build();
+  }
+
+  /** Resolves the InterestRuleCode for a debt, with fallback to DEFAULT_RULE. */
+  private InterestRuleCode resolveRuleCode(DebtEntity debt) {
+    InterestSelectionEmbeddable sel = debt.getInterestSelection();
+    if (sel != null && sel.getInterestRule() != null && !sel.getInterestRule().isBlank()) {
+      try {
+        return InterestRuleCode.valueOf(sel.getInterestRule());
+      } catch (IllegalArgumentException e) {
+        log.warn(
+            "Unknown interest rule '{}' for debt={}, using default",
+            sel.getInterestRule(),
+            debt.getId());
+      }
+    }
+    return DEFAULT_RULE;
   }
 
   /**

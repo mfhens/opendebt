@@ -1,7 +1,6 @@
 package dk.ufst.opendebt.debtservice.batch;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +21,9 @@ import dk.ufst.opendebt.debtservice.entity.InterestSelectionEmbeddable;
 import dk.ufst.opendebt.debtservice.repository.BatchJobExecutionRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
+import dk.ufst.rules.model.InterestCalculationRequest;
+import dk.ufst.rules.model.InterestCalculationResult;
+import dk.ufst.rules.service.RulesService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,12 +54,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class InterestAccrualJobHelper {
 
-  private static final BigDecimal DAYS_IN_YEAR = new BigDecimal("365");
   private static final InterestRuleCode DEFAULT_RULE = InterestRuleCode.INDR_STD;
 
   private final BatchJobExecutionRepository batchRepository;
   private final InterestJournalEntryRepository interestRepository;
   private final BusinessConfigService configService;
+  private final RulesService rulesService;
 
   @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
   public boolean alreadyExecuted(String jobName, java.time.LocalDate date) {
@@ -112,8 +114,18 @@ public class InterestAccrualJobHelper {
           balance = balance.add(fees);
         }
 
-        BigDecimal dailyInterest =
-            balance.multiply(rate).divide(DAYS_IN_YEAR, 2, RoundingMode.HALF_UP);
+        InterestCalculationResult ruleResult =
+            rulesService.calculateInterest(
+                InterestCalculationRequest.builder()
+                    .interestRule(resolveRuleCode(debt).name())
+                    .annualRate(rate)
+                    .principalAmount(balance)
+                    .daysPastDue(1)
+                    .build());
+        if (ruleResult.getInterestAmount().signum() == 0) {
+          continue;
+        }
+        BigDecimal dailyInterest = ruleResult.getInterestAmount();
 
         toSave.add(
             InterestJournalEntry.builder()

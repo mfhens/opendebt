@@ -1,0 +1,30 @@
+package dk.ufst.opendebt.debtservice.config;
+
+import org.kie.api.runtime.KieContainer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import dk.ufst.rules.config.KieContainerFactory;
+import dk.ufst.rules.service.RulesService;
+import dk.ufst.rules.service.impl.RulesServiceImpl;
+
+/**
+ * Wires the embedded ufst-rules-lib into the debt-service Spring context (TB-057).
+ *
+ * <p>Provides a singleton {@link KieContainer} (expensive to build) and a {@link RulesService}
+ * backed by it. The container is built once at startup from the DRL files bundled in
+ * ufst-rules-lib.
+ */
+@Configuration
+public class DroolsAutoConfiguration {
+
+  @Bean
+  public KieContainer kieContainer() {
+    return KieContainerFactory.buildFromClasspath();
+  }
+
+  @Bean
+  public RulesService rulesService(KieContainer kieContainer) {
+    return new RulesServiceImpl(kieContainer);
+  }
+}
