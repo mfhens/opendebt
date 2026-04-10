@@ -18,7 +18,6 @@ data:
   WAGE_GARNISHMENT_SERVICE_URL: "http://opendebt-wage-garnishment-service:8088"
   INTEGRATION_GATEWAY_URL: "http://opendebt-integration-gateway:8089"
   PERSON_REGISTRY_URL: "http://opendebt-person-registry:8090"
-  RULES_ENGINE_URL: "http://opendebt-rules-engine:8091"
   CREDITOR_SERVICE_URL: "http://opendebt-creditor-service:8092"
 
   # Observability — override in overlay with the actual OTel Collector endpoint

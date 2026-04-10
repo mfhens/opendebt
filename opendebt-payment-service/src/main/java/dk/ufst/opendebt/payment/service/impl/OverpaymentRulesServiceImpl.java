@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class OverpaymentRulesServiceImpl implements OverpaymentRulesService {
 
-  // AIDEV-TODO: Inject RulesService from opendebt-rules-engine and replace the hardcoded default.
+  // AIDEV-TODO: Inject RulesService from ufst-rules-lib and replace the hardcoded default.
   // Blocked on: case type (sagstype) model and frivillig indbetaling flag in DebtEntity.
 
   @Override
