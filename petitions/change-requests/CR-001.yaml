@@ -25,6 +25,15 @@ desired_behaviour: |
     (BigDecimal, pre-resolved by the caller from BusinessConfigService before invoking the
     rules engine, since BusinessConfigService lives in opendebt-debt-service not in the
     rules engine service itself).
+  - CRITICAL TIME-AWARE CONSTRAINT: the caller MUST resolve annualRate using
+    request.calculationDate (not LocalDate.now()) as the effectiveDate for
+    BusinessConfigService.getDecimalValue(configKey, calculationDate). This ensures
+    retroactive recalculations (petition039 timeline replay, krydsende handlinger) use the
+    rate that was legally valid on the historical accrual date, not today's rate.
+    Example: interest replayed for 2024-01-15 must use RATE_INDR_STD valid 2024-01-15
+    (7.75%), NOT the current 5.75% — even though the current date is later.
+    Rate change lag (G.A.2.1.1, petition043): the valid_from stored in business_config
+    already accounts for the 5-banking-day lag; the caller passes calculationDate as-is.
   - interest-calculation.drl branches on interestRule with explicit salience ordering:
       salience 200  — "No Interest Before Due Date"   (daysPastDue <= 0)
       salience 100  — "INDR_EXEMPT: Straffebøder"     (interestRule == "INDR_EXEMPT")
@@ -94,6 +103,10 @@ acceptance_criteria: |
   - INDR_TOLD: same formula with annualRate=0.0375 returns 375.00 (±0.01).
   - INDR_TOLD_AFD: same formula with annualRate=0.0275 returns 275.00 (±0.01).
   - INDR_CONTRACT: same formula with annualRate=<contractual value> returns correct amount.
+  - TIME-AWARE: calculateInterest with interestRule="INDR_STD", annualRate=0.0775
+    (historical 2024 rate) produces a different result than annualRate=0.0575 (2025 rate)
+    for identical principal and daysPastDue — confirming the DRL uses request.annualRate
+    verbatim and does NOT override it with any hardcoded or internally resolved value.
   - No-interest rules fire before rate rules (salience ordering verified by rule name in
     result.rateType: "EXEMPT", "NOT_DUE", "SMALL_AMOUNT").
   - All existing unit tests (RulesServiceImplTest, RulesControllerTest,
