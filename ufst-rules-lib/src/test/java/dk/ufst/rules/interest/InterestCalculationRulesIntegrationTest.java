@@ -28,7 +28,7 @@ import dk.ufst.rules.test.RulesTestHarness;
  */
 class InterestCalculationRulesIntegrationTest {
 
-  private static final String RESULT_GLOBAL = "result";
+  private static final String RESULT_GLOBAL = "interestResult";
 
   private static KieContainer kieContainer;
 

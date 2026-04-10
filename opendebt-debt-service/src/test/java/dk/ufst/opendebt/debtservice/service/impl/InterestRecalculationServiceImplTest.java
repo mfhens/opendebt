@@ -26,6 +26,9 @@ import dk.ufst.opendebt.debtservice.entity.InterestJournalEntry;
 import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.InterestJournalEntryRepository;
 import dk.ufst.opendebt.debtservice.service.BusinessConfigService;
+import dk.ufst.rules.model.InterestCalculationRequest;
+import dk.ufst.rules.model.InterestCalculationResult;
+import dk.ufst.rules.service.RulesService;
 
 /**
  * Unit tests for P046-T5: timeline replay with per-day rate boundary splitting in
@@ -38,6 +41,7 @@ class InterestRecalculationServiceImplTest {
   @Mock private DebtRepository debtRepository;
   @Mock private InterestJournalEntryRepository interestRepository;
   @Mock private BusinessConfigService configService;
+  @Mock private RulesService rulesService;
 
   @InjectMocks private InterestRecalculationServiceImpl service;
 
@@ -50,6 +54,17 @@ class InterestRecalculationServiceImplTest {
     when(debtRepository.findById(debtId)).thenReturn(Optional.of(debt));
     when(interestRepository.deleteByDebtIdFromDate(eq(debtId), any())).thenReturn(3);
     when(interestRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+    // Mock rulesService to compute interest using the passed annualRate (mirrors DRL behaviour)
+    when(rulesService.calculateInterest(any(InterestCalculationRequest.class)))
+        .thenAnswer(
+            inv -> {
+              InterestCalculationRequest req = inv.getArgument(0);
+              java.math.BigDecimal daily =
+                  req.getPrincipalAmount()
+                      .multiply(req.getAnnualRate())
+                      .divide(new java.math.BigDecimal("365"), 2, java.math.RoundingMode.HALF_UP);
+              return InterestCalculationResult.builder().interestAmount(daily).build();
+            });
   }
 
   @Test

@@ -21,7 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RulesServiceImpl implements RulesService {
 
-  private static final String RESULT_GLOBAL = "result";
+  private static final String INTEREST_RESULT_GLOBAL = "interestResult";
+  private static final String READINESS_RESULT_GLOBAL = "readinessResult";
+  private static final String COLLECTION_RESULT_GLOBAL = "collectionResult";
 
   private final KieContainer kieContainer;
 
@@ -38,7 +40,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal(RESULT_GLOBAL, result);
+      kieSession.setGlobal(READINESS_RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {
@@ -63,7 +65,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal(RESULT_GLOBAL, result);
+      kieSession.setGlobal(INTEREST_RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {
@@ -85,7 +87,7 @@ public class RulesServiceImpl implements RulesService {
 
     KieSession kieSession = kieContainer.newKieSession();
     try {
-      kieSession.setGlobal(RESULT_GLOBAL, result);
+      kieSession.setGlobal(COLLECTION_RESULT_GLOBAL, result);
       kieSession.insert(request);
       kieSession.fireAllRules();
     } finally {

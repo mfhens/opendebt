@@ -4,7 +4,7 @@ import dk.ufst.rules.model.CollectionPriorityRequest
 import dk.ufst.rules.model.CollectionPriorityResult
 import java.time.LocalDate
 
-global CollectionPriorityResult result
+global CollectionPriorityResult collectionResult
 
 // ============================================================================
 // GIL § 4 Daekningsraekkefoeige — Inter-claim priority order
@@ -44,7 +44,7 @@ rule "GIL4 FIFO Sort Key — FR-2.1 / FR-2.2 (GIL § 4, stk. 2)"
                 && $req.getLegacyOprettetDato().isBefore(LocalDate.of(2013, 9, 1))) {
             fifoKey = $req.getLegacyOprettetDato();
         }
-        result.setFifoSortKey(fifoKey);
+        collectionResult.setFifoSortKey(fifoKey);
 end
 
 // ============================================================================
@@ -58,10 +58,10 @@ rule "GIL4 Kategori 1 — Rimelige Omkostninger (GIL § 6a)"
     when
         $req : CollectionPriorityRequest(rimeligOmkostning == true)
     then
-        result.setPriorityRank(CollectionPriorityResult.GIL4_RIMELIGE_OMKOSTNINGER);
-        result.setPriorityCategory("RIMELIGE_OMKOSTNINGER");
-        result.setUnderholdsbidragOrdning(0);
-        result.setLegalBasis(
+        collectionResult.setPriorityRank(CollectionPriorityResult.GIL4_RIMELIGE_OMKOSTNINGER);
+        collectionResult.setPriorityCategory("RIMELIGE_OMKOSTNINGER");
+        collectionResult.setUnderholdsbidragOrdning(0);
+        collectionResult.setLegalBasis(
             "GIL § 6a, stk. 1; GIL § 6a, stk. 12 — Rimelige omkostninger daekkes forud for alle oevrige fordringer (FR-1.1)");
 end
 
@@ -79,10 +79,10 @@ rule "GIL4 Kategori 2 — Boeder, Tvangsboeder og Tilbagebetaling (GIL § 10b)"
             rimeligOmkostning == false
         )
     then
-        result.setPriorityRank(CollectionPriorityResult.GIL4_BOEDER_TVANGSBOEEDER_TILBAGEBETALING);
-        result.setPriorityCategory(CollectionPriorityResult.CATEGORY_BOEDER_TVANGSBOEEDER_TILBAGEBETALING);
-        result.setUnderholdsbidragOrdning(0);
-        result.setLegalBasis(
+        collectionResult.setPriorityRank(CollectionPriorityResult.GIL4_BOEDER_TVANGSBOEEDER_TILBAGEBETALING);
+        collectionResult.setPriorityCategory(CollectionPriorityResult.CATEGORY_BOEDER_TVANGSBOEEDER_TILBAGEBETALING);
+        collectionResult.setUnderholdsbidragOrdning(0);
+        collectionResult.setLegalBasis(
             "GIL § 10b; lov nr. 288/2022 § 2, nr. 1 — Boeder, tvangsboeder og tilbagebetalingskrav er kategori 2 (FR-1.2)");
 end
 
@@ -103,10 +103,10 @@ rule "GIL4 Kategori 3a — Underholdsbidrag Privatretlig (GIL § 4, stk. 1, nr. 
             fine == false
         )
     then
-        result.setPriorityRank(CollectionPriorityResult.GIL4_UNDERHOLDSBIDRAG);
-        result.setPriorityCategory("UNDERHOLDSBIDRAG_PRIVATRETLIG");
-        result.setUnderholdsbidragOrdning(1);
-        result.setLegalBasis(
+        collectionResult.setPriorityRank(CollectionPriorityResult.GIL4_UNDERHOLDSBIDRAG);
+        collectionResult.setPriorityCategory("UNDERHOLDSBIDRAG_PRIVATRETLIG");
+        collectionResult.setUnderholdsbidragOrdning(1);
+        collectionResult.setLegalBasis(
             "GIL § 4, stk. 1, nr. 2 — Privatretligt underholdsbidrag daekkes forud for offentligretligt inden for kategori 3 (FR-1.3a/c)");
 end
 
@@ -126,10 +126,10 @@ rule "GIL4 Kategori 3b — Underholdsbidrag Offentlig (GIL § 4, stk. 1, nr. 2)"
             fine == false
         )
     then
-        result.setPriorityRank(CollectionPriorityResult.GIL4_UNDERHOLDSBIDRAG);
-        result.setPriorityCategory("UNDERHOLDSBIDRAG_OFFENTLIG");
-        result.setUnderholdsbidragOrdning(2);
-        result.setLegalBasis(
+        collectionResult.setPriorityRank(CollectionPriorityResult.GIL4_UNDERHOLDSBIDRAG);
+        collectionResult.setPriorityCategory("UNDERHOLDSBIDRAG_OFFENTLIG");
+        collectionResult.setUnderholdsbidragOrdning(2);
+        collectionResult.setLegalBasis(
             "GIL § 4, stk. 1, nr. 2 — Offentligretligt underholdsbidrag, ordning 2 inden for kategori 3 (FR-1.3b/d)");
 end
 
@@ -150,9 +150,9 @@ rule "GIL4 Kategori 4 — Andre Fordringer (GIL § 4, stk. 1, nr. 3)"
             childSupport == false
         )
     then
-        result.setPriorityRank(CollectionPriorityResult.GIL4_ANDRE_FORDRINGER);
-        result.setPriorityCategory("ANDRE_FORDRINGER");
-        result.setUnderholdsbidragOrdning(0);
-        result.setLegalBasis(
+        collectionResult.setPriorityRank(CollectionPriorityResult.GIL4_ANDRE_FORDRINGER);
+        collectionResult.setPriorityCategory("ANDRE_FORDRINGER");
+        collectionResult.setUnderholdsbidragOrdning(0);
+        collectionResult.setLegalBasis(
             "GIL § 4, stk. 1, nr. 3 — Andre fordringer daekkes sidst, herunder skattegaeld og retsafgoerelser (FR-1.4)");
 end

@@ -1,6 +1,7 @@
 package dk.ufst.opendebt.debtservice.config;
 
 import org.kie.api.runtime.KieContainer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,11 +20,13 @@ import dk.ufst.rules.service.impl.RulesServiceImpl;
 public class DroolsAutoConfiguration {
 
   @Bean
+  @ConditionalOnMissingBean
   public KieContainer kieContainer() {
     return KieContainerFactory.buildFromClasspath();
   }
 
   @Bean
+  @ConditionalOnMissingBean
   public RulesService rulesService(KieContainer kieContainer) {
     return new RulesServiceImpl(kieContainer);
   }

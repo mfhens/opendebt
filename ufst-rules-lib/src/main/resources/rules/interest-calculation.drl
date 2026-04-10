@@ -5,7 +5,7 @@ import dk.ufst.rules.model.InterestCalculationResult
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-global InterestCalculationResult result
+global InterestCalculationResult interestResult
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GUARD RULES  (salience ≥ 90 — fire before any rate rule)
@@ -18,10 +18,10 @@ rule "No Interest Before Due Date"
     when
         $req : InterestCalculationRequest(daysPastDue <= 0)
     then
-        result.setInterestAmount(BigDecimal.ZERO);
-        result.setInterestRate(BigDecimal.ZERO);
-        result.setRateType("NOT_DUE");
-        result.setLegalBasis("Gæld endnu ikke forfalden");
+        interestResult.setInterestAmount(BigDecimal.ZERO);
+        interestResult.setInterestRate(BigDecimal.ZERO);
+        interestResult.setRateType("NOT_DUE");
+        interestResult.setLegalBasis("Gæld endnu ikke forfalden");
 end
 
 // Salience 100 — straffebøder are interest-exempt
@@ -35,10 +35,10 @@ rule "INDR_EXEMPT: Straffebøder"
             interestRule == "INDR_EXEMPT"
         )
     then
-        result.setInterestAmount(BigDecimal.ZERO);
-        result.setInterestRate(BigDecimal.ZERO);
-        result.setRateType("INDR_EXEMPT");
-        result.setLegalBasis("Gældsinddrivelsesloven § 5, stk. 1; Retsplejeloven § 997, stk. 3");
+        interestResult.setInterestAmount(BigDecimal.ZERO);
+        interestResult.setInterestRate(BigDecimal.ZERO);
+        interestResult.setRateType("INDR_EXEMPT");
+        interestResult.setLegalBasis("Gældsinddrivelsesloven § 5, stk. 1; Retsplejeloven § 997, stk. 3");
 end
 
 // Salience 90 — amounts below 100 kr do not accrue interest
@@ -52,10 +52,10 @@ rule "No Interest For Small Amounts"
             principalAmount.compareTo(new BigDecimal("100")) < 0
         )
     then
-        result.setInterestAmount(BigDecimal.ZERO);
-        result.setInterestRate(BigDecimal.ZERO);
-        result.setRateType("SMALL_AMOUNT");
-        result.setLegalBasis("Beløb under 100 kr — ingen rente");
+        interestResult.setInterestAmount(BigDecimal.ZERO);
+        interestResult.setInterestRate(BigDecimal.ZERO);
+        interestResult.setRateType("SMALL_AMOUNT");
+        interestResult.setLegalBasis("Beløb under 100 kr — ingen rente");
 end
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,10 +87,10 @@ rule "INDR_STD: Standard Rate"
             .multiply(dailyRate)
             .multiply(new BigDecimal($req.getDaysPastDue()))
             .setScale(2, RoundingMode.HALF_UP);
-        result.setInterestAmount(interest);
-        result.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
-        result.setRateType("INDR_STD");
-        result.setLegalBasis("Gældsinddrivelsesloven § 5, stk. 1-2");
+        interestResult.setInterestAmount(interest);
+        interestResult.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
+        interestResult.setRateType("INDR_STD");
+        interestResult.setLegalBasis("Gældsinddrivelsesloven § 5, stk. 1-2");
 end
 
 // Salience 50 — INDR_TOLD: EU-toldkodeks art. 114; Toldloven § 30a (no payment plan)
@@ -111,10 +111,10 @@ rule "INDR_TOLD: Told Rate"
             .multiply(dailyRate)
             .multiply(new BigDecimal($req.getDaysPastDue()))
             .setScale(2, RoundingMode.HALF_UP);
-        result.setInterestAmount(interest);
-        result.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
-        result.setRateType("INDR_TOLD");
-        result.setLegalBasis("EU-toldkodeks art. 114; Toldloven § 30a");
+        interestResult.setInterestAmount(interest);
+        interestResult.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
+        interestResult.setRateType("INDR_TOLD");
+        interestResult.setLegalBasis("EU-toldkodeks art. 114; Toldloven § 30a");
 end
 
 // Salience 50 — INDR_TOLD_AFD: EU-toldkodeks art. 114 (with afdragsordning)
@@ -135,10 +135,10 @@ rule "INDR_TOLD_AFD: Told Afdrag Rate"
             .multiply(dailyRate)
             .multiply(new BigDecimal($req.getDaysPastDue()))
             .setScale(2, RoundingMode.HALF_UP);
-        result.setInterestAmount(interest);
-        result.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
-        result.setRateType("INDR_TOLD_AFD");
-        result.setLegalBasis("EU-toldkodeks art. 114 (med afdragsordning)");
+        interestResult.setInterestAmount(interest);
+        interestResult.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
+        interestResult.setRateType("INDR_TOLD_AFD");
+        interestResult.setLegalBasis("EU-toldkodeks art. 114 (med afdragsordning)");
 end
 
 // Salience 50 — INDR_CONTRACT: contractual rate from fordringshaver
@@ -160,8 +160,8 @@ rule "INDR_CONTRACT: Contractual Rate"
             .multiply(dailyRate)
             .multiply(new BigDecimal($req.getDaysPastDue()))
             .setScale(2, RoundingMode.HALF_UP);
-        result.setInterestAmount(interest);
-        result.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
-        result.setRateType("INDR_CONTRACT");
-        result.setLegalBasis("Gældsinddrivelsesbekendtgørelsen § 9, stk. 3");
+        interestResult.setInterestAmount(interest);
+        interestResult.setInterestRate($req.getAnnualRate().multiply(new BigDecimal("100")));
+        interestResult.setRateType("INDR_CONTRACT");
+        interestResult.setLegalBasis("Gældsinddrivelsesbekendtgørelsen § 9, stk. 3");
 end

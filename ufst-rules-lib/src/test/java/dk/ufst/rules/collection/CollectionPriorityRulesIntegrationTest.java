@@ -38,7 +38,7 @@ import dk.ufst.rules.test.RulesTestHarness;
  */
 class CollectionPriorityRulesIntegrationTest {
 
-  private static final String RESULT_GLOBAL = "result";
+  private static final String RESULT_GLOBAL = "collectionResult";
 
   private static KieContainer kieContainer;
 
