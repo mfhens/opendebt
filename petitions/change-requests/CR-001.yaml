@@ -1,0 +1,108 @@
+cr_id: CR-001
+parent_petition: petition045
+title: "Complete interest-calculation.drl with per-regime rules and configured rates"
+status: draft
+requested_by: "Markus (EA review)"
+requested_date: "2026-04-10"
+
+observed_behaviour: |
+  interest-calculation.drl contains only a single placeholder rule ("Standard Interest Rate")
+  that applies a hardcoded 10% annual rate to all public debts regardless of debt type.
+  The comment states "NB+8%" but the petition 045 standard rate is NB+4% (5.75% as of 2025-07-07).
+  Specifically:
+  - Rate is hardcoded to 0.10 — BusinessConfigService/RATE_INDR_STD is never consulted.
+  - InterestCalculationRequest carries no interestRule or annualRate fields — the DRL has no
+    way to branch on the debt's interest regime.
+  - INDR_EXEMPT (straffebøder) rule is absent — straffebøder incorrectly accrue interest.
+  - INDR_TOLD and INDR_TOLD_AFD rules are absent — customs debts use the wrong rate.
+  - INDR_CONTRACT rule is absent — contractual rate from InterestSelectionEmbeddable is ignored.
+  - No salience ordering — exemption rules could conflict with the default rule.
+  - No rule for isPublicDebt == false — private/contractual debts fall through with no result.
+
+desired_behaviour: |
+  The rules engine applies the correct interest regime for each debt type:
+  - InterestCalculationRequest carries interestRule (String, e.g. "INDR_STD") and annualRate
+    (BigDecimal, pre-resolved by the caller from BusinessConfigService before invoking the
+    rules engine, since BusinessConfigService lives in opendebt-debt-service not in the
+    rules engine service itself).
+  - interest-calculation.drl branches on interestRule with explicit salience ordering:
+      salience 200  — "No Interest Before Due Date"   (daysPastDue <= 0)
+      salience 100  — "INDR_EXEMPT: Straffebøder"     (interestRule == "INDR_EXEMPT")
+      salience  90  — "No Interest For Small Amounts"  (principalAmount < 100 kr)
+      salience  50  — "INDR_STD: Standard Rate"        (uses annualRate from request)
+      salience  50  — "INDR_TOLD: Told Rate"            (uses annualRate from request)
+      salience  50  — "INDR_TOLD_AFD: Told Afdrag Rate" (uses annualRate from request)
+      salience  50  — "INDR_CONTRACT: Contractual Rate" (uses annualRate from request)
+  - All rate rules use request.annualRate for calculation — never a hardcoded literal.
+  - daysCalculated is set by the DRL (currently set before session in service, acceptable
+    as-is; no change required here).
+  - Legal basis strings are corrected:
+      INDR_STD → "Gældsinddrivelsesloven § 5, stk. 1-2"
+      INDR_TOLD → "EU-toldkodeks art. 114; Toldloven § 30a"
+      INDR_TOLD_AFD → "EU-toldkodeks art. 114 (med afdragsordning)"
+      INDR_EXEMPT → "Gældsinddrivelsesloven § 5, stk. 1; Retsplejeloven § 997, stk. 3"
+      INDR_CONTRACT → "Gældsinddrivelsesbekendtgørelsen § 9, stk. 3"
+
+scope:
+  modified_scenarios:
+    - "Standard rate public debt accrues interest"       # existing placeholder → replace with INDR_STD
+    - "No Interest For Small Amounts"                    # unchanged logic, keep
+    - "No Interest Before Due Date"                      # unchanged logic, keep
+
+  new_scenarios:
+    - "INDR_EXEMPT debt accrues zero interest regardless of principal"
+    - "INDR_TOLD debt uses pre-resolved told rate"
+    - "INDR_TOLD_AFD debt uses pre-resolved told-with-afdrag rate"
+    - "INDR_CONTRACT debt uses pre-resolved contractual rate"
+
+  # NOTE: 4 new scenarios exceeds the default 3-scenario limit.
+  # Justification: all scenarios are narrow parametric variations of the same
+  # rate-switching logic in a single DRL file (interest-calculation.drl).
+  # No new domain concepts are introduced. Each new scenario is a one-liner
+  # assertion on a different enum branch. Recommend conductor accept as in-scope.
+
+  removed_scenarios: []
+
+  affected_components:
+    - opendebt-rules-engine   # interest-calculation.drl, InterestCalculationRequest model
+    # Callers of RulesController/RulesService.calculateInterest must also pass interestRule
+    # and annualRate — the primary caller is InterestAccrualJobHelper in opendebt-debt-service.
+    # That wiring is a prerequisite but is documented in petition045/petition046 scope.
+    # The CR implementation here is bounded to the rules engine alone.
+
+  out_of_scope: |
+    - FeeEntity interest inclusion (petition045 FR-5) — separate feature, not in this DRL.
+    - Separate accounting targets (FORDRINGSHAVER / STATEN) — petition045 FR-6.
+    - InterestAccrualJobHelper wiring to pass interestRule and annualRate — caller-side change
+      already implied by petition045/petition046; if not yet done, file a separate CR or TB item.
+    - BusinessConfigService rate seeding and validation — petition046 scope.
+    - OPK_STD (opkrævningsrente) — informational only, not calculated by rules engine.
+    - SU-lån compound interest, restskat renter — explicitly out of scope per petition045.
+
+legal_reference: |
+  Gældsinddrivelsesloven § 5, stk. 1-2 (INDR_STD, INDR_EXEMPT)
+  EU-toldkodeks art. 114; Toldloven § 30a (INDR_TOLD, INDR_TOLD_AFD)
+  Gældsinddrivelsesbekendtgørelsen § 9, stk. 3 (INDR_CONTRACT)
+
+acceptance_criteria: |
+  - InterestCalculationRequest has interestRule (String) and annualRate (BigDecimal) fields.
+  - interest-calculation.drl compiles without warnings under the existing DroolsConfig setup.
+  - INDR_EXEMPT: calculateInterest with interestRule="INDR_EXEMPT" returns interestAmount=0
+    and rateType="INDR_EXEMPT" regardless of principalAmount or daysPastDue.
+  - INDR_STD: calculateInterest with interestRule="INDR_STD", annualRate=0.0575,
+    principal=10000, daysPastDue=365 returns interestAmount=575.00 (±0.01).
+  - INDR_TOLD: same formula with annualRate=0.0375 returns 375.00 (±0.01).
+  - INDR_TOLD_AFD: same formula with annualRate=0.0275 returns 275.00 (±0.01).
+  - INDR_CONTRACT: same formula with annualRate=<contractual value> returns correct amount.
+  - No-interest rules fire before rate rules (salience ordering verified by rule name in
+    result.rateType: "EXEMPT", "NOT_DUE", "SMALL_AMOUNT").
+  - All existing unit tests (RulesServiceImplTest, RulesControllerTest,
+    InterestCalculationResultTest) remain green.
+  - No hardcoded rate literals remain in interest-calculation.drl.
+
+linked_artifacts:
+  outcome_contract: null      # petition045 has no separate outcome-contract file (embedded in petition)
+  feature_file: null          # petition045 has no separate feature file; new file to be created by Phase 1
+  spec_file: null             # no separate spec file; to be created by Phase 2
+
+pipeline_log: []

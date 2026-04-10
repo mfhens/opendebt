@@ -1740,6 +1740,8 @@ program:
   # Total: 72 petitions
   #   6 validated, 43 implemented, 1 superseded, 1 in_progress, 21 not_started
   #
+  # CHANGE REQUESTS: 1 (CR-001 draft)
+  #
   # COMPLETED: Phases 1-13 (partial gaps: 042+049 not started), Phase 14
   # IN PROGRESS: Phase 0 (petition002 end-to-end validation)
   # PLANNED: Phase 15 (petition051 immudb production hardening — pending TB-028-a)
@@ -1767,6 +1769,15 @@ program:
   # ===========================================================================
   # Technical Debt and Infrastructure Backlog
   # ===========================================================================
+
+  change_requests:
+    CR-001:
+      parent: petition045
+      title: "Complete interest-calculation.drl with per-regime rules and configured rates"
+      status: draft
+      phase: 0
+      requested_date: "2026-04-10"
+      file: petitions/change-requests/CR-001.yaml
 
   technical_backlog:
     - id: TB-001
