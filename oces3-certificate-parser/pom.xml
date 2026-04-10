@@ -43,7 +43,7 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring-framework.version>6.2.5</spring-framework.version>
+    <spring-framework.version>6.2.7</spring-framework.version>
   </properties>
 
   <dependencies>
