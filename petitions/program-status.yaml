@@ -2901,6 +2901,55 @@ program:
 
         Effort: SMALL (1–2 days). Risk: LOW if aligned with existing access-check infrastructure.
 
+    - id: TB-057
+      title: "Replace standalone opendebt-rules-engine service with embedded ufst-rules-lib"
+      status: open
+      priority: medium
+      created: 2026-04-10
+      adr: ADR-0035
+      description: |
+        ADR-0035 (supersedes ADR-0015) establishes that Drools rules are evaluated in-process
+        via a shared Maven library (`ufst-rules-lib`), not via a standalone HTTP service.
+
+        Motivation: No production Java code currently calls the rules engine HTTP API.
+        InterestAccrualJobHelper and InterestRecalculationServiceImpl both calculate inline;
+        OverpaymentRulesServiceImpl is an explicit placeholder (blocked on sagstype model).
+        The standalone service creates three diverging implementations of interest logic and
+        an unused PostgreSQL/Flyway setup. See ADR-0035 for full analysis.
+
+        Work items:
+        1. Create Maven module `ufst-rules-lib` (sibling of ufst-bookkeeping-core):
+           - Move model classes (InterestCalculationRequest, InterestCalculationResult, etc.)
+             from opendebt-rules-engine into ufst-rules-lib
+           - Move all .drl files into ufst-rules-lib/src/main/resources/rules/
+           - Extract KieContainerFactory as a Spring-agnostic factory
+           - Extract RulesEngineService facade (stateless session per evaluation)
+           - Provide RulesTestHarness as test-jar for consumer integration tests
+           - Drools deps declared in ufst-rules-lib pom; consumers inherit transitively
+        2. Update opendebt-debt-service:
+           - Add ufst-rules-lib dependency; wire KieContainerFactory as @Bean
+           - InterestAccrualJobHelper: replace inline calculation with RulesEngineService.evaluate()
+           - InterestRecalculationServiceImpl: replace inline calculation with RulesEngineService.evaluate()
+           - Remove HTTP client wiring for rules engine (if any)
+        3. Update opendebt-payment-service:
+           - Add ufst-rules-lib dependency
+           - Update OverpaymentRulesServiceImpl AIDEV-TODO comment to reference ufst-rules-lib
+             (actual implementation remains blocked on sagstype model)
+        4. Retire opendebt-rules-engine:
+           - Remove Spring Boot application entrypoint, REST controllers, HTTP client config
+           - Remove PostgreSQL/Flyway setup (DB was never used for DRL storage)
+           - Remove from k8s/base/configmap.yaml (RULES_ENGINE_URL key)
+           - Remove from docker-compose if present
+           - Remove Maven module declaration from root pom.xml
+        5. Update docs/site/technical/adr-index.md — add ADR-0035, mark ADR-0015 as superseded
+        6. All existing tests must remain green after refactor
+
+        Acceptance: all interest calculation paths (batch, retroactive, API preview) invoke the
+        same in-process KieContainer; opendebt-rules-engine module deleted; no RULES_ENGINE_URL
+        references remain in k8s or application config.
+
+        Effort: MEDIUM (3–5 days). Risk: LOW — no production callers to migrate.
+
 escalations:
   - id: ESC-055
     petition: P055

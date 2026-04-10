@@ -1,7 +1,11 @@
 # ADR 0015: Drools for Business Rules Engine
 
 ## Status
-Accepted
+~~Accepted~~ — **Superseded by ADR-0035** (2026-04-10)
+
+ADR-0035 establishes that Drools is embedded as a shared in-process library (`ufst-rules-lib`)
+rather than deployed as a standalone HTTP service. The standalone `opendebt-rules-engine` service
+is retired. See ADR-0035 for the full rationale and implementation plan (TB-057).
 
 ## Context
 Danish debt collection involves complex business rules including:

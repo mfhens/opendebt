@@ -16,7 +16,7 @@
 | 0012 | Debtor identification model | CPR/CVR with role-based identification in person-registry |
 | 0013 | Enterprise PostgreSQL with audit | Audit trail and history tracking in PostgreSQL |
 | 0014 | GDPR data isolation | All PII isolated in person-registry service |
-| 0015 | Drools rules engine | Drools for business rule evaluation |
+| 0015 | Drools rules engine | Drools for business rule evaluation — **superseded by ADR-0035** |
 | 0016 | Flowable workflow engine | Flowable BPMN for case management workflows |
 | 0017 | Smooks EDIFACT CREMUL/DEBMUL | Smooks for parsing SKB payment files |
 | 0018 | Double-entry bookkeeping | All financial effects post to payment-service ledger (amendment #3); local journals supplementary |
@@ -33,5 +33,6 @@
 | 0029 | immudb for financial ledger integrity | immudb 1.10 + immudb4j 1.0.1 as cryptographic tamper-evidence KV store for double-entry ledger entries; dual-write pattern from `BookkeepingService`; conditionally accepted pending UFST HDP platform validation (TB-028-a) |
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
 | 0031 | Statutory codes as enums | Values defined by statute (e.g., `WriteDownReasonCode`) are Java enums, not DB configuration; confirmed compatible with Catala's enumeration model (P054 spike) |
+| 0035 | Embed Drools as shared library (`ufst-rules-lib`) | Supersedes ADR-0015: Drools evaluated in-process via a shared Maven library; standalone `opendebt-rules-engine` service retired |
 
 ADR source files are in `architecture/adr/` in the repository.
