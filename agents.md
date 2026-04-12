@@ -1,15 +1,15 @@
 # OpenDebt - AI Agent Guidelines
 
-This document provides guidelines for AI agents (GitHub Copilot, ChatGPT, Claude, etc.) working on the OpenDebt codebase.
+Guidelines for AI agents (GitHub Copilot, ChatGPT, Claude, etc.) on OpenDebt codebase.
 
 ## Project Overview
 
-OpenDebt is an open-source debt collection system for Danish public institutions, designed to replace legacy systems like EFI/DMI with a modern, PSRM-compatible architecture.
+OpenDebt: open-source debt collection for Danish public institutions. Replaces EFI/DMI; PSRM-compatible architecture.
 
 ### Key Characteristics
 - **Language**: Java 21, Spring Boot 3.3
-- **Architecture**: Microservices deployed on Kubernetes
-- **API Style**: REST with OpenAPI 3.1 specifications
+- **Architecture**: Microservices on Kubernetes
+- **API Style**: REST with OpenAPI 3.1
 - **Authentication**: OAuth2/OIDC via Keycloak
 - **Database**: PostgreSQL 16 (enterprise grade with audit and history)
 - **Target Platform**: UFST Horizontale Driftsplatform
@@ -17,44 +17,44 @@ OpenDebt is an open-source debt collection system for Danish public institutions
 ## Tools
 
 ### Diagrams
-Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagrams). Embed Mermaid blocks directly in Markdown files using ` ```mermaid ` fenced code blocks. Do NOT use ASCII art or draw.io.
+Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagrams). Embed with ` ```mermaid ` blocks in Markdown. Do NOT use ASCII art or draw.io.
 
 ### External API and SDK Documentation
-When implementing against third-party libraries, SDKs, or external APIs, prefer the local Claude skill in `~/.claude/skills/get-api-docs/` and its `chub` workflow before relying on remembered API shapes.
+For third-party libs/SDKs/APIs, use local Claude skill `~/.claude/skills/get-api-docs/` and `chub` workflow — don't rely on remembered API shapes.
 
-- Use `chub search "<library or API name>"` to find the correct documentation ID
+- Use `chub search "<library or API name>"` to find correct documentation ID
 - Use `chub get <id> [--lang <lang>]` to fetch current documentation
-- Use the fetched documentation as the implementation reference
-- If useful, save concise local notes with `chub annotate <id> "..."`
+- Use fetched documentation as implementation reference
+- Save concise local notes with `chub annotate <id> "..."`
 
 ### Documentation Maintenance (CRITICAL)
-**Every time source code is changed, check and update the following documentation if affected:**
+**On every source change, check/update docs if affected:**
 - `architecture/overview.md` - Service inventory, implementation status, diagrams, endpoint lists
 - `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
 - `agents.md` - ADR references, package structure, patterns
-- Relevant ADR in `architecture/adr/` if an architectural decision is affected
+- Relevant ADR in `architecture/adr/` if architectural decision affected
 - `docs/site/technical/` - Developer guide, architecture, API reference, domain model (English)
 - `docs/site/fordringshaver/` - Creditor user guide (Danish) if creditor-facing features change
 - `docs/site/skyldner/` - Citizen user guide (Danish) if citizen-facing features change
 - `docs/site/sagsbehandler/` - Caseworker user guide (Danish) if caseworker-facing features change
 
-The documentation site is built with MkDocs (`mkdocs.yml` at repo root). Run `mkdocs serve` to preview locally.
+Doc site built with MkDocs (`mkdocs.yml` at root). Preview: `mkdocs serve`.
 
 ### Memory MCP Synchronisation
-**When `petitions/program-status.yaml` or `architecture/adr/` are updated, also reflect the change in the memory MCP knowledge graph** (if the memory MCP server is available in the current session).
+**When `petitions/program-status.yaml` or `architecture/adr/` updated, sync to memory MCP knowledge graph** (if available).
 
 Update memory when:
-- A new ADR is added or its status changes → create or update an entity for the ADR
-- A technical backlog item (TB-*) is added, completed, or blocked → update the relevant entity
-- A petition status changes (e.g. `not_started` → `implemented`) → update the petition entity
+- New ADR added or status changes → create or update entity for ADR
+- TB-* item added, completed, or blocked → update relevant entity
+- Petition status changes (e.g. `not_started` → `implemented`) → update petition entity
 
-Use `memory-create_entities` for new items and `memory-add_observations` / `memory-delete_observations` for status changes. Keep observations concise and factual — the YAML file is the source of truth; memory is a queryable index on top of it.
+Use `memory-create_entities` for new items, `memory-add_observations` / `memory-delete_observations` for status changes. Keep observations concise — YAML is source of truth; memory is queryable index.
 
 ## Architecture Principles
 
 ### GDPR Data Isolation (CRITICAL)
 
-**All personal data (PII) is isolated in the Person Registry service.** Other services store only technical UUIDs.
+**All PII isolated in Person Registry.** Other services store only technical UUIDs.
 
 | Data Type | Storage Location | Other Services Store |
 |-----------|------------------|---------------------|
@@ -77,7 +77,7 @@ private String name;       // NEVER DO THIS
 
 ### Fællesoffentlige Arkitekturprincipper Compliance
 
-All code must align with Danish public sector architecture principles:
+Code must align with Danish public sector architecture principles:
 
 1. **Business-driven architecture** - Services map to business capabilities
 2. **Flexibility and scalability** - Stateless services, horizontal scaling
@@ -90,7 +90,7 @@ All code must align with Danish public sector architecture principles:
 
 ### No Cross-Service Database Access
 
-**CRITICAL**: Services must NOT directly connect to OTHER services' databases. Each service owns its database, but cross-service data access is via APIs.
+**CRITICAL**: Services must NOT directly connect to other services' databases. Each service owns its DB; cross-service data via APIs only.
 
 ```java
 // CORRECT - Service owns its own repository
@@ -118,9 +118,9 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {} // In d
 
 ### Implementation Language and Domain Terminology (CRITICAL)
 
-**All source code (Java, JS, SQL), comments, log messages, and API contracts are written in English.** Do not mix languages within source code. Danish terms must never appear in identifiers, string literals, or code comments — use the English equivalents exclusively.
+**All source code (Java, JS, SQL), comments, logs, API contracts: English only.** No Danish in identifiers, string literals, or comments — use English equivalents.
 
-**`docs/begrebsmodel/` is the single authoritative source for domain terminology.** Section 2.1 of the begrebsmodel provides the canonical Danish→English mapping. When naming classes, fields, methods, database columns, REST resources, or DTOs, use the English equivalent from that table. When translating UI text into any locale, use the Danish column as the source concept.
+**`docs/begrebsmodel/` is single source for domain terminology.** Section 2.1: canonical Danish→English mapping. Use English equivalent for classes, fields, methods, columns, REST resources, DTOs. For i18n UI text, use Danish column as source concept.
 
 | Begrebsmodel Danish | English for code | Example usage |
 |---------------------|-----------------|---------------|
@@ -155,7 +155,7 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {} // In d
 | Fordringskompleks | Claim Complex | `claimComplexId` |
 | Sag | Case | `CaseEntity` |
 
-**For i18n message bundles** (`messages_*.properties`): each locale file must be written entirely in its target language. The begrebsmodel Danish terms are the source concepts; each locale translates them into its own language. New locale bundles must include a header comment mapping domain terms back to the begrebsmodel.
+**For i18n message bundles** (`messages_*.properties`): each locale file written entirely in its target language. Begrebsmodel Danish terms are source concepts. New locale bundles must include header comment mapping terms back to begrebsmodel.
 
 ### Package Structure
 ```
@@ -170,7 +170,7 @@ dk.ufst.opendebt.<service>/
 └── exception/       # Custom exceptions
 ```
 
-`integration-gateway` additionally contains a `soap/` sub-package for all Spring-WS SOAP logic (petition019, ADR-0030):
+`integration-gateway` has `soap/` sub-package for Spring-WS SOAP logic (petition019, ADR-0030):
 
 ```
 dk.ufst.opendebt.integrationgateway.soap/
@@ -183,7 +183,7 @@ dk.ufst.opendebt.integrationgateway.soap/
 └── skat/            # SKAT endpoints, SkatClaimMapper, generated JAXB
 ```
 
-`payment-service` additionally contains a `daekning/` domain sub-package for the GIL § 4 payment application order module (petition057):
+`payment-service` has `daekning/` sub-package for GIL § 4 payment application order module (petition057):
 
 ```
 dk.ufst.opendebt.payment.daekning/
@@ -199,7 +199,7 @@ dk.ufst.opendebt.payment.daekning/
         └── DaekningsRaekkefoeigenServiceImpl.java  # 8-step GIL § 4 algorithm
 ```
 
-`debt-service` additionally contains an `offsetting/` domain sub-package for the Modregning og Korrektionspulje module (petition058, ADR-0027):
+`debt-service` has `offsetting/` sub-package for Modregning og Korrektionspulje module (petition058, ADR-0027):
 
 ```
 dk.ufst.opendebt.debtservice.offsetting/
@@ -228,14 +228,14 @@ dk.ufst.opendebt.debtservice.offsetting/
     └── [result/decision records]                  # ModregningResult, KorrektionspuljeResult, etc.
 ```
 
-Key invariants enforced in `offsetting/`:
+Key invariants in `offsetting/`:
 - `renteGodtgoerelseNonTaxable` is ALWAYS `true` (GIL SS 8b; hardcoded, never configurable)
 - No CPR/PII in entities — `UUID debtorPersonId` only (ADR-0014)
 - Idempotency via `nemkontoReferenceId` unique constraint (AC-5)
 - `@Transactional` on `initiateModregning` and `settleEntry` (NFR-1)
 - CLS audit per allocation with `gilParagraf` annotation (NFR-2)
 
-`caseworker-portal` additionally contains a `daekning/` view sub-package for the GIL § 4 view (petition057):
+`caseworker-portal` has `daekning/` view sub-package for GIL § 4 view (petition057):
 
 ```
 dk.ufst.opendebt.caseworkerportal.daekning/
@@ -244,9 +244,9 @@ dk.ufst.opendebt.caseworkerportal.daekning/
                                                  #   and renders daekningsraakkefoelge.html
 ```
 
-The `PaymentServiceClient` in `caseworker-portal` was extended with `getDaekningsraekkefoelge(UUID debtorId)` that calls `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057). i18n: 12 new keys per locale (5 priority category labels, 6 interest component labels, 1 view title).
+`PaymentServiceClient` in `caseworker-portal` extended with `getDaekningsraekkefoelge(UUID debtorId)` → `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057). i18n: 12 new keys/locale (5 priority category labels, 6 interest component labels, 1 view title).
 
-Shared code in `opendebt-common` uses the base package `dk.ufst.opendebt.common` with domain sub-packages:
+Shared code in `opendebt-common` base package `dk.ufst.opendebt.common`:
 
 ```
 dk.ufst.opendebt.common/
@@ -284,7 +284,7 @@ public class DebtController {
 ```
 
 ### Security Annotations
-Always use Spring Security annotations:
+Use Spring Security annotations:
 ```java
 @PreAuthorize("hasRole('CASEWORKER')")           // Role check
 @PreAuthorize("hasAuthority('SCOPE_read:debts')") // Scope check
@@ -292,7 +292,7 @@ Always use Spring Security annotations:
 ```
 
 ### Error Handling
-Use the common exception hierarchy:
+Use common exception hierarchy:
 ```java
 throw new OpenDebtException(
     "Debt not found: " + id,
@@ -303,7 +303,7 @@ throw new OpenDebtException(
 
 ## Domain Terminology Reference
 
-**`docs/begrebsmodel/` is the single source of truth.** See the full mapping table in "Implementation Language and Domain Terminology" above. Code uses **English only**; Danish terms appear only in i18n message bundles for the `da` locale and in documentation that discusses the Danish legal/business domain. When in doubt, consult `docs/begrebsmodel/Inddrivelse-begrebsmodel-UFST-v3.md` section 2.1.
+**`docs/begrebsmodel/` single source of truth.** See mapping table in "Implementation Language and Domain Terminology" above. Code: **English only**; Danish only in `da` i18n bundles and domain docs. Consult `docs/begrebsmodel/Inddrivelse-begrebsmodel-UFST-v3.md` section 2.1.
 
 ## Testing Requirements
 
@@ -314,12 +314,12 @@ throw new OpenDebtException(
 
 ### Architecture Tests
 
-**Shared rules** are defined in `opendebt-common/src/test/java/.../SharedArchRules.java` and enforced across all 12 services:
+**Shared rules** in `opendebt-common/src/test/java/.../SharedArchRules.java`, enforced across all 12 services:
 
 - **ADR-0014 (GDPR):** `ENTITIES_MUST_NOT_STORE_PII` — bans PII field names (cpr, cvr, name, address, email, phone) in `@Entity` classes. Applied to all services except person-registry (the GDPR vault).
 - **ADR-0007 (DB isolation):** `noAccessToOtherServiceRepositories("myservice")` — prevents any service from importing another service's repository classes. Applied to all 12 services.
 
-Each service has a thin `*ArchitectureTest.java` that references the shared rules:
+Each service has thin `*ArchitectureTest.java` referencing shared rules:
 
 ```java
 @AnalyzeClasses(packages = "dk.ufst.opendebt.myservice", importOptions = ImportOption.DoNotIncludeTests.class)
@@ -329,9 +329,9 @@ class MyServiceArchitectureTest {
 }
 ```
 
-**When adding a new service:** create this test class referencing `SharedArchRules`. If the service has a `..client..` package with WebClient, also add the trace propagation rule from `PortalArchitectureTest`.
+**New service:** create test class referencing `SharedArchRules`. If service has `..client..` with WebClient, add trace propagation rule from `PortalArchitectureTest`.
 
-**Trace propagation rule (ADR-0024):** Services with inter-service clients must prevent `WebClient.create()`:
+**Trace propagation rule (ADR-0024):** Services with inter-service clients must not use `WebClient.create()`:
 
 ```java
 @ArchTest
@@ -343,7 +343,7 @@ static final ArchRule clients_must_use_injected_webclient_builder =
         .as("Service clients must inject WebClient.Builder for trace propagation (ADR-0024).");
 ```
 
-See `CreditorArchitectureTest` (full layered architecture + shared rules) and `PortalArchitectureTest` (WebClient guard) for reference.
+See `CreditorArchitectureTest` (layered architecture + shared rules) and `PortalArchitectureTest` (WebClient guard) for reference.
 
 ### Integration Tests
 - Use Testcontainers for external dependencies
@@ -358,7 +358,7 @@ See `CreditorArchitectureTest` (full layered architecture + shared rules) and `P
 4. `sonar:sonar` - Static analysis
 5. `catala typecheck --language en --no-stdlib` — Catala compliance artefacts (for petitions with `legal_footprint: true`)
 
-**Scheduled / manual:** `dependency-check:check` (OWASP) runs weekly and via workflow dispatch — see `.github/workflows/owasp-dependency-check.yml` (not on every push; too slow for PR feedback).
+**Scheduled / manual:** `dependency-check:check` (OWASP) runs weekly + workflow dispatch — see `.github/workflows/owasp-dependency-check.yml`. Not on every push (too slow).
 
 ### Before Committing
 ```bash
@@ -369,7 +369,7 @@ mvn verify            # Run all checks
 ## External Integrations
 
 ### DUPLA (API Gateway)
-All external APIs must be exposed via DUPLA:
+All external APIs via DUPLA:
 - Define OpenAPI spec first
 - Use OCES3 certificates for system-to-system
 - Log all calls to CLS
@@ -380,7 +380,7 @@ Citizen portal integrates with TastSelv for authentication:
 - Token exchange for internal services
 
 ### Digital Post
-Letters are sent via Digital Post:
+Letters sent via Digital Post:
 - Check recipient status before sending
 - Fallback to physical mail if needed
 
@@ -388,7 +388,7 @@ Letters are sent via Digital Post:
 
 ### Service Client Pattern
 
-**CRITICAL (ADR-0024 / Trace Propagation):** Always inject `WebClient.Builder` — never use `WebClient.create()`. The Spring-managed builder carries Micrometer Tracing filters that automatically propagate W3C `traceparent` headers across inter-service calls. Without this, distributed traces break and requests cannot be correlated across services. This is enforced by ArchUnit tests.
+**CRITICAL (ADR-0024 / Trace Propagation):** Inject `WebClient.Builder` — never use `WebClient.create()`. Spring-managed builder carries Micrometer Tracing filters that propagate W3C `traceparent` headers. Without this, distributed traces break. Enforced by ArchUnit.
 
 ```java
 @Component
@@ -430,7 +430,7 @@ public ResponseEntity<Page<DebtDto>> listDebts(
 ```
 
 ### Audit Infrastructure
-All entities should extend `AuditableEntity` from opendebt-common:
+Entities should extend `AuditableEntity` from opendebt-common:
 ```java
 @Entity
 public class MyEntity extends AuditableEntity {
@@ -440,9 +440,9 @@ public class MyEntity extends AuditableEntity {
 }
 ```
 
-The `AuditableEntity` provides: `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `version`.
+`AuditableEntity` provides: `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `version`.
 
-For CLS (Common Logging System) integration, events are shipped via `ClsAuditClient`:
+For CLS integration, events shipped via `ClsAuditClient`:
 ```yaml
 opendebt:
   audit:
@@ -452,7 +452,7 @@ opendebt:
 
 ## ADR References
 
-When making architectural decisions, reference existing ADRs:
+Reference existing ADRs for architectural decisions:
 - ADR-0002: Microservices Architecture
 - ADR-0003: Java/Spring Boot Stack
 - ADR-0004: API-First Design
@@ -488,7 +488,7 @@ When making architectural decisions, reference existing ADRs:
 ## Standard Components
 
 ### Rules Engine (Drools)
-Use Drools for all business rules:
+Use Drools for business rules:
 - Debt readiness validation (indrivelsesparathed)
 - Interest calculation
 - Collection priority for offsetting
@@ -499,7 +499,7 @@ Use Drools for all business rules:
 DebtReadinessResult result = rulesService.evaluateReadiness(request);
 ```
 
-Rules are defined in:
+Rules in:
 - `.drl` files for complex rules (developers)
 - `.xlsx` Excel decision tables for simple rules (business analysts)
 
@@ -522,21 +522,21 @@ workflowService.completeTask(taskId, variables);
 ## Do's and Don'ts
 
 ### Do
-- Follow existing patterns in the codebase
-- **Financial transactions (ADR-0018):** When a change records a financial effect (balances, payments, interest, offsetting, write-offs, refunds, corrections), ensure **double-entry postings** land in payment-service (`BookkeepingService` / ledger) or document an explicit **ADR exception**. Service-local journals alone are not sufficient for statutory accounting.
+- Follow existing patterns
+- **Financial transactions (ADR-0018):** On changes with financial effect (balances, payments, interest, offsetting, write-offs, refunds, corrections), ensure **double-entry postings** land in payment-service (`BookkeepingService` / ledger) or document explicit **ADR exception**. Service-local journals alone insufficient for statutory accounting.
 - Write OpenAPI specs before implementing endpoints
-- Use Lombok for boilerplate reduction
-- Add proper validation annotations
+- Use Lombok for boilerplate
+- Add validation annotations
 - Include security annotations on all endpoints
 - Write conventional commits: `type(scope): description` (types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`; always include `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer)
 - Update ADRs for significant decisions
-- Use Mermaid for all diagrams in documentation
+- Use Mermaid for all diagrams
 - Store PII only in Person Registry
 - Use technical UUIDs to reference persons/organizations
 - Update `architecture/overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
-- **Record financial effects only in service-local tables** (e.g. interest journals) **without** a corresponding ledger posting plan to payment-service — see ADR-0018 amendment #3
+- **Record financial effects only in service-local tables** (e.g. interest journals) **without** corresponding ledger posting plan to payment-service — see ADR-0018 amendment #3
 - Store CPR, CVR, names, addresses outside Person Registry
 - Access other services' databases directly
 - Skip security annotations
@@ -551,8 +551,7 @@ workflowService.completeTask(taskId, variables);
 
 ## AIDEV Comments for Technical Backlog
 
-When AI agents (droids) or developers identify technical debt, refactoring opportunities, or
-improvements that are not blocking but should be tracked, use `AIDEV-` prefixed comments:
+Track non-blocking tech debt/refactoring/improvements with `AIDEV-` comments:
 
 ```java
 // AIDEV-TODO: Migrate this entity to extend AuditableEntity (TB-001)
@@ -570,40 +569,36 @@ improvements that are not blocking but should be tracked, use `AIDEV-` prefixed 
 
 **Workflow:**
 1. Reviewer droids (`code-reviewer-strict`, `solution-architecture-reviewer`) add AIDEV comments
-2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items; it also posts new TB items to the wasteland `wanted` table (see **Wasteland Integration → New items**)
-3. `tech-debt-executor` implements items from the technical_backlog
+2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items; also posts new TB items to wasteland `wanted` table (see **Wasteland Integration → New items**)
+3. `tech-debt-executor` implements items from technical_backlog
 
-These comments are collected into `petitions/program-status.yaml` under `technical_backlog`.
+Collected into `petitions/program-status.yaml` under `technical_backlog`.
 
 
 ## C4 Architecture Governance
 
-Architecture is governed using Structurizr DSL. Key files:
+Architecture governed via Structurizr DSL. Key files:
 
 | File | Purpose |
 |---|---|
 | `architecture/workspace.dsl` | Canonical C4 model — updated by `solution-architect`, maintained by `implementation-doc-sync` |
 | `architecture/policies.yaml` | Architecture policy set — evaluated by `c4-model-validator` and `c4-architecture-governor` |
 
-Architectural decisions are recorded in `architecture/adr/` — one Markdown file per ADR, numbered sequentially (0001, 0002, …). The index is maintained in `docs/site/technical/adr-index.md`.
+ADRs in `architecture/adr/` — one file per ADR, numbered sequentially (0001, 0002, …). Index: `docs/site/technical/adr-index.md`.
 
-When a new ADR is accepted, also INSERT it into the wasteland `decisions` table (see **Wasteland Integration → New items**).
+On new accepted ADR, INSERT into wasteland `decisions` table (see **Wasteland Integration → New items**).
 
 ## Wasteland Integration
 
-The **wasteland** (`mfhens/ufst` on DoltHub) is the federated work registry for the
-UFST Modernization programme. It operates at petition/TB granularity and is visible to
-external contractors and agent rigs that join the federation.
+**Wasteland** (`mfhens/ufst` on DoltHub): federated work registry for UFST Modernization. Petition/TB granularity; visible to external contractors and agent rigs.
 
-**Beads and wasteland coexist.** Beads is the inner project tracker (sprint subtasks,
-fine-grained status). The wasteland is the outer federated registry (petition-level bounty
-board with evidence and trust stamps).
+**Beads and wasteland coexist.** Beads: inner tracker (sprint subtasks, fine-grained). Wasteland: outer federated registry (petition-level bounty board with evidence and trust stamps).
 
 Local clone: `~/.hop/commons/mfhens/ufst`
 
 ### Claim
 
-Before starting work on a petition or TB item, mark it claimed in the wasteland:
+Before starting petition or TB item, mark claimed:
 
 ```bash
 cd ~/.hop/commons/mfhens/ufst
@@ -613,12 +608,11 @@ dolt sql -q "UPDATE wanted SET status='in_progress', claimed_by='mfhens' \
 dolt add . && dolt commit -m 'claim: <petition-id>' && dolt push origin main
 ```
 
-If the item is not yet in `wanted` (new TB item posted mid-sprint), INSERT it first — see **New items** below.
+If item not in `wanted` yet, INSERT first — see **New items**.
 
 ### Complete
 
-When a petition or TB item is marked `implemented`/`done` in `program-status.yaml`, post
-the completion and close the wanted item:
+When petition or TB item marked `implemented`/`done`, post completion and close wanted item:
 
 ```bash
 cd ~/.hop/commons/mfhens/ufst
@@ -632,10 +626,7 @@ dolt add . && dolt commit -m 'complete: <petition-id>' && dolt push origin main
 
 ### Stamp
 
-Reviewer agents (`code-reviewer-strict`, `scrutiny-feature-reviewer`) issue stamps on
-**external** workers' completions to signal verified quality. The `stamps` table enforces
-`author != subject`, so self-stamps are not allowed — stamps are only meaningful when
-external rigs are involved.
+Reviewer agents (`code-reviewer-strict`, `scrutiny-feature-reviewer`) stamp external workers' completions. `stamps` table enforces `author != subject` — no self-stamps; only meaningful for external rigs.
 
 ```bash
 cd ~/.hop/commons/mfhens/ufst
@@ -676,7 +667,7 @@ dolt add . && dolt commit -m 'decision: adr-<NNNN>' && dolt push origin main
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+Project uses **bd (beads)** for issue tracking. Run `bd prime` for workflow context and commands.
 
 ### Quick Reference
 
@@ -693,16 +684,104 @@ bd close <id>         # Complete work
 - Run `bd prime` for detailed command reference and session close protocol
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
+<!-- dgc-policy-v11 -->
+## Dual-Graph Context Policy
+
+Project uses local dual-graph MCP server for efficient context retrieval.
+
+### MANDATORY: Adaptive graph_continue rule
+
+**Call `graph_continue` ONLY when NOT already knowing relevant files.**
+
+**Call when:**
+- First message of new task / conversation
+- Task shifts to different codebase area
+- Need files not yet read this session
+
+**SKIP when:**
+- Already identified relevant files this conversation
+- Follow-up work on already-read files (verify, refactor, test, docs, cleanup, commit)
+- Pure text task (commit message, summary, explanation)
+
+**If skipping** → go directly to `graph_read` on already-known `file::symbol`.
+
+### When you DO call graph_continue
+
+1. `needs_project=true` → call `graph_scan` with `pwd`. Do NOT ask user.
+2. `skip=true` → fewer than 5 files — read only specifically named files.
+3. Read `recommended_files` via `graph_read`:
+   - Always use `file::symbol` notation (e.g. `src/auth.ts::handleLogin`) — never whole files.
+   - Entries already containing `::` passed verbatim.
+4. Obey confidence caps:
+   - `confidence=high` → Stop. No grep/explore.
+   - `confidence=medium` → `fallback_rg` at most `max_supplementary_greps` times, then `graph_read` at most `max_supplementary_files` more. Stop.
+   - `confidence=low` → same as medium. Stop.
+
+### Session State
+
+Maintain short JSON in working memory. Update every turn:
+
+```json
+{
+  "files_identified": ["path/to/file.py"],
+  "symbols_changed": ["module::function"],
+  "fix_applied": true,
+  "features_added": ["description"],
+  "open_issues": ["one-line note"]
+}
+```
+
+### Token Usage
+
+`token-counter` MCP tracks live token usage.
+
+- Before large file read: `count_tokens({text: "<content>"})`
+- Running session cost: `get_session_stats()`
+- Log completed task: `log_usage({input_tokens: N, output_tokens: N, description: "task"})`
+
+### Rules
+
+- Do NOT use `rg`, `grep`, or file exploration before `graph_continue` (when required)
+- No broad/recursive exploration at any confidence level
+- `max_supplementary_greps` and `max_supplementary_files` are hard caps — never exceed
+- Do NOT call `graph_continue` more than once per turn
+- Always use `file::symbol` with `graph_read` — never bare filenames
+- After edits, call `graph_register_edit` with changed files using `file::symbol`
+
+### Context Store
+
+Append decisions/tasks/blockers to `.dual-graph/context-store.json`.
+
+```json
+{"type": "decision|task|next|fact|blocker", "content": "one sentence max 15 words", "tags": ["topic"], "files": ["relevant/file.ts"], "date": "YYYY-MM-DD"}
+```
+
+Read → add entry → write back → call `graph_register_edit` on `.dual-graph/context-store.json`.
+
+Rules:
+- Only log things worth remembering across sessions
+- `content` max 15 words
+- Log immediately — not at session end
+
+### Session End (Dual-Graph)
+
+When user signals done (e.g. "bye", "done", "wrap up"), update `CONTEXT.md` in project root:
+- **Current Task**: one sentence
+- **Key Decisions**: bullet list, max 3
+- **Next Steps**: bullet list, max 3
+
+Keep `CONTEXT.md` under 20 lines. Only what's needed to resume next session.
+
 ## Session Completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+**End session**: complete ALL steps. Work NOT done until `git push` succeeds.
 
 **MANDATORY WORKFLOW:**
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
+1. **File issues for remaining work** - Create issues for anything needing follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+4. **PUSH TO REMOTE** - MANDATORY:
    ```bash
    git pull --rebase
    bd dolt push
@@ -715,8 +794,8 @@ bd close <id>         # Complete work
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
+- Work NOT complete until `git push` succeeds
+- NEVER stop before pushing - leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+- If push fails, resolve and retry until success
 <!-- END BEADS INTEGRATION -->

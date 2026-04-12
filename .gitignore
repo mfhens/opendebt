@@ -110,3 +110,4 @@ opendebt-e2e/.cache/
 .dolt/
 *.db
 .beads-credential-key
+.dual-graph/

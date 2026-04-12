@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File \"C:/Users/AJ849XF/Documents/GitHub/opendebt/.dual-graph/prime.ps1\""
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File \"C:/Users/AJ849XF/Documents/GitHub/opendebt/.dual-graph/stop_hook.ps1\""
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File \"C:/Users/AJ849XF/Documents/GitHub/opendebt/.dual-graph/prime.ps1\""
+          }
+        ],
+        "matcher": ""
+      }
+    ]
+  }
+}
