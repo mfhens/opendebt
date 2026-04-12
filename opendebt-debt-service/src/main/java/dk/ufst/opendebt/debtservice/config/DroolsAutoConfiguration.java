@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import dk.ufst.rules.config.KieContainerFactory;
+import dk.ufst.rules.service.FordringValidationService;
 import dk.ufst.rules.service.RulesService;
+import dk.ufst.rules.service.impl.FordringValidationServiceImpl;
 import dk.ufst.rules.service.impl.RulesServiceImpl;
 
 /**
@@ -29,5 +31,11 @@ public class DroolsAutoConfiguration {
   @ConditionalOnMissingBean
   public RulesService rulesService(KieContainer kieContainer) {
     return new RulesServiceImpl(kieContainer);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public FordringValidationService fordringValidationService(KieContainer kieContainer) {
+    return new FordringValidationServiceImpl(kieContainer);
   }
 }

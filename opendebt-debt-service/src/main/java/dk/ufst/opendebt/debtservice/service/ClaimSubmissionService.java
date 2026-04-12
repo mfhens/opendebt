@@ -9,5 +9,9 @@ import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
  */
 public interface ClaimSubmissionService {
 
-  ClaimSubmissionResponse submitClaim(DebtDto claim);
+  ClaimSubmissionResponse submitClaim(DebtDto claim, ClaimValidationContext context);
+
+  default ClaimSubmissionResponse submitClaim(DebtDto claim) {
+    return submitClaim(claim, ClaimValidationContext.systemToSystem());
+  }
 }

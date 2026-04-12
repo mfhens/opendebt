@@ -109,7 +109,14 @@ public class CreditorIngressServiceImpl implements CreditorIngressService {
     if (result.getErrors() != null && !result.getErrors().isEmpty()) {
       errors =
           result.getErrors().stream()
-              .map(e -> e.getRuleCode() + ": " + e.getMessage())
+              .map(
+                  e -> {
+                    String code =
+                        e.getRuleCode() != null && !e.getRuleCode().isBlank()
+                            ? e.getRuleCode()
+                            : e.getErrorCode();
+                    return code != null ? code + ": " + e.getMessage() : e.getMessage();
+                  })
               .collect(Collectors.toList());
     }
 

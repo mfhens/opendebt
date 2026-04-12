@@ -27,17 +27,6 @@ When implementing against third-party libraries, SDKs, or external APIs, prefer 
 - Use the fetched documentation as the implementation reference
 - If useful, save concise local notes with `chub annotate <id> "..."`
 
-### Security Scanning (CRITICAL)
-
-BEFORE declaring any task complete: run the `snyk_code_scan` tool if a significant change has been made to first-party Java code.
-
-- Only applies to Snyk-supported languages (Java is supported)
-- If security issues are found in newly introduced or modified code or dependencies, attempt to fix them using the context from Snyk
-- Rescan after fixing to confirm the issues are resolved and no new issues were introduced
-- Repeat until no new issues are found
-
-The Snyk MCP server is configured in `.mcp.json` at the repo root.
-
 ### Documentation Maintenance (CRITICAL)
 **Every time source code is changed, check and update the following documentation if affected:**
 - `architecture/overview.md` - Service inventory, implementation status, diagrams, endpoint lists

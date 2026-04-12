@@ -99,6 +99,24 @@ class DebtControllerTest {
   }
 
   @Test
+  void submitClaim_defaultsToSystemToSystemIngress() {
+    DebtDto dto = debtDto();
+    var submission =
+        dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse.builder()
+            .outcome(dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse.Outcome.UDFOERT)
+            .claimId(UUID.randomUUID())
+            .build();
+    when(claimSubmissionService.submitClaim(
+            dto, dk.ufst.opendebt.debtservice.service.ClaimValidationContext.systemToSystem()))
+        .thenReturn(submission);
+
+    var response = controller.submitClaim(dto, null);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(201);
+    assertThat(response.getBody()).isSameAs(submission);
+  }
+
+  @Test
   void updateDebt_returnsOk() {
     UUID debtId = UUID.randomUUID();
     DebtDto dto = debtDto();

@@ -46,6 +46,8 @@ public class DebtServiceClient {
   private static final String ERR_UNAVAILABLE_MSG = "Debt service unavailable";
   private static final String ERROR_CODE_CLIENT = "DEBT_CLIENT_ERROR";
   private static final String ERROR_CODE_UNAVAILABLE = "DEBT_SERVICE_UNAVAILABLE";
+  private static final String CLAIM_INGRESS_PATH_HEADER = "X-OpenDebt-Claim-Ingress-Path";
+  private static final String CLAIM_INGRESS_PATH_PORTAL = "PORTAL";
 
   @SuppressWarnings("java:S1075")
   private static final String CLAIMS_PATH = "/debt-service/api/v1/debts/claims";
@@ -686,6 +688,7 @@ public class DebtServiceClient {
         return webClient
             .post()
             .uri("/debt-service/api/v1/debts/submit")
+            .header(CLAIM_INGRESS_PATH_HEADER, CLAIM_INGRESS_PATH_PORTAL)
             .bodyValue(submitRequest)
             .exchangeToMono(
                 response -> {
