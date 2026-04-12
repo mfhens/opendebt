@@ -18,6 +18,7 @@ import dk.ufst.opendebt.common.dto.DebtDto;
 import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
 import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationContext;
 import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 
@@ -58,7 +59,8 @@ class ClaimSubmissionServiceImplTest {
                         .description("Due date is required")
                         .build()))
             .build();
-    when(validationService.validate(claim)).thenReturn(invalid);
+    when(validationService.validate(eq(claim), any(ClaimValidationContext.class)))
+        .thenReturn(invalid);
 
     ClaimSubmissionResponse response = service.submitClaim(claim);
 
@@ -79,7 +81,8 @@ class ClaimSubmissionServiceImplTest {
         new CaseServiceClient.CaseAssignmentResult();
     assignment.setCaseId(caseId);
 
-    when(validationService.validate(claim)).thenReturn(valid);
+    when(validationService.validate(eq(claim), any(ClaimValidationContext.class)))
+        .thenReturn(valid);
     when(debtService.createDebt(claim)).thenReturn(created);
     when(caseServiceClient.assignDebtToCase(createdId.toString(), "1234567890"))
         .thenReturn(assignment);

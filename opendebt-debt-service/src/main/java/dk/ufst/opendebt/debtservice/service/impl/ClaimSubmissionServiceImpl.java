@@ -10,6 +10,7 @@ import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
 import dk.ufst.opendebt.debtservice.dto.ClaimSubmissionResponse;
 import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
 import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationContext;
 import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 
@@ -27,14 +28,15 @@ public class ClaimSubmissionServiceImpl implements ClaimSubmissionService {
 
   @Override
   @Transactional
-  public ClaimSubmissionResponse submitClaim(DebtDto claim) {
+  public ClaimSubmissionResponse submitClaim(DebtDto claim, ClaimValidationContext context) {
     log.info(
-        "Submitting claim: debtorId={}, type={}, amount={}",
+        "Submitting claim: debtorId={}, type={}, amount={}, ingressPath={}",
         claim.getDebtorId(),
         claim.getDebtTypeCode(),
-        claim.getPrincipalAmount());
+        claim.getPrincipalAmount(),
+        context.ingressPath());
 
-    ClaimValidationResult validationResult = validationService.validate(claim);
+    ClaimValidationResult validationResult = validationService.validate(claim, context);
 
     if (!validationResult.isValid()) {
       log.info("Claim rejected with {} validation errors", validationResult.getErrors().size());

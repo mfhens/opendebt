@@ -103,8 +103,9 @@ paths:
       tags: [Debts]
       summary: Register a new debt
       description: |
-        Registers a new debt for collection. The debt will be validated for
-        readiness (indrivelsesparathed) before being accepted for collection.
+        Internal persistence endpoint used after claim validation has already completed.
+        External creditor ingestion must use `POST /api/v1/debts/submit` so the shared
+        fordring Drools validation contract is applied consistently.
       operationId: createDebt
       requestBody:
         required: true
@@ -123,6 +124,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '422':
           description: Validation failed
           content:
@@ -133,8 +136,20 @@ paths:
   /api/v1/debts/submit:
     post:
       tags: [Debts]
-      summary: Submit debts in batch (fordringshaver bulk submission)
+      summary: Submit a claim for collection
+      description: |
+        Validates the claim through the shared fordring Drools rules before persistence and
+        returns the PSRM ingestion outcome (`UDFOERT`, `AFVIST`, or `HOERING`).
       operationId: submitDebts
+      parameters:
+        - name: X-OpenDebt-Claim-Ingress-Path
+          in: header
+          description: |
+            Optional ingress hint for shared validation. `PORTAL` is sent by the creditor portal;
+            direct API and integration-gateway submissions default to `SYSTEM_TO_SYSTEM`.
+          schema:
+            type: string
+            enum: [SYSTEM_TO_SYSTEM, PORTAL]
       requestBody:
         required: true
         content:
@@ -142,14 +157,24 @@ paths:
             schema:
               $ref: '#/components/schemas/DebtSubmitRequest'
       responses:
-        '200':
-          description: Batch submission result
+        '201':
+          description: Claim accepted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DebtSubmitResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          description: Claim rejected by fordring validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebtSubmitResult'
 
   /api/v1/debts/by-ocr:
     get:
@@ -1235,14 +1260,21 @@ components:
     DebtSubmitResult:
       type: object
       properties:
-        accepted:
-          type: integer
-        rejected:
-          type: integer
+        outcome:
+          type: string
+          enum: [UDFOERT, AFVIST, HOERING]
+        claimId:
+          type: string
+          format: uuid
+          nullable: true
+        caseId:
+          type: string
+          format: uuid
+          nullable: true
         errors:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/ValidationError'
 
     WriteDownRequest:
       type: object
@@ -1682,14 +1714,12 @@ components:
     ValidationError:
       type: object
       properties:
+        ruleId:
+          type: string
         errorCode:
           type: string
-        message:
+        description:
           type: string
-        details:
-          type: array
-          items:
-            type: string
 
     Error:
       type: object
@@ -1808,8 +1838,9 @@ paths:
       tags: [Debts]
       summary: Register a new debt
       description: |
-        Registers a new debt for collection. The debt will be validated for
-        readiness (indrivelsesparathed) before being accepted for collection.
+        Internal persistence endpoint used after claim validation has already completed.
+        External creditor ingestion must use `POST /api/v1/debts/submit` so the shared
+        fordring Drools validation contract is applied consistently.
       operationId: createDebt
       requestBody:
         required: true
@@ -1828,6 +1859,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '422':
           description: Validation failed
           content:
@@ -2104,14 +2137,12 @@ components:
     ValidationError:
       type: object
       properties:
+        ruleId:
+          type: string
         errorCode:
           type: string
-        message:
+        description:
           type: string
-        details:
-          type: array
-          items:
-            type: string
 
     Error:
       type: object

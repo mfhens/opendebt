@@ -23,16 +23,20 @@ Each OpenDebt service exposes a REST API documented with OpenAPI 3.1. Swagger UI
 |--------|----------|---------|
 | `GET` | `/api/v1/debts` | List debts (filter by creditorId, debtorId, ids, status, readinessStatus) |
 | `GET` | `/api/v1/debts/{id}` | Get debt by ID |
-| `POST` | `/api/v1/debts` | Register a new debt |
+| `POST` | `/api/v1/debts` | Internal-only debt persistence endpoint after validation |
 | `PUT` | `/api/v1/debts/{id}` | Update a debt |
 | `DELETE` | `/api/v1/debts/{id}` | Delete a debt (retraction before collection) |
-| `POST` | `/api/v1/debts/submit` | Batch claim submission |
+| `POST` | `/api/v1/debts/submit` | Validated claim submission via shared fordring Drools rules |
 | `GET` | `/api/v1/debts/by-ocr` | Look up debt by OCR/payment ID |
 | `GET` | `/api/v1/debts/debtor/{debtorId}` | List debts for a debtor (UUID) |
 | `POST` | `/api/v1/debts/{id}/evaluate-state` | Trigger lifecycle state evaluation |
 | `POST` | `/api/v1/debts/{id}/transfer-for-collection` | Transfer to PSRM for collection |
 | `POST` | `/api/v1/debts/{id}/write-down` | Write down claim balance |
 | `POST` | `/api/v1/debts/{id}/interest/recalculate` | Recalculate interest from a date (rate boundary-aware) |
+
+`POST /api/v1/debts/submit` accepts an optional `X-OpenDebt-Claim-Ingress-Path` header with
+`PORTAL` or `SYSTEM_TO_SYSTEM`. The creditor portal and integration gateway set this header so the
+same Drools validation contract applies across all claim-ingestion paths.
 
 #### Adjustments (petition 053)
 

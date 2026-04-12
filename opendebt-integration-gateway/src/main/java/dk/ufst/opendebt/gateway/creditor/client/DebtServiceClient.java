@@ -17,6 +17,9 @@ import reactor.core.publisher.Mono;
 @Component
 public class DebtServiceClient {
 
+  private static final String CLAIM_INGRESS_PATH_HEADER = "X-OpenDebt-Claim-Ingress-Path";
+  private static final String CLAIM_INGRESS_PATH_SYSTEM_TO_SYSTEM = "SYSTEM_TO_SYSTEM";
+
   private final WebClient webClient;
 
   public DebtServiceClient(
@@ -35,6 +38,7 @@ public class DebtServiceClient {
     return webClient
         .post()
         .uri("/debt-service/api/v1/debts/submit")
+        .header(CLAIM_INGRESS_PATH_HEADER, CLAIM_INGRESS_PATH_SYSTEM_TO_SYSTEM)
         .bodyValue(debtDto)
         .retrieve()
         .onStatus(

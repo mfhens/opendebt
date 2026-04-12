@@ -2,7 +2,7 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-04-09
+  updated_at: 2026-04-12
   updated_by: petition012 Playwright GREEN (creditor-portal BFF / manual / act-as E2E)
   psrm_reference:
     source_docs: docs/psrm-reference/
@@ -478,15 +478,15 @@ program:
       phase: phase-4
       psrm_enriched: true
       depends_on: []
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-12
       evidence:
-        - W2-RULE-01 complete -- 23 core validation rules in fordring-validation.drl
+        - 23 core validation rules implemented in fordring-validation.drl
         - 43 unit tests for core rules plus 92 existing tests = 135 total passing
         - Rules cover structure, currency, art type, interest rate, dates, agreement, debtor
       psrm_additions:
         - Cross-reference to PSRM stamdata field definitions
         - Submission outcome mapping (UDFOERT/AFVIST/HOERING)
-      next_step: Complete. Integration with ingestion pipeline tracked in W2-INT-01.
+      next_step: Complete. Remaining claim-ingestion integration is tracked in TB-058.
 
     petition016:
       title: Fordring claimant authorization rules
@@ -495,12 +495,12 @@ program:
       phase: phase-4
       depends_on:
         - petition015
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-12
       evidence:
-        - W2-RULE-02 complete -- 14 authorization rules in fordring-validation.drl
+        - 14 authorization rules implemented in fordring-validation.drl
         - 33 unit tests covering all 26 feature scenarios
         - All 210 rules-engine tests pass
-      next_step: Complete. Integration with ingestion pipeline tracked in W2-INT-01.
+      next_step: Complete. Remaining claim-ingestion integration is tracked in TB-058.
 
     petition017:
       title: Fordring claim lifecycle and reference rules
@@ -511,16 +511,16 @@ program:
       depends_on:
         - petition015
         - petition016
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-12
       evidence:
-        - W2-RULE-03 complete -- 32 lifecycle/reference rules in fordring-validation.drl
+        - 32 lifecycle/reference rules implemented in fordring-validation.drl
         - 40 unit tests covering all 32 feature scenarios
         - All 343 rules-engine tests pass
       psrm_additions:
         - Full tilbagekald aarsagskode mapping
         - GenindsendFordring constraint table
         - Opskrivning/nedskrivning reason codes
-      next_step: Complete. Integration with ingestion pipeline tracked in W2-INT-01.
+      next_step: Complete. Remaining claim-ingestion integration is tracked in TB-058.
 
     petition018:
       title: Fordring claim content validation rules
@@ -532,15 +532,15 @@ program:
         - petition015
         - petition016
         - petition017
-      last_reviewed: 2026-03-17
+      last_reviewed: 2026-04-12
       evidence:
-        - W2-RULE-04 complete -- 45 content validation rules in fordring-validation.drl
+        - 45 content validation rules implemented in fordring-validation.drl
         - 55 unit tests covering all 44+ feature scenarios
         - All 534 rules-engine tests pass
       psrm_additions:
         - PSRM interest regime cross-reference
         - Hovedstol and nedskriv constraints
-      next_step: Complete. Integration with ingestion pipeline tracked in W2-INT-01.
+      next_step: Complete. Remaining claim-ingestion integration is tracked in TB-058.
 
     # --- Phase 5: Cross-cutting quality ---
 
@@ -2949,6 +2949,52 @@ program:
         references remain in k8s or application config.
 
         Effort: MEDIUM (3–5 days). Risk: LOW — no production callers to migrate.
+
+    - id: TB-058
+      title: "Wire fordring Drools validation into claim-ingestion paths"
+      status: done
+      priority: high
+      created: 2026-04-12
+      completed: 2026-04-12
+      adr: ADR-0035
+      petitions: [petition002, petition012, petition015, petition016, petition017, petition018]
+      implementation_notes: |
+        Completed without a commit in this session. Deliverables:
+        - debt-service now maps `DebtDto` plus ingress context into `FordringValidationRequest`
+          and validates via `FordringValidationService` from `ufst-rules-lib`.
+        - creditor-portal and integration-gateway now send `X-OpenDebt-Claim-Ingress-Path`
+          so portal and M2M ingress share the same validation contract.
+        - raw `POST /api/v1/debts` is documented and secured as an internal-only persistence path;
+          external claim ingestion goes through `POST /api/v1/debts/submit`.
+        - focused debt-service, creditor-portal, and integration-gateway tests pass.
+      description: |
+        Petitions 015-018 delivered the fordring validation rules in `fordring-validation.drl`,
+        but the production ingestion paths still do not use them consistently.
+
+        Current gap:
+        - `POST /api/v1/debts/submit` validates through `ClaimValidationServiceImpl`, which
+          duplicates only a subset of the rules as handwritten Java checks.
+        - Creditor-portal manual submission and integration-gateway M2M ingress both delegate to
+          `/api/v1/debts/submit`, so they inherit the same handwritten validation path.
+        - Raw `POST /api/v1/debts` persists debt posts after creditor permission checks and bypasses
+          fordring validation entirely.
+
+        Required work:
+        1. Map `DebtDto` plus ingress context to `FordringValidationRequest`.
+        2. Replace the handwritten `ClaimValidationServiceImpl` checks with
+           `FordringValidationService` from `ufst-rules-lib`.
+        3. Route claim-ingestion entry points through the same validation contract:
+           debt-service `/api/v1/debts/submit`, creditor-portal manual submission, and
+           integration-gateway creditor ingress.
+        4. Decide and document the contract for raw `POST /api/v1/debts`: validate through the
+           same rules, restrict the endpoint to internal use, or deprecate it.
+        5. Add integration tests proving accepted and rejected outcomes are driven by the Drools
+           rules.
+
+        Acceptance: claim-ingestion paths evaluate the petitions 015-018 rules via
+        `ufst-rules-lib`; no handwritten fordring validation logic remains in
+        `ClaimValidationServiceImpl`; and raw debt creation no longer bypasses the agreed
+        validation contract.
 
 escalations:
   - id: ESC-055

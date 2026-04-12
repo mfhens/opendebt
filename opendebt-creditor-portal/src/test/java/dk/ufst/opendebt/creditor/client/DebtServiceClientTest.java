@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.PortalDebtDto;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -136,5 +138,31 @@ class DebtServiceClientTest {
     assertThatThrownBy(() -> client.createDebt(request))
         .isInstanceOf(OpenDebtException.class)
         .hasMessageContaining("unavailable");
+  }
+
+  @Test
+  void submitClaimWizard_sendsPortalIngressHeader() throws InterruptedException {
+    UUID claimId = UUID.randomUUID();
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(201)
+            .setBody("{\"outcome\":\"UDFOERT\",\"claimId\":\"" + claimId + "\"}")
+            .addHeader("Content-Type", "application/json"));
+
+    ClaimSubmissionResultDto result =
+        client.submitClaimWizard(
+            PortalDebtDto.builder()
+                .debtorPersonId(UUID.randomUUID())
+                .creditorOrgId(UUID.randomUUID())
+                .debtTypeCode("HF01")
+                .principalAmount(new BigDecimal("5000.00"))
+                .dueDate(LocalDate.now().plusDays(30))
+                .build());
+
+    assertThat(result.getOutcome()).isEqualTo("UDFOERT");
+
+    RecordedRequest recorded = mockWebServer.takeRequest();
+    assertThat(recorded.getPath()).isEqualTo("/debt-service/api/v1/debts/submit");
+    assertThat(recorded.getHeader("X-OpenDebt-Claim-Ingress-Path")).isEqualTo("PORTAL");
   }
 }

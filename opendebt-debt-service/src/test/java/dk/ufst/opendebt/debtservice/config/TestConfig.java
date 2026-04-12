@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.kie.api.runtime.KieContainer;
@@ -17,6 +18,8 @@ import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
+import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.rules.model.InterestCalculationRequest;
 import dk.ufst.rules.model.InterestCalculationResult;
 import dk.ufst.rules.service.RulesService;
@@ -60,6 +63,59 @@ public class TestConfig {
               return InterestCalculationResult.builder().interestAmount(daily).build();
             });
     return mockService;
+  }
+
+  /**
+   * Keep SpringBootTest and Cucumber scenarios lightweight by stubbing the external fordring
+   * validation contract with the handful of outcomes those tests assert.
+   */
+  @Bean
+  @Primary
+  public ClaimValidationService claimValidationService() {
+    return (claim, context) -> {
+      ClaimValidationResult result = ClaimValidationResult.builder().build();
+
+      if (claim.getDebtTypeCode() == null || claim.getDebtTypeCode().isBlank()) {
+        result
+            .getErrors()
+            .add(
+                ClaimValidationResult.ValidationError.builder()
+                    .ruleId("Rule151")
+                    .errorCode("TYPE_AGREEMENT_MISSING")
+                    .description("Fordringstype er paakraevet")
+                    .build());
+      }
+
+      if (claim.getClaimArt() != null
+          && !claim.getClaimArt().isBlank()
+          && !("INDR".equals(claim.getClaimArt().toUpperCase(Locale.ROOT))
+              || "MODR".equals(claim.getClaimArt().toUpperCase(Locale.ROOT)))) {
+        result
+            .getErrors()
+            .add(
+                ClaimValidationResult.ValidationError.builder()
+                    .ruleId("Rule411")
+                    .errorCode("FORDRING_TYPE_ERROR")
+                    .description(
+                        "Fordringsart skal vaere inddrivelse (INDR) eller modregning (MODR)")
+                    .build());
+      }
+
+      if (claim.getPeriodFrom() != null
+          && claim.getPeriodTo() != null
+          && claim.getPeriodFrom().isAfter(claim.getPeriodTo())) {
+        result
+            .getErrors()
+            .add(
+                ClaimValidationResult.ValidationError.builder()
+                    .ruleId("Rule569")
+                    .errorCode("PERIODE_TIL_EFTER_PERIODE_FRA")
+                    .description("Periodens startdato kan ikke vaere efter slutdato")
+                    .build());
+      }
+
+      return result;
+    };
   }
 
   @Bean

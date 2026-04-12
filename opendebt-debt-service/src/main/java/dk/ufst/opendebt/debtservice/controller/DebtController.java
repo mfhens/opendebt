@@ -23,6 +23,7 @@ import dk.ufst.opendebt.debtservice.dto.InterestRecalculationResult;
 import dk.ufst.opendebt.debtservice.dto.TransferForCollectionRequest;
 import dk.ufst.opendebt.debtservice.service.ClaimLifecycleService;
 import dk.ufst.opendebt.debtservice.service.ClaimSubmissionService;
+import dk.ufst.opendebt.debtservice.service.ClaimValidationContext;
 import dk.ufst.opendebt.debtservice.service.DebtService;
 import dk.ufst.opendebt.debtservice.service.InterestRecalculationService;
 import dk.ufst.opendebt.debtservice.service.ReadinessValidationService;
@@ -37,6 +38,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Tag(name = "Debt Management", description = "APIs for managing debts and readiness validation")
 public class DebtController {
+
+  public static final String CLAIM_INGRESS_PATH_HEADER = "X-OpenDebt-Claim-Ingress-Path";
 
   private final DebtService debtService;
   private final ReadinessValidationService readinessValidationService;
@@ -135,8 +138,12 @@ public class DebtController {
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('CREDITOR') or hasRole('ADMIN')")
-  @Operation(summary = "Register a new debt", description = "Registers a new debt for collection")
+  @PreAuthorize("hasRole('SERVICE') or hasRole('ADMIN')")
+  @Operation(
+      summary = "Register a new debt",
+      description =
+          "Internal persistence endpoint. External claim ingestion must use POST /api/v1/debts/submit"
+              + " so the shared fordring Drools validation contract is always applied.")
   public ResponseEntity<DebtDto> createDebt(@Valid @RequestBody DebtDto debtDto) {
     return ResponseEntity.status(HttpStatus.CREATED).body(debtService.createDebt(debtDto));
   }
@@ -148,8 +155,12 @@ public class DebtController {
       description =
           "Validates the claim against inddrivelsesparathed rules and returns "
               + "UDFOERT (accepted), AFVIST (rejected), or HOERING (pending review)")
-  public ResponseEntity<ClaimSubmissionResponse> submitClaim(@Valid @RequestBody DebtDto debtDto) {
-    ClaimSubmissionResponse response = claimSubmissionService.submitClaim(debtDto);
+  public ResponseEntity<ClaimSubmissionResponse> submitClaim(
+      @Valid @RequestBody DebtDto debtDto,
+      @RequestHeader(name = CLAIM_INGRESS_PATH_HEADER, required = false) String ingressPathHeader) {
+    ClaimSubmissionResponse response =
+        claimSubmissionService.submitClaim(
+            debtDto, ClaimValidationContext.fromSubmitHeader(ingressPathHeader));
     HttpStatus httpStatus =
         response.getOutcome() == ClaimSubmissionResponse.Outcome.AFVIST
             ? HttpStatus.UNPROCESSABLE_ENTITY

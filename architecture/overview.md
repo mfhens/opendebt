@@ -702,9 +702,10 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | Flyway V8 (P058) | Done | `debt.modregning_tier` column |
 
 **API endpoints (29):**
-- `GET/POST /api/v1/debts` - List/create debts
+- `GET /api/v1/debts` - List debts
+- `POST /api/v1/debts` - Internal debt persistence after prior validation
 - `GET/PUT /api/v1/debts/{id}` - Get/update debt
-- `POST /api/v1/debts/submit` - Submit claim (full validation + kvittering)
+- `POST /api/v1/debts/submit` - Submit claim (shared fordring Drools validation + kvittering)
 - `GET /api/v1/debts/debtor/{debtorId}` - Debts by debtor
 - `GET /api/v1/debts/by-ocr?ocrLine={ocrLine}` - Find debts by OCR-linje
 - `POST /api/v1/debts/{id}/validate-readiness` - Validate indrivelsesparathed
