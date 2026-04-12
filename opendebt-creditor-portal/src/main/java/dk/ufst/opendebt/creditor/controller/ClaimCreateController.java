@@ -233,8 +233,8 @@ public class ClaimCreateController {
     form.setDescription(description);
     form.setInterestRule(interestRule);
     form.setInterestRateCode(interestRateCode);
-    form.setClaimNote(claimNote);
-    form.setDebtorNote(debtorNote);
+    form.setClaimNote(normalizeOptionalText(claimNote));
+    form.setDebtorNote(normalizeOptionalText(debtorNote));
     form.setEstateProcessing(parseBoolean(estateProcessingStr));
 
     // Parse and validate numeric fields
@@ -495,8 +495,8 @@ public class ClaimCreateController {
         .interestRule(form.getInterestRule())
         .interestRateCode(form.getInterestRateCode())
         .additionalInterestRate(form.getInterestRate())
-        .claimNote(form.getClaimNote())
-        .customerNote(form.getDebtorNote())
+        .claimNote(normalizeOptionalText(form.getClaimNote()))
+        .customerNote(normalizeOptionalText(form.getDebtorNote()))
         .build();
   }
 
@@ -584,6 +584,10 @@ public class ClaimCreateController {
 
   private String resolveMessage(String code) {
     return messageSource.getMessage(code, null, code, LocaleContextHolder.getLocale());
+  }
+
+  private String normalizeOptionalText(String value) {
+    return value == null || value.isBlank() ? null : value;
   }
 
   private java.time.LocalDate parseDate(String dateStr) {
