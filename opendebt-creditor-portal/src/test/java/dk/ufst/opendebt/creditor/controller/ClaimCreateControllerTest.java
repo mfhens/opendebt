@@ -276,6 +276,46 @@ class ClaimCreateControllerTest {
   }
 
   @Test
+  void processDetailsStep_normalizesBlankOptionalNotesToNull() {
+    when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
+    when(creditorServiceClient.getCreditorAgreement(ACTING_CREDITOR)).thenReturn(buildAgreement());
+
+    session.setAttribute(ClaimCreateController.SESSION_WIZARD_FORM, buildVerifiedWizardForm());
+
+    Model model = new ConcurrentModel();
+
+    String view =
+        controller.processDetailsStep(
+            "SKAT",
+            "1000.00",
+            "500.00",
+            "REF-001",
+            "Test description",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "2027-12-31",
+            "false",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "   ",
+            "",
+            model,
+            session);
+
+    assertThat(view).isEqualTo("redirect:/fordring/opret/step/3");
+    ClaimWizardFormDto saved =
+        (ClaimWizardFormDto) session.getAttribute(ClaimCreateController.SESSION_WIZARD_FORM);
+    assertThat(saved.getClaimNote()).isNull();
+    assertThat(saved.getDebtorNote()).isNull();
+  }
+
+  @Test
   void processDetailsStep_redisplaysStep2OnMissingClaimType() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
     when(creditorServiceClient.getCreditorAgreement(ACTING_CREDITOR)).thenReturn(buildAgreement());
@@ -477,6 +517,32 @@ class ClaimCreateControllerTest {
     assertThat(dto.getAdditionalInterestRate()).isEqualByComparingTo("0.0375");
     assertThat(dto.getClaimNote()).isEqualTo("Internal note");
     assertThat(dto.getCustomerNote()).isEqualTo("Debtor note");
+  }
+
+  @Test
+  void processSubmission_mapsBlankOptionalNotesToNull() {
+    when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
+    when(debtServiceClient.submitClaimWizard(any()))
+        .thenReturn(
+            ClaimSubmissionResultDto.builder()
+                .outcome("UDFOERT")
+                .claimId(UUID.randomUUID())
+                .processingStatus("ACCEPTED")
+                .build());
+
+    ClaimWizardFormDto form = buildCompletedWizardForm();
+    form.setClaimNote("   ");
+    form.setDebtorNote("");
+    session.setAttribute(ClaimCreateController.SESSION_WIZARD_FORM, form);
+
+    controller.processSubmission(new ConcurrentModel(), session);
+
+    var captor = ArgumentCaptor.forClass(PortalDebtDto.class);
+    verify(debtServiceClient).submitClaimWizard(captor.capture());
+
+    var dto = captor.getValue();
+    assertThat(dto.getClaimNote()).isNull();
+    assertThat(dto.getCustomerNote()).isNull();
   }
 
   @Test
