@@ -101,19 +101,24 @@
             <dt th:if="${caseDto.openObjections > 0}" th:text="#{case.detail.open.objections}">&#197;bne indsigelser</dt>
             <dd th:if="${caseDto.openObjections > 0}" th:text="${caseDto.openObjections}">0</dd>
           </dl>
-          <div th:if="${caseDto.parties != null and !caseDto.parties.isEmpty()}" style="margin-top: 1rem;">
+          <div th:if="${parties != null and !parties.isEmpty()}" style="margin-top: 1rem;">
             <h3 th:text="#{case.detail.tab.parties}">Sagsparter</h3>
             <table class="skat-table">
               <thead>
                 <tr>
-                  <th scope="col" th:text="#{party.person.id}">Person-ID</th>
+                  <th scope="col" th:text="#{party.person}">Person</th>
                   <th scope="col" th:text="#{party.role}">Rolle</th>
                   <th scope="col" th:text="#{party.type}">Type</th>
                 </tr>
               </thead>
               <tbody>
-                <tr th:each="p : ${caseDto.parties}">
-                  <td th:text="${p.personId}">—</td>
+                <tr th:each="p : ${parties}">
+                  <td>
+                    <span th:text="${p.personId != null and partyDisplayNames != null ? partyDisplayNames[p.personId] : '—'}">—</span>
+                    <div class="skat-hint"
+                         th:if="${p.personId != null and partyDisplayNames != null and partyDisplayNames[p.personId] != p.personId.toString()}"
+                         th:text="${p.personId}">00000000-0000-0000-0000-000000000000</div>
+                  </td>
                   <td th:text="#{${'party.role.' + p.partyRole}}">—</td>
                   <td th:text="${p.partyType ?: '—'}">—</td>
                 </tr>
@@ -127,7 +132,7 @@
           <table class="skat-table">
             <thead>
               <tr>
-                <th scope="col" th:text="#{party.person.id}">Person-ID</th>
+                <th scope="col" th:text="#{party.person}">Person</th>
                 <th scope="col" th:text="#{party.role}">Rolle</th>
                 <th scope="col" th:text="#{party.type}">Type</th>
                 <th scope="col" th:text="#{party.activeFrom}">Aktiv fra</th>
@@ -139,7 +144,12 @@
                 <td colspan="5" th:text="#{parties.empty}">Ingen sagsparter fundet.</td>
               </tr>
               <tr th:each="p : ${parties}">
-                <td th:text="${p.personId}">—</td>
+                <td>
+                  <span th:text="${p.personId != null and partyDisplayNames != null ? partyDisplayNames[p.personId] : '—'}">—</span>
+                  <div class="skat-hint"
+                       th:if="${p.personId != null and partyDisplayNames != null and partyDisplayNames[p.personId] != p.personId.toString()}"
+                       th:text="${p.personId}">00000000-0000-0000-0000-000000000000</div>
+                </td>
                 <td th:text="#{${'party.role.' + p.partyRole}}">—</td>
                 <td th:text="${p.partyType ?: '—'}">—</td>
                 <td th:text="${p.activeFrom != null} ? ${#temporals.format(p.activeFrom, 'dd-MM-yyyy')} : '—'">—</td>

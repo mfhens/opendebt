@@ -1,6 +1,8 @@
 package dk.ufst.opendebt.caseworker.controller;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpSession;
@@ -99,7 +101,9 @@ public class CaseDetailController {
   private String resolveDebtorDisplay(CaseDto caseDto) {
     if (caseDto.getDebtorId() == null) return "\u2014";
     try {
-      return personRegistryClient.getDisplayName(UUID.fromString(caseDto.getDebtorId()));
+      UUID debtorPersonId = UUID.fromString(caseDto.getDebtorId());
+      String displayName = personRegistryClient.getDisplayName(debtorPersonId);
+      return isResolvedDisplayName(displayName) ? displayName : caseDto.getDebtorId();
     } catch (IllegalArgumentException ex) {
       return caseDto.getDebtorId();
     }
@@ -109,10 +113,47 @@ public class CaseDetailController {
     try {
       List<CasePartyDto> parties = caseServiceClient.getParties(caseId);
       model.addAttribute("parties", parties);
+      model.addAttribute("partyDisplayNames", resolvePartyDisplayNames(caseId, parties));
     } catch (Exception ex) {
       log.warn("Failed to load parties for case {}: {}", caseId, ex.getMessage());
       model.addAttribute("parties", List.of());
+      model.addAttribute("partyDisplayNames", Map.of());
     }
+  }
+
+  private Map<UUID, String> resolvePartyDisplayNames(UUID caseId, List<CasePartyDto> parties) {
+    if (parties == null || parties.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<UUID, String> displayNames = new LinkedHashMap<>();
+    for (CasePartyDto party : parties) {
+      if (party == null
+          || party.getPersonId() == null
+          || displayNames.containsKey(party.getPersonId())) {
+        continue;
+      }
+
+      try {
+        String displayName = personRegistryClient.getDisplayName(party.getPersonId());
+        displayNames.put(
+            party.getPersonId(),
+            isResolvedDisplayName(displayName) ? displayName : party.getPersonId().toString());
+      } catch (Exception ex) {
+        log.warn(
+            "Failed to resolve display name for case party {} on case {}: {}",
+            party.getPersonId(),
+            caseId,
+            ex.getMessage());
+        displayNames.put(party.getPersonId(), party.getPersonId().toString());
+      }
+    }
+
+    return displayNames;
+  }
+
+  private boolean isResolvedDisplayName(String displayName) {
+    return displayName != null && !displayName.isBlank() && !"\u2014".equals(displayName);
   }
 
   private void loadMeasures(UUID caseId, Model model) {

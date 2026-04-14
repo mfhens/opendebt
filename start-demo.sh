@@ -282,7 +282,9 @@ start_service "person-registry" \
     "$BACKEND_PROFILE" "opendebt_person" \
     "--KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI" \
     "--KEYCLOAK_JWK_URI=$KEYCLOAK_ISSUER_URI/protocol/openid-connect/certs" \
-    "--opendebt.encryption.key=$ENCRYPTION_KEY"
+    "--opendebt.encryption.key=$ENCRYPTION_KEY" \
+    "--opendebt.demo.seed-organizations=true" \
+    "--opendebt.demo.seed-persons=true"
 
 if $START_CASEWORKER || $START_CITIZEN; then
     start_service "case-service" \

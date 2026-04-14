@@ -288,6 +288,8 @@ Start-Service -Name "person-registry" `
         "KEYCLOAK_ISSUER_URI"     = $KeycloakIssuerUri
         "KEYCLOAK_JWK_URI"        = "$KeycloakIssuerUri/protocol/openid-connect/certs"
         "opendebt.encryption.key" = $env:ENCRYPTION_KEY
+        "opendebt.demo.seed-organizations" = "true"
+        "opendebt.demo.seed-persons" = "true"
     }
 
 

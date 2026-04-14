@@ -141,5 +141,10 @@ public class DemoPersonSeeder implements ApplicationRunner {
               "3000",
               "jens.moller@mail.dk",
               "+45 40 77 88 99"));
+
   // @formatter:on
+
+  static List<String> seededPersonIds() {
+    return PERSONS.stream().map(PersonSeed::id).toList();
+  }
 }

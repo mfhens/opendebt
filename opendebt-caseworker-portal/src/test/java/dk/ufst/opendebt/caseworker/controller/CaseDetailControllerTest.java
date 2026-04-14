@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,12 @@ class CaseDetailControllerTest {
   private final Model model = new ExtendedModelMap();
   private static final UUID CASE_ID = UUID.randomUUID();
   private static final UUID DEBT_ID = UUID.randomUUID();
+  private static final UUID PARTY_ID = UUID.randomUUID();
+
+  @SuppressWarnings("unchecked")
+  private Map<UUID, String> partyDisplayNames() {
+    return (Map<UUID, String>) model.asMap().get("partyDisplayNames");
+  }
 
   @Test
   void caseDetail_whenNoSession_redirectsToLogin() {
@@ -69,7 +76,8 @@ class CaseDetailControllerTest {
     when(personRegistryClient.getDisplayName(any(UUID.class))).thenReturn("Person-abc123");
     when(debtServiceClient.listDebtsByIds(any()))
         .thenReturn(new RestPage<>(List.of(DebtDto.builder().build()), 0, 20, 1, 1));
-    when(caseServiceClient.getParties(CASE_ID)).thenReturn(List.of(CasePartyDto.builder().build()));
+    when(caseServiceClient.getParties(CASE_ID))
+        .thenReturn(List.of(CasePartyDto.builder().personId(PARTY_ID).build()));
     when(caseServiceClient.getMeasures(CASE_ID)).thenReturn(List.of());
     when(caseServiceClient.getObjections(CASE_ID)).thenReturn(List.of());
     when(caseServiceClient.getJournalEntries(CASE_ID)).thenReturn(List.of());
@@ -81,6 +89,8 @@ class CaseDetailControllerTest {
     assertThat(model.asMap()).containsKey("caseDto");
     assertThat(model.asMap()).containsKey("debts");
     assertThat(model.asMap()).containsKey("debtorDisplay");
+    assertThat(model.asMap()).containsKey("partyDisplayNames");
+    assertThat(partyDisplayNames()).containsEntry(PARTY_ID, "Person-abc123");
   }
 
   @Test
@@ -170,6 +180,25 @@ class CaseDetailControllerTest {
     assertThat(view).isEqualTo("cases/detail");
     assertThat((List<?>) model.asMap().get("measures")).hasSize(1);
     assertThat((List<?>) model.asMap().get("objections")).hasSize(1);
+  }
+
+  @Test
+  void caseDetail_whenPartyNameUnavailable_usesPartyUuidFallback() {
+    when(sessionService.getCurrentCaseworker(session)).thenReturn(caseworker());
+    CaseDto caseDto = CaseDto.builder().id(CASE_ID).debtIds(List.of()).build();
+    when(caseServiceClient.getCase(CASE_ID)).thenReturn(caseDto);
+    when(caseServiceClient.getParties(CASE_ID))
+        .thenReturn(List.of(CasePartyDto.builder().personId(PARTY_ID).build()));
+    when(personRegistryClient.getDisplayName(PARTY_ID)).thenReturn("—");
+    when(caseServiceClient.getMeasures(CASE_ID)).thenReturn(List.of());
+    when(caseServiceClient.getObjections(CASE_ID)).thenReturn(List.of());
+    when(caseServiceClient.getJournalEntries(CASE_ID)).thenReturn(List.of());
+    when(caseServiceClient.getJournalNotes(CASE_ID)).thenReturn(List.of());
+
+    String view = controller.caseDetail(CASE_ID, session, model);
+
+    assertThat(view).isEqualTo("cases/detail");
+    assertThat(partyDisplayNames()).containsEntry(PARTY_ID, PARTY_ID.toString());
   }
 
   private CaseworkerIdentity caseworker() {
