@@ -368,6 +368,12 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                    <configuration>
+                        <!-- JaCoCo cannot instrument the generated Drools parser classes reliably. -->
+                        <excludes>
+                            <exclude>org/drools/drl/parser/lang/*</exclude>
+                        </excludes>
+                    </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
