@@ -1,522 +1,192 @@
 ---
-marp: true
+
+## marp: true
 theme: ey
 paginate: true
+
 ---
-
-
-<!-- _class: lead -->
 
 # AI-Driven Software Development
 
-### From Vibe to Enterprise Grade
+### From Code Generation to Governed Delivery
 
-**Go Home Meeting · March 2026**
+**OpenDebt showcase · April 2026**
 
----
 
-## The Spectrum of AI Development
-
-<br>
-
-| | **Vibe Coding** | **Enterprise AI Dev** |
-|---|---|---|
-| Prompt style | One-liner | Structured petition |
-| Requirements | "Make it cool" | BDD scenarios + outcome contract |
-| Tests | ¿Qué? | TDD — failing first |
-| Audience | You, maybe a friend | 1,200 public institutions |
-| Stakes | Bragging rights | €600M in public debt |
-| Agent role | Autocomplete | Orchestrated pipeline |
-| **Human role** | **Writes the code** | **Governs the process** |
-
-<br>
-
-> Both are real. Both are powered by AI. The discipline is what changes.
 
 ---
 
-<!-- _class: lead -->
+## The Real Bottleneck
 
-# 🕹️ Act I: Vibe Coding
+- AI already reduces time-to-first-code
+- Complex delivery still fails on ambiguity, drift, and rework
+- National debt collection needs control, not just speed
+- The question is how to accelerate without losing governance
 
-### *"Just build me a Space Invaders game"*
 
----
-
-## The One-Liner Prompt
-
-<br>
-
-```
-Build a Space Invaders game in HTML/JS.
-The player ship shoots upward.
-Aliens move side to side and descend.
-Score counter. Game over screen.
-```
-
-<br>
-
-**What happens next?** The AI:
-1. Generates ~300 lines of HTML + Canvas API code
-2. It runs. First try. Looks great.
-3. You show it to someone → they are impressed
-
-<br>
-
-### ✅ This is genuinely useful
-Prototyping · Learning · Demos · Personal tools
 
 ---
 
-## What Vibe Coding Gives You
+## What Enterprise Delivery Must Guarantee
 
-<br>
 
-**🟢 The Good**
-- Zero friction from idea to running code
-- Brilliant for throwaway prototypes
-- Democratises creation — "citizen developers"
-- Great at well-understood problem domains
+| Capability            | Why it matters in OpenDebt                           |
+| --------------------- | ---------------------------------------------------- |
+| Traceability          | Public decisions must link back to business intent   |
+| Security and privacy  | PII, OAuth2, and role-based access must hold         |
+| Auditability          | Financial and legal actions must be reviewable       |
+| Architecture control  | A 12-service platform cannot drift silently          |
+| Current documentation | Operators, developers, and auditors need one picture |
 
-<br>
 
-**🔴 The Limits**
-- No auditability — what exactly does it do?
-- No regression safety — change one line, break everything
-- No compliance — GDPR? WCAG? Data isolation?
-- No governance — who approved this going to production?
 
-<br>
-
-> Vibe coding is a **proof of concept machine**. Not a production machine.
 
 ---
 
-<!-- _class: lead -->
+## The SDLC In One View
 
-# 🏛️ Act II: Enterprise AI Development
 
-### *OpenDebt — can AI help to replace PSRM/DMI?*
+| Step                       | Main output               | Why it exists                |
+| -------------------------- | ------------------------- | ---------------------------- |
+| Petition                   | Business intent           | Bound the scope              |
+| Outcome contract + Gherkin | Observable behaviour      | Remove ambiguity early       |
+| Architecture + policies    | Governed design           | Keep change platform-aligned |
+| Specs + tests              | Executable expectations   | Drive implementation         |
+| Implementation + review    | Code with evidence        | Enforce quality              |
+| Doc sync + status          | Current operating picture | Reduce drift afterwards      |
 
----
 
-## What is OpenDebt?
+**Human role:** gate intent, accountability, and merge readiness.
 
-<br>
 
-An open-source debt collection platform for Danish public institutions
-
-<br>
-
-| Dimension | Detail |
-|---|---|
-| Scope | ~600 debt types · ~1,200 creditor institutions |
-| Money at stake | Public sector debt recovery |
-| Tech stack | Java 21 · Spring Boot 3.3 · PostgreSQL 16 · Kubernetes |
-| Compliance | GDPR · Fællesoffentlige Arkitekturprincipper · WCAG 2.1 AA |
-| Authentication | OAuth2/OIDC · MitID · OCES3 certificates |
-| Architecture | 12 microservices · Event-driven · API-first |
-
-<br>
-
-> Replacing PSRM/DMI — systems responsible for billions in public revenue.
-> **This cannot vibe.**
 
 ---
 
-## The Development Pipeline
+## Guardrails Exist Before Coding Starts
 
-```
-  Petition (customer need)
-       │
-       ▼
-  Outcome Contract  ◄── What does "done" mean, exactly?
-       │
-       ▼
-  Gherkin Feature   ◄── BDD: failing acceptance tests first
-       │
-       ▼
-  Specification     ◄── Technical design, data model, API contract
-       │           ◄── C4 model updated → architecture policies validated
-       ▼
-  Java Unit Tests   ◄── TDD: red → green → refactor
-       │
-       ▼
-  Implementation    ◄── AI-generated, discipline-guided
-       │
-       ▼
-  Code Review       ◄── Strict + minimality agents · Snyk security scan
-       │
-       ▼
-  Docs + Status     ◄── Auto-maintained · sprint tracker synced
-       │
-       ▼
-  Wasteland         ◄── Federated registry: completion, patterns, stamps
-```
+- `project-bootstrap` creates the delivery substrate
+- `.factory/project.yaml` captures stack, commands, and test routing
+- `architecture/workspace.dsl` and `architecture/policies.yaml` define the model and rules
+- `compliance/nfr-register.yaml` makes cross-cutting NFRs explicit
+- `AGENTS.md` and `petitions/program-status.yaml` keep conventions and status visible
 
-**9 specialised agents. 20 phases. Orchestrated by Gas City. Zero manual handoffs.**
 
-Petition → outcome contract → BDD → spec (incl. C4) → failing tests → implementation → review → docs/status → **Wasteland** registry.
 
 ---
 
-## The Inversion
+## Example 1: Petition 050, Unified Case Timeline
 
-**Traditional software delivery puts humans everywhere.**
 
-```
-Traditional:  Human writes code → Human reviews PR → Human updates docs
-              Human writes status → Human presents to steering committee
+| Requirement                                      | Why it matters                 |
+| ------------------------------------------------ | ------------------------------ |
+| Replace fragmented event views with one timeline | Better situational awareness   |
+| Reuse across three portals                       | One component, three audiences |
+| Role-based visibility                            | GDPR data minimisation         |
+| HTMX filtering and pagination                    | Usable at real scale           |
 
-This process: Human sets intent (petition)
-              ↓
-              Agents handle everything deterministic
-              ↓
-              Human gates at exactly three moments:
-                  Gate 1 — Does this spec accurately represent the intent?
-                  Gate 2 — Does this code responsibly deliver what was promised?
-                  Gate 3 — Is this ready to merge into production?
-              ↓
-              Human receives decision-support views (steerco, Basecamp)
-              to exercise ongoing governance
-```
 
-**Gate 1 — scaffold review**
-- Is the outcome contract faithful to the business intent?
-- Are the Gherkin scenarios complete, testable, and non-speculative?
-- Is the spec minimal — no gold-plating?
-- Is the Catala tier correct — is this statute or workflow?
+**Simple request. Still touches UX, privacy, reuse, and architecture.**
 
-**What a human actually does at Gate 2 (code review):**
-- Does the implementation match the spec — no scope creep?
-- Do `mvn verify` and the security scan pass cleanly?
-- Is the Catala encoding consistent with the legal text?
 
-**What a human actually does at Gate 3 (merge gate):**
-- Is the documentation updated and the MkDocs build clean?
-- Is `program-status.yaml` set to `implemented`?
-- Am I willing to put my name on this going to 1,200 public institutions?
-
-<br>
-
-> *Three gates. All the accountability. None of the grunt work.*
 
 ---
 
-## Step 1: The Petition
+## What Traceability Actually Means
 
-**A structured customer request — not a ticket, not a story**
+- A petition anchors the business intent
+- Outcome contracts and scenarios define observable behaviour
+- Specs and architecture explain how the change will be delivered
+- Tests, reviews, docs, and status link back to the same petition
+- This is artifact-level traceability, not a claim that every conversation is captured
 
-<br>
 
-```
-petition001 · OCR Payment Matching
-  status: implemented
-  phase: 0 — Existing Foundation
-
-petition019 · Legacy SOAP Endpoints (OCES3)
-  status: implemented
-  component: opendebt-integration-gateway
-  rationale: Protocol adaptation — not an exception to REST,
-             but additive SOAP capability for legacy creditors
-
-petition050 · Unified Case Timeline UI
-  status: implemented
-  personas: caseworker · citizen · creditor
-  principle: one view, all history, role-filtered
-```
-
-<br>
-
-72 petitions. 20 phases. Full traceability from business need → code → test.
 
 ---
 
-## Step 2: BDD — Behaviour-Driven Design
+## NFRs Are Explicit And Reusable
 
-**Real example from `petition001-ocr-payment-matching.feature`**
 
-```gherkin
-Feature: OCR-based matching of incoming payments
+| Concern       | Example in OpenDebt                | Checked by       |
+| ------------- | ---------------------------------- | ---------------- |
+| Security      | Auth on non-public endpoints       | Review and tests |
+| Audit         | Structured audit for state changes | Review and tests |
+| Observability | Trace propagation and JSON logs    | Review           |
+| Architecture  | No cross-service DB access         | C4 governance    |
 
-  Scenario: Unique OCR auto-match even when the amount differs
-    Given an issued påkrav contains OCR-linje "OCR-123"
-    And OCR-linje "OCR-123" uniquely identifies debt "D1"
-    And debt "D1" has an outstanding balance of 1000 DKK
-    And an incoming payment references "OCR-123" with amount 900 DKK
-    When the payment is processed
-    Then the payment is auto-matched to debt "D1"
-    And the payment is not routed to manual matching
 
-  Scenario: Payment without unique OCR match → manual queue
-    Given an incoming payment does not contain an OCR-linje
-      that uniquely identifies a debt
-    When the payment is processed
-    Then the payment is routed to manual matching on the case
-```
+**Applicable NFRs are injected into architecture and specs before implementation.**
 
-**The AI generates this first. Tests fail. Then code is written.**
+
 
 ---
 
-## Step 3: TDD — Test-Driven Implementation
+## Architecture Is A Checked Artifact
 
-**Real example from `CaseServiceImplTest.java`**
+- `architecture/workspace.dsl` is a living model, not slideware
+- `c4-model-validator` checks syntax and structural completeness
+- `c4-architecture-governor` checks code and IaC against the declared model
+- Drift is surfaced before it becomes expensive
+- This matters more in a platform than in a single application
 
-```java
-@ExtendWith(MockitoExtension.class)
-class CaseServiceImplTest {
 
-  @Mock private CaseRepository caseRepository;
-  @Mock private CaseAccessChecker caseAccessChecker;
-  @Mock private CaseEventRepository caseEventRepository;
-
-  @InjectMocks private CaseServiceImpl service;
-
-  @Test
-  void createCase_validInput_persistsAndReturnsDto() {
-    CaseDto input = CaseDto.builder()
-        .caseNumber("SAG-001")
-        .title("Test case")
-        .build();
-
-    when(caseRepository.save(any())).thenReturn(savedEntity);
-
-    CaseDto result = service.createCase(input);
-
-    assertThat(result.getCaseNumber()).isEqualTo("SAG-001");
-    verify(caseEventRepository).save(argThat(e ->
-        e.getEventType() == CASE_CREATED));
-  }
-}
-```
-
-Red first. AI writes green. Human reviews.
 
 ---
 
-<!-- _class: compact -->
+## Example 2: Petition 058, Statutory And Financial Complexity
 
-## Step 4: Gas City — Agent Orchestration
 
-**Gas City runs the pipeline automatically. Human gates pause it.**
+| Domain concern        | Why it is hard                          |
+| --------------------- | --------------------------------------- |
+| Three-tier offsetting | Legal priority ordering                 |
+| Korrektionspulje      | Reversal and settlement lifecycle       |
+| Rentegodtgoerelse     | Date rules and statutory exceptions     |
+| Appeal deadlines      | Legally significant dates               |
+| Ledger + immudb       | Financial integrity and tamper evidence |
 
-<br>
 
-```bash
-gc start ~/GitHub/opendebt   # brings all agents online in tmux
-bd list --assignee human      # find your review gates
-bd close <id> "Approved"     # release the gate → pipeline resumes
-```
+**Same SDLC. Much higher stakes.**
 
-<br>
 
-| Phase | Formula step | Pipeline agent | Produces |
-|---|---|---|---|
-| 1 · Translate | `translate` | `petition-translator` | Outcome contract |
-| 2 · Test | `gherkin` | `petition-to-gherkin` | Failing BDD step definitions |
-| 3 · Specify | `specs` | `specs-translator` | Implementation specification |
-| ⏸ Gate 1 | `human-review-scaffold` | **Human** | Scaffold approved |
-| 4 · Implement | `implement` | `tdd-enforcer` *(per-service rig)* | Green implementation |
-| 5 · Review | `review` | `code-reviewer` | Review findings · Snyk scan |
-| 6 · Encode | `catala-encode` | `catala-encoder` *(Tier A only)* | Formal Catala specification |
-| ⏸ Gate 2 | `human-review-code` | **Human** | Code approved |
-| 7 · Sync | `doc-sync` | `doc-sync` | Docs updated · status synced |
-| ⏸ Gate 3 | `human-merge-gate` | **Human** | Merge approved |
-
-<br>
-
-> Three **mandatory human gates**: scaffold review (before code), code review (before docs), merge gate (before main).
 
 ---
 
-<!-- _class: compact -->
+## Documentation And Portfolio Visibility Are Outputs
 
-## Step 5: Law as Code — Juridisk Vejledning → Catala
+- `implementation-doc-sync` checks documentation impact with every change
+- `doc-writer` regenerates docs from petitions, specs, ADRs, and compliance data
+- `petitions/program-status.yaml` is the portfolio source of truth
+- Current snapshot: `52` implemented, `6` validated, `3` in progress, `1` blocked
+- The goal is not magical perfection; it is to make drift hard to hide
 
-**Who checks that the PSRM encoding of Danish tax law is actually correct?**
 
-<br>
-
-```
-  Juridisk Vejledning (G.A.)
-        │
-        │  G.A.1.4.3 · G.A.1.4.4 · G.A.2.3.2 · G.A.2.4 · GIL §4 · §18k ...
-        ▼
-   Catala DSL           ◄── Formally typed, machine-checkable rules
-        │                   Anchored to exact G.A. article citations
-        ├──► Test suite ◄── Boundary conditions derived from legal text
-        │
-        ├──► Compare vs. PSRM implementation ◄── Discrepancies surfaced
-        │
-        └──► CI typecheck ◄── catala typecheck in GitHub Actions (ADR-0032)
-```
-
-<br>
-
-**3 completed spikes, 3× Go verdict:**
-
-| Spike | Section | Key finding |
-|---|---|---|
-| P054 | G.A.1.4.3/1.4.4 (opskrivning/nedskrivning) | 4 discrepancies vs. PSRM — retroaktivitet, §18k under-application |
-| P069 | G.A.2.3.2 (dækningsrækkefølge GIL §4) | Token mismatch: INDDRIVELSESRENTER_FORDRINGSHAVER_STK3 vs. G.A. text |
-| P070 | G.A.2.4 (forældelse — prescription) | SKM2015.718.ØLR varsel/afgørelse distinction; 2 P059 coverage gaps |
-
-<br>
-
-> **Roadmap: ~50 G.A. sections · ~1–2 person-days each.** Phases 18–20 fully planned.
 
 ---
 
-## Step 6: The Wasteland — Federated Knowledge
+## What Acceleration Really Means
 
-**Work doesn't disappear into a private repo. It's published to a federated registry.**
+- Less ambiguity before work starts
+- Less architecture drift during implementation
+- Less rework caused by late NFR discovery
+- Less manual chasing of docs and delivery status
+- More human attention on the decisions that actually matter
 
-```
-  Implementation complete
-         │
-         ▼
-  Wasteland (mfhens/ufst on DoltHub)
-  ┌──────────────────────────────────────────────────────┐
-  │  wanted board    ← open petitions visible to all     │
-  │  completions     ← evidence of shipped work          │
-  │  patterns        ← reusable architectural knowledge  │
-  │  learnings       ← findings anchored to patterns     │
-  │  stamps          ← validator trust signals           │
-  └──────────────────────────────────────────────────────┘
-```
 
-| Concept | What it means |
-|---|---|
-| **Rig** | A participant — human, agent, or org — with a DoltHub identity |
-| **Wanted** | Open work anyone can claim (petition or TB item) |
-| **Completion** | Evidence that work was done (git SHA, service path) |
-| **Pattern** | Reusable solution with validated evidence (e.g., *Double-Entry Financial Ledger*) |
-| **Stamp** | Trust signal issued by a validator after reviewing a completion |
-
-> Stored in versioned SQL (Dolt + DoltHub). Fork → work → push → earn reputation.
 
 ---
 
-## GDPR by Architecture, Not by Promise
 
-<br>
 
-```
-                ┌─────────────────────────────┐
-                │      Person Registry        │
-                │  CPR · CVR · Name · Address │  ← Only service that
-                │  (AES-256 encrypted at rest)│    touches PII
-                └────────────┬────────────────┘
-                             │ UUID only
-           ┌─────────────────┼──────────────────┐
-           │                 │                  │
-    debt-service      case-service      payment-service
-    debtorPersonId    partyPersonId     payerPersonId
-    (UUID)            (UUID)            (UUID)
-```
+# Takeaway
 
-<br>
+### OpenDebt shows that the same governed pipeline can support:
 
-```java
-// CORRECT
-@Column(name = "debtor_person_id")
-private UUID debtorPersonId;   // ← references registry
+### 1. Simple product changes
 
-// WRONG — AI enforced never to do this
-private String cprNumber;      // ← never in this service
-```
+### 2. Cross-cutting platform concerns
 
----
+### 3. Statutory and financially sensitive workflows
 
-## Architecture: 12 Microservices
-
-<br>
-
-```
-┌──────────────┐  ┌───────────────┐  ┌──────────────┐  ┌────────────────────┐
-│citizen-portal│  │creditor-portal│  │caseworker-   │  │integration-gateway │
-│  (MitID/     │  │  (MitID       │  │portal        │  │  (OCES3 · SOAP ·   │
-│  TastSelv)   │  │   Erhverv)    │  │  (Keycloak)  │  │   DUPLA · REST)    │
-└──────┬───────┘  └──────┬────────┘  └──────┬───────┘  └─────────┬──────────┘
-       └─────────────────┴───────────────────┴───────────────────┘
-                         │
-    ┌────────┬────────────┼──────────┬──────────────┬──────────────┐
-    │        │            │          │              │              │
-debt-svc  case-svc  payment-svc  letter-svc  rules-engine  wage-garnishment
-(Fordring) (Flowable) (OCR match) (DigPost)  (Drools)      (Lønindeholdelse)
-    │        │            │          │              │              │
-    └────────┴────────────┴──────────┴──────────────┴──────────────┘
-                         │
-          ┌──────────────┴─────────────────┐
-          │  person-registry  (AES-256 PII) │
-          │  creditor-service               │
-          │  immudb  (cryptographic ledger) │  ◄── ADR-0029
-          └─────────────────────────────────┘
-```
-
-PostgreSQL 16 · Keycloak · OpenTelemetry · Kubernetes · Double-entry bookkeeping (ADR-0018)
-
----
-
-## The Core Insight
-
-<br>
-
-> **AI doesn't replace discipline — it amplifies it.**
-
-<br>
-
-| Without discipline | With discipline |
-|---|---|
-| AI writes fast, breaks silently | AI writes fast, tests catch regressions |
-| Requirements drift | Petitions + outcome contracts hold the line |
-| One model, one context | Specialised agents, clear handoffs |
-| Manual dispatch, context loss | Human judgment concentrated at accountability moments — not diluted across every PR |
-| "It works on my machine" | CI/CD · Snyk · OWASP · automated docs |
-| GDPR as an afterthought | GDPR enforced by architecture |
-| Law interpreted loosely | G.A. encoded in Catala · discrepancies surfaced |
-| Financial records on trust | Double-entry bookkeeping · immudb ledger integrity |
-| Work buried in a private repo | Wasteland: federated board · completions · patterns · stamps |
-
-<br>
-
-**Vibe coding scales to one developer.**  
-**Disciplined AI development scales to an enterprise.**
-
----
-
-<!-- _class: lead -->
-
-# The Takeaway
-
-<br>
-
-### 🕹️ Space Invaders = proof that AI can generate code
-
-### 🏛️ OpenDebt = proof that AI can deliver enterprise software
-
-<br>
-
-**The difference is not the model.**  
-**The difference is knowing what only a human should decide.**
-
-<br>
-
-*Petition → BDD → Spec → TDD → Review → Law as Code → Gas City → ⏸ Human Gate → Wasteland*
-
----
-
-<!-- _class: lead -->
-
-# Thank You
-
-<br>
+**AI accelerates complex delivery when it reduces ambiguity, drift, and rework.**
 
 **Questions?**
 
-<br>
-
-`github.com/opendebt` · Java 21 · Spring Boot 3.3 · 72 petitions · 12 services · Gas City · Wasteland
-
----

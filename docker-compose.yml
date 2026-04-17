@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_USER: opendebt
       POSTGRES_PASSWORD: opendebt
-      POSTGRES_MULTIPLE_DATABASES: opendebt_person,opendebt_case,opendebt_debt,opendebt_creditor,opendebt_payment,opendebt_letter,opendebt_offsetting,opendebt_wage_garnishment
+      POSTGRES_MULTIPLE_DATABASES: opendebt_person,opendebt_case,opendebt_debt,opendebt_creditor,opendebt_payment,opendebt_letter,opendebt_offsetting,opendebt_wage_garnishment,opendebt_keycloak
     ports:
       - "5432:5432"
     volumes:
@@ -22,10 +22,17 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/opendebt_keycloak
+      KC_DB_USERNAME: opendebt
+      KC_DB_PASSWORD: opendebt
     ports:
       - "8080:8080"
     volumes:
       - ./config/keycloak:/opt/keycloak/data/import
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' || exit 1"]
       interval: 15s
