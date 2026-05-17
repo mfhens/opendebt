@@ -153,6 +153,27 @@ erDiagram
     }
 ```
 
+## Limitation domain entities (petition059)
+
+| Entity | Service | Purpose | Key fields |
+|--------|---------|---------|------------|
+| `ForaeldelseRecord` | debt-service | Authoritative limitation state for one `fordring` | `fordringId`, `debtorPersonId`, `retsgrundlag`, `udskydelseDato`, `inUdskydelse`, `currentFristExpires`, `status`, `kompleksId` |
+| `AfbrydelseEvent` | debt-service | Records a legally effective interruption and any claim-complex propagation | `fordringId`, `type`, `eventDate`, `newFristExpires`, `legalReference`, `sourceFordringId`, `targetFordringId`, `propagationReason` |
+| `TillaegsfristEvent` | debt-service | Records a supplementary limitation period | `fordringId`, `type`, `appliedDate`, `extensionYears`, `newFristExpires`, `legalReference` |
+| `FordringskompleksLink` | debt-service | Links a `fordring` into a claim complex used for propagation | `kompleksId`, `fordringId`, `linkedAt` |
+| `LimitationObjectionLinkage` | debt-service | Keeps the debt-service reference from `indsigelsesId` to the case-service workflow record | `fordringId`, `indsigelsesId`, `workflowCaseId`, `status`, `rationale` |
+
+`ForaeldelseRecord`, `AfbrydelseEvent`, `TillaegsfristEvent`, and `LimitationObjectionLinkage` extend `AuditableEntity`, so creation/update metadata is captured without introducing PII into the limitation model.
+
+### Limitation enums
+
+| Enum | Values | Notes |
+|------|--------|-------|
+| `Retsgrundlag` | `ORDINARY`, `SPECIAL` | Persisted on `ForaeldelseRecord` to distinguish ordinary and special legal basis calculations |
+| `AfbrydelsesType` | `BEROSTILLELSE`, `LOENINDEHOLDELSE`, `MODREGNING`, `UDLAEG` | Stored on `AfbrydelseEvent` |
+| `ForaeldelseStatus` | `ACTIVE`, `FORAELDET`, `INDSIGELSE_PENDING` | Public limitation-state values exposed on `ForaeldelseStatusDto` |
+| `ObjectionStatus` | `ACTIVE`, `FORAELDET`, `INDSIGELSE_PENDING` | Current implementation value set stored on `LimitationObjectionLinkage.status`; internal workflow commands use `VALID` / `INVALID` as decision outcomes |
+
 ## Claim lifecycle states
 
 ```mermaid

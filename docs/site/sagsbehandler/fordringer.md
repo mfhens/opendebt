@@ -25,6 +25,27 @@ For hver fordring kan du se:
 | Stamdata | De 22 PSRM-stamdata-felter |
 | Hæftelser | Tilknyttede skyldnere og hæftelsestyper |
 
+## Forældelsespanel
+
+Fra fordringsdetaljen kan du åbne panelet **Forældelse** for den valgte fordring.
+
+Panelet viser:
+
+- **Status** for forældelse (Aktiv, Forældet eller Afventer indsigelse)
+- **Aktuel frist** og eventuel udskydelsesdato
+- **Fordringskompleks** med øvrige tilknyttede fordringer
+- **Afbrydelseshistorik** med type, dato og juridisk reference
+- **Tillægsfrister** med ny fristdato
+- **Udfald og begrundelse** hvis en forældelsesindsigelse allerede er afgjort
+
+Som `CASEWORKER` eller `ADMIN` kan du fra panelet:
+
+- registrere en afbrydelseshændelse
+- registrere en forældelsesindsigelse, når status er **Aktiv**
+- vurdere en forældelsesindsigelse som **Gyldig** eller **Ugyldig**, når status er **Afventer indsigelse**
+
+Brug panelet, når du skal dokumentere forældelsesforløb direkte på en konkret fordring uden at forlade sagsvisningen.
+
 ## Indrivelsesparathed
 
 Før en fordring kan overdrages til inddrivelse, vurderes dens indrivelsesparathed:

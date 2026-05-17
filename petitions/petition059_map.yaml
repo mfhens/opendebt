@@ -1,0 +1,427 @@
+# petition059_map.yaml
+# Component Assignment Map for Petition 059:
+#   Forældelse — prescription tracking and interruption
+#
+# Legal basis: G.A.2.4, GIL §§ 18, 18a, Forældelsesl. §§ 3, 5, 18-19,
+#              Gæld.bekendtg., SKM2015.718.ØLR
+#
+# Component definitions were read from design/components/*.yaml.
+# Components below use the module-level ownership boundaries declared there.
+#
+# Component legend:
+#   opendebt-debt-service            — authoritative owner of fordring state; petition059
+#                                      deliverables place ForaeldelseRecord, AfbrydelseEvent,
+#                                      TillaegsfristEvent, FordringskompleksLink,
+#                                      ForaeldelseIndsigelse, ForaeldelseService,
+#                                      FordringskompleksService, and ForaeldelseApiController here.
+#   opendebt-caseworker-portal       — Thymeleaf BFF and caseworker UI; renders the
+#                                      forældelses status panel and indsigelse/evaluation forms.
+#   opendebt-wage-garnishment-service — owner of lønindeholdelse process facts such as
+#                                      afgørelse scope and inactivity, consumed by debt-service.
+#   audit-trail-commons              — shared CLS audit publishing library used for
+#                                      immutable audit payload emission from state-changing flows.
+
+petition_id: petition059
+
+scenarios:
+
+  # ── FR-1: Forældelsesfrist tracking ─────────────────────────────────────────
+
+  - id: "001"
+    title: "FR-1.1 ForaeldelseRecord oprettes ved accept til inddrivelse"
+    component: opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      Petition059 places ForaeldelseRecord creation, status initialisation, and
+      accept-to-inddrivelse handling in ForaeldelseService inside
+      opendebt-debt-service, which is also the authoritative owner of fordring state.
+
+  - id: "002"
+    title: "FR-1.2 GET returnerer komplet ForaeldelseStatusDto"
+    component: opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      The GET /foraeldelse/{fordringId} contract, DTO assembly, and full history response
+      are explicit debt-service deliverables via ForaeldelseApiController and
+      ForaeldelseStatusDto.
+
+  - id: "003"
+    title: "FR-1.3 3-årig forældelsesfrist gælder uden afbrydelse og uden udskydelse"
+    component: opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      Base prescription date arithmetic without interruptions or postponement is core
+      ForaeldelseService logic in opendebt-debt-service.
+
+  - id: "004"
+    title: "FR-1.3b PSRM-fordring med særligt retsgrundlag har stadig 3-årig basisfrist før udlæg"
+    component: opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      This scenario tests statutory basis-frist calculation before any udlæg event;
+      petition059 assigns that legal calculation to ForaeldelseService in debt-service.
+
+  - id: "005"
+    title: "FR-1.4 API returnerer 404 for ukendt fordringId"
+    component: opendebt-debt-service
+    fr_refs: [FR-1]
+    rationale: >
+      Unknown-fordring lookup handling is owned by the REST controller and repository
+      boundary in opendebt-debt-service.
+
+  # ── FR-2: Udskydelse ────────────────────────────────────────────────────────
+
+  - id: "006"
+    title: "FR-2.1 PSRM-fordring fra 19-11-2015 har udskydelse til 20-11-2021"
+    component: opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      Computation and persistence of udskydelseDato on acceptance are part of
+      ForaeldelseService in opendebt-debt-service.
+
+  - id: "007"
+    title: "FR-2.2 DMI-fordring registreret 2024-01-01 har udskydelse til 20-11-2027"
+    component: opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      The DMI/SAP38 postponement rule is another petition059 prescription calculation
+      delivered inside debt-service, not a separate integration component concern.
+
+  - id: "008"
+    title: "FR-2.3 Udskydelsesdato er uforanderlig og ændres ikke af efterfølgende afbrydelse"
+    component: opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      Immutability of udskydelseDato across later afbrydelse registration is enforced in
+      the same ForaeldelseRecord update logic inside debt-service.
+
+  - id: "009"
+    title: "FR-2.4 Fordring uden udskydelsesregel får ingen udskydelsesdato"
+    component: opendebt-debt-service
+    fr_refs: [FR-2]
+    rationale: >
+      The absence of an udskydelse rule still requires debt-service to derive and persist
+      null/false values on the record at acceptance time.
+
+  # ── FR-3: Afbrydelse event registration ─────────────────────────────────────
+
+  - id: "010"
+    title: "FR-3.1 BEROSTILLELSE afbryder forældelsesfrist for PSRM-fordring"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      Registration of BEROSTILLELSE events, new expiry calculation, and afbrydelselog
+      persistence are debt-service responsibilities under ForaeldelseService.
+
+  - id: "011"
+    title: "FR-3.2 Lønindeholdelsesvarsel alene afbryder ikke forældelsesfrist"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+    fr_refs: [FR-3]
+    rationale: >
+      debt-service owns prescription validation and HTTP 422 rejection, while
+      opendebt-wage-garnishment-service is the source domain for whether a
+      lønindeholdelse has become a registered afgørelse rather than mere warning.
+
+  - id: "012"
+    title: "FR-3.2b Manglende afgoerelseRegistreret for lønindeholdelse returnerer HTTP 422"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+    fr_refs: [FR-3]
+    rationale: >
+      The request validation and unchanged currentFristExpires are enforced by the
+      debt-service API, but the missing decision fact belongs to the wage-garnishment
+      process model.
+
+  - id: "013"
+    title: "FR-3.3 Afgørelse om lønindeholdelse afbryder ved underretning til debitor"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+    fr_refs: [FR-3]
+    rationale: >
+      debt-service applies the legal afbrydelse effect and updates the expiry date;
+      opendebt-wage-garnishment-service is secondary because it owns the underlying
+      lønindeholdelse decision context and notification lifecycle.
+
+  - id: "014"
+    title: "FR-3.4 Lønindeholdelse afbryder alle fordringer omfattet af samme afgørelse"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+    fr_refs: [FR-3]
+    rationale: >
+      Multi-fordring propagation of one lønindeholdelsesafgørelse is executed on
+      fordring records in debt-service; the shared-afgørelse membership originates from
+      wage-garnishment-service.
+
+  - id: "015"
+    title: "FR-3.5 Lønindeholdelse inaktiv i 1 år medfører at ny forældelsesfrist begynder"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-wage-garnishment-service
+    fr_refs: [FR-3]
+    rationale: >
+      The new prescription period is recorded on the fordring's prescription state in
+      debt-service, while inactivity facts for the wage-garnishment process belong to
+      opendebt-wage-garnishment-service.
+
+  - id: "016"
+    title: "FR-3.6 Udlæg på fordring med almindeligt retsgrundlag sætter ny 3-årig frist"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      UDLAEG interruption handling and statutory 3-year reset logic are part of the
+      debt-service prescription engine.
+
+  - id: "017"
+    title: "FR-3.7 Udlæg på fordring med særligt retsgrundlag sætter ny 10-årig frist"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      This is the same afbrydelse registration flow with a different legal basis branch,
+      implemented in ForaeldelseService inside debt-service.
+
+  - id: "018"
+    title: "FR-3.8 Forgæves udlæg har samme afbrydelseseffekt som succesfuldt udlæg"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      The scenario outline tests debt-service treatment of the forgaevesUdlaeg flag and
+      resulting expiry date/metadata for both legal-basis variants.
+
+  - id: "019"
+    title: "FR-3.9 Modregning afbryder forældelsesfrist"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      debt-service already owns modregning/offsetting within OpenDebt and is also the
+      petition059 host for prescription interruption registration and history.
+
+  - id: "020"
+    title: "FR-3.10 Ukendt afbrydelsestype returnerer HTTP 422"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      Validation of allowed afbrydelse types and problem-detail responses is a controller
+      and DTO concern in opendebt-debt-service.
+
+  - id: "021"
+    title: "FR-3.11 Manglende eventDate returnerer HTTP 422"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      Required-field validation for eventDate belongs to the afbrydelse API contract in
+      debt-service.
+
+  - id: "022"
+    title: "FR-3.12 Ukendt fordringId ved afbrydelse returnerer HTTP 404"
+    component: opendebt-debt-service
+    fr_refs: [FR-3]
+    rationale: >
+      Unknown-fordring rejection on afbrydelse registration is owned by debt-service's
+      repository lookup and controller error mapping.
+
+  # ── FR-4: Fordringskompleks membership and propagation ──────────────────────
+
+  - id: "023"
+    title: "FR-4.1 Nyt fordringskompleks oprettes med initiale medlemmer"
+    component: opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      Petition059 explicitly places FordringskompleksLink and FordringskompleksService in
+      opendebt-debt-service, making it the membership owner.
+
+  - id: "024"
+    title: "FR-4.2 Medlem kan tilføjes og medlemslisten kan hentes"
+    component: opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      Adding and listing members are direct FordringskompleksService API operations owned
+      by debt-service.
+
+  - id: "025"
+    title: "FR-4.3 Afbrydelse for én fordring i fordringskompleks propagerer til alle medlemmer med fuld metadata"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+    fr_refs: [FR-4]
+    rationale: >
+      debt-service owns the transactional propagation across FordringskompleksLink members
+      and the propagated metadata on AfbrydelseEvent records; audit-trail-commons is
+      secondary because CLS revisions are emitted through the shared audit publisher.
+
+  - id: "026"
+    title: "FR-4.4 Fordringskompleks-propagation er atomisk og ruller tilbage ved fejl"
+    component: opendebt-debt-service
+    fr_refs: [FR-4]
+    rationale: >
+      All-or-nothing rollback is a transactional guarantee on ForaeldelseRecord and
+      Fordringskompleks propagation updates inside debt-service.
+
+  # ── FR-5: Tillægsfrister ─────────────────────────────────────────────────────
+
+  - id: "027"
+    title: "FR-5.1 Intern opskrivning tilføjer 2-årig tillægsfrist til forældelsesfrist"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+    fr_refs: [FR-5]
+    rationale: >
+      TillaegsfristEvent persistence and expiry extension are debt-service deliverables;
+      the required CLS revision entry is emitted via audit-trail-commons.
+
+  - id: "028"
+    title: "FR-5.2 Tillægsfrist beregnes fra max af currentFristExpires og appliedDate"
+    component: opendebt-debt-service
+    fr_refs: [FR-5]
+    rationale: >
+      The max(currentFristExpires, appliedDate) rule is pure prescription date arithmetic
+      in ForaeldelseService.
+
+  # ── FR-6: Forældelsesindsigelse workflow ────────────────────────────────────
+
+  - id: "029"
+    title: "FR-6.1 Debitors forældelsesindsigelse registreres og udløser sagsbehandlerworkflow"
+    component: opendebt-case-service
+    secondary_components:
+      - opendebt-debt-service
+      - audit-trail-commons
+    fr_refs: [FR-6]
+    rationale: >
+      The scenario explicitly creates and hands off a caseworker workflow, which matches
+      case-service's responsibility for workflow orchestration, hearing, decision, and
+      closure. debt-service remains secondary because the claim status still transitions to
+      INDSIGELSE_PENDING on the underlying fordring. audit-trail-commons remains supporting
+      infrastructure for CLS emission.
+
+  - id: "030"
+    title: "FR-6.2 Gyldig forældelsesindsigelse fjerner fordringen fra inddrivelse"
+    component: opendebt-case-service
+    secondary_components:
+      - opendebt-debt-service
+      - audit-trail-commons
+    fr_refs: [FR-6]
+    rationale: >
+      Evaluating an objection is a decision workflow concern owned by case-service. The
+      resulting FORAELDET transition and removal from active inddrivelse land in debt-service
+      as secondary domain-state mutation. audit-trail-commons remains secondary for the CLS
+      audit payload.
+
+  - id: "031"
+    title: "FR-6.3 Ugyldig forældelsesindsigelse returnerer fordring til aktiv inddrivelse"
+    component: opendebt-case-service
+    secondary_components:
+      - opendebt-debt-service
+      - audit-trail-commons
+    fr_refs: [FR-6]
+    rationale: >
+      INVALID evaluation is likewise part of the objection workflow boundary owned by
+      case-service. debt-service is secondary because the underlying claim returns to ACTIVE
+      and the objection result must still be reflected on the claim record. audit-trail-commons
+      is secondary for CLS logging.
+
+  # ── FR-7: Sagsbehandlerportal synlighed ─────────────────────────────────────
+
+  - id: "032"
+    title: "FR-7.1 Sagsbehandlerportalen viser forældelsesstatus med ISO-dato og udskydelse"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      Rendering the status panel, labels, and ISO-date presentation is a caseworker-portal
+      concern; debt-service is the secondary upstream source of the status DTO fields.
+
+  - id: "033"
+    title: "FR-7.2 Sagsbehandlerportalen viser afbrydelseshistorik med resulting new frist"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      The history table is rendered by the portal templates/BFF, while debt-service
+      supplies afbrydelseHistory entries and ordering data.
+
+  - id: "034"
+    title: "FR-7.3 Sagsbehandlerportalen viser tillægsfristhistorik og fordringskompleks-medlemskab"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      Display of fordringskompleks membership, sourceFordringId, and tillægsfristHistory is
+      a portal presentation job over data retrieved from debt-service.
+
+  - id: "035"
+    title: "FR-7.4 Sagsbehandler med skriveadgang ser knap til registrering af forældelsesindsigelse"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      Button visibility is controlled in the caseworker portal using role/write-access
+      checks and current status from the debt-service response.
+
+  - id: "036"
+    title: "FR-7.5 Afventende indsigelse viser evalueringsformular med rationalefelt"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      The evaluation form and rationale field are explicit portal deliverables, while
+      debt-service provides the INDSIGELSE_PENDING status that drives this stateful view.
+
+  - id: "037"
+    title: "FR-7.6 Forældet fordring viser udfald og rationale uden registreringsknap"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      The portal owns the rendered outcome/rationale state and absence of write actions;
+      debt-service remains the source of FORAELDET status and stored rationale.
+
+  - id: "038"
+    title: "FR-7.7 Read-only caseworker ser panelet men ingen skrivehandlinger"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+    fr_refs: [FR-7]
+    rationale: >
+      Read-only visibility and suppression of registration/evaluation controls are portal
+      authorization and template concerns over debt-service data.
+
+  # ── NFR-3 / NFR-2 ────────────────────────────────────────────────────────────
+
+  - id: "039"
+    title: "NFR-3.1 Forældelsesdata og API-svar refererer kun skyldner via person_id"
+    component: opendebt-debt-service
+    fr_refs: [NFR-3]
+    rationale: >
+      The no-PII invariant applies to ForaeldelseRecord, AfbrydelseEvent,
+      TillaegsfristEvent, FordringskompleksLink, ForaeldelseIndsigelse, and the
+      prescription API DTOs, all of which petition059 assigns to debt-service.
+
+  - id: "040"
+    title: "NFR-2.1 Almindelig afbrydelsesregistrering logges til CLS med påkrævede felter"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+    fr_refs: [NFR-2]
+    rationale: >
+      The business event originates in debt-service during afbrydelse registration, but
+      the CLS payload shape is emitted through the shared audit-trail-commons library.
+
+  - id: "041"
+    title: "NFR-2.2 Øvrige auditerede hændelser skriver CLS-payload med påkrævede felter"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+    fr_refs: [NFR-2]
+    rationale: >
+      All listed audited events are petition059 debt-service operations; audit-trail-commons
+      is secondary because it provides the reusable publisher and immutable audit envelope.

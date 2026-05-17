@@ -11,7 +11,7 @@ tidligste tidspunkt for forældelsesfristens udløb for fordringer under inddriv
 PSRM og DMI/SAP38. Udskydelsen er en engangsregel knyttet til et systems registrerings-
 eller inddrivelsesdato — den er uforanderlig og påvirkes ikke af efterfølgende afbrydelser.
 
-Dette Catala-program formaliserer forældelsesreglerne i fem scopes og fire enumerationstyper.
+Dette Catala-program formaliserer forældelsesreglerne i seks scopes og fire enumerationstyper.
 
 ---
 
@@ -159,6 +159,42 @@ separation sikrer den juridiske uforanderlighed jf. GIL § 18a, stk. 1.
   # AfbrydelseValidering-scopet MUST NOT output udskydelseDato.
   # Separation er strukturelt håndhævet: udskydelseDato er KUN output fra UdskydelsesBeregning.
   # Ankerpunkt: GIL § 18a, stk. 1 (uforanderlighedsprincip)
+```
+
+---
+
+## Artikel: G.A.2.4.1 — SCOPE-1B: UdskydelsesStatus (GIL § 18a, stk. 1)
+
+### Baggrund
+
+Udskydelse efter GIL § 18a, stk. 1 er et tidsvindue: indtil udskydelsesdatoen indtræder
+løber forældelsesfristen endnu ikke. Dette operationaliseres i petition059 som feltet
+`isInUdskydelse`, der er sandt før udskydelsesdatoen og falsk på selve datoen samt efter.
+
+### Omfangsdeklaration — UdskydelsesStatus
+
+```catala
+declaration scope UdskydelsesStatus:
+  context udskydelseDato content date
+  context vurderingsDato content date
+  context output isInUdskydelse content boolean
+```
+
+---
+
+## GIL § 18a, stk. 1 — S-1: isInUdskydelse = vurderingsDato < udskydelseDato
+
+**FR-2.3b: Udskydelsesvinduet ophører på udskydelsesdatoen**
+
+Udskydelse er alene aktiv mens vurderingsdatoen ligger før udskydelsesdatoen. På
+udskydelsesdatoen er fristen ikke længere udskudt, og `isInUdskydelse` skal derfor
+være falsk fra og med denne dato.
+
+```catala
+scope UdskydelsesStatus:
+  # S-1: vurderingsDato < udskydelseDato → isInUdskydelse = true; på/efter datoen = false
+  # Ankerpunkt: GIL § 18a, stk. 1
+  definition isInUdskydelse equals vurderingsDato < udskydelseDato
 ```
 
 ---

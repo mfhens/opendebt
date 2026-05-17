@@ -123,10 +123,13 @@ jobs:
             catala interpret --language en --no-stdlib --scope "$scope" \
               catala/tests/ga_opskrivning_nedskrivning_tests.catala_da
           done
-          # Forældelse tests (18 scopes)
+          # Forældelse tests (25 scopes)
           for scope in ForaeldelseTest01 ForaeldelseTest02 ForaeldelseTest03 \
                        ForaeldelseTest04 ForaeldelseTest05 ForaeldelseTest06 \
+                       ForaeldelseTest06b \
                        ForaeldelseTest07a ForaeldelseTest07b \
+                       ForaeldelseTest07c ForaeldelseTest07d ForaeldelseTest07e \
+                       ForaeldelseTest07f ForaeldelseTest07g ForaeldelseTest07h \
                        ForaeldelseTest08 ForaeldelseTest09 ForaeldelseTest10 \
                        ForaeldelseTest11a ForaeldelseTest11b \
                        ForaeldelseTest12 ForaeldelseTest13 ForaeldelseTest14 \

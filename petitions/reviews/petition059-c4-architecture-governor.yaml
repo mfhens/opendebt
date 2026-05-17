@@ -1,0 +1,109 @@
+petition_id: petition059
+agent: c4-architecture-governor
+mode: pr
+status: success
+verdict: PASS-WITH-WARNINGS
+timestamp: '2026-05-16T19:31:45+02:00'
+blocking_count: 0
+warning_count: 3
+summary: >
+  PASS-WITH-WARNINGS. The current petition059 PR-scope architecture changes conform to the
+  declared C4 model and policy set at the governance gate. No blocking model drift, undeclared
+  cross-service relationship, trust-boundary violation, or deployment-view regression was
+  evidenced in this run. Non-blocking warnings remain for component-view coverage and two
+  carried-forward canon/requirements clarity gaps.
+artifacts:
+  - architecture\workspace.dsl
+  - architecture\policies.yaml
+  - design\solution-architecture-p059-foraeldelse.md
+  - petitions\reviews\petition059-solution-architecture-reviewer.yaml
+  - petitions\reviews\petition059-c4-model-validator.yaml
+  - petitions\reviews\petition059-c4-architecture-governor.yaml
+  - petitions\program-status.yaml
+  - architecture\adr\0038-prescription-objection-workflow-boundary.md
+  - api-specs\openapi-debt-service-limitation.yaml
+  - api-specs\openapi-case-service-limitation-internal.yaml
+  - api-specs\openapi-wage-garnishment-service-internal.yaml
+evidence_checked:
+  - claim: PR-scope changes conform to the declared petition059 architecture model
+    proof: >
+      Reviewed the active changed-file set from git status/diff in this run. The PR-scope changes
+      are architecture/package artifacts (`architecture/workspace.dsl`, solution architecture, ADR,
+      OpenAPI specs, petition artifacts, docs) rather than undeclared runtime code or IaC. The
+      petition059 architecture reviewer currently accepts the remediated package
+      (petitions\reviews\petition059-solution-architecture-reviewer.yaml:1-87), and the changed
+      architecture elements are present in the canonical DSL
+      (architecture\workspace.dsl:64-115,173-181,233-251,256-331).
+    freshness: '2026-05-16T19:31:45+02:00'
+    result: pass
+  - claim: No blocking policy violation was evidenced in this run
+    proof: >
+      Evaluated `architecture\policies.yaml` in PR mode against the current DSL and changed
+      architecture artifacts. No evidence of ARCH-001, ARCH-003, ARCH-004, ARCH-005, ARCH-008,
+      ARCH-009, ARCH-010, or ARCH-011 violation was found. The petition059 slice keeps declared
+      debt-service -> case-service workflow delegation, debt-service -> wage-garnishment-service
+      fact reads, CLS audit relations, and Production deployment coverage
+      (architecture\workspace.dsl:173-181,233-251,256-331).
+    freshness: '2026-05-16T19:31:45+02:00'
+    result: pass
+  - claim: Updated C4 model remains valid after PR-scope DSL changes
+    proof: >
+      `architecture\workspace.dsl` is part of the changed scope, so the gate consumed the fresh
+      enforce-mode validator result at `petitions\reviews\petition059-c4-model-validator.yaml`,
+      which returned `PASS-WITH-WARNINGS` with `blocking_count: 0` and `may_proceed: true`.
+    freshness: '2026-05-16T19:31:45+02:00'
+    result: pass
+  - claim: Next gate may proceed
+    proof: >
+      This governance verdict artifact was produced in this run, and no blocking drift or policy
+      conflict was identified. The validator and reviewer artifacts both permit progression beyond
+      the architecture governance gate.
+    freshness: '2026-05-16T19:31:45+02:00'
+    result: pass
+warnings:
+  - >
+    STRUCT-VIEW-001: `LimitationPanelController`, `LimitationPanelView`, and
+    `LimitationPortalClient` are defined in `Caseworker Portal` but are not included in any
+    component view (`architecture\workspace.dsl:69-71,295-331`). This is non-blocking view
+    coverage drift.
+  - >
+    CONSISTENCY-001: Ordered history behaviour is stated in the architecture package
+    (`design\solution-architecture-p059-foraeldelse.md:404-405`), but explicit upstream
+    requirements proof for FR-1 history ordering is still not present in the reviewed gate inputs.
+  - >
+    CONSISTENCY-002: The canon still does not explicitly specify the BEROSTILLELSE failure mode
+    for non-PSRM paths. This remains a non-blocking clarification gap carried forward from the
+    validator artifact.
+escalations: []
+next_action: Proceed to Phase 3.7 Catala encoding evidence for petition059.
+handoff_target: catala-encoder
+findings:
+  - severity: warning
+    element: 'Caseworker Portal / LimitationPanelController / LimitationPanelView / LimitationPortalClient'
+    policy_id: ''
+    file: 'architecture\workspace.dsl:69-71,295-331'
+    description: >
+      The three petition059 caseworker-portal components are declared but not included in any
+      component view.
+    fix: >
+      Add the portal limitation components to an appropriate component view in the canonical DSL
+      when the team next refreshes view coverage.
+  - severity: warning
+    element: 'petition059 requirements traceability'
+    policy_id: ''
+    file: 'design\solution-architecture-p059-foraeldelse.md:404-405'
+    description: >
+      Ordered history behaviour is asserted in the architecture package, but the reviewed inputs
+      do not explicitly prove FR-1 history ordering at the requirements level.
+    fix: >
+      Add explicit requirements/spec/test evidence for ordered `afbrydelseHistory` and
+      `tillaegsfristHistory` before implementation sign-off.
+  - severity: warning
+    element: 'petition059 canonical behaviour'
+    policy_id: ''
+    file: 'petitions\petition059-foraeldelse.feature:11-12'
+    description: >
+      BEROSTILLELSE failure mode for non-PSRM paths remains unspecified in the reviewed canon.
+    fix: >
+      Clarify the expected non-PSRM BEROSTILLELSE behaviour in the requirement package before
+      implementation sign-off if that path becomes relevant.

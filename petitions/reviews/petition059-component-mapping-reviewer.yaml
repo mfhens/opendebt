@@ -1,0 +1,131 @@
+petition_id: petition059
+agent: component-mapping-reviewer
+verdict: APPROVED
+timestamp: 2026-05-16T11:18:17.1904352+02:00
+keep_count: 41
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: "001"
+    decision: KEEP
+    justification: "Prescription record creation at claim acceptance fits debt-service as authoritative owner of claim state."
+  - id: "002"
+    decision: KEEP
+    justification: "The status DTO and history API are coherent with debt-service owning prescription state and retrieval."
+  - id: "003"
+    decision: KEEP
+    justification: "Base limitation-date calculation is core domain logic for the claim state owner."
+  - id: "004"
+    decision: KEEP
+    justification: "The special legal-basis branch still belongs to prescription calculation on the claim aggregate."
+  - id: "005"
+    decision: KEEP
+    justification: "Unknown-claim lookup and 404 behavior sit naturally with the owning debt-service API."
+  - id: "006"
+    decision: KEEP
+    justification: "Postponement derivation on acceptance is coherent with debt-service ownership of prescription records."
+  - id: "007"
+    decision: KEEP
+    justification: "The DMI postponement rule is another prescription-date calculation on claim state, not a separate component concern."
+  - id: "008"
+    decision: KEEP
+    justification: "Postponement immutability across later interruption events belongs with the same debt-service record lifecycle."
+  - id: "009"
+    decision: KEEP
+    justification: "Deriving absence of postponement is part of the same prescription-state ownership in debt-service."
+  - id: "010"
+    decision: KEEP
+    justification: "Registering BEROSTILLELSE and recalculating expiry remains coherent inside debt-service prescription handling."
+  - id: "011"
+    decision: KEEP
+    justification: "Debt-service is the right primary owner for prescription impact, with wage-garnishment-service only supplying decision facts."
+  - id: "012"
+    decision: KEEP
+    justification: "HTTP 422 validation on missing garnishment decision facts still belongs primarily to debt-service's prescription API."
+  - id: "013"
+    decision: KEEP
+    justification: "Applying interruption effect to claim expiry fits debt-service, while garnishment context remains a secondary dependency."
+  - id: "014"
+    decision: KEEP
+    justification: "Propagating one garnishment decision across affected claims is coherent where the affected prescription state is owned."
+  - id: "015"
+    decision: KEEP
+    justification: "The new limitation period is applied to claim prescription state in debt-service, with inactivity facts sourced elsewhere."
+  - id: "016"
+    decision: KEEP
+    justification: "UDLAEG interruption and new expiry logic are prescription-domain responsibilities of debt-service."
+  - id: "017"
+    decision: KEEP
+    justification: "The 10-year branch is a legal-calculation variant within the same debt-service prescription capability."
+  - id: "018"
+    decision: KEEP
+    justification: "Treating unsuccessful attachment with the same interruption effect remains coherent inside debt-service."
+  - id: "019"
+    decision: KEEP
+    justification: "Offsetting already resides in debt-service, so the resulting prescription interruption belongs there too."
+  - id: "020"
+    decision: KEEP
+    justification: "Validation of supported interruption types is API-contract behavior for debt-service."
+  - id: "021"
+    decision: KEEP
+    justification: "Required-field validation for interruption registration belongs with the same debt-service endpoint."
+  - id: "022"
+    decision: KEEP
+    justification: "Unknown claim handling during interruption registration fits the authoritative claim owner."
+  - id: "023"
+    decision: KEEP
+    justification: "Fordringskompleks membership is modeled over claims and therefore sits coherently with debt-service."
+  - id: "024"
+    decision: KEEP
+    justification: "Adding and listing claim-complex members is a cohesive extension of debt-service claim-state ownership."
+  - id: "025"
+    decision: KEEP
+    justification: "Propagation across claim-complex members is a claim-state concern led by debt-service; audit-trail-commons is only supporting infrastructure."
+  - id: "026"
+    decision: KEEP
+    justification: "Atomic rollback across propagated claim updates is a transactional responsibility of debt-service."
+  - id: "027"
+    decision: KEEP
+    justification: "Supplementary limitation periods extend claim prescription state and fit debt-service ownership."
+  - id: "028"
+    decision: KEEP
+    justification: "The max-date rule is pure prescription arithmetic and belongs in debt-service."
+  - id: "029"
+    decision: KEEP
+    justification: "Creating and handing off the prescription-objection workflow is cohesive in case-service, with debt-service handling resulting claim-state mutation and audit-trail-commons remaining supporting infrastructure."
+  - id: "030"
+    decision: KEEP
+    justification: "Decisioning a valid objection belongs with case-service's workflow and decision lifecycle, while debt-service remains the secondary owner of the resulting FORAELDET state change."
+  - id: "031"
+    decision: KEEP
+    justification: "Invalid objection evaluation likewise fits case-service as workflow owner, with debt-service secondarily updating the claim back to ACTIVE."
+  - id: "032"
+    decision: KEEP
+    justification: "Displaying prescription status in the caseworker UI is coherently owned by caseworker-portal."
+  - id: "033"
+    decision: KEEP
+    justification: "Rendering interruption history is a portal presentation concern over upstream prescription data."
+  - id: "034"
+    decision: KEEP
+    justification: "Showing supplementary-history and claim-complex context is cohesive with portal presentation ownership."
+  - id: "035"
+    decision: KEEP
+    justification: "Button visibility by role and current status is a portal responsibility."
+  - id: "036"
+    decision: KEEP
+    justification: "The evaluation form is a user-interface concern and belongs with caseworker-portal."
+  - id: "037"
+    decision: KEEP
+    justification: "Rendering objection outcome and suppressing actions remains coherent UI ownership for caseworker-portal."
+  - id: "038"
+    decision: KEEP
+    justification: "Read-only visibility and suppression of write actions are presentation and authorization behavior for caseworker-portal."
+  - id: "039"
+    decision: KEEP
+    justification: "The no-PII invariant applies to prescription entities and DTOs owned by debt-service."
+  - id: "040"
+    decision: KEEP
+    justification: "The audited business event originates in debt-service, making it the coherent primary owner of the audit obligation."
+  - id: "041"
+    decision: KEEP
+    justification: "The remaining audited prescription events are still debt-service behaviors, with audit-trail-commons acting only as reusable plumbing."

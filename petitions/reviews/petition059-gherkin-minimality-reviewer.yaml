@@ -1,0 +1,11 @@
+petition: petition059
+reviewer: gherkin-minimality-reviewer
+verdict: PASS
+blocking_findings: []
+warnings:
+  - The canon still states BEROSTILLELSE applies to PSRM-managed fordringer only, but does not define the explicit failure mode for non-PSRM requests; this remains a non-blocking canonical ambiguity rather than a feature minimality defect.
+evidence_paths:
+  - petitions\petition059-foraeldelse.md
+  - petitions\petition059-foraeldelse-outcome-contract.md
+  - petitions\petition059-foraeldelse.feature
+timestamp: 2026-05-16T19:16:00+02:00

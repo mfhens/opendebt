@@ -13,3 +13,8 @@ spring:
         format_sql: true
   flyway:
     enabled: false
+
+opendebt:
+  services:
+    wage-garnishment-service:
+      url: http://localhost:8088

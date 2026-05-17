@@ -1,0 +1,37 @@
+petition_id: petition059
+agent: bdd-test-coverage-auditor
+verdict: APPROVED
+timestamp: 2026-05-16T21:49:06.0032583+02:00
+keep_count: 9
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: COVERAGE-CANONICAL-SCENARIOS
+    decision: KEEP
+    justification: "All 49 canonical petition059 scenarios remain covered across the generated debt-service and caseworker-portal feature files."
+  - id: JUSTIFIED-FOCUSED-RETRY-SCENARIOS
+    decision: KEEP
+    justification: "Five additional debt-service scenarios were added, but each maps to an explicit petition/spec requirement (NFR-1, NFR-5, and remaining 404 mutation paths), so there is no overreach."
+  - id: GAP-NFR-1-RESOLVED
+    decision: KEEP
+    justification: "NFR-1 is now covered by scenario NFR-1.1 plus step traceability for fixed Clock and deterministic LocalDate evaluation."
+  - id: GAP-NFR-5-RESOLVED
+    decision: KEEP
+    justification: "NFR-5 is now covered by scenario NFR-5.1 asserting p99 < 200 ms for GET /foraeldelse/{fordringId} with 50 history rows."
+  - id: GAP-FR1-ORDER-RESOLVED
+    decision: KEEP
+    justification: "FR-1.2 now explicitly asserts sorted afbrydelseHistory by eventDate and sorted tillaegsfristHistory by appliedDate."
+  - id: GAP-FR6-DTO-RESOLVED
+    decision: KEEP
+    justification: "FR-6.2 and FR-6.3 now assert that the HTTP 200 response is an updated ForaeldelseStatusDto and check key fields."
+  - id: GAP-404-STATE-CHANGERS-RESOLVED
+    decision: KEEP
+    justification: "FR-5.3, FR-6.1c, and FR-6.2b now cover unknown fordringId = HTTP 404 on the remaining public mutation endpoints."
+  - id: DRY-RUN-DEBT-SERVICE
+    decision: KEEP
+    justification: "Targeted cucumber-jvm dry-run succeeded in opendebt-debt-service for @petition059."
+  - id: DRY-RUN-CASEWORKER-PORTAL
+    decision: KEEP
+    justification: "Targeted cucumber-jvm dry-run succeeded in opendebt-caseworker-portal for @petition059."
+gaps: []
+overreach: []

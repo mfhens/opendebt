@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Wage Garnishment Limitation Facts Internal API
+  description: |
+    Internal fact contract used by debt-service limitation rules to resolve whether wage
+    garnishment constitutes a legally effective interruption.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+servers:
+  - url: http://opendebt-wage-garnishment-service:8088
+    description: Internal cluster service
+security:
+  - bearerAuth: []
+tags:
+  - name: Limitation Facts
+    description: Internal wage-garnishment facts for limitation calculations
+paths:
+  /api/internal/v1/limitation-facts/debtors/{debtorPersonId}:
+    get:
+      tags: [Limitation Facts]
+      summary: Get wage-garnishment limitation facts for a debtor
+      operationId: getWageGarnishmentLimitationFacts
+      parameters:
+        - name: debtorPersonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: asOfDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Limitation facts returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WageGarnishmentLimitationFacts'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    WageGarnishmentLimitationFacts:
+      type: object
+      additionalProperties: false
+      required: [debtorPersonId, decisionRegistered, coveredFordringIds]
+      properties:
+        debtorPersonId:
+          type: string
+          format: uuid
+        decisionRegistered:
+          type: boolean
+        debtorNotificationDate:
+          type: string
+          format: date
+        coveredFordringIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        inactiveSince:
+          type: string
+          format: date

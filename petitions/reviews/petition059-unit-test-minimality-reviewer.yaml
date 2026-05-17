@@ -1,0 +1,155 @@
+petition_id: petition059
+agent: unit-test-minimality-reviewer
+verdict: APPROVED
+timestamp: '2026-05-16T20:56:08.5628063+02:00'
+keep_count: 49
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: playwright-fr-7.1
+    decision: KEEP
+    justification: "Direct match to feature FR-7.1, outcome-contract FR-7 portal visibility, petition FR-7 panel fields, and spec module opendebt-caseworker-portal.limitation-panel / VAL-P059-040; no extra UI behaviour beyond the stated status, ISO expiry date, and udskydelse display."
+  - id: playwright-fr-7.2
+    decision: KEEP
+    justification: "Direct match to feature FR-7.2 plus outcome-contract FR-7 requirement for chronological afbrydelse history with resulting new frist; scoped exactly to portal rendering and VAL-P059-041."
+  - id: playwright-fr-7.3
+    decision: KEEP
+    justification: "Direct match to feature FR-7.3, outcome-contract FR-4/FR-7 propagated metadata visibility, and portal spec acceptance criteria for claim-complex membership plus sourceFordringId/targetFordringId rendering; no speculative fields added."
+  - id: playwright-fr-7.4
+    decision: KEEP
+    justification: "Direct match to feature FR-7.4 and outcome-contract FR-6/FR-7 control-state rule that ACTIVE caseworkers with write access see the objection registration button; mapped to VAL-P059-043 only."
+  - id: playwright-fr-7.5
+    decision: KEEP
+    justification: "Direct match to feature FR-7.5 and outcome-contract FR-6/FR-7 requirement that INDSIGELSE_PENDING shows VALID/INVALID evaluation controls plus rationale field while suppressing registration; mapped to VAL-P059-044 only."
+  - id: playwright-fr-7.6
+    decision: KEEP
+    justification: "Direct match to feature FR-7.6 and outcome-contract FR-6/FR-7 requirement that FORAELDET shows outcome and rationale without registration control; no extra negative-path coverage added."
+  - id: playwright-fr-7.7
+    decision: KEEP
+    justification: "Direct match to feature FR-7.7 and outcome-contract FR-7 read-only rule: panel visible, no afbrydelse or indsigelse write actions; mapped exactly to VAL-P059-046."
+  - id: debt-steps-fr-1.1
+    decision: KEEP
+    justification: "Direct match to feature FR-1.1, petition FR-1, outcome-contract FR-1, and debt-service limitation spec; the step group covers only automatic ForaeldelseRecord creation with ACTIVE status, retsgrundlag, and empty histories."
+  - id: debt-steps-fr-1.2
+    decision: KEEP
+    justification: "Direct match to feature FR-1.2 and outcome-contract FR-1 GET surface for ForaeldelseStatusDto fields; no extra response assertions beyond the explicit observable contract."
+  - id: debt-steps-fr-1.2b
+    decision: KEEP
+    justification: "Direct match to feature FR-1.2b and spec acceptance criteria requiring propagated metadata in afbrydelseHistory; lean because it checks only sourceFordringId/targetFordringId propagation visibility."
+  - id: debt-steps-fr-1.3
+    decision: KEEP
+    justification: "Direct match to feature FR-1.3 and outcome-contract FR-1 rule that a claim with no afbrydelse and no udskydelse expires at registration plus three years; no extra arithmetic branches added."
+  - id: debt-steps-fr-1.3b
+    decision: KEEP
+    justification: "Direct match to feature FR-1.3b and petition constraint that PSRM claims with særligt retsgrundlag still use the ordinary 3-year base frist before udlæg; not speculative."
+  - id: debt-steps-fr-2.1
+    decision: KEEP
+    justification: "Direct match to feature FR-2.1 and outcome-contract FR-2 PSRM threshold rule for udskydelseDato 2021-11-20 with earliest expiry 2024-11-21."
+  - id: debt-steps-fr-2.1b
+    decision: KEEP
+    justification: "Direct match to feature FR-2.1b and petition FR-2 boundary-day-before rule that PSRM registration on 2015-11-18 yields no system-specific udskydelse."
+  - id: debt-steps-fr-2.2
+    decision: KEEP
+    justification: "Direct match to feature FR-2.2 and outcome-contract FR-2 DMI/SAP38 threshold rule for udskydelseDato 2027-11-20 with earliest expiry 2030-11-21."
+  - id: debt-steps-fr-2.3
+    decision: KEEP
+    justification: "Direct match to feature FR-2.3 and petition constraint that udskydelseDato is immutable after later afbrydelse events."
+  - id: debt-steps-fr-2.3b
+    decision: KEEP
+    justification: "Direct match to feature FR-2.3b and outcome-contract FR-2 rule that isInUdskydelse flips on the threshold date itself; no extra date variants beyond the explicit outline."
+  - id: debt-steps-fr-2.4
+    decision: KEEP
+    justification: "Direct match to feature FR-2.4 and petition FR-2 rule that claims outside the statutory ranges get no udskydelseDato."
+  - id: debt-steps-fr-3.1
+    decision: KEEP
+    justification: "Direct match to feature FR-3.1 and outcome-contract FR-3 BEROSTILLELSE behaviour: HTTP 201, eventDate plus three years, and legal reference GIL § 18a, stk. 8."
+  - id: debt-steps-fr-3.2
+    decision: KEEP
+    justification: "Direct match to feature FR-3.2 and petition constraint that lønindeholdelse varsel alone must be rejected with HTTP 422 and unchanged currentFristExpires."
+  - id: debt-steps-fr-3.3
+    decision: KEEP
+    justification: "Direct match to feature FR-3.3 and outcome-contract FR-3 confirmed lønindeholdelse rule using underretning date and legal reference GIL § 18, stk. 4 plus Forældelsesl. § 18, stk. 4."
+  - id: debt-steps-fr-3.4
+    decision: KEEP
+    justification: "Direct match to feature FR-3.4 and petition FR-3 rule that one wage-garnishment decision interrupts all covered claims."
+  - id: debt-steps-fr-3.5
+    decision: KEEP
+    justification: "Direct match to feature FR-3.5 and petition constraint that one year of inactivity starts a new three-year frist."
+  - id: debt-steps-fr-3.6
+    decision: KEEP
+    justification: "Direct match to feature FR-3.6 and outcome-contract FR-3 rule that UDLAEG on ORDINARY retsgrundlag sets a new three-year frist."
+  - id: debt-steps-fr-3.8
+    decision: KEEP
+    justification: "Direct match to feature FR-3.8 and petition constraint that forgæves udlæg has the same interruption effect as successful udlæg; no invented alternative outcomes."
+  - id: debt-steps-fr-3.9
+    decision: KEEP
+    justification: "Direct match to feature FR-3.9 and outcome-contract FR-3 MODREGNING rule: eventDate plus three years with the explicit legal reference."
+  - id: debt-steps-fr-3.10
+    decision: KEEP
+    justification: "Direct match to feature FR-3.10 and outcome-contract FR-3 failure condition for unknown afbrydelse type returning HTTP 422."
+  - id: debt-steps-fr-3.11
+    decision: KEEP
+    justification: "Direct match to feature FR-3.11 and outcome-contract FR-3 failure condition for missing eventDate returning HTTP 422."
+  - id: debt-steps-fr-4.1
+    decision: KEEP
+    justification: "Direct match to feature FR-4.1 and outcome-contract FR-4 create-membership operation; the step group checks only new kompleksId creation and initial membership."
+  - id: debt-steps-fr-4.2
+    decision: KEEP
+    justification: "Direct match to feature FR-4.2 and outcome-contract FR-4 add/list membership operations; no extra ownership or inference checks added."
+  - id: debt-steps-fr-4.3
+    decision: KEEP
+    justification: "Direct match to feature FR-4.3 and outcome-contract FR-4 propagation rule including sourceFordringId, targetFordringId, propagationReason, and same-transaction visibility through GET."
+  - id: debt-steps-fr-4.4
+    decision: KEEP
+    justification: "Direct match to feature FR-4.4 and petition NFR-4 atomicity rule; the group asserts only rollback-on-failure with unchanged currentFristExpires."
+  - id: debt-steps-fr-4.5
+    decision: KEEP
+    justification: "Direct match to feature FR-4.5 and outcome-contract FR-4 empty claim-complex reception rule creating a provisional interruption with GIL § 18a, stk. 7 and receiptDate plus three years."
+  - id: debt-steps-fr-5.1
+    decision: KEEP
+    justification: "Direct match to feature FR-5.1 and outcome-contract FR-5 INTERN_OPSKRIVNING rule: two-year extension, tillaegsfristHistory entry, and audit trace."
+  - id: debt-steps-fr-6.1
+    decision: KEEP
+    justification: "Direct match to feature FR-6.1 and outcome-contract FR-6 registration behaviour: HTTP 201, unique indsigelsesId, status transition to INDSIGELSE_PENDING, and server-derived audit identity."
+  - id: debt-steps-fr-6.1b
+    decision: KEEP
+    justification: "Direct match to feature FR-6.1b and petition FR-6 guardrail rejecting client-supplied registeredBy, decidedBy, and debtorPersonId on public registration commands."
+  - id: debt-steps-fr-6.2
+    decision: KEEP
+    justification: "Direct match to feature FR-6.2 and outcome-contract FR-6 VALID evaluation behaviour: status FORAELDET, removal from active inddrivelse, and audited rationale."
+  - id: debt-steps-fr-6.3
+    decision: KEEP
+    justification: "Direct match to feature FR-6.3 and outcome-contract FR-6 INVALID evaluation behaviour: return to ACTIVE and stored rejection rationale."
+  - id: debt-steps-fr-6.3b
+    decision: KEEP
+    justification: "Direct match to feature FR-6.3b and petition FR-6 guardrail rejecting spoofed identity/debtor fields on public evaluation commands."
+  - id: debt-steps-nfr-3.1
+    decision: KEEP
+    justification: "Direct match to feature NFR-3.1 and petition NFR-3 no-PII rule covering response payloads and persisted limitation entities through person_id only."
+  - id: debt-steps-nfr-2.1
+    decision: KEEP
+    justification: "Direct match to feature NFR-2.1 and petition NFR-2 audit requirement for ordinary afbrydelse registration payload fields."
+  - id: debt-steps-nfr-2.2
+    decision: KEEP
+    justification: "Direct match to feature NFR-2.2 and petition NFR-2 audit requirement across propagation, tillægsfrist, and objection events; explicit scenario-outline coverage means this is requested, not speculative duplication."
+  - id: portal-steps-fr-7.1
+    decision: KEEP
+    justification: "Direct match to feature FR-7.1 and portal spec module; this Cucumber-JVM glue group is required to bind the repo's Java BDD harness and does not add assertions beyond the feature text."
+  - id: portal-steps-fr-7.2
+    decision: KEEP
+    justification: "Direct match to feature FR-7.2 and portal spec module; glue only for the explicit afbrydelseshistorik rendering scenario, with no extra edge cases."
+  - id: portal-steps-fr-7.3
+    decision: KEEP
+    justification: "Direct match to feature FR-7.3 and portal spec acceptance criteria for membership plus propagated metadata visibility; required Cucumber glue, not gold-plated coverage."
+  - id: portal-steps-fr-7.4
+    decision: KEEP
+    justification: "Direct match to feature FR-7.4 and outcome-contract control-state rule for ACTIVE claims with write access; glue only."
+  - id: portal-steps-fr-7.5
+    decision: KEEP
+    justification: "Direct match to feature FR-7.5 and outcome-contract rule for the pending-objection evaluation form; glue only."
+  - id: portal-steps-fr-7.6
+    decision: KEEP
+    justification: "Direct match to feature FR-7.6 and outcome-contract rule for outcome plus rationale display without the registration button; glue only."
+  - id: portal-steps-fr-7.7
+    decision: KEEP
+    justification: "Direct match to feature FR-7.7 and outcome-contract read-only access rule; glue only and necessary for Java/Cucumber-JVM collectibility."
