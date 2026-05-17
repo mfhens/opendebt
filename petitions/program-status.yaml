@@ -3038,17 +3038,19 @@ program:
       severity: warning
       created: 2026-05-18
       completed: 2026-05-18
+      commit: 0f11b81
       resolved_note: >
-        Replaced 7 RED stub tests (throw new Error) with real Playwright actions covering
-        FR-7.1 through FR-7.7. Created caseworker-portal-auth.ts helper. Created
-        petitions/validation/petition059/user-testing/flows/main.json with 7 flows
-        (VAL-P059-040..046). All tests tagged @backlog; CI exclusion via grepInvert
-        confirmed in playwright.config.ts. State-dependent tests (FR-7.2–FR-7.6) skip
-        gracefully when no ACTIVE foraeldelse_record rows exist in the local stack.
+        7/7 Playwright tests (FR-7.1–FR-7.7) passing in full 7-worker parallel run.
+        Replaced RED stubs with real Playwright actions. Created caseworker-portal-auth.ts
+        helper, idempotent seed scripts (petition059-case-seed.sql, petition059-debt-seed.sql,
+        apply-petition059-seed.ps1) with 5 fordringer (fd00-001..005) — each destructive
+        test gets an exclusive fordring to prevent AuditableEntity @Version optimistic-lock
+        conflicts; fd00-005 is a static complex-member for FR-7.3's fordringskompleks POST.
+        All 7 validation flows in main.json updated to result=pass.
       notes: >
-        Tests require a running docker-compose stack with ≥3 ACTIVE foraeldelse_record rows
-        for full state-specific coverage. Port assignments from docker-compose.yml:
-        case-service=8081, debt-service=8082 (user-testing.md had them swapped — fixed in harness).
+        Tests require a running docker-compose stack with ≥5 ACTIVE foraeldelse_record rows.
+        Re-seed between full runs: apply-petition059-seed.ps1 -RunTests. Port assignments:
+        case-service=8081, debt-service=8082.
 
 escalations:
   - id: ESC-055
