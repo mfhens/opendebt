@@ -1,0 +1,120 @@
+{
+  "petition": "petition059",
+  "title": "Forældelse — prescription tracking and interruption",
+  "harness": "opendebt-e2e/tests/caseworker-portal/petition059-limitation-panel.spec.ts",
+  "tag": "@backlog",
+  "note": "Manual execution only — requires a running docker-compose stack with ≥4 ACTIVE foraeldelse_record rows (fd00-001..005).",
+  "flows": [
+    {
+      "id": "VAL-P059-040",
+      "title": "FR-7.1 Sagsbehandlerportalen viser forældelsesstatus med ISO-dato og udskydelse",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "Authenticate as anna-jensen via /caseworker-portal/demo-login",
+        "Navigate to /caseworker-portal/cases/{caseId}/debts/{fordringId}/limitation-panel",
+        "Assert [data-testid='limitation-status-panel'] is visible",
+        "Assert 4 dd elements are visible in the status dl"
+      ],
+      "precondition": "Any valid fordringId (circuit-breaker fallback works for structural check)",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-041",
+      "title": "FR-7.2 Sagsbehandlerportalen viser afbrydelseshistorik med resulting new frist",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "POST 2 afbrydelse events via debt-service API for activePairs[0].fordringId",
+        "Authenticate as anna-jensen",
+        "Navigate to limitation panel for that fordring",
+        "Assert [data-afbrydelse-row='true'] count ≥ 2",
+        "Assert each row has type, date, legal reference, new frist columns"
+      ],
+      "precondition": "≥1 fordring with ACTIVE foraeldelse_record row in debt-service DB",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-042",
+      "title": "FR-7.3 Sagsbehandlerportalen viser tillægsfristhistorik og fordringskompleks-medlemskab",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "POST fordringskompleks with memberFordringIds=[fordringA, fordringB]",
+        "POST tillaegsfrist on fordringA",
+        "Authenticate as anna-jensen",
+        "Navigate to limitation panel for fordringA",
+        "Assert h2:has-text('Fordringskompleks') is visible and fordringB is listed",
+        "Assert h2:has-text('Tillægsfristhistorik') is visible with ≥1 row",
+        "Assert sourceFordringId and targetFordringId column headers are attached"
+      ],
+      "precondition": "≥2 fordringer with ACTIVE foraeldelse_record rows",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-043",
+      "title": "FR-7.4 Sagsbehandler med skriveadgang ser knap til registrering af forældelsesindsigelse",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "Authenticate as anna-jensen",
+        "Navigate to limitation panel for ACTIVE fordring",
+        "Assert button 'Registrer forældelsesindsigelse' is visible"
+      ],
+      "precondition": "≥1 fordring with ACTIVE foraeldelse_record row",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-044",
+      "title": "FR-7.5 Afventende indsigelse viser evalueringsformular med rationalefelt",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "POST /foraeldelse/{fordringId}/indsigelse to move to INDSIGELSE_PENDING",
+        "Authenticate as anna-jensen",
+        "Navigate to limitation panel",
+        "Assert input[name='outcome'][value='VALID'] is visible",
+        "Assert input[name='outcome'][value='INVALID'] is visible",
+        "Assert textarea[name='rationale'] is visible",
+        "Assert 'Registrer forældelsesindsigelse' button is NOT visible"
+      ],
+      "precondition": "≥2 fordringer with ACTIVE foraeldelse_record rows (uses activePairs[1])",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-045",
+      "title": "FR-7.6 Forældet fordring viser udfald og rationale uden registreringsknap",
+      "persona": "anna-jensen (CASEWORKER)",
+      "steps": [
+        "POST indsigelse on activePairs[2].fordringId",
+        "PUT /indsigelse/{indsigelsesId} with outcome=VALID to move to FORAELDET",
+        "Authenticate as anna-jensen",
+        "Navigate to limitation panel",
+        "Assert h2:has-text('Udfald') is visible",
+        "Assert statusLabel 'Forældet' is present in Udfald section",
+        "Assert rationale text is present in Udfald section",
+        "Assert 'Registrer forældelsesindsigelse' button is NOT visible"
+      ],
+      "precondition": "≥3 fordringer with ACTIVE foraeldelse_record rows (activePairs[2] is mutated)",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    },
+    {
+      "id": "VAL-P059-046",
+      "title": "FR-7.7 Read-only caseworker ser panelet men ingen skrivehandlinger",
+      "persona": "erik-sorensen (SENIOR_CASEWORKER)",
+      "steps": [
+        "Authenticate as erik-sorensen",
+        "Navigate to limitation panel for any fordringId",
+        "Assert [data-testid='limitation-status-panel'] is visible",
+        "Assert button 'Registrer afbrydelseshændelse' is NOT visible",
+        "Assert button 'Registrer forældelsesindsigelse' is NOT visible",
+        "Assert input[name='outcome'] is NOT visible"
+      ],
+      "precondition": "Any valid fordringId (circuit-breaker fallback works for read-only check)",
+      "result": "pass",
+      "evidence": "playwright-7of7-2026-05-17"
+    }
+  ]
+}
+

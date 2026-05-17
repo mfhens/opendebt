@@ -405,6 +405,11 @@ public class LimitationStateApplicationServiceImpl implements LimitationStateApp
                         .legalReference(event.getLegalReference())
                         .build())
             .toList();
+    String objectionRationale =
+        objectionLinkageRepository
+            .findByFordringId(record.getFordringId())
+            .map(LimitationObjectionLinkage::getRationale)
+            .orElse(null);
     return ForaeldelseStatusDto.builder()
         .fordringId(record.getFordringId())
         .currentFristExpires(record.getCurrentFristExpires())
@@ -414,6 +419,8 @@ public class LimitationStateApplicationServiceImpl implements LimitationStateApp
         .afbrydelseHistory(afbrydelseHistory)
         .tillaegsfristHistory(tillaegsfristHistory)
         .status(record.getStatus())
+        .kompleksId(record.getKompleksId())
+        .objectionRationale(objectionRationale)
         .build();
   }
 }

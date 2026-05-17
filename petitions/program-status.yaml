@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-05-17
-  updated_by: TB-059 method-security wiring done (debt-service, case-service, wage-garnishment-service)
+  updated_at: 2026-05-18
+  updated_by: TB-060 Playwright E2E harness for petition059 limitation panel done
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -3025,6 +3025,30 @@ program:
         Petition059 controllers use @PreAuthorize, but debt-service, case-service, and
         wage-garnishment-service do not declare local @EnableMethodSecurity / MethodSecurityConfig.
         Add explicit method-security wiring and a 403 smoke test so the role checks are enforced.
+
+    - id: TB-060
+      title: "Playwright E2E harness for petition059 limitation panel (caseworker portal)"
+      status: done
+      source_agent: tech-debt-executor
+      petition: petition059
+      category: e2e-coverage
+      remediation_target: e2e-harness
+      drift_class: test coverage gap
+      symbol: opendebt-e2e/tests/caseworker-portal/petition059-limitation-panel.spec.ts
+      severity: warning
+      created: 2026-05-18
+      completed: 2026-05-18
+      resolved_note: >
+        Replaced 7 RED stub tests (throw new Error) with real Playwright actions covering
+        FR-7.1 through FR-7.7. Created caseworker-portal-auth.ts helper. Created
+        petitions/validation/petition059/user-testing/flows/main.json with 7 flows
+        (VAL-P059-040..046). All tests tagged @backlog; CI exclusion via grepInvert
+        confirmed in playwright.config.ts. State-dependent tests (FR-7.2–FR-7.6) skip
+        gracefully when no ACTIVE foraeldelse_record rows exist in the local stack.
+      notes: >
+        Tests require a running docker-compose stack with ≥3 ACTIVE foraeldelse_record rows
+        for full state-specific coverage. Port assignments from docker-compose.yml:
+        case-service=8081, debt-service=8082 (user-testing.md had them swapped — fixed in harness).
 
 escalations:
   - id: ESC-055

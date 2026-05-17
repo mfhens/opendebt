@@ -31,6 +31,8 @@ public class ForaeldelseStatusDto {
   private List<AfbrydelseHistoryEntryDto> afbrydelseHistory;
   private List<TillaegsfristHistoryEntryDto> tillaegsfristHistory;
   private ForaeldelseStatus status;
+  private UUID kompleksId;
+  private String objectionRationale;
 
   @Data
   @Builder
