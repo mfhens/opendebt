@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-04-12
-  updated_by: petition012 Playwright GREEN (creditor-portal BFF / manual / act-as E2E)
+  updated_at: 2026-05-17
+  updated_by: TB-059 method-security wiring done (debt-service, case-service, wage-garnishment-service)
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -3004,7 +3004,7 @@ program:
 
     - id: TB-059
       title: "Resolve runtime integration drift: security drift in petition059 limitation routes"
-      status: pending
+      status: done
       source_agent: runtime-integration-conductor
       petition: petition059
       category: runtime-integration-drift
@@ -3013,7 +3013,14 @@ program:
       symbol: debt-service/case-service/wage-garnishment-service limitation controllers
       severity: warning
       created: 2026-05-17
+      completed: 2026-05-17
       evidence_artifact: petitions/reviews/petition059-runtime-integration-conductor.yaml
+      resolved_note: >
+        Added MethodSecurityConfig (@EnableMethodSecurity) to debt-service, case-service,
+        and wage-garnishment-service. Added LimitationSecuritySmokeTest,
+        LimitationObjectionSecuritySmokeTest, and WageGarnishmentLimitationSecuritySmokeTest
+        verifying 403 for VIEWER role. Also fixed GlobalExceptionHandler in opendebt-common
+        to map AccessDeniedException to 403 instead of 500.
       notes: >
         Petition059 controllers use @PreAuthorize, but debt-service, case-service, and
         wage-garnishment-service do not declare local @EnableMethodSecurity / MethodSecurityConfig.
