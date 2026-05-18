@@ -111,6 +111,8 @@ opendebt:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     creditor-service:
       url: ${CREDITOR_SERVICE_URL:http://localhost:8092}
+    wage-garnishment-service:
+      url: ${WAGE_GARNISHMENT_SERVICE_URL:http://localhost:8088}
 
 resilience4j:
   circuitbreaker:
@@ -129,6 +131,8 @@ resilience4j:
       creditor-service:
         baseConfig: default
       case-service:
+        baseConfig: default
+      wage-garnishment-service:
         baseConfig: default
   retry:
     configs:

@@ -8,6 +8,9 @@ Each OpenDebt service exposes a REST API documented with OpenAPI 3.1. Swagger UI
 |---------|-----------|------------|
 | debt-service | `api-specs/openapi-debt-service.yaml` | `:8082/debt-service/swagger-ui.html` |
 | case-service | `api-specs/openapi-case-service.yaml` | `:8081/case-service/swagger-ui.html` |
+| debt-service (limitation surface, petition059) | `api-specs/openapi-debt-service-limitation.yaml` | `:8082/debt-service/swagger-ui.html` |
+| case-service (limitation internal workflow) | `api-specs/openapi-case-service-limitation-internal.yaml` | Internal cluster contract |
+| wage-garnishment-service (limitation facts) | `api-specs/openapi-wage-garnishment-service-internal.yaml` | Internal cluster contract |
 | creditor-service | `api-specs/openapi-creditor-service.yaml` | `:8092/creditor-service/swagger-ui.html` |
 | person-registry | `api-specs/openapi-person-registry-internal.yaml` | `:8090/person-registry/swagger-ui.html` |
 | integration-gateway | Auto-generated | `:8089/integration-gateway/swagger-ui.html` |
@@ -43,6 +46,28 @@ same Drools validation contract applies across all claim-ingestion paths.
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | `POST` | `/api/v1/debts/{id}/adjustments` | Submit write-up or write-down adjustment; enforces all G.A.1.4.3/G.A.1.4.4/Gæld.bekendtg. § 7 rules independently of the portal (FR-9). Returns `201` with `ClaimAdjustmentResponseDto` or `422` with RFC 7807 `ProblemDetail`. |
+
+#### Limitation / prescription (petition 059)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/v1/foraeldelse/{fordringId}` | Get limitation status, expiry date, histories, and claim-complex context for a claim. |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/afbrydelse` | Register a legally effective interruption and recalculate expiry. |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/tillaegsfrist` | Register a supplementary period (for example `INTERN_OPSKRIVNING`). |
+| `POST` | `/api/v1/fordringskompleks` | Create a claim complex with one or more initial members. |
+| `POST` | `/api/v1/fordringskompleks/{kompleksId}/members/{fordringId}` | Add one member to an existing claim complex. |
+| `GET` | `/api/v1/fordringskompleks/{kompleksId}/members` | List the current members of a claim complex. |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/indsigelse` | Register a limitation objection on the petition-aligned limitation surface; debt-service delegates workflow ownership to case-service. |
+| `PUT` | `/api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}` | Evaluate a limitation objection on the petition-aligned limitation surface. |
+
+Internal companion specs for petition059:
+
+- `api-specs/openapi-case-service-limitation-internal.yaml` — debt-service to case-service workflow delegation
+- `api-specs/openapi-wage-garnishment-service-internal.yaml` — debt-service to wage-garnishment limitation fact reads
+
+Public FR-6 objection commands reject caller-supplied `registeredBy`, `decidedBy`, and
+`debtorPersonId`; those values are derived server-side from authenticated context and
+authoritative claim state.
 
 #### Readiness
 
@@ -200,6 +225,46 @@ SOAP endpoints are served by a dedicated `MessageDispatcherServlet` at `/soap/*`
 | `Oces3AuthenticationException` | 401 | `env:Client` | `env:Sender` |
 | `Oces3AuthorizationException` | 403 | `env:Client` | `env:Sender` |
 | `ServiceException` (generic) | 500 | `env:Server` | `env:Receiver` |
+
+## Petition059 detailed API surfaces
+
+### Limitation State API (`debt-service`, `:8082`)
+
+**Auth:** `CASEWORKER` or `ADMIN`
+
+| Method | Path | Request shape | Response shape |
+|--------|------|---------------|----------------|
+| `GET` | `/api/v1/foraeldelse/{fordringId}` | Path parameter: `fordringId` (`UUID`) | `ForaeldelseStatusDto` — `fordringId`, `debtorPersonId`, `currentFristExpires`, `udskydelseDato`, `isInUdskydelse`, `retsgrundlag`, `afbrydelseHistory[]`, `tillaegsfristHistory[]`, `status`, `kompleksId`, `memberFordringIds[]`, `objectionRationale` |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/afbrydelse` | `RegisterAfbrydelseRequest` — `type`, `eventDate`, `afgoerelseRegistreret`, `forgaevesUdlaeg` | `201 Created` + `ForaeldelseStatusDto` |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/tillaegsfrist` | `RegisterTillaegsfristRequest` — `type`, `appliedDate` | `201 Created` + `ForaeldelseStatusDto` |
+| `POST` | `/api/v1/fordringskompleks` | `CreateFordringskompleksRequest` — `memberFordringIds[]` | `201 Created` + `FordringskompleksMemberListDto` — `kompleksId`, `memberFordringIds[]` |
+| `POST` | `/api/v1/fordringskompleks/{kompleksId}/members/{fordringId}` | Path parameters only: `kompleksId`, `fordringId` | `201 Created` with empty body |
+| `GET` | `/api/v1/fordringskompleks/{kompleksId}/members` | Path parameter: `kompleksId` (`UUID`) | `FordringskompleksMemberListDto` — `kompleksId`, `memberFordringIds[]` |
+| `POST` | `/api/v1/foraeldelse/{fordringId}/indsigelse` | Optional `RegisterObjectionRequest`; caller-supplied `registeredBy`, `decidedBy`, and `debtorPersonId` are rejected and derived server-side | `201 Created` + `ObjectionRegistrationResult` — `indsigelsesId`, `status` |
+| `PUT` | `/api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}` | `EvaluateObjectionRequest` — `outcome`, `rationale`; caller-supplied `registeredBy`, `decidedBy`, and `debtorPersonId` are rejected | `200 OK` + `ForaeldelseStatusDto` |
+
+### Limitation Objection Workflow Internal API (`case-service`, `:8081`)
+
+**Auth:** `SERVICE`, `ADMIN`, or `CASEWORKER`
+
+| Method | Path | Request shape | Response shape |
+|--------|------|---------------|----------------|
+| `POST` | `/api/internal/v1/limitation-objections` | `CreateLimitationObjectionWorkflowRequest` — `fordringId`, `debtorPersonId`, `registeredBy` | `201 Created` + `LimitationObjectionWorkflowResult` — `indsigelsesId`, `workflowCaseId`, `status`, `rationale` |
+| `PUT` | `/api/internal/v1/limitation-objections/{indsigelsesId}/decision` | `LimitationObjectionDecisionRequest` — `fordringId`, `outcome`, `rationale`, `decidedBy`, `decidedAt` | `200 OK` + `LimitationObjectionWorkflowResult` — `indsigelsesId`, `workflowCaseId`, `status`, `rationale` |
+
+### Wage Garnishment Limitation Facts Internal API (`wage-garnishment-service`, `:8088`)
+
+**Auth:** `SERVICE`, `ADMIN`, or `CASEWORKER`
+
+| Method | Path | Request shape | Response shape |
+|--------|------|---------------|----------------|
+| `GET` | `/api/internal/v1/limitation-facts/debtors/{debtorPersonId}` | Path parameter: `debtorPersonId` (`UUID`) | `WageGarnishmentLimitationFacts` — `afgoerelseRegistreret`, `underretningsDato`, `coveredFordringIds[]`, `inaktivSiden` |
+
+### Caseworker Portal Limitation Panel (`caseworker-portal`, `:8087`)
+
+| Route | Access | Rendered content |
+|-------|--------|------------------|
+| `GET /cases/{caseId}/debts/{fordringId}/limitation-panel` | Authenticated caseworker session; write actions are shown for `CASEWORKER` and `ADMIN` | Thymeleaf limitation panel with current status, expiry date, claim-complex members, interruption history, supplementary-period history, and objection actions |
 
 ## Authentication
 

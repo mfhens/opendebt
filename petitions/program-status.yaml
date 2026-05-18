@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-04-12
-  updated_by: petition012 Playwright GREEN (creditor-portal BFF / manual / act-as E2E)
+  updated_at: 2026-05-18
+  updated_by: TB-060 Playwright E2E harness for petition059 limitation panel done
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1403,11 +1403,11 @@ program:
       legal_footprint: true
       catala_files:
         - catala/ga_2_4_foraeldelse.catala_da
-      status: not_started
+      status: implemented
       phase: phase-18
       depends_on:
         - petition057
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-05-17
       notes: >
         G.A.2.4: complete forældelses-ruleset — 3/10-year base periods (forældelsesloven §§ 3, 5),
         afbrydelse conditions (lønindeholdelse, udlæg, afgørelse, debtor acknowledgement),
@@ -1416,10 +1416,16 @@ program:
         arithmetic, multiple exception hierarchies, and afbrydelse interaction with inddrivelse
         actions are almost certain to reveal PSRM discrepancies.
         Tier A + Catala companion spike (highest priority Catala target after P054).
+        Implemented across 4 slices: debt-service (authoritative state, 8 endpoints),
+        case-service (objection workflow, 2 internal endpoints), wage-garnishment-service
+        (limitation facts, 1 internal endpoint), caseworker-portal (limitation panel view).
+        All gate reviews passed: BDD (49 scenarios, 521 tests green), contract drift (PASS),
+        runtime integration (PASS-WITH-WARNINGS, 3 wiring defects fixed), code review (APPROVE).
+        ADR-0038 accepted. TB-059 logged for explicit method-security enablement.
       next_step: >
-        Draft petition document and Catala companion spike petition. Catala spike to encode
-        forældelseloven §§ 3, 5, and afbrydelse conditions; cross-validate with PSRM rule
-        engine for prescription date calculation.
+        PR ready on branch petition/p059-foraeldelse. Close TB-059 (method-security wiring)
+        via tech-debt-executor after merge. Activate E2E browser harness
+        (.factory/library/user-testing.md) when live docker-compose stack is available in CI.
 
     petition060:
       title: Retskraftvurdering — § 50 priority ordering (G.A.2.5)
@@ -2996,6 +3002,56 @@ program:
         `ClaimValidationServiceImpl`; and raw debt creation no longer bypasses the agreed
         validation contract.
 
+    - id: TB-059
+      title: "Resolve runtime integration drift: security drift in petition059 limitation routes"
+      status: done
+      source_agent: runtime-integration-conductor
+      petition: petition059
+      category: runtime-integration-drift
+      remediation_target: config
+      drift_class: security drift
+      symbol: debt-service/case-service/wage-garnishment-service limitation controllers
+      severity: warning
+      created: 2026-05-17
+      completed: 2026-05-17
+      evidence_artifact: petitions/reviews/petition059-runtime-integration-conductor.yaml
+      resolved_note: >
+        Added MethodSecurityConfig (@EnableMethodSecurity) to debt-service, case-service,
+        and wage-garnishment-service. Added LimitationSecuritySmokeTest,
+        LimitationObjectionSecuritySmokeTest, and WageGarnishmentLimitationSecuritySmokeTest
+        verifying 403 for VIEWER role. Also fixed GlobalExceptionHandler in opendebt-common
+        to map AccessDeniedException to 403 instead of 500.
+      notes: >
+        Petition059 controllers use @PreAuthorize, but debt-service, case-service, and
+        wage-garnishment-service do not declare local @EnableMethodSecurity / MethodSecurityConfig.
+        Add explicit method-security wiring and a 403 smoke test so the role checks are enforced.
+
+    - id: TB-060
+      title: "Playwright E2E harness for petition059 limitation panel (caseworker portal)"
+      status: done
+      source_agent: tech-debt-executor
+      petition: petition059
+      category: e2e-coverage
+      remediation_target: e2e-harness
+      drift_class: test coverage gap
+      symbol: opendebt-e2e/tests/caseworker-portal/petition059-limitation-panel.spec.ts
+      severity: warning
+      created: 2026-05-18
+      completed: 2026-05-18
+      commit: 0f11b81
+      resolved_note: >
+        7/7 Playwright tests (FR-7.1–FR-7.7) passing in full 7-worker parallel run.
+        Replaced RED stubs with real Playwright actions. Created caseworker-portal-auth.ts
+        helper, idempotent seed scripts (petition059-case-seed.sql, petition059-debt-seed.sql,
+        apply-petition059-seed.ps1) with 5 fordringer (fd00-001..005) — each destructive
+        test gets an exclusive fordring to prevent AuditableEntity @Version optimistic-lock
+        conflicts; fd00-005 is a static complex-member for FR-7.3's fordringskompleks POST.
+        All 7 validation flows in main.json updated to result=pass.
+      notes: >
+        Tests require a running docker-compose stack with ≥5 ACTIVE foraeldelse_record rows.
+        Re-seed between full runs: apply-petition059-seed.ps1 -RunTests. Port assignments:
+        case-service=8081, debt-service=8082.
+
 escalations:
   - id: ESC-055
     petition: P055
@@ -3017,3 +3073,42 @@ escalations:
     status: open
     resolution: ~
     created: 2026-04-02
+  - id: ESC-056
+    petition: P059
+    phase: 3
+    agent: component-mapping-reviewer
+    reason: >
+      FR-6.1, FR-6.2, and FR-6.3 mix prescription-objection workflow ownership with
+      claim-state ownership. The current map assigns the scenarios to debt-service,
+      but design/components/case-service.yaml declares workflow orchestration,
+      hearing, and decision lifecycle in case-service. Architecture handoff should
+      wait until ownership of the objection workflow boundary is clarified.
+    status: resolved
+    resolution: >
+      petitions/petition059_map.yaml was updated so FR-6.1 through FR-6.3 are owned by
+      opendebt-case-service as primary, with opendebt-debt-service for claim-state mutation
+      and audit-trail-commons for CLS emission as secondaries. Rerun review found the
+      workflow boundary cohesive and approved the mapping for architecture handoff.
+    created: 2026-05-16
+  - id: ESC-057
+    petition: P059
+    phase: 3
+    agent: solution-architecture-reviewer
+    reason: >
+      Repeated rejection of the petition059 architecture package. The remediated package fixes
+      the previous DSL/deployment blockers, but the observable limitation API still does not
+      match the current petition/outcome contract, FR-4 membership-management endpoints are
+      still missing from the architecture package, and the public objection commands still rely
+      on client-supplied audit identity fields.
+    status: resolved
+    resolution: >
+      The petition059 architecture package was realigned to the revalidated petition/outcome
+      contract. `api-specs/openapi-debt-service-limitation.yaml` now exposes the exact public
+      limitation fields (`fordringId`, `currentFristExpires`, `udskydelseDato`,
+      `isInUdskydelse`, `retsgrundlag`, `afbrydelseHistory`, `tillaegsfristHistory`) including
+      propagation metadata `sourceFordringId` and `targetFordringId`; the public FR-4 surface now
+      includes `POST /api/v1/fordringskompleks`, `POST /api/v1/fordringskompleks/{kompleksId}/members/{fordringId}`,
+      and `GET /api/v1/fordringskompleks/{kompleksId}/members`; and the public FR-6 objection
+      commands now reject caller-supplied `registeredBy`, `decidedBy`, and `debtorPersonId` while
+      deriving those values server-side before debt-service delegates to case-service.
+    created: 2026-05-16

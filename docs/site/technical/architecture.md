@@ -173,6 +173,23 @@ When `RATE_NB_UDLAAN` is created or updated, three derived rate entries are auto
 
 The `InterestAccrualJob` and `InterestRecalculationService` resolve the effective rate per day, splitting interest periods at rate-change boundaries (see petition 045/046 implementation).
 
+## Limitation capability (petition059)
+
+ADR-0038 defines the petition059 boundary: **debt-service** keeps the public limitation surface, **case-service** owns the objection workflow lifecycle, **wage-garnishment-service** exposes an internal fact seam used by limitation rules, and **caseworker-portal** renders the caseworker-facing limitation panel on claim detail.
+
+| Service | Petition059 responsibility |
+|---------|----------------------------|
+| `debt-service` | Authoritative limitation state, interruption registration, supplementary periods, claim-complex maintenance, and the public objection façade |
+| `case-service` | Internal limitation-objection workflow creation and decision recording |
+| `wage-garnishment-service` | Internal wage-garnishment facts used to determine whether garnishment interrupts limitation |
+| `caseworker-portal` | Read-only/read-write limitation panel for caseworkers on claim detail pages |
+
+The limitation policy engine in debt-service is wired through an injected `limitationClock` bean. That keeps date-based calculations deterministic in tests and reproducible across environments, which is the relevant petition059 NFR-1 concern.
+
+The capability also follows ADR-0014 privacy constraints. Cross-service contracts use technical references only — `fordringId`, `debtorPersonId`, `kompleksId`, and `workflowCaseId` — so limitation processing never introduces CPR, names, or addresses outside person-registry.
+
+Claim-complex propagation is modeled explicitly. `FordringskompleksLink` groups related fordringer, and when a legally effective interruption applies to one member, debt-service records propagated `AfbrydelseEvent` entries for the linked members with source/target claim references and a propagation reason. That keeps the recalculated expiry dates auditable without adding cross-service database coupling.
+
 ## Key architectural decisions
 
 See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
@@ -184,3 +201,4 @@ See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
 - **ADR-0024**: Observability with Grafana stack
 - **ADR-0029**: immudb for cryptographic financial ledger integrity (conditionally accepted; pending TB-028-a HDP validation)
 - **ADR-0030**: SOAP legacy gateway (OIO/SKAT protocols via `integration-gateway`)
+- **ADR-0038**: Limitation objection boundary with debt-service façade and case-service workflow ownership

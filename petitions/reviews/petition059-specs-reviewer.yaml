@@ -1,0 +1,120 @@
+petition_id: petition059
+agent: specs-reviewer
+status: approved
+verdict: PASS-WITH-WARNINGS
+summary: >
+  PASS-WITH-WARNINGS. The revised specs artifact now closes both previously blocking issues:
+  the public FR-6 decision path returns the updated limitation-status document, and the
+  portal module now explicitly models the claim-complex member lookup plus optional
+  case-service read enrichment for rationale/task metadata. The package remains inside the
+  accepted four-slice architecture and preserves the ownership-neutral public surface. One
+  non-blocking source ambiguity remains around whether `person_id` is a public response field;
+  the revised validation contract now constrains that ambiguity without forcing public-contract
+  drift.
+artifacts:
+  - petitions\petition059-foraeldelse.md
+  - petitions\petition059-foraeldelse-outcome-contract.md
+  - petitions\petition059-foraeldelse.feature
+  - petitions\specs\petition059-specs.yaml
+  - petitions\validation\petition059\validation-contract.md
+  - design\solution-architecture-p059-foraeldelse.md
+  - api-specs\openapi-debt-service-limitation.yaml
+  - petitions\reviews\petition059-solution-architecture-reviewer.yaml
+  - petitions\reviews\petition059-c4-model-validator.yaml
+  - petitions\reviews\petition059-c4-architecture-governor.yaml
+  - petitions\reviews\petition059-catala-encoder.yaml
+evidence_checked:
+  - claim: feature-to-spec scenario traceability remains complete
+    proof: >
+      The petition059 feature file still exposes 49 scenario titles, and the current specs
+      artifact references all of them through its module-level `gherkin_scenarios` coverage.
+      No reviewed scenario title is missing from the revised specs package.
+    freshness: '2026-05-16T19:59:01.5151661+02:00'
+    result: pass
+  - claim: prior blocker SPECS-P059-001 is resolved
+    proof: >
+      The debt-service module now declares `response_model: ForaeldelseStatusDto` for
+      `PUT /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}`
+      (`petitions\specs\petition059-specs.yaml:149-156`) and explicitly states that objection
+      evaluation returns the updated limitation-status document rather than a reduced wrapper
+      (`petitions\specs\petition059-specs.yaml:272-279`). That now matches both the outcome
+      contract's FR-6 evaluation response
+      (`petitions\petition059-foraeldelse-outcome-contract.md:247-272`) and the current
+      debt-service OpenAPI (`api-specs\openapi-debt-service-limitation.yaml:154-175`).
+    freshness: '2026-05-16T19:59:01.5151661+02:00'
+    result: pass
+  - claim: prior blocker SPECS-P059-002 is resolved
+    proof: >
+      The portal module now declares `GET /api/v1/fordringskompleks/{kompleksId}/members`
+      as an upstream dependency and adds explicit read-enrichment notes for FR-7.3
+      claim-complex membership and FR-7.6 rationale/task metadata
+      (`petitions\specs\petition059-specs.yaml:438-453`). This is consistent with the accepted
+      architecture, which allows the portal to reuse the member-list endpoint and existing
+      case-service read APIs without introducing a new public endpoint
+      (`design\solution-architecture-p059-foraeldelse.md:160-165,228-239,258-260,350-365`).
+    freshness: '2026-05-16T19:59:01.5151661+02:00'
+    result: pass
+  - claim: the revised specs package still avoids architecture drift
+    proof: >
+      The module split remains debt-service limitation, case-service objection workflow,
+      wage-garnishment limitation facts, and caseworker-portal limitation panel
+      (`petitions\specs\petition059-specs.yaml:64-503`). That remains aligned with the
+      accepted S1-S4 slice model in the solution architecture
+      (`design\solution-architecture-p059-foraeldelse.md:33-39,89-178`). No case-service-only
+      public endpoint, ownership remap, broker, or cross-service database coupling was added.
+    freshness: '2026-05-16T19:59:01.5151661+02:00'
+    result: pass
+  - claim: the remaining person_id ambiguity is now explicitly bounded rather than left implicit
+    proof: >
+      The specs artifact records the source ambiguity and stays aligned to the explicit FR-1 /
+      OpenAPI field set instead of inventing a new public debtor field
+      (`petitions\specs\petition059-specs.yaml:56-62`). The validation contract now mirrors
+      that stance by validating a no-PII response and requiring any exposed debtor reference to
+      be an opaque UUID only if such a field is present
+      (`petitions\validation\petition059\validation-contract.md:480-490`). This keeps the
+      ambiguity visible as a warning, not a blocker.
+    freshness: '2026-05-16T19:59:01.5151661+02:00'
+    result: warning
+prior_blockers:
+  resolved: true
+  items:
+    - id: SPECS-P059-001
+      resolved: true
+      note: FR-6 decision response now aligns with the outcome contract and OpenAPI.
+    - id: SPECS-P059-002
+      resolved: true
+      note: Portal membership/rationale sourcing is now modeled explicitly.
+warnings:
+  - >
+    Upstream inputs still disagree on whether `person_id` is a public response field or merely
+    the internal non-PII debtor reference. The revised specs and validation contract now handle
+    that ambiguity safely, but the petition/outcome/feature package should still be normalized
+    before implementation sign-off.
+blocking_issues: []
+escalations: []
+next_action: >
+  Petition059 may proceed past the specs-reviewer gate. Carry the `person_id` response-surface
+  ambiguity as a non-blocking alignment item for later requirement/package cleanup.
+handoff_target: specs-minimality-reviewer
+timestamp: '2026-05-16T19:59:01.5151661+02:00'
+findings_count: 1
+blocking_count: 0
+warning_count: 1
+findings:
+  - id: '001'
+    severity: warning
+    area: requirements-consistency
+    description: >
+      `person_id` remains inconsistent across the petition package: some source text suggests a
+      public opaque debtor reference, while the explicit FR-1 DTO/OpenAPI field set omits it.
+      The revised specs and validation contract now treat this safely, but the upstream package
+      should be aligned to one position.
+    evidence:
+      - petitions\specs\petition059-specs.yaml:56-62
+      - petitions\validation\petition059\validation-contract.md:480-490
+      - petitions\petition059-foraeldelse-outcome-contract.md:33-50
+      - petitions\petition059-foraeldelse-outcome-contract.md:367-370
+    fix: >
+      Normalize the petition/feature/outcome wording so it either explicitly includes or
+      explicitly omits a public debtor UUID field, then keep specs/OpenAPI/validation aligned
+      to that single position.

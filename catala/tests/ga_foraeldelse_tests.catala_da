@@ -6,16 +6,19 @@
    G.A. snapshot v3.16, dated 2026-03-28
    Testpakke for: ga_2_4_foraeldelse.catala_da
    Petition: P070 — Catala Compliance Spike — Forældelse G.A.2.4
-   Status: Research spike — ingen produktionskode.
+   Status: Research spike extended for petition059 alignment.
 
-   Denne fil indeholder 18 testscopes der dækker:
+   Denne fil indeholder 25 testscopes der dækker:
    - FR-1.1: 3-årig grundfrist (ForaeldelseTest01)
    - FR-1.2: 10-årig frist ved udlæg + særligt retsgrundlag (ForaeldelseTest02)
    - FR-1.3 grænseværdi: PSRM inddrivelse FØR 2015-11-19 (ForaeldelseTest03)
    - FR-1.3 grænseværdi: PSRM inddrivelse PÅ 2015-11-19 (ForaeldelseTest04)
    - FR-1.3 grænseværdi: PSRM inddrivelse EFTER 2015-11-19 (ForaeldelseTest05)
-   - FR-1.4: DMI/SAP38-udskydelse (ForaeldelseTest06)
+   - FR-1.4 grænseværdi: DMI/SAP38 på 2024-01-01 (ForaeldelseTest06)
+   - FR-1.4 grænseværdi: DMI/SAP38 før 2024-01-01 (ForaeldelseTest06b)
    - FR-1.5: Udskydelse er uforanderlig (ForaeldelseTest07a + ForaeldelseTest07b)
+   - FR-2.3b: isInUdskydelse dag før/på/efter PSRM-grænse (ForaeldelseTest07c-07e)
+   - FR-2.3b: isInUdskydelse dag før/på/efter DMI-grænse (ForaeldelseTest07f-07h)
    - FR-2.1: Berostillelse → NY_FRIST_3_AAR (ForaeldelseTest08)
    - FR-2.2 negativ: LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE (ForaeldelseTest09)
    - FR-2.2 positiv: Lønindeholdelsesafgørelse → NY_FRIST_3_AAR (ForaeldelseTest10)
@@ -161,24 +164,47 @@ scope ForaeldelseTest05:
 
 ---
 
-## Test 6 — FR-1.4: DMI/SAP38-udskydelse (registreringsDato ≥ 2024-01-01)
+## Test 6 — FR-1.4 grænseværdi: DMI/SAP38 på 2024-01-01 får udskydelse
 
-Ref: petition070 TC-6
-GIL § 18a, stk. 1, 2. pkt.: En DMI_SAP38-fordring med registreringsDato |2024-03-01|
-(>= |2024-01-01|) er underlagt DMI/SAP38-udskydelsen. udskydelseDato skal være
-|2027-11-20|.
+Ref: petition070 TC-6 / petition059 FR-2.2
+GIL § 18a, stk. 1, 2. pkt.: Grænseværdidatoen |2024-01-01| er inklusiv. En
+DMI_SAP38-fordring med registreringsDato præcis |2024-01-01| er derfor underlagt
+DMI/SAP38-udskydelsen. udskydelseDato skal være |2027-11-20|.
 
 ```catala
 declaration scope ForaeldelseTest06:
   comp scope UdskydelsesBeregning
 
 scope ForaeldelseTest06:
-  # Test: FR-1.4 — DMI/SAP38-udskydelse → udskydelseDato = |2027-11-20|
+  # Test: FR-1.4 grænseværdi — DMI/SAP38 registreringsDato = |2024-01-01| → udskydelseDato = |2027-11-20|
   # Ref: petition070 TC-6 / ForaeldelseTest06
   definition comp.kildesystem equals DMI_SAP38
-  definition comp.registreringsDato equals |2024-03-01|
-  definition comp.inddrivelsesdato equals |2024-03-01|
+  definition comp.registreringsDato equals |2024-01-01|
+  definition comp.inddrivelsesdato equals |2024-01-01|
   assertion comp.udskydelseDato = |2027-11-20|
+```
+
+---
+
+## Test 6b — FR-1.4 grænseværdi: DMI/SAP38 dagen før 2024-01-01 får ingen udskydelse
+
+Ref: petition059 FR-2.2b
+GIL § 18a, stk. 1, 2. pkt.: En DMI_SAP38-fordring med registreringsDato |2023-12-31|
+ligger før grænseværdien og er derfor IKKE underlagt DMI/SAP38-udskydelsen.
+udskydelseDato forbliver sentinel-værdien |1970-01-01|.
+
+```catala
+declaration scope ForaeldelseTest06b:
+  comp scope UdskydelsesBeregning
+
+scope ForaeldelseTest06b:
+  # Test: FR-1.4 grænseværdi — DMI/SAP38 registreringsDato = |2023-12-31| → ingen udskydelse
+  # Ref: petition059 FR-2.2b / ForaeldelseTest06b
+  definition comp.kildesystem equals DMI_SAP38
+  definition comp.registreringsDato equals |2023-12-31|
+  definition comp.inddrivelsesdato equals |2023-12-31|
+  definition comp.udskydelseDato equals |1970-01-01|
+  assertion comp.udskydelseDato = |1970-01-01|
 ```
 
 ---
@@ -222,6 +248,120 @@ scope ForaeldelseTest07b:
   definition comp.underretningsDato equals |1970-01-01|
   definition comp.retsgrundlag equals ORDINARY
   assertion comp.nyFristUdloeber = |2026-05-31|
+```
+
+---
+
+## Test 7c — FR-2.3b: PSRM dag før udskydelsesdato er stadig i udskydelse
+
+Ref: petition059 FR-2.3b
+`isInUdskydelse` skal være sand når vurderingsdatoen ligger dagen før udskydelsesdatoen.
+
+```catala
+declaration scope ForaeldelseTest07c:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07c:
+  # Test: FR-2.3b — PSRM dagen før |2021-11-20| → isInUdskydelse = true
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07c
+  definition comp.udskydelseDato equals |2021-11-20|
+  definition comp.vurderingsDato equals |2021-11-19|
+  assertion comp.isInUdskydelse = true
+```
+
+---
+
+## Test 7d — FR-2.3b: PSRM på udskydelsesdatoen er ikke længere i udskydelse
+
+Ref: petition059 FR-2.3b
+`isInUdskydelse` ophører på selve udskydelsesdatoen.
+
+```catala
+declaration scope ForaeldelseTest07d:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07d:
+  # Test: FR-2.3b — PSRM på |2021-11-20| → isInUdskydelse = false
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07d
+  definition comp.udskydelseDato equals |2021-11-20|
+  definition comp.vurderingsDato equals |2021-11-20|
+  assertion comp.isInUdskydelse = false
+```
+
+---
+
+## Test 7e — FR-2.3b: PSRM dagen efter udskydelsesdatoen er ikke i udskydelse
+
+Ref: petition059 FR-2.3b
+Når vurderingsdatoen ligger efter udskydelsesdatoen, er udskydelsesvinduet ophørt.
+
+```catala
+declaration scope ForaeldelseTest07e:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07e:
+  # Test: FR-2.3b — PSRM dagen efter |2021-11-20| → isInUdskydelse = false
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07e
+  definition comp.udskydelseDato equals |2021-11-20|
+  definition comp.vurderingsDato equals |2021-11-21|
+  assertion comp.isInUdskydelse = false
+```
+
+---
+
+## Test 7f — FR-2.3b: DMI dagen før udskydelsesdatoen er stadig i udskydelse
+
+Ref: petition059 FR-2.3b
+Den samme tærskeladfærd gælder for DMI/SAP38-udskydelsen.
+
+```catala
+declaration scope ForaeldelseTest07f:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07f:
+  # Test: FR-2.3b — DMI dagen før |2027-11-20| → isInUdskydelse = true
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07f
+  definition comp.udskydelseDato equals |2027-11-20|
+  definition comp.vurderingsDato equals |2027-11-19|
+  assertion comp.isInUdskydelse = true
+```
+
+---
+
+## Test 7g — FR-2.3b: DMI på udskydelsesdatoen er ikke længere i udskydelse
+
+Ref: petition059 FR-2.3b
+`isInUdskydelse` bliver falsk på selve DMI-udskydelsesdatoen.
+
+```catala
+declaration scope ForaeldelseTest07g:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07g:
+  # Test: FR-2.3b — DMI på |2027-11-20| → isInUdskydelse = false
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07g
+  definition comp.udskydelseDato equals |2027-11-20|
+  definition comp.vurderingsDato equals |2027-11-20|
+  assertion comp.isInUdskydelse = false
+```
+
+---
+
+## Test 7h — FR-2.3b: DMI dagen efter udskydelsesdatoen er ikke i udskydelse
+
+Ref: petition059 FR-2.3b
+Efter DMI-udskydelsesdatoen er udskydelsesvinduet afsluttet.
+
+```catala
+declaration scope ForaeldelseTest07h:
+  comp scope UdskydelsesStatus
+
+scope ForaeldelseTest07h:
+  # Test: FR-2.3b — DMI dagen efter |2027-11-20| → isInUdskydelse = false
+  # Ref: petition059 FR-2.3b / ForaeldelseTest07h
+  definition comp.udskydelseDato equals |2027-11-20|
+  definition comp.vurderingsDato equals |2027-11-21|
+  assertion comp.isInUdskydelse = false
 ```
 
 ---
@@ -487,15 +627,22 @@ scope ForaeldelseTest16:
 
 ---
 
-(* Opsummering af testdækning (18 test-scopes):
+(* Opsummering af testdækning (25 test-scopes):
    - FR-1.1 grundfrist:         ForaeldelseTest01 — ORDINARY → fristVarighed=3, nyFristUdloeber=|2025-05-31|
    - FR-1.2 10-årig:            ForaeldelseTest02 — erUdlaeg=true, SAERLIGT → fristVarighed=10, nyFristUdloeber=|2034-04-08|
    - FR-1.3 grænse FØR:        ForaeldelseTest03 — inddrivelsesdato=|2015-11-18| → udskydelseDato=|1970-01-01|
    - FR-1.3 grænse PÅ:         ForaeldelseTest04 — inddrivelsesdato=|2015-11-19| → udskydelseDato=|2021-11-20|
    - FR-1.3 grænse EFTER:      ForaeldelseTest05 — inddrivelsesdato=|2015-11-20| → udskydelseDato=|2021-11-20|
-   - FR-1.4 DMI:                ForaeldelseTest06 — DMI_SAP38, registreringsDato=|2024-03-01| → udskydelseDato=|2027-11-20|
+   - FR-1.4 DMI PÅ:             ForaeldelseTest06 — registreringsDato=|2024-01-01| → udskydelseDato=|2027-11-20|
+   - FR-1.4 DMI FØR:            ForaeldelseTest06b — registreringsDato=|2023-12-31| → udskydelseDato=|1970-01-01|
    - FR-1.5 immutabilitet A:    ForaeldelseTest07a — PSRM inddrivelse=|2020-01-01| → udskydelseDato=|2021-11-20|
    - FR-1.5 immutabilitet B:    ForaeldelseTest07b — BEROSTILLELSE post-udskydelse → nyFristUdloeber=|2026-05-31|
+   - FR-2.3b PSRM før:          ForaeldelseTest07c — vurderingsDato=|2021-11-19| → isInUdskydelse=true
+   - FR-2.3b PSRM på:           ForaeldelseTest07d — vurderingsDato=|2021-11-20| → isInUdskydelse=false
+   - FR-2.3b PSRM efter:        ForaeldelseTest07e — vurderingsDato=|2021-11-21| → isInUdskydelse=false
+   - FR-2.3b DMI før:           ForaeldelseTest07f — vurderingsDato=|2027-11-19| → isInUdskydelse=true
+   - FR-2.3b DMI på:            ForaeldelseTest07g — vurderingsDato=|2027-11-20| → isInUdskydelse=false
+   - FR-2.3b DMI efter:         ForaeldelseTest07h — vurderingsDato=|2027-11-21| → isInUdskydelse=false
    - FR-2.1 berostillelse:      ForaeldelseTest08 — BEROSTILLELSE, PSRM → NY_FRIST_3_AAR, nyFristUdloeber=|2027-02-14|
    - FR-2.2 negativ:            ForaeldelseTest09 — LOENINDEHOLDELSE_VARSEL → AFVIST_VARSEL_ALENE
    - FR-2.2 positiv:            ForaeldelseTest10 — LOENINDEHOLDELSE_AFGOERELSE registreret → NY_FRIST_3_AAR, nyFristUdloeber=|2027-06-20|
@@ -511,6 +658,7 @@ scope ForaeldelseTest16:
    - Varsel/afgørelse-distinktion:   ForaeldelseTest09 (AFVIST) + ForaeldelseTest10 (NY_FRIST_3_AAR)
    - Fordringskompleks atomicitet:   ForaeldelseTest12
    - Udskydelse immutabilitet:       ForaeldelseTest07a + ForaeldelseTest07b
+   - Udskydelses-statusgrænser:      ForaeldelseTest07c-07h
    - Forgæves udlæg ligestilling:    ForaeldelseTest11a + ForaeldelseTest11b (identiske outputs)
    - Tillægsfrist max() branches:    ForaeldelseTest13 (branch A) + ForaeldelseTest14 (branch B)
 

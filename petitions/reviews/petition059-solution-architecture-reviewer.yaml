@@ -1,0 +1,100 @@
+petition_id: petition059
+agent: solution-architecture-reviewer
+status: approved
+verdict: ACCEPT
+summary: 'Accept. The current remediated architecture package closes the three ESC-057
+  blockers: the external limitation contract now matches the petition/outcome package,
+  FR-4 public membership operations are present, and public FR-6 commands reject caller-supplied
+  identity/debtor fields while debt-service derives them server-side before delegating
+  to case-service. The package is fit to pass the architecture gate.'
+artifacts:
+- petitions\petition059-foraeldelse.md
+- petitions\petition059-foraeldelse-outcome-contract.md
+- petitions\petition059-foraeldelse.feature
+- petitions\petition059_map.yaml
+- design\solution-architecture-p059-foraeldelse.md
+- architecture\adr\*.md
+- architecture\policies.yaml
+- architecture\workspace.dsl
+- api-specs\openapi-debt-service-limitation.yaml
+- api-specs\openapi-case-service-limitation-internal.yaml
+- api-specs\openapi-wage-garnishment-service-internal.yaml
+- petitions\reviews\petition059-solution-architecture-reviewer.yaml
+- petitions\program-status.yaml
+evidence_checked:
+- claim: external limitation contract matches petition and outcome contract
+  proof: Petition and outcome contract require fordringId, currentFristExpires, udskydelseDato,
+    isInUdskydelse, retsgrundlag, afbrydelseHistory, tillaegsfristHistory, and propagated
+    sourceFordringId/targetFordringId (petitions/petition059-foraeldelse.md:186-209,
+    276-294; petitions/petition059-foraeldelse-outcome-contract.md:31-50, 167-182,
+    220-255). The current public OpenAPI exposes exactly that field set in LimitationStatus
+    and AfbrydelseEvent (api-specs/openapi-debt-service-limitation.yaml:225-299).
+  freshness: '2026-05-16T18:07:40.910651+02:00'
+  result: pass
+- claim: FR-4 public membership operations are present and traceable
+  proof: Petition059 requires ownership-neutral create/add/list membership operations
+    (petitions/petition059-foraeldelse.md:276-295; petitions/petition059-foraeldelse.feature:216-258;
+    petitions/petition059-foraeldelse-outcome-contract.md:142-179). The current design
+    and public OpenAPI define POST /api/v1/fordringskompleks, POST /api/v1/fordringskompleks/{kompleksId}/members/{fordringId},
+    and GET /api/v1/fordringskompleks/{kompleksId}/members (design/solution-architecture-p059-foraeldelse.md:224-240,
+    474-479; api-specs/openapi-debt-service-limitation.yaml:81-127).
+  freshness: '2026-05-16T18:07:40.910651+02:00'
+  result: pass
+- claim: FR-6 public security and audit model is enforceable
+  proof: Petition and outcome contract forbid caller-supplied registeredBy, decidedBy,
+    and debtorPersonId on the public command surface and require server-side derivation
+    (petitions/petition059-foraeldelse.md:305-335, 363-374, 476-479; petitions/petition059-foraeldelse-outcome-contract.md:13-18,
+    215-255). The public debt-service OpenAPI now limits registration to optional
+    note and decision to outcome plus rationale, rejects invalid public input, and
+    documents server-side derivation; the internal case-service API accepts authoritative
+    derived values from debt-service only (api-specs/openapi-debt-service-limitation.yaml:8-11,
+    128-180, 353-379; api-specs/openapi-case-service-limitation-internal.yaml:4-8,
+    72-136; design/solution-architecture-p059-foraeldelse.md:310-349, 375-380, 476-479).
+  freshness: '2026-05-16T18:07:40.910651+02:00'
+  result: pass
+- claim: ownership, DSL, and deployment evidence remain coherent after remediation
+  proof: The ownership map keeps FR-6 workflow ownership in case-service with debt-service
+    as secondary state-mutation owner (petitions/petition059_map.yaml:286-324). The
+    design and workspace DSL both model debt-service as the external limitation facade
+    delegating to case-service, with CLS relations and a production deployment view
+    present (design/solution-architecture-p059-foraeldelse.md:310-349, 472-479, 487-583;
+    architecture/workspace.dsl:173-181, 233-251, 256-331). This satisfies the previously
+    revalidated ownership boundary while keeping ARCH-005 closed.
+  freshness: '2026-05-16T18:07:40.910651+02:00'
+  result: pass
+- claim: ESC-057 is closed from reviewer perspective
+  proof: The three reasons recorded in ESC-057 were contract drift, missing FR-4 membership
+    operations, and caller-supplied FR-6 identity/debtor fields (petitions/program-status.yaml:3037-3057).
+    Current artifacts now close each blocker and the reviewer agrees with the status=resolved
+    escalation record.
+  freshness: '2026-05-16T18:07:40.910651+02:00'
+  result: pass
+warnings:
+- ADR-0038 remains Proposed rather than Accepted (architecture/adr/0038-prescription-objection-workflow-boundary.md:1-9).
+  It documents the remediated boundary correctly, but formal ADR acceptance should
+  still be completed as governance follow-through.
+- The design still notes two P070 implementation-signoff coverage gaps (design/solution-architecture-p059-foraeldelse.md:411-416).
+  These are non-blocking for this architecture gate but must be closed before implementation
+  sign-off.
+escalations:
+- id: ESC-057
+  reviewer_perspective: closed
+  reason: The remediated package closes the previously blocking contract, FR-4, and
+    FR-6 issues. No remaining blocker in the current evidence set requires keeping
+    ESC-057 open.
+next_action: Proceed to the next gate. Keep ADR-0038 acceptance and the P070 coverage
+  gaps as follow-up governance items, not architecture blockers.
+handoff_target: implementation-doc-sync
+timestamp: '2026-05-16T18:07:40.910651+02:00'
+findings_count: 2
+blocking_count: 0
+findings:
+- id: '001'
+  severity: warning
+  description: ADR-0038 is still Proposed. The boundary is now coherent, but governance
+    should formally accept or reject the ADR rather than leaving the remediation decision
+    provisional.
+- id: '002'
+  severity: warning
+  description: P070 coverage gaps remain noted in the design narrative for later implementation
+    sign-off. They do not block the petition059 architecture package itself.

@@ -192,7 +192,15 @@ Response: ForaeldelseStatusDto {
     isInUdskydelse: boolean,
     retsgrundlag: ORDINARY | SAERLIGT_RETSGRUNDLAG,
     afbrydelseHistory: [
-        { type, eventDate, legalReference, newFristExpires }
+        {
+            type,
+            eventDate,
+            legalReference,
+            newFristExpires,
+            sourceFordringId?: UUID,
+            targetFordringId?: UUID,
+            propagationReason?: FORDRINGSKOMPLEKS_PROPAGATION
+        }
     ],
     tillaegsfristHistory: [
         { type, appliedDate, extensionYears, newFristExpires }
@@ -200,6 +208,9 @@ Response: ForaeldelseStatusDto {
     status: ACTIVE | FORAELDET | INDSIGELSE_PENDING
 }
 ```
+
+This public read contract is ownership-neutral: the listed observable fields are mandatory
+regardless of which internal service ultimately owns or serves the capability.
 
 ### FR-2: Udskydelse — system-specific start-date rules (GIL § 18a, stk. 1 / G.A.2.4.1)
 
@@ -211,6 +222,13 @@ based on source system and registration date:
 - **DMI/SAP38 fordringer** registered on 2024-01-01 or later: `udskydelseDato = 2027-11-20`.
   No forældelsesfrist can expire before 2030-11-21.
 - Fordringer outside these ranges follow the ordinary forældelsesfrist calculation.
+- The boundary dates are mandatory parts of the requirement surface:
+  - PSRM registration on 2015-11-18 yields no PSRM udskydelse, while registration on
+    2015-11-19 yields `udskydelseDato = 2021-11-20`.
+  - DMI/SAP38 registration on 2023-12-31 yields no DMI/SAP38 udskydelse, while registration
+    on 2024-01-01 yields `udskydelseDato = 2027-11-20`.
+- `isInUdskydelse` is `true` only while the current date is before `udskydelseDato`; it turns
+  `false` on `udskydelseDato` itself and remains `false` after that date.
 
 Udskydelse is a one-time, non-mutable start-date rule. Once set at registration, it cannot
 be changed by subsequent afbrydelse events. It prevents the clock from starting; it does
@@ -277,6 +295,13 @@ Membership management:
 - `POST /fordringskompleks` — create a new kompleks with initial members.
 - `POST /fordringskompleks/{kompleksId}/members/{fordringId}` — add a member.
 - `GET /fordringskompleks/{kompleksId}/members` — list all members.
+- If a tomt fordringskompleks is received into inddrivelse, the service shall record a
+  provisional interruption with legal reference `GIL § 18a, stk. 7` and set
+  `currentFristExpires = receiptDate + 3 years`.
+
+These create/add/list operations are mandatory parts of the external FR-4 contract. The
+architecture may place them behind any owning service, but the public requirement package
+shall preserve these operations and their observable outcomes.
 
 ### FR-5: Tillægsfrister (G.A.2.4.4.2)
 
@@ -292,8 +317,15 @@ shall be added to the running forældelsesfrist. The `ForaeldelseService` shall:
 A debtor may formally assert that a fordring is forældet. The service shall support a
 two-step caseworker workflow:
 
+Public indsigelse commands are ownership-neutral and shall not accept caller-supplied
+`registeredBy`, `decidedBy`, or `debtorPersonId` fields. `registeredBy` and `decidedBy`
+shall be derived from authenticated server-side context, and `debtorPersonId` shall be
+derived from the authoritative claim state for the addressed `fordringId`.
+
 **Step 1 — Registration:**
 - Endpoint: `POST /foraeldelse/{fordringId}/indsigelse`
+- Any caller-supplied `registeredBy`, `decidedBy`, or `debtorPersonId` input is rejected as
+  invalid public command input.
 - The fordring's status transitions to `INDSIGELSE_PENDING`.
 - Inddrivelse activities on the fordring are flagged for caseworker review.
 - The indsigelse is assigned a unique `indsigelsesId` and logged.
@@ -301,6 +333,8 @@ two-step caseworker workflow:
 **Step 2 — Evaluation:**
 - Endpoint: `PUT /foraeldelse/{fordringId}/indsigelse/{indsigelsesId}`
 - Request body: `{ outcome: VALID | INVALID, rationale: string }`
+- Any caller-supplied `registeredBy`, `decidedBy`, or `debtorPersonId` input is rejected as
+  invalid public command input.
 - If `outcome = VALID`:
   - Fordring status transitions to `FORAELDET`.
   - Fordring lifecycle transitions to a terminal state (removed from inddrivelse).
@@ -317,8 +351,8 @@ forældelsesstatus panel containing:
 - **Current status:** `Aktiv` / `Forældet` / `Indsigelse under behandling`.
 - **Forældelsesfrist udløber:** The computed next expiry date.
 - **Udskydelse:** Whether the fordring is in an udskydelse window and the applicable date.
-- **Afbrydelse history:** A chronological table with type, date, and legal reference for
-  each registered afbrydelse event.
+- **Afbrydelse history:** A chronological table with type, date, legal reference, resulting
+  new frist, and, for propagated events, `sourceFordringId` and `targetFordringId`.
 - **Fordringskompleks membership:** Whether the fordring is part of a kompleks and which
   other fordringer are members.
 - **Indsigelse:** A button to register a forældelsesindsigelse; a form to evaluate a
@@ -340,6 +374,8 @@ access shall see the panel but cannot register afbrydelse events or evaluate ind
   propagation, tillægsfrister application, indsigelse registration, and indsigelse evaluation
   shall be logged to the audit log (CLS) with: caseworker or system identity, timestamp,
   fordringId, event type, and the applicable legal reference (GIL/forældelsesl. section).
+  Audit identity fields are server-derived from authenticated context and are never accepted
+  as caller-supplied public command fields.
 
 - **NFR-3: GDPR — no PII in forældelses tables.** All `ForaeldelseRecord`,
   `AfbrydelseEvent`, `TillaegsfristEvent`, `FordringskompleksLink`, and
@@ -379,6 +415,11 @@ access shall see the panel but cannot register afbrydelse events or evaluate ind
 - **GIL § 18a, stk. 2 / G.A.2.4.2:** Fordringskompleks membership is determined under GIL
   § 18a, stk. 2. Membership shall not be inferred from obligationId alone without explicit
   GIL § 18a, stk. 2 linkage registered in `FordringskompleksLink`.
+
+- **Ownership-neutral external contract:** This petition defines public capability and
+  observable contract only. It must not be rewritten into case-service-only public endpoints;
+  architecture remains free to assign implementation ownership without changing the external
+  requirement surface defined here.
 
 - **G.A.2.4.4.1 lønindeholdelse inactivity:** If lønindeholdelse has been inactive for
   ≥ 1 year, a new 3-year frist starts. The system must track lønindeholdelse activity state
@@ -432,16 +473,22 @@ access shall see the panel but cannot register afbrydelse events or evaluate ind
 
 - `ForaeldelseService` calculates `currentFristExpires` correctly for all cases: PSRM
   ordinary, DMI/SAP38, særligt retsgrundlag, with and without afbrydelse events.
-- Udskydelse rules (GIL § 18a, stk. 1) applied correctly at fordring registration; no
-  PSRM fordring (from 19-11-2015) has a forældelsesfrist commencing before 2021-11-20.
+- Udskydelse rules (GIL § 18a, stk. 1) applied correctly at fordring registration; PSRM and
+  DMI/SAP38 threshold dates are covered explicitly (day before threshold = no udskydelse;
+  threshold day = fixed udskydelse), and no PSRM fordring (from 19-11-2015) has a
+  forældelsesfrist commencing before 2021-11-20.
 - All four afbrydelse event types are registered with correct date logic and legal references.
 - Lønindeholdelse varsel alone is rejected (HTTP 422); only confirmed afgørelse afbryder.
 - Forgæves udlæg is treated identically to successful udlæg for afbrydelse purposes.
 - Udlæg on særligt retsgrundlag fordring sets a new 10-year frist.
 - Fordringskompleks afbrydelse propagation is atomic and logged with GIL § 18a, stk. 2 reference.
+- FR-4 membership management exposes create/add/list operations and propagated afbrydelse
+  history retains `sourceFordringId` and `targetFordringId` in the external read contract;
+  tomt fordringskompleks reception creates a provisional interruption under `GIL § 18a, stk. 7`.
 - Tillægsfrister (2-year extension) applied correctly on `INTERN_OPSKRIVNING` event.
 - Forældelsesindsigelse workflow: register → evaluate (VALID removes from inddrivelse;
-  INVALID returns to ACTIVE) — all steps audited.
+  INVALID returns to ACTIVE) — all steps audited, with `registeredBy`/`decidedBy` derived
+  server-side and `debtorPersonId` derived from authoritative claim state.
 - `GET /foraeldelse/{fordringId}` returns correct `ForaeldelseStatusDto` with full history.
 - Sagsbehandlerportal displays forældelsesstatus panel with history and indsigelse controls.
 - No CPR or PII in forældelses-service entities or API responses — only `person_id` UUID.

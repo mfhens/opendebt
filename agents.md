@@ -7,6 +7,7 @@ Guidelines for AI agents (GitHub Copilot, ChatGPT, Claude, etc.) on OpenDebt cod
 OpenDebt: open-source debt collection for Danish public institutions. Replaces EFI/DMI; PSRM-compatible architecture.
 
 ### Key Characteristics
+
 - **Language**: Java 21, Spring Boot 3.3
 - **Architecture**: Microservices on Kubernetes
 - **API Style**: REST with OpenAPI 3.1
@@ -17,9 +18,11 @@ OpenDebt: open-source debt collection for Danish public institutions. Replaces E
 ## Tools
 
 ### Diagrams
+
 Use **Mermaid** for all diagrams (architecture, ER, flowcharts, sequence diagrams). Embed with ` ```mermaid ` blocks in Markdown. Do NOT use ASCII art or draw.io.
 
 ### External API and SDK Documentation
+
 For third-party libs/SDKs/APIs, use local Claude skill `~/.claude/skills/get-api-docs/` and `chub` workflow — don't rely on remembered API shapes.
 
 - Use `chub search "<library or API name>"` to find correct documentation ID
@@ -28,7 +31,9 @@ For third-party libs/SDKs/APIs, use local Claude skill `~/.claude/skills/get-api
 - Save concise local notes with `chub annotate <id> "..."`
 
 ### Documentation Maintenance (CRITICAL)
+
 **On every source change, check/update docs if affected:**
+
 - `architecture/overview.md` - Service inventory, implementation status, diagrams, endpoint lists
 - `docs/development-process-rules-and-workflows.md` - Rules and workflow development process
 - `agents.md` - ADR references, package structure, patterns
@@ -41,9 +46,11 @@ For third-party libs/SDKs/APIs, use local Claude skill `~/.claude/skills/get-api
 Doc site built with MkDocs (`mkdocs.yml` at root). Preview: `mkdocs serve`.
 
 ### Memory MCP Synchronisation
+
 **When `petitions/program-status.yaml` or `architecture/adr/` updated, sync to memory MCP knowledge graph** (if available).
 
 Update memory when:
+
 - New ADR added or status changes → create or update entity for ADR
 - TB-* item added, completed, or blocked → update relevant entity
 - Petition status changes (e.g. `not_started` → `implemented`) → update petition entity
@@ -65,6 +72,7 @@ Use `memory-create_entities` for new items, `memory-add_observations` / `memory-
 | Email/Phone | Person Registry (encrypted) | Nothing |
 
 **When creating new entities:**
+
 ```java
 // CORRECT - reference by technical ID
 @Column(name = "debtor_person_id", nullable = false)
@@ -158,6 +166,7 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {} // In d
 **For i18n message bundles** (`messages_*.properties`): each locale file written entirely in its target language. Begrebsmodel Danish terms are source concepts. New locale bundles must include header comment mapping terms back to begrebsmodel.
 
 ### Package Structure
+
 ```
 dk.ufst.opendebt.<service>/
 ├── config/          # Spring configuration
@@ -229,6 +238,7 @@ dk.ufst.opendebt.debtservice.offsetting/
 ```
 
 Key invariants in `offsetting/`:
+
 - `renteGodtgoerelseNonTaxable` is ALWAYS `true` (GIL SS 8b; hardcoded, never configurable)
 - No CPR/PII in entities — `UUID debtorPersonId` only (ADR-0014)
 - Idempotency via `nemkontoReferenceId` unique constraint (AC-5)
@@ -260,6 +270,7 @@ dk.ufst.opendebt.common/
 ```
 
 ### Naming Conventions
+
 - **Classes**: PascalCase (`DebtController`, `CaseService`)
 - **Methods**: camelCase (`createDebt`, `validateReadiness`)
 - **Constants**: SCREAMING_SNAKE_CASE (`MAX_DEBT_AMOUNT`)
@@ -268,6 +279,7 @@ dk.ufst.opendebt.common/
 - **JSON fields**: camelCase (`debtorId`, `principalAmount`)
 
 ### API Design
+
 ```java
 @RestController
 @RequestMapping("/api/v1/debts")
@@ -284,7 +296,9 @@ public class DebtController {
 ```
 
 ### Security Annotations
+
 Use Spring Security annotations:
+
 ```java
 @PreAuthorize("hasRole('CASEWORKER')")           // Role check
 @PreAuthorize("hasAuthority('SCOPE_read:debts')") // Scope check
@@ -292,7 +306,9 @@ Use Spring Security annotations:
 ```
 
 ### Error Handling
+
 Use common exception hierarchy:
+
 ```java
 throw new OpenDebtException(
     "Debt not found: " + id,
@@ -308,6 +324,7 @@ throw new OpenDebtException(
 ## Testing Requirements
 
 ### Unit Tests
+
 - Minimum 80% line coverage, 70% branch coverage
 - Use JUnit 5 and Mockito
 - Test business logic in isolation
@@ -346,12 +363,14 @@ static final ArchRule clients_must_use_injected_webclient_builder =
 See `CreditorArchitectureTest` (layered architecture + shared rules) and `PortalArchitectureTest` (WebClient guard) for reference.
 
 ### Integration Tests
+
 - Use Testcontainers for external dependencies
 - Test API contracts against OpenAPI specs
 
 ## CI/CD Pipeline
 
 ### Required Checks
+
 1. `spotless:check` - Code formatting
 2. `test` - Unit tests
 3. `verify` - Integration tests + coverage
@@ -361,6 +380,7 @@ See `CreditorArchitectureTest` (layered architecture + shared rules) and `Portal
 **Scheduled / manual:** `dependency-check:check` (OWASP) runs weekly + workflow dispatch — see `.github/workflows/owasp-dependency-check.yml`. Not on every push (too slow).
 
 ### Before Committing
+
 ```bash
 mvn spotless:apply    # Fix formatting
 mvn verify            # Run all checks
@@ -369,18 +389,24 @@ mvn verify            # Run all checks
 ## External Integrations
 
 ### DUPLA (API Gateway)
+
 All external APIs via DUPLA:
+
 - Define OpenAPI spec first
 - Use OCES3 certificates for system-to-system
 - Log all calls to CLS
 
 ### TastSelv Integration
+
 Citizen portal integrates with TastSelv for authentication:
+
 - MitID login flow
 - Token exchange for internal services
 
 ### Digital Post
+
 Letters sent via Digital Post:
+
 - Check recipient status before sending
 - Fallback to physical mail if needed
 
@@ -420,6 +446,7 @@ WebClient client = webClientBuilder.build();
 ```
 
 ### Pagination
+
 ```java
 @GetMapping
 public ResponseEntity<Page<DebtDto>> listDebts(
@@ -430,7 +457,9 @@ public ResponseEntity<Page<DebtDto>> listDebts(
 ```
 
 ### Audit Infrastructure
+
 Entities should extend `AuditableEntity` from opendebt-common:
+
 ```java
 @Entity
 public class MyEntity extends AuditableEntity {
@@ -443,6 +472,7 @@ public class MyEntity extends AuditableEntity {
 `AuditableEntity` provides: `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `version`.
 
 For CLS integration, events shipped via `ClsAuditClient`:
+
 ```yaml
 opendebt:
   audit:
@@ -453,6 +483,7 @@ opendebt:
 ## ADR References
 
 Reference existing ADRs for architectural decisions:
+
 - ADR-0002: Microservices Architecture
 - ADR-0003: Java/Spring Boot Stack
 - ADR-0004: API-First Design
@@ -488,7 +519,9 @@ Reference existing ADRs for architectural decisions:
 ## Standard Components
 
 ### Rules Engine (Drools)
+
 Use Drools for business rules:
+
 - Debt readiness validation (indrivelsesparathed)
 - Interest calculation
 - Collection priority for offsetting
@@ -500,11 +533,14 @@ DebtReadinessResult result = rulesService.evaluateReadiness(request);
 ```
 
 Rules in:
+
 - `.drl` files for complex rules (developers)
 - `.xlsx` Excel decision tables for simple rules (business analysts)
 
 ### Workflow Engine (Flowable)
+
 Use Flowable for case management workflow:
+
 - BPMN 2.0 process definitions in `processes/*.bpmn20.xml`
 - Service tasks for automated actions (delegates)
 - User tasks for caseworker/supervisor actions
@@ -522,6 +558,7 @@ workflowService.completeTask(taskId, variables);
 ## Do's and Don'ts
 
 ### Do
+
 - Follow existing patterns
 - **Financial transactions (ADR-0018):** On changes with financial effect (balances, payments, interest, offsetting, write-offs, refunds, corrections), ensure **double-entry postings** land in payment-service (`BookkeepingService` / ledger) or document explicit **ADR exception**. Service-local journals alone insufficient for statutory accounting.
 - Write OpenAPI specs before implementing endpoints
@@ -536,6 +573,7 @@ workflowService.completeTask(taskId, variables);
 - Update `architecture/overview.md` when adding/changing services, endpoints, entities, or migrations
 
 ### Don't
+
 - **Record financial effects only in service-local tables** (e.g. interest journals) **without** corresponding ledger posting plan to payment-service — see ADR-0018 amendment #3
 - Store CPR, CVR, names, addresses outside Person Registry
 - Access other services' databases directly
@@ -561,6 +599,7 @@ Track non-blocking tech debt/refactoring/improvements with `AIDEV-` comments:
 ```
 
 **Comment types:**
+
 - `AIDEV-TODO` - Work that should be done but isn't blocking
 - `AIDEV-REFACTOR` - Code that works but should be restructured
 - `AIDEV-PERF` - Performance improvement opportunities
@@ -568,12 +607,12 @@ Track non-blocking tech debt/refactoring/improvements with `AIDEV-` comments:
 - `AIDEV-TEST` - Missing test coverage
 
 **Workflow:**
+
 1. Reviewer droids (`code-reviewer-strict`, `solution-architecture-reviewer`) add AIDEV comments
 2. `backlog-planner` can scan for AIDEV comments and propose technical_backlog items; also posts new TB items to wasteland `wanted` table (see **Wasteland Integration → New items**)
 3. `tech-debt-executor` implements items from technical_backlog
 
 Collected into `petitions/program-status.yaml` under `technical_backlog`.
-
 
 ## C4 Architecture Governance
 
@@ -694,11 +733,13 @@ Project uses local dual-graph MCP server for efficient context retrieval.
 **Call `graph_continue` ONLY when NOT already knowing relevant files.**
 
 **Call when:**
+
 - First message of new task / conversation
 - Task shifts to different codebase area
 - Need files not yet read this session
 
 **SKIP when:**
+
 - Already identified relevant files this conversation
 - Follow-up work on already-read files (verify, refactor, test, docs, cleanup, commit)
 - Pure text task (commit message, summary, explanation)
@@ -759,18 +800,10 @@ Append decisions/tasks/blockers to `.dual-graph/context-store.json`.
 Read → add entry → write back → call `graph_register_edit` on `.dual-graph/context-store.json`.
 
 Rules:
+
 - Only log things worth remembering across sessions
 - `content` max 15 words
 - Log immediately — not at session end
-
-### Session End (Dual-Graph)
-
-When user signals done (e.g. "bye", "done", "wrap up"), update `CONTEXT.md` in project root:
-- **Current Task**: one sentence
-- **Key Decisions**: bullet list, max 3
-- **Next Steps**: bullet list, max 3
-
-Keep `CONTEXT.md` under 20 lines. Only what's needed to resume next session.
 
 ## Session Completion
 
@@ -782,6 +815,7 @@ Keep `CONTEXT.md` under 20 lines. Only what's needed to resume next session.
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - MANDATORY:
+
    ```bash
    git pull --rebase
    bd dolt push
@@ -789,13 +823,22 @@ Keep `CONTEXT.md` under 20 lines. Only what's needed to resume next session.
    git push
    git status  # MUST show "up to date with origin"
    ```
+
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work NOT complete until `git push` succeeds
 - NEVER stop before pushing - leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until success
 <!-- END BEADS INTEGRATION -->
+
+<!-- lean-ctx -->
+## lean-ctx
+
+Prefer lean-ctx MCP tools over native equivalents for token savings.
+Full rules: @LEAN-CTX.md
+<!-- /lean-ctx -->

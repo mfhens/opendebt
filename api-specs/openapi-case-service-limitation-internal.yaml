@@ -1,0 +1,135 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Case Service Limitation Workflow Internal API
+  description: |
+    Internal workflow contract used by debt-service to register and evaluate limitation objections
+    while case-service remains the owner of workflow state and decision lifecycle.
+    `registeredBy`, `decidedBy`, and `debtorPersonId` are authoritative values derived by
+    debt-service from authenticated context and claim state before the internal call is made.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+servers:
+  - url: http://opendebt-case-service:8081
+    description: Internal cluster service
+security:
+  - bearerAuth: []
+tags:
+  - name: Limitation Objection Workflow
+    description: Internal limitation-objection workflow operations
+paths:
+  /api/internal/v1/limitation-objections:
+    post:
+      tags: [Limitation Objection Workflow]
+      summary: Register a limitation objection workflow
+      operationId: registerLimitationObjectionWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitationObjectionWorkflowRegistrationRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationObjectionWorkflowResponse'
+  /api/internal/v1/limitation-objections/{indsigelsesId}/decision:
+    put:
+      tags: [Limitation Objection Workflow]
+      summary: Record the authoritative workflow decision
+      operationId: decideLimitationObjectionWorkflow
+      parameters:
+        - name: indsigelsesId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitationObjectionWorkflowDecisionRequest'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationObjectionWorkflowDecisionResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LimitationObjectionWorkflowRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [fordringId, debtorPersonId, registeredBy]
+      properties:
+        fordringId:
+          type: string
+          format: uuid
+        debtorPersonId:
+          type: string
+          format: uuid
+        registeredBy:
+          type: string
+        sourceSurface:
+          type: string
+          enum: [LIMITATION_SURFACE]
+        sourceReference:
+          type: string
+    LimitationObjectionWorkflowResponse:
+      type: object
+      additionalProperties: false
+      required: [indsigelsesId, workflowCaseId, workflowStatus]
+      properties:
+        indsigelsesId:
+          type: string
+          format: uuid
+        workflowCaseId:
+          type: string
+          format: uuid
+        workflowStatus:
+          type: string
+          enum: [REGISTERED, UNDER_REVIEW]
+    LimitationObjectionWorkflowDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [outcome, rationale, decidedBy]
+      properties:
+        outcome:
+          type: string
+          enum: [VALID, INVALID]
+        rationale:
+          type: string
+        decidedBy:
+          type: string
+    LimitationObjectionWorkflowDecisionResponse:
+      type: object
+      additionalProperties: false
+      required: [indsigelsesId, workflowCaseId, workflowStatus, authoritativeOutcome]
+      properties:
+        indsigelsesId:
+          type: string
+          format: uuid
+        workflowCaseId:
+          type: string
+          format: uuid
+        workflowStatus:
+          type: string
+          enum: [VALID, INVALID, CLOSED]
+        authoritativeOutcome:
+          type: string
+          enum: [VALID, INVALID]
+        decidedAt:
+          type: string
+          format: date-time

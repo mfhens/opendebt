@@ -1,0 +1,133 @@
+petition_id: petition059
+agent: specs-minimality-reviewer
+status: success
+verdict: APPROVED
+summary: >
+  Approved. The revised package closes both prior blockers: the portal spec now traces the FR-7.3
+  claim-complex membership read input explicitly, and VAL-P059-047 now stays on observable API
+  behaviour instead of persisted-state inspection. Scenario-to-validation coverage remains exact at
+  49/49 with no extra validation sections.
+artifacts:
+  - petitions\petition059-foraeldelse.md
+  - petitions\petition059-foraeldelse-outcome-contract.md
+  - petitions\petition059-foraeldelse.feature
+  - petitions\specs\petition059-specs.yaml
+  - petitions\validation\petition059\validation-contract.md
+  - petitions\reviews\petition059-catala-encoder.yaml
+  - petitions\reviews\petition059-specs-minimality-reviewer.yaml
+evidence_checked:
+  - claim: all mandatory review inputs were present and readable
+    proof: >
+      This run re-inspected the petition, outcome contract, feature file, revised specs artifact,
+      revised validation contract, prior catala-encoder evidence, and the prior minimality review
+      artifact.
+    freshness: '2026-05-16T19:59:32.6882320+02:00'
+    result: pass
+  - claim: validation keeps one assertion entry per Gherkin scenario and adds no extra sections
+    proof: >
+      `petitions/petition059-foraeldelse.feature` contains 49 `Scenario`/`Scenario Outline`
+      headings, and `petitions/validation/petition059/validation-contract.md` contains 49
+      `VAL-P059-*` sections in this run.
+    freshness: '2026-05-16T19:59:32.6882320+02:00'
+    result: pass
+  - claim: prior blocker SMR-P059-001 is resolved
+    proof: >
+      The portal module now declares `GET /api/v1/fordringskompleks/{kompleksId}/members` as an
+      upstream dependency and adds a read-enrichment note that FR-7.3 membership rendering uses the
+      existing claim-complex identifier from the surrounding claim-detail context
+      (`petitions/specs/petition059-specs.yaml:438-448`). That closes the previous missing-input
+      trace for FR-7.3 (`petitions/petition059-foraeldelse.feature:404-414`).
+    freshness: '2026-05-16T19:59:32.6882320+02:00'
+    result: pass
+  - claim: prior blocker SMR-P059-002 is resolved
+    proof: >
+      VAL-P059-047 now validates only the visible API response and explicitly avoids requiring a
+      new public debtor field beyond the current DTO/OpenAPI surface
+      (`petitions/validation/petition059/validation-contract.md:480-490`). The earlier persisted
+      data inspection clause is gone, restoring alignment with the observable-only outcome
+      guardrail (`petitions/petition059-foraeldelse-outcome-contract.md:13-18`).
+    freshness: '2026-05-16T19:59:32.6882320+02:00'
+    result: pass
+  - claim: the main spec package remains lean and testable after revision
+    proof: >
+      The debt-service limitation module still stays on petition/outcome-visible commands and
+      fields, while the portal module now adds only the minimum traceability needed to satisfy
+      FR-7.3 and FR-7.6 without introducing new public contract surface
+      (`petitions/specs/petition059-specs.yaml:60-280,424-484`).
+    freshness: '2026-05-16T19:59:32.6882320+02:00'
+    result: pass
+warnings:
+  - >
+    Source ambiguity still remains on whether public limitation responses expose `person_id`
+    (`petitions/specs/petition059-specs.yaml:59-62`;
+    `petitions/validation/petition059/validation-contract.md:490`). The revised package handles it
+    safely by constraining observable no-PII behaviour without inventing a new public field, but
+    the upstream source contract is still not fully crisp.
+  - >
+    The large generic `nfr_injection_summary` and `register_refs` blocks remain traceability
+    metadata rather than acceptance behaviour (`petitions/specs/petition059-specs.yaml:15-55,239-268,321-345,483-490`).
+    They are non-blocking now, but any further expansion would push the spec package back toward
+    register-dump bloat.
+blocking_issues: []
+prior_blockers:
+  - id: SMR-P059-001
+    title: Portal membership input trace is incomplete for FR-7.3
+    resolved: true
+    resolution_evidence: >
+      Revised portal inputs now include `GET /api/v1/fordringskompleks/{kompleksId}/members` plus
+      explicit FR-7.3 read-enrichment guidance (`petitions/specs/petition059-specs.yaml:438-448`).
+  - id: SMR-P059-002
+    title: VAL-P059-047 validates persisted data instead of observable behaviour
+    resolved: true
+    resolution_evidence: >
+      Revised VAL-P059-047 checks only visible API behaviour and explicitly avoids requiring any
+      new public debtor field (`petitions/validation/petition059/validation-contract.md:483-490`).
+prior_blockers_resolved: true
+findings_count: 4
+blocking_count: 0
+warning_count: 2
+assertion_count: 49
+gherkin_scenario_count: 49
+keep_count: 4
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: SMR-P059-K01
+    severity: info
+    decision: KEEP
+    area: validation-counts
+    description: Scenario-to-assertion coverage remains exact at 49-to-49.
+    justification: >
+      Counts from this run show 49 Gherkin scenarios and 49 `VAL-P059-*` sections, so the
+      validation package still contains no extra assertion entries.
+  - id: SMR-P059-K02
+    severity: info
+    decision: KEEP
+    area: opendebt-caseworker-portal.limitation-panel.inputs
+    description: The revised portal module now names the minimal membership read input for FR-7.3.
+    justification: >
+      Adding the member-list read dependency and the read-enrichment explanation supplies the
+      missing traceability for claim-complex membership without forcing a new limitation-read DTO
+      field (`petitions/specs/petition059-specs.yaml:438-448`).
+  - id: SMR-P059-K03
+    severity: info
+    decision: KEEP
+    area: VAL-P059-047
+    description: The revised privacy validation stays on observable behaviour.
+    justification: >
+      VAL-P059-047 now limits itself to visible API-response evidence and constrains any exposed
+      debtor reference to an opaque UUID only, which is the minimal observable test surface for the
+      current source package (`petitions/validation/petition059/validation-contract.md:483-490`).
+  - id: SMR-P059-K04
+    severity: info
+    decision: KEEP
+    area: opendebt-debt-service.limitation
+    description: The core public limitation module remains lean after the revision pass.
+    justification: >
+      The revised package did not add speculative public fields or extra public commands beyond the
+      petition/outcome-visible scope already under review (`petitions/specs/petition059-specs.yaml:60-280`).
+next_action: >
+  Specs minimality gate passes. Proceed to the next pipeline gate without further revision on this
+  package.
+handoff_target: verification-gate
+timestamp: '2026-05-16T19:59:32.6882320+02:00'

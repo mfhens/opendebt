@@ -1,0 +1,16 @@
+petition: petition059
+reviewer: petition-translator-reviewer
+verdict: PASS-WITH-WARNINGS
+blocking_findings: []
+warnings:
+  - id: W1
+    finding: "The latest feature fixes close the targeted gaps: FR-2 now explicitly covers the PSRM threshold day, and FR-4.5 now proves GET visibility of the provisional GIL § 18a, stk. 7 interruption. No blocking semantic drift remains. The only residual non-blocking gap is that FR-1 still does not explicitly prove backend ordering of 'afbrydelseHistory' and 'tillaegsfristHistory', which the outcome contract defines as ordered lists."
+    evidence:
+      petition: "petitions\\petition059-foraeldelse.md:220-231,298-300"
+      contract: "petitions\\petition059-foraeldelse-outcome-contract.md:40-44,72-85,192-195"
+      feature: "petitions\\petition059-foraeldelse.feature:92-105,115-142,296-305"
+evidence_paths:
+  - petitions\\petition059-foraeldelse.md
+  - petitions\\petition059-foraeldelse-outcome-contract.md
+  - petitions\\petition059-foraeldelse.feature
+timestamp: 2026-05-16T19:04:17.1769647+02:00

@@ -33,6 +33,10 @@
 | 0029 | immudb for financial ledger integrity | immudb 1.10 + immudb4j 1.0.1 as cryptographic tamper-evidence KV store for double-entry ledger entries; dual-write pattern from `BookkeepingService`; conditionally accepted pending UFST HDP platform validation (TB-028-a) |
 | 0030 | SOAP legacy gateway | Spring-WS SOAP 1.1/1.2 on `/soap/*` in `integration-gateway`; OCES3 mTLS auth for OIO/SKAT protocols |
 | 0031 | Statutory codes as enums | Values defined by statute (e.g., `WriteDownReasonCode`) are Java enums, not DB configuration; confirmed compatible with Catala's enumeration model (P054 spike) |
+| 0034 | Playwright TypeScript as the E2E acceptance testing layer for portal features | Browser-level acceptance testing for Thymeleaf + HTMX portals using Playwright TypeScript |
 | 0035 | Embed Drools as shared library (`ufst-rules-lib`) | Supersedes ADR-0015: Drools evaluated in-process via a shared Maven library; standalone `opendebt-rules-engine` service retired |
+| 0036 | Security baseline | Consolidated cross-cutting security baseline for authentication, authorization, secrets, transport security, validation, audit logging, and vulnerability management |
+| 0037 | Performance SLA | Cross-cutting performance targets for response time, database access, async processing, load testing, and observability |
+| 0038 | Prescription objection boundary with debt-service façade | Keep the petition-aligned limitation surface in debt-service while case-service owns objection workflow lifecycle |
 
 ADR source files are in `architecture/adr/` in the repository.

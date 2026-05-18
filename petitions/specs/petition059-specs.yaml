@@ -1,0 +1,502 @@
+specification_id: SPEC-P059
+petition_id: petition059
+status: success
+summary: >
+  Minimal package-level specification for the petition059 limitation capability across the
+  debt-service limitation package, case-service objection workflow package, wage-garnishment
+  fact package, and caseworker-portal limitation panel.
+source_artifacts:
+  - petitions/petition059-foraeldelse.md
+  - petitions/petition059-foraeldelse-outcome-contract.md
+  - petitions/petition059-foraeldelse.feature
+  - compliance/petition059-nfr-coverage.md
+  - petitions/reviews/petition059-catala-encoder.yaml
+  - design/solution-architecture-p059-foraeldelse.md
+nfr_injection_summary:
+  applied:
+    - NFR-SEC-001
+    - NFR-SEC-002
+    - NFR-SEC-003
+    - NFR-SEC-004
+    - NFR-SEC-005
+    - NFR-SEC-006
+    - NFR-GDPR-001
+    - NFR-GDPR-002
+    - NFR-GDPR-003
+    - NFR-GDPR-004
+    - NFR-GDPR-005
+    - NFR-AUDIT-001
+    - NFR-RIGS-001
+    - NFR-RIGS-002
+    - NFR-PERF-002
+    - NFR-RES-001
+    - NFR-RES-002
+    - NFR-RES-003
+    - NFR-OBS-001
+    - NFR-OBS-002
+    - NFR-OBS-003
+    - NFR-API-001
+    - NFR-API-002
+    - NFR-ACC-001
+    - NFR-ACC-002
+    - NFR-ARCH-001
+    - NFR-ARCH-002
+    - NFR-ARCH-003
+    - NFR-ARCH-004
+    - NFR-PERF-001
+    - NFR-PERF-003
+  skipped_scope_mismatch:
+    - NFR-AUDIT-002
+    - NFR-AUDIT-003
+  register_gaps:
+    - id: NFR-SEC-006
+      reason: must NFR with no automated stage hook in the coverage report
+    - id: NFR-ACC-001
+      reason: must NFR with no automated stage hook in the coverage report
+warnings:
+  - NFR-SEC-006 requires explicit CI or reviewer evidence outside the default stage hooks.
+  - NFR-ACC-001 requires dedicated accessibility evidence outside the default stage hooks.
+  - >
+    Source ambiguity remains on whether public limitation responses expose `person_id`. This spec
+    stays aligned with the explicit FR-1/OpenAPI field list and does not add a new public debtor
+    field without upstream contract alignment.
+modules:
+  - module: opendebt-debt-service.limitation
+    source_requirement:
+      petition_refs: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, NFR-1, NFR-2, NFR-3, NFR-4, NFR-5]
+      outcome_contract_refs: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6]
+      gherkin_scenarios:
+        - FR-1.1 ForaeldelseRecord oprettes ved accept til inddrivelse
+        - FR-1.2 GET returnerer komplet ForaeldelseStatusDto
+        - FR-1.2b GET bevarer propagated metadata i afbrydelseHistory
+        - FR-1.3 3-årig forældelsesfrist gælder uden afbrydelse og uden udskydelse
+        - FR-1.3b PSRM-fordring med særligt retsgrundlag har stadig 3-årig basisfrist før udlæg
+        - FR-1.4 API returnerer 404 for ukendt fordringId
+        - FR-2.1 PSRM-fordring fra 19-11-2015 har udskydelse til 20-11-2021
+        - FR-2.1b PSRM-fordring registreret dagen før grænsen får ingen PSRM-udskydelse
+        - FR-2.1c PSRM-fordring registreret på grænsedatoen får PSRM-udskydelse
+        - FR-2.2 DMI-fordring registreret 2024-01-01 har udskydelse til 20-11-2027
+        - FR-2.2b DMI-fordring registreret dagen før grænsen får ingen DMI-udskydelse
+        - FR-2.3 Udskydelsesdato er uforanderlig og ændres ikke af efterfølgende afbrydelse
+        - FR-2.3b isInUdskydelse skifter ved udskydelsesdatoens grænse
+        - FR-2.4 Fordring uden udskydelsesregel får ingen udskydelsesdato
+        - FR-3.1 BEROSTILLELSE afbryder forældelsesfrist for PSRM-fordring
+        - FR-3.2 Lønindeholdelsesvarsel alene afbryder ikke forældelsesfrist
+        - FR-3.2b Manglende afgoerelseRegistreret for lønindeholdelse returnerer HTTP 422
+        - FR-3.3 Afgørelse om lønindeholdelse afbryder ved underretning til debitor
+        - FR-3.4 Lønindeholdelse afbryder alle fordringer omfattet af samme afgørelse
+        - FR-3.5 Lønindeholdelse inaktiv i 1 år medfører at ny forældelsesfrist begynder
+        - FR-3.6 Udlæg på fordring med almindeligt retsgrundlag sætter ny 3-årig frist
+        - FR-3.7 Udlæg på fordring med særligt retsgrundlag sætter ny 10-årig frist
+        - FR-3.8 Forgæves udlæg har samme afbrydelseseffekt som succesfuldt udlæg
+        - FR-3.9 Modregning afbryder forældelsesfrist
+        - FR-3.10 Ukendt afbrydelsestype returnerer HTTP 422
+        - FR-3.11 Manglende eventDate returnerer HTTP 422
+        - FR-3.12 Ukendt fordringId ved afbrydelse returnerer HTTP 404
+        - FR-4.1 Nyt fordringskompleks oprettes med initiale medlemmer
+        - FR-4.2 Medlem kan tilføjes og medlemslisten kan hentes
+        - FR-4.3 Afbrydelse for én fordring i fordringskompleks propagerer til alle medlemmer med fuld metadata
+        - FR-4.4 Fordringskompleks-propagation er atomisk og ruller tilbage ved fejl
+        - FR-4.5 Modtagelse af tomt fordringskompleks udløser foreløbig afbrydelse
+        - FR-5.1 Intern opskrivning tilføjer 2-årig tillægsfrist til forældelsesfrist
+        - FR-5.2 Tillægsfrist beregnes fra max af currentFristExpires og appliedDate
+        - FR-6.1 Debitors forældelsesindsigelse registreres og udløser sagsbehandlerworkflow
+        - FR-6.1b Offentlig indsigelsesregistrering afviser klientstyrede identitets- og skyldnerfelter
+        - FR-6.2 Gyldig forældelsesindsigelse fjerner fordringen fra inddrivelse
+        - FR-6.3 Ugyldig forældelsesindsigelse returnerer fordring til aktiv inddrivelse
+        - FR-6.3b Offentlig indsigelsesevaluering afviser klientstyrede identitets- og skyldnerfelter
+        - NFR-3.1 Forældelsesdata og API-svar refererer kun skyldner via person_id
+        - NFR-2.1 Almindelig afbrydelsesregistrering logges til CLS med påkrævede felter
+        - NFR-2.2 Øvrige auditerede hændelser skriver CLS-payload med påkrævede felter
+    interface:
+      inputs:
+        rest_endpoints:
+          - method: GET
+            path: /api/v1/foraeldelse/{fordringId}
+            request:
+              path_params: [fordringId]
+              body: none
+          - method: POST
+            path: /api/v1/foraeldelse/{fordringId}/afbrydelse
+            request:
+              path_params: [fordringId]
+              body_fields: [type, eventDate, legalReference, afgoerelseRegistreret]
+          - method: POST
+            path: /api/v1/foraeldelse/{fordringId}/tillaegsfrist
+            request:
+              path_params: [fordringId]
+              body_fields: [type, appliedDate]
+          - method: POST
+            path: /api/v1/fordringskompleks
+            request:
+              body_fields: [memberFordringIds]
+          - method: POST
+            path: /api/v1/fordringskompleks/{kompleksId}/members/{fordringId}
+            request:
+              path_params: [kompleksId, fordringId]
+              body: none
+          - method: GET
+            path: /api/v1/fordringskompleks/{kompleksId}/members
+            request:
+              path_params: [kompleksId]
+              body: none
+          - method: POST
+            path: /api/v1/foraeldelse/{fordringId}/indsigelse
+            request:
+              path_params: [fordringId]
+              body_fields: []
+              rejected_public_fields: [registeredBy, decidedBy, debtorPersonId]
+          - method: PUT
+            path: /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}
+            request:
+              path_params: [fordringId, indsigelsesId]
+              body_fields: [outcome, rationale]
+              rejected_public_fields: [registeredBy, decidedBy, debtorPersonId]
+            response_model: ForaeldelseStatusDto
+      outputs:
+        response_models:
+          - name: ForaeldelseStatusDto
+            fields:
+              - fordringId
+              - currentFristExpires
+              - udskydelseDato
+              - isInUdskydelse
+              - retsgrundlag
+              - afbrydelseHistory
+              - tillaegsfristHistory
+              - status
+          - name: FordringskompleksMemberList
+            fields: [kompleksId, memberFordringIds]
+          - name: ObjectionRegistrationResult
+            fields: [indsigelsesId, status]
+      error_handling:
+        - unknown fordringId returns HTTP 404 on read and state-changing limitation endpoints
+        - unknown afbrydelse type returns HTTP 422
+        - missing eventDate returns HTTP 422
+        - LOENINDEHOLDELSE without afgoerelseRegistreret=true returns HTTP 422
+        - spoofed registeredBy, decidedBy, or debtorPersonId on public objection commands is rejected as invalid public command input
+        - claim-complex propagation failure aborts the request and leaves all currentFristExpires values unchanged
+    data_models:
+      - name: ForaeldelseRecord
+        fields:
+          - fordringId
+          - personId
+          - retsgrundlag
+          - udskydelseDato
+          - isInUdskydelse
+          - currentFristExpires
+          - status
+      - name: AfbrydelseEvent
+        fields:
+          - fordringId
+          - type
+          - eventDate
+          - legalReference
+          - newFristExpires
+          - sourceFordringId
+          - targetFordringId
+          - propagationReason
+      - name: TillaegsfristEvent
+        fields:
+          - fordringId
+          - type
+          - appliedDate
+          - extensionYears
+          - newFristExpires
+          - legalReference
+      - name: FordringskompleksLink
+        fields:
+          - kompleksId
+          - fordringId
+          - linkedAt
+      - name: LimitationObjectionLinkage
+        fields:
+          - fordringId
+          - indsigelsesId
+          - status
+          - rationale
+    persistence:
+      - ForaeldelseRecord is created automatically when a claim is accepted to inddrivelse.
+      - udskydelseDato is computed once at creation and is never mutated afterward.
+      - currentFristExpires is updated atomically on every accepted afbrydelse or tillaegsfrist mutation.
+      - propagated afbrydelse events are persisted for every target member with sourceFordringId, targetFordringId, and propagationReason.
+      - receipt of a tomt fordringskompleks persists a provisional interruption carrying legalReference GIL § 18a, stk. 7.
+      - all persisted limitation data use personId UUID only; no CPR, name, address, email, or phone is stored.
+    non_functional:
+      petition_specific:
+        - id: P059-NFR-1
+          description: Deterministic LocalDate arithmetic with injectable Clock
+          source: petitions/petition059-foraeldelse.md#Non-functional requirements
+        - id: P059-NFR-2
+          description: Full CLS audit for afbrydelse, propagation, tillaegsfrist, and objection flows
+          source: petitions/petition059-foraeldelse.md#Non-functional requirements
+        - id: P059-NFR-3
+          description: No PII in limitation entities or API responses
+          source: petitions/petition059-foraeldelse.md#Non-functional requirements
+        - id: P059-NFR-4
+          description: Claim-complex propagation executes in one transaction
+          source: petitions/petition059-foraeldelse.md#Non-functional requirements
+        - id: P059-NFR-5
+          description: GET /foraeldelse/{fordringId} p99 under 200 ms for up to 50 afbrydelse events
+          source: petitions/petition059-foraeldelse.md#Non-functional requirements
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-SEC-006
+        - NFR-GDPR-001
+        - NFR-GDPR-002
+        - NFR-GDPR-003
+        - NFR-GDPR-004
+        - NFR-GDPR-005
+        - NFR-AUDIT-001
+        - NFR-RIGS-001
+        - NFR-RIGS-002
+        - NFR-PERF-001
+        - NFR-PERF-002
+        - NFR-PERF-003
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-RES-003
+        - NFR-OBS-001
+        - NFR-OBS-002
+        - NFR-OBS-003
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+        - NFR-ARCH-003
+        - NFR-ARCH-004
+    acceptance_criteria:
+      - GET limitation status returns the full observable contract, including propagated metadata and ordered histories.
+      - PSRM and DMI threshold-day semantics are explicit: day-before means no system-specific udskydelse, threshold day applies the fixed udskydelse date, and isInUdskydelse becomes false on the threshold date itself.
+      - BEROSTILLELSE, LOENINDEHOLDELSE, UDLAEG, and MODREGNING update currentFristExpires with the legal-reference-specific date rules required by the outcome contract.
+      - claim-complex create, add, and list operations exist on the public surface, propagated events retain sourceFordringId and targetFordringId, and propagation rolls back fully on failure.
+      - INTERN_OPSKRIVNING computes newFristExpires as max(currentFristExpires, appliedDate) plus two years.
+      - public objection commands derive identity and debtor linkage server-side and reject spoofed identity fields.
+      - objection evaluation returns HTTP 200 with the updated ForaeldelseStatusDto/limitation-status document rather than a reduced wrapper.
+    rationale: >
+      The petition-visible limitation surface, persistence rules, and legal arithmetic all land in
+      debt-service. These specs are required to implement the public contract without changing the
+      approved architecture boundary.
+
+  - module: opendebt-case-service.limitation-objection-workflow
+    source_requirement:
+      petition_refs: [FR-6]
+      outcome_contract_refs: [FR-6]
+      gherkin_scenarios:
+        - FR-6.1 Debitors forældelsesindsigelse registreres og udløser sagsbehandlerworkflow
+        - FR-6.2 Gyldig forældelsesindsigelse fjerner fordringen fra inddrivelse
+        - FR-6.3 Ugyldig forældelsesindsigelse returnerer fordring til aktiv inddrivelse
+    interface:
+      inputs:
+        internal_endpoints:
+          - method: POST
+            path: /api/internal/v1/limitation-objections
+            request_fields: [fordringId, debtorPersonId, registeredBy, registeredAt]
+          - method: PUT
+            path: /api/internal/v1/limitation-objections/{indsigelsesId}/decision
+            request_fields: [fordringId, outcome, rationale, decidedBy, decidedAt]
+      outputs:
+        response_models:
+          - name: LimitationObjectionWorkflowResult
+            fields: [indsigelsesId, workflowStatus, outcome, rationale, decidedAt]
+      error_handling:
+        - internal workflow create or decision failure returns an explicit error to debt-service so the public command can fail without partial state mutation
+    data_models:
+      - name: LimitationObjectionWorkflowRecord
+        fields:
+          - indsigelsesId
+          - fordringId
+          - workflowCaseId
+          - workflowStatus
+          - outcome
+          - rationale
+          - registeredBy
+          - registeredAt
+          - decidedBy
+          - decidedAt
+    persistence:
+      - workflow status changes are recorded in case-service, not in debt-service as authoritative workflow state
+      - rationale is stored for both VALID and INVALID decisions
+    non_functional:
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-GDPR-001
+        - NFR-GDPR-002
+        - NFR-GDPR-003
+        - NFR-GDPR-004
+        - NFR-GDPR-005
+        - NFR-AUDIT-001
+        - NFR-RIGS-001
+        - NFR-RIGS-002
+        - NFR-PERF-001
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-RES-003
+        - NFR-OBS-001
+        - NFR-OBS-002
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+    acceptance_criteria:
+      - creating an objection yields a stable indsigelsesId and workflow-owned status for debt-service to surface publicly
+      - VALID and INVALID decisions return authoritative workflow outcome data and rationale to debt-service
+      - workflow audit emission occurs for registration and evaluation outcomes
+    rationale: >
+      The accepted architecture keeps workflow ownership in case-service. Minimal workflow specs
+      are required so debt-service can preserve the public FR-6 contract without re-owning the
+      objection lifecycle.
+
+  - module: opendebt-wage-garnishment-service.limitation-facts
+    source_requirement:
+      petition_refs: [FR-3]
+      outcome_contract_refs: [FR-3]
+      gherkin_scenarios:
+        - FR-3.2 Lønindeholdelsesvarsel alene afbryder ikke forældelsesfrist
+        - FR-3.2b Manglende afgoerelseRegistreret for lønindeholdelse returnerer HTTP 422
+        - FR-3.3 Afgørelse om lønindeholdelse afbryder ved underretning til debitor
+        - FR-3.4 Lønindeholdelse afbryder alle fordringer omfattet af samme afgørelse
+        - FR-3.5 Lønindeholdelse inaktiv i 1 år medfører at ny forældelsesfrist begynder
+    interface:
+      inputs:
+        internal_endpoint:
+          method: GET
+          path: /api/internal/v1/limitation-facts/debtors/{debtorPersonId}
+          request_fields: [debtorPersonId]
+      outputs:
+        response_model:
+          name: WageGarnishmentLimitationFacts
+          fields:
+            - afgoerelseRegistreret
+            - underretningsDato
+            - coveredFordringIds
+            - inaktivSiden
+      error_handling:
+        - missing fact data is returned to debt-service as an explicit integration error rather than inferred defaults
+    data_models:
+      - name: WageGarnishmentLimitationFacts
+        fields:
+          - debtorPersonId
+          - afgoerelseRegistreret
+          - underretningsDato
+          - coveredFordringIds
+          - inaktivSiden
+    persistence:
+      - none mandated by petition059 beyond exposing the authoritative fact set already owned by wage-garnishment-service
+    non_functional:
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-GDPR-001
+        - NFR-GDPR-002
+        - NFR-GDPR-003
+        - NFR-GDPR-004
+        - NFR-GDPR-005
+        - NFR-PERF-001
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-RES-003
+        - NFR-OBS-001
+        - NFR-OBS-002
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+    acceptance_criteria:
+      - debt-service can distinguish varsel from a registered afgørelse using authoritative facts only
+      - debt-service receives underretningsDato and inaktivSiden needed to compute FR-3.3 and FR-3.5
+      - the fact response identifies all fordringer covered by the same wage-garnishment decision
+    rationale: >
+      Petition059 requires debt-service to use wage-garnishment decision and inactivity facts
+      without re-owning that process domain. This internal fact package is the minimal contract.
+
+  - module: opendebt-caseworker-portal.limitation-panel
+    source_requirement:
+      petition_refs: [FR-7]
+      outcome_contract_refs: [FR-1, FR-6, FR-7]
+      gherkin_scenarios:
+        - FR-7.1 Sagsbehandlerportalen viser forældelsesstatus med ISO-dato og udskydelse
+        - FR-7.2 Sagsbehandlerportalen viser afbrydelseshistorik med resulting new frist
+        - FR-7.3 Sagsbehandlerportalen viser tillægsfristhistorik og fordringskompleks-medlemskab
+        - FR-7.4 Sagsbehandler med skriveadgang ser knap til registrering af forældelsesindsigelse
+        - FR-7.5 Afventende indsigelse viser evalueringsformular med rationalefelt
+        - FR-7.6 Forældet fordring viser udfald og rationale uden registreringsknap
+        - FR-7.7 Read-only caseworker ser panelet men ingen skrivehandlinger
+    interface:
+      inputs:
+        upstream_dependency:
+          - GET /api/v1/foraeldelse/{fordringId}
+          - GET /api/v1/fordringskompleks/{kompleksId}/members
+          - POST /api/v1/foraeldelse/{fordringId}/indsigelse
+          - PUT /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}
+        read_enrichment:
+          - >
+            FR-7.3 claim-complex membership uses the claim-complex identifier already available to
+            the surrounding claim-detail context and resolves the member list through
+            GET /api/v1/fordringskompleks/{kompleksId}/members; this petition does not add new
+            limitation-read fields for that lookup.
+          - >
+            FR-7.6 objection rationale is rendered from the limitation read model when present; if
+            the limitation read model does not carry the rationale, the portal may reuse an
+            existing case-service read API for read-only workflow metadata as described by the
+            accepted architecture, without defining a new public endpoint in this petition.
+      outputs:
+        rendered_elements:
+          - status label
+          - ISO expiry date
+          - udskydelse date and isInUdskydelse indicator
+          - afbrydelse history table
+          - tillaegsfrist history table
+          - claim-complex membership section
+          - objection registration button
+          - objection evaluation form
+          - objection outcome and rationale display
+      error_handling:
+        - read-only access suppresses all write controls while preserving panel visibility
+    data_models:
+      - name: LimitationPanelViewModel
+        fields:
+          - status
+          - currentFristExpires
+          - udskydelseDato
+          - isInUdskydelse
+          - afbrydelseHistory
+          - tillaegsfristHistory
+          - claimComplexMembers
+          - objectionStatus
+          - objectionRationale
+          - canWrite
+    persistence:
+      - none
+    non_functional:
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-GDPR-001
+        - NFR-OBS-001
+        - NFR-API-001
+        - NFR-ACC-001
+        - NFR-ACC-002
+        - NFR-ARCH-002
+    acceptance_criteria:
+      - the panel is rendered on the claim detail page with status, expiry date, postponement, histories, and claim-complex membership
+      - propagated events surface sourceFordringId and targetFordringId in the UI
+      - ACTIVE, INDSIGELSE_PENDING, and FORAELDET states toggle registration and evaluation controls exactly as described in the outcome contract
+      - read-only users can inspect the panel but cannot trigger write operations
+    rationale: >
+      The portal requirements are presentation-only and fully observable. This package spec stays
+      lean by defining only the rendered fields and control-state rules the scenarios require.
+next_action: Send these artifacts to specs-reviewer and specs-minimality-reviewer.
+handoff_target: specs-reviewer

@@ -1,0 +1,373 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Debt Service Limitation API
+  description: |
+    Petition059 limitation surface for authoritative limitation state, interruption handling,
+    supplementary periods, claim-complex maintenance, and contract-preserving objection commands.
+
+    The legal-facing objection resource `/foraeldelse/{fordringId}/indsigelse` is preserved on the
+    debt-service limitation surface while workflow authority remains in case-service. Public objection
+    commands reject caller-supplied `registeredBy`, `decidedBy`, and `debtorPersonId`; debt-service
+    derives those values from authenticated server-side context and authoritative claim state.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+servers:
+  - url: https://api.opendebt.dk/debt-service
+    description: Production
+  - url: https://api-staging.opendebt.dk/debt-service
+    description: Staging
+security:
+  - bearerAuth: []
+tags:
+  - name: Limitation
+    description: Limitation (forældelse) state and workflow façade operations
+paths:
+  /api/v1/foraeldelse/{fordringId}:
+    get:
+      tags: [Limitation]
+      summary: Get limitation status for a claim
+      operationId: getLimitationStatus
+      parameters:
+        - $ref: '#/components/parameters/FordringIdPath'
+      responses:
+        '200':
+          description: Limitation status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationStatus'
+  /api/v1/foraeldelse/{fordringId}/afbrydelse:
+    post:
+      tags: [Limitation]
+      summary: Register a limitation interruption
+      operationId: registerInterruption
+      parameters:
+        - $ref: '#/components/parameters/FordringIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InterruptionRegistrationRequest'
+      responses:
+        '201':
+          description: Interruption registered and limitation recalculated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationStatus'
+  /api/v1/foraeldelse/{fordringId}/tillaegsfrist:
+    post:
+      tags: [Limitation]
+      summary: Register a supplementary period
+      operationId: registerSupplementaryPeriod
+      parameters:
+        - $ref: '#/components/parameters/FordringIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplementaryPeriodRequest'
+      responses:
+        '201':
+          description: Supplementary period registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationStatus'
+  /api/v1/fordringskompleks:
+    post:
+      tags: [Limitation]
+      summary: Create a fordringskompleks with initial members
+      operationId: createFordringskompleks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FordringskompleksCreateRequest'
+      responses:
+        '201':
+          description: Fordringskompleks created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fordringskompleks'
+  /api/v1/fordringskompleks/{kompleksId}/members/{fordringId}:
+    post:
+      tags: [Limitation]
+      summary: Add a member to an existing fordringskompleks
+      operationId: addFordringskompleksMember
+      parameters:
+        - $ref: '#/components/parameters/KompleksIdPath'
+        - $ref: '#/components/parameters/FordringIdPath'
+      responses:
+        '200':
+          description: Member added and current membership returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fordringskompleks'
+  /api/v1/fordringskompleks/{kompleksId}/members:
+    get:
+      tags: [Limitation]
+      summary: List members of a fordringskompleks
+      operationId: listFordringskompleksMembers
+      parameters:
+        - $ref: '#/components/parameters/KompleksIdPath'
+      responses:
+        '200':
+          description: Membership list returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fordringskompleks'
+  /api/v1/foraeldelse/{fordringId}/indsigelse:
+    post:
+      tags: [Limitation]
+      summary: Register a limitation objection on the limitation surface
+      operationId: registerLimitationObjection
+      parameters:
+        - $ref: '#/components/parameters/FordringIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitationObjectionRegistrationRequest'
+      responses:
+        '201':
+          description: Objection registered and claim moved to INDSIGELSE_PENDING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationObjectionRegistrationResponse'
+        '400':
+          description: Invalid public input, including caller-supplied audit identity or debtor linkage
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}:
+    put:
+      tags: [Limitation]
+      summary: Evaluate a limitation objection on the limitation surface
+      operationId: decideLimitationObjection
+      parameters:
+        - $ref: '#/components/parameters/FordringIdPath'
+        - $ref: '#/components/parameters/IndsigelsesIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitationObjectionDecisionRequest'
+      responses:
+        '200':
+          description: Objection evaluated and limitation state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitationStatus'
+        '400':
+          description: Invalid public input, including caller-supplied audit identity or debtor linkage
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    FordringIdPath:
+      name: fordringId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IndsigelsesIdPath:
+      name: indsigelsesId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    KompleksIdPath:
+      name: kompleksId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+    LimitationStatus:
+      type: object
+      additionalProperties: false
+      required:
+        [fordringId, currentFristExpires, udskydelseDato, isInUdskydelse, retsgrundlag, afbrydelseHistory, tillaegsfristHistory, status]
+      properties:
+        fordringId:
+          type: string
+          format: uuid
+        currentFristExpires:
+          type: string
+          format: date
+        udskydelseDato:
+          type: [string, 'null']
+          format: date
+        isInUdskydelse:
+          type: boolean
+        retsgrundlag:
+          type: string
+          enum: [ORDINARY, SAERLIGT_RETSGRUNDLAG]
+        afbrydelseHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/AfbrydelseEvent'
+        tillaegsfristHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/TillaegsfristEvent'
+        status:
+          $ref: '#/components/schemas/LimitationStatusCode'
+    LimitationStatusCode:
+      type: string
+      enum: [ACTIVE, FORAELDET, INDSIGELSE_PENDING]
+    InterruptionRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [type, eventDate, legalReference]
+      properties:
+        type:
+          type: string
+          enum: [BEROSTILLELSE, LOENINDEHOLDELSE, UDLAEG, MODREGNING]
+        eventDate:
+          type: string
+          format: date
+        legalReference:
+          type: string
+        afgoerelseRegistreret:
+          type: boolean
+    AfbrydelseEvent:
+      type: object
+      additionalProperties: false
+      required: [type, eventDate, legalReference, newFristExpires]
+      properties:
+        type:
+          type: string
+        eventDate:
+          type: string
+          format: date
+        legalReference:
+          type: string
+        newFristExpires:
+          type: string
+          format: date
+        sourceFordringId:
+          type: string
+          format: uuid
+        targetFordringId:
+          type: string
+          format: uuid
+        propagationReason:
+          type: string
+          enum: [FORDRINGSKOMPLEKS_PROPAGATION]
+    SupplementaryPeriodRequest:
+      type: object
+      additionalProperties: false
+      required: [type, appliedDate, legalReference]
+      properties:
+        type:
+          type: string
+          enum: [INTERN_OPSKRIVNING]
+        appliedDate:
+          type: string
+          format: date
+        legalReference:
+          type: string
+    TillaegsfristEvent:
+      type: object
+      additionalProperties: false
+      required: [type, appliedDate, extensionYears, newFristExpires]
+      properties:
+        type:
+          type: string
+        appliedDate:
+          type: string
+          format: date
+        extensionYears:
+          type: integer
+        newFristExpires:
+          type: string
+          format: date
+        legalReference:
+          type: string
+    FordringskompleksCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [memberFordringIds]
+      properties:
+        memberFordringIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+    Fordringskompleks:
+      type: object
+      additionalProperties: false
+      required: [kompleksId, memberFordringIds]
+      properties:
+        kompleksId:
+          type: string
+          format: uuid
+        memberFordringIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    LimitationObjectionRegistrationRequest:
+      type: object
+      additionalProperties: false
+    LimitationObjectionRegistrationResponse:
+      type: object
+      additionalProperties: false
+      required: [indsigelsesId, status]
+      properties:
+        indsigelsesId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/LimitationStatusCode'
+    LimitationObjectionDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [outcome, rationale]
+      properties:
+        outcome:
+          type: string
+          enum: [VALID, INVALID]
+        rationale:
+          type: string

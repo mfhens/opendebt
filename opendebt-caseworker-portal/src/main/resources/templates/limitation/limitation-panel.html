@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title>Forældelse</title>
+</head>
+<body>
+<span layout:fragment="breadcrumb">
+  <a th:href="@{/cases}">Sager</a>
+  <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+  <span>Forældelse</span>
+</span>
+<section layout:fragment="content">
+  <h1>Forældelse</h1>
+  <div class="skat-card">
+    <div class="skat-card__body">
+      <section data-testid="limitation-status-panel">
+        <dl>
+          <dt>Status</dt>
+          <dd th:text="${statusLabel}">Aktiv</dd>
+          <dt>Frist udløber</dt>
+          <dd th:text="${limitation.currentFristExpires}">2027-03-15</dd>
+          <dt>Udskydelsesdato</dt>
+          <dd th:text="${limitation.udskydelseDato}">2021-11-20</dd>
+          <dt>I udskydelsesvindue</dt>
+          <dd th:text="${yesNoUdskydelse}">Nej</dd>
+        </dl>
+      </section>
+
+      <section th:if="${limitation.kompleksId != null or !#lists.isEmpty(memberFordringIds)}">
+        <h2>Fordringskompleks</h2>
+        <ul>
+          <li th:each="memberId : ${memberFordringIds}" th:text="${memberId}">member</li>
+        </ul>
+      </section>
+
+      <section th:if="${!#lists.isEmpty(limitation.afbrydelseHistory)}">
+        <h2>Afbrydelseshistorik</h2>
+        <table>
+          <thead>
+          <tr>
+            <th>Type</th>
+            <th>Dato</th>
+            <th>Juridisk reference</th>
+            <th>Resulting new frist</th>
+            <th>sourceFordringId</th>
+            <th>targetFordringId</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="row : ${limitation.afbrydelseHistory}" data-afbrydelse-row="true">
+            <td th:text="${row.type}">MODREGNING</td>
+            <td th:text="${row.eventDate}">2024-01-01</td>
+            <td th:text="${row.legalReference}">G.A.2.4.2</td>
+            <td th:text="${row.newFristExpires}">2027-01-01</td>
+            <td th:text="${row.sourceFordringId}">source</td>
+            <td th:text="${row.targetFordringId}">target</td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section th:if="${!#lists.isEmpty(limitation.tillaegsfristHistory)}">
+        <h2>Tillægsfristhistorik</h2>
+        <table>
+          <thead>
+          <tr>
+            <th>Type</th>
+            <th>Dato</th>
+            <th>Extension</th>
+            <th>Ny frist</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="row : ${limitation.tillaegsfristHistory}">
+            <td th:text="${row.type}">AFVENTER_KLAGE</td>
+            <td th:text="${row.appliedDate}">2024-01-01</td>
+            <td th:text="${row.extensionYears}">1</td>
+            <td th:text="${row.newFristExpires}">2028-01-01</td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section th:if="${limitation.objectionRationale != null}">
+        <h2>Udfald</h2>
+        <p th:text="${statusLabel}">Forældet</p>
+        <h3>Rationale</h3>
+        <p th:text="${limitation.objectionRationale}">Forældelsesfrist udløb</p>
+      </section>
+
+      <div th:if="${!readOnly}">
+        <button type="button">Registrer afbrydelseshændelse</button>
+      </div>
+      <button th:if="${canRegisterObjection}" type="button">Registrer forældelsesindsigelse</button>
+      <div th:if="${showEvaluationForm}">
+        <label>Gyldig <input type="radio" name="outcome" value="VALID" /></label>
+        <label>Ugyldig <input type="radio" name="outcome" value="INVALID" /></label>
+        <textarea name="rationale"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>

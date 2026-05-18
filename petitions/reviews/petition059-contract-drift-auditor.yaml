@@ -1,0 +1,86 @@
+status: success
+agent: contract-drift-auditor
+mode: enforce
+scope: petition059 limitation contracts
+canonical_sources:
+  - api-specs/openapi-debt-service-limitation.yaml
+  - api-specs/openapi-case-service-limitation-internal.yaml
+  - api-specs/openapi-wage-garnishment-service-internal.yaml
+  - opendebt-debt-service/src/main/resources/db/migration/V12__limitation.sql
+canonical_source: explicit-user-source
+layers_checked:
+  - debt-service OpenAPI paths vs LimitationController
+  - debt-service OpenAPI schemas vs limitation DTOs
+  - case-service OpenAPI paths vs LimitationObjectionWorkflowInternalController
+  - case-service OpenAPI schemas vs limitation DTOs
+  - wage-garnishment OpenAPI coverage and schema vs controller/DTO
+  - V12__limitation.sql vs debt-service limitation entities
+verdict: PASS
+summary: >-
+  Initial blocking contract drift existed in debt-service, case-service, and wage-garnishment
+  limitation DTO/controller code, but all blocking findings were remediated in this run.
+  Post-fix Maven tests passed for opendebt-debt-service, opendebt-case-service, and
+  opendebt-wage-garnishment-service. No migration/entity drift remains, and no unresolved
+  findings require technical-backlog handoff.
+artifacts:
+  - petitions/reviews/petition059-contract-drift-auditor.yaml
+evidence_checked:
+  - claim: debt-service limitation paths and response codes align with the public OpenAPI contract
+    proof: >-
+      Compared openapi-debt-service-limitation.yaml with LimitationController.java and aligned
+      claim-complex member POST to return HTTP 200 with FordringskompleksMemberListDto.
+    freshness: current run
+    result: pass
+  - claim: debt-service public DTOs match the public limitation schemas
+    proof: >-
+      ForaeldelseStatusDto no longer exposes undeclared public fields; RegisterAfbrydelseRequest and
+      RegisterTillaegsfristRequest now include legalReference; public objection DTOs were reduced to
+      schema fields and now reject unexpected input via captured unknown-property checks.
+    freshness: current run
+    result: pass
+  - claim: case-service and wage-garnishment internal contracts align with their OpenAPI specs
+    proof: >-
+      Added sourceSurface/sourceReference to workflow registration, aligned workflow response fields
+      to workflowStatus/authoritativeOutcome/decidedAt, and aligned wage-garnishment limitation facts
+      DTO/controller names plus optional asOfDate query handling.
+    freshness: current run
+    result: pass
+  - claim: debt-service persistence entities align with V12__limitation.sql
+    proof: >-
+      Verified table names, column names, nullability, and unique constraints for foraeldelse_record,
+      afbrydelse_event, tillaegsfrist_event, fordringskompleks_link, and limitation_objection_linkage.
+    freshness: current run
+    result: pass
+drift_classes:
+  - class: INFO
+    layer: spec
+    finding: >-
+      Resolved blocking external contract drift in debt-service limitation request/response DTOs and
+      claim-complex member POST response semantics.
+    remediation: >-
+      Updated LimitationController.java plus debt-service limitation DTO/service files to match the
+      canonical OpenAPI contract.
+  - class: INFO
+    layer: spec
+    finding: >-
+      Resolved blocking internal contract drift in case-service objection workflow DTOs and response
+      field names.
+    remediation: >-
+      Updated case-service limitation DTOs/service implementation and the debt-service internal client
+      DTOs to match the internal OpenAPI contract.
+  - class: INFO
+    layer: spec
+    finding: >-
+      Resolved blocking internal contract drift in wage-garnishment limitation facts naming and query
+      parameter coverage.
+    remediation: >-
+      Updated WageGarnishmentLimitationFactsController.java and both producer/consumer DTOs to match
+      the wage-garnishment internal OpenAPI spec.
+  - class: INFO
+    layer: migration
+    finding: No Flyway vs entity drift detected for petition059 limitation persistence.
+    remediation: No change required.
+warnings: []
+escalations: []
+next_action: Ready for code review and PR readiness checks.
+handoff_target: none

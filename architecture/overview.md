@@ -614,9 +614,9 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 
 ### debt-service (Port 8082)
 
-**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, and batch processing. Also owns the **offsetting (modregning)** domain (ADR-0027).
+**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, batch processing, and limitation state. Also owns the **offsetting (modregning)** domain (ADR-0027).
 
-**Implementation status:** IMPLEMENTED (~125 Java files, 8 migrations)
+**Implementation status:** IMPLEMENTED (~125 Java files; Flyway migrations documented through V12)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -663,6 +663,17 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | ClaimAdjustmentService / Impl | Done | FR-1 write-down reason required, AC-12 RENTE rejection, AC-13/FR-7 RIM-internal code (DINDB/OMPL/AFSK) rejection, FR-3 høring timing rule, FR-4 retroactive WARN log marker, AC-16 CLS audit all outcomes |
 | ClaimAdjustmentRequestDto / ResponseDto | Done | Request: adjustmentType, writeDownReasonCode, amount, effectiveDate, notes; Response: includes crossSystemRetroactiveApplies flag (GIL § 18 k) |
 | WriteDownReasonCode | Done | NED_INDBETALING, NED_FEJL_OVERSENDELSE, NED_GRUNDLAG_AENDRET (gæld.bekendtg. § 7 stk. 2) |
+| **Limitation (petition059)** | **Done** | |
+| ForaeldelseRecord | Done | Authoritative limitation state per fordring; stores only UUID references (`fordringId`, `debtorPersonId`, `kompleksId`) |
+| AfbrydelseEvent | Done | Interruption history with source/target propagation metadata for claim-complex propagation |
+| TillaegsfristEvent | Done | Supplementary-period history with applied date, extension years, and recalculated expiry |
+| FordringskompleksLink | Done | Membership table for claim-complex propagation across related fordringer |
+| LimitationObjectionLinkage | Done | Links `indsigelsesId` to `fordringId` and `workflowCaseId` without duplicating workflow state |
+| LimitationController | Done | Petition059 REST surface under `/api/v1/foraeldelse` and `/api/v1/fordringskompleks` |
+| LimitationStateApplicationService / Impl | Done | Calculates limitation state, registers interruption/supplementary-period events, and applies claim-complex propagation |
+| LimitationObjectionFacade | Done | Keeps the public limitation objection contract in debt-service while delegating workflow lifecycle to case-service (ADR-0038) |
+| LimitationPolicyEngine | Done | Uses injected `limitationClock` for deterministic calculation windows (NFR-1) |
+| OpenAPI spec (limitation) | Done | `api-specs/openapi-debt-service-limitation.yaml` |
 | **Modregning og Korrektionspulje (petition058)** | | |
 | ModregningEvent | Done | JPA entity — table `modregning_event`; stores GIL § 16 stk. 1 set-off decision with three-tier allocation, klage-frist, rentegodtgoerelse metadata. Idempotency via `nemkontoReferenceId`. Written to immudb (ADR-0029 amendment). |
 | KorrektionspuljeEntry | Done | JPA entity — table `korrektionspulje_entry`; pool entry for reversal/gendaenkning credit pending re-application. Links to originating `ModregningEvent`. |
@@ -700,8 +711,12 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | Flyway V6 (P058) | Done | `rentegodt_rate_entry` table |
 | Flyway V7 (P058) | Done | `collection_measure` extended: `modregning_event_id`, `waiver_applied`, `caseworker_id` |
 | Flyway V8 (P058) | Done | `debt.modregning_tier` column |
+| Flyway V9 | Done | `notification_outbox` table |
+| Flyway V10 | Done | `collection_measure.tier_level` column |
+| Flyway V11 | Done | Audit columns for `AuditableEntity` adoption |
+| Flyway V12 (P059) | Done | `foraeldelse_record`, `afbrydelse_event`, `tillaegsfrist_event`, `fordringskompleks_link`, `limitation_objection_linkage` |
 
-**API endpoints (29):**
+**API endpoints (37):**
 - `GET /api/v1/debts` - List debts
 - `POST /api/v1/debts` - Internal debt persistence after prior validation
 - `GET/PUT /api/v1/debts/{id}` - Get/update debt
@@ -715,6 +730,14 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 - `POST /api/v1/debts/{id}/transfer-for-collection` - Transfer for collection (RESTANCE->OVERDRAGET)
 - `POST /api/v1/debts/{id}/write-down?amount={amount}` - Write down outstanding balance
 - `POST /api/v1/debts/{id}/adjustments` - Submit claim adjustment (write-up/write-down with full G.A. validation; petition053)
+- `GET /api/v1/foraeldelse/{fordringId}` - Get limitation status for a fordring (petition059)
+- `POST /api/v1/foraeldelse/{fordringId}/afbrydelse` - Register a limitation interruption and recalculate expiry (petition059)
+- `POST /api/v1/foraeldelse/{fordringId}/tillaegsfrist` - Register a supplementary period (petition059)
+- `POST /api/v1/fordringskompleks` - Create a claim complex (petition059)
+- `POST /api/v1/fordringskompleks/{kompleksId}/members/{fordringId}` - Add a fordring to an existing claim complex (petition059)
+- `GET /api/v1/fordringskompleks/{kompleksId}/members` - List claim-complex members (petition059)
+- `POST /api/v1/foraeldelse/{fordringId}/indsigelse` - Register a limitation objection on the public debt-service surface (petition059)
+- `PUT /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}` - Evaluate a limitation objection on the public debt-service surface (petition059)
 - `POST /api/v1/modregning/tier2-waiver` - Apply tier-2 waiver to a modregning event (scope `modregning:waiver`; petition058)
 - `GET /api/v1/modregning/events` - Read modregning event log, filterable by debtor/date (scope `modregning:read`; petition058)
 - `DELETE /api/v1/debts/{id}` - Cancel (soft delete)
@@ -737,7 +760,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 
 ### case-service (Port 8081)
 
-**Purpose:** Case management, workflow orchestration via Flowable BPMN, caseworker assignment.
+**Purpose:** Case management, workflow orchestration via Flowable BPMN, caseworker assignment, and internal limitation-objection workflow handling.
 
 **Implementation status:** IMPLEMENTED
 
@@ -754,7 +777,13 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | SendLetterDelegate | Done | Letter service integration (TODO: wire client) |
 | CheckPaymentDelegate | Done | Payment check (TODO: wire client) |
 | CloseCaseDelegate | Done | Case closure |
+| **Limitation objection workflow (petition059)** | **Done** | |
+| LimitationObjectionWorkflowInternalController | Done | Internal REST boundary for objection registration and authoritative decisions |
+| LimitationObjectionWorkflowService / Impl | Done | Case-service-owned workflow lifecycle for petition059 objection handling |
+| LimitationObjectionWorkflowResult | Done | Internal response DTO with `indsigelsesId`, `workflowCaseId`, status, and rationale |
 | Flyway migration V1 | Done | Cases, case_debt_ids, audit, history |
+| Flyway migration V2 | Done | Debtor-person cleanup before petition059 workflow persistence |
+| Flyway migration V3 (P059) | Done | `limitation_objection_workflow_record` table |
 
 **Workflow paths (BPMN):**
 1. **Voluntary Payment:** Send reminder -> wait 30 days -> check payment -> paid/escalate
@@ -768,6 +797,8 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 - `POST /api/v1/cases/{id}/assign` - Assign caseworker
 - `POST /api/v1/cases/{id}/strategy` - Set collection strategy
 - `POST /api/v1/cases/{id}/close` - Close case
+- `POST /api/internal/v1/limitation-objections` - Create limitation objection workflow (petition059)
+- `PUT /api/internal/v1/limitation-objections/{indsigelsesId}/decision` - Record limitation objection decision (petition059)
 
 ---
 
@@ -1018,15 +1049,20 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 
 ### wage-garnishment-service (Port 8088)
 
-**Purpose:** Loenindeholdelse (wage garnishment) processing.
+**Purpose:** Loenindeholdelse (wage garnishment) processing, including the petition059 internal limitation-facts seam.
 
-**Implementation status:** SCAFFOLD ONLY
+**Implementation status:** PARTIALLY IMPLEMENTED
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | WageGarnishmentServiceApplication | Done | Spring Boot app |
 | application.yml | Done | |
-| Controllers/Services | Not started | |
+| WageGarnishmentLimitationFactsController | Done | `GET /api/internal/v1/limitation-facts/debtors/{debtorPersonId}` |
+| WageGarnishmentLimitationFacts | Done | Internal DTO: `afgoerelseRegistreret`, `underretningsDato`, `coveredFordringIds`, `inaktivSiden` |
+| Controllers/Services | Partial | Remaining wage-garnishment processing still pending |
+
+**API endpoints:**
+- `GET /api/internal/v1/limitation-facts/debtors/{debtorPersonId}` - Read wage-garnishment limitation facts for a debtor (petition059)
 
 ---
 
@@ -1165,11 +1201,16 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | PaymentServiceClient (extended) | Done | Added `getDaekningsraekkefoelge(debtorId)` — calls `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057) |
 | daekningsraakkefoelge.html | Done | Thymeleaf template — tabular display of GIL § 4 priority position (PrioritetKategori, RenteKomponent, fordring_id, daekning_beloeb) |
 | i18n DA + EN (extended) | Done | 12 new keys per locale: priority category labels (5), interest component labels (6), view title/header (1) |
+| **Limitation panel (petition059)** | **Done** | |
+| LimitationPanelController | Done | `GET /cases/{caseId}/debts/{fordringId}/limitation-panel` — fetches limitation status and renders the caseworker panel |
+| DebtServiceLimitationClient | Done | Reads limitation status and claim-complex members from debt-service |
+| limitation/limitation-panel.html | Done | Thymeleaf panel with status, expiry, claim-complex members, interruption history, supplementary periods, and objection actions |
 
 **Page routes include:**
 - `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, all categories, petition050)
 - `GET /cases/{caseId}/tidslinje/entries` - Timeline entries, load-more (HTMX, petition050)
 - `GET /debtors/{debtorId}/daekningsraekkefoelge` - GIL § 4 payment application order view (petition057)
+- `GET /cases/{caseId}/debts/{fordringId}/limitation-panel` - Limitation panel on claim detail (petition059)
 
 ---
 
@@ -1223,8 +1264,8 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 | Database | Service | Key Tables |
 |----------|---------|------------|
 | opendebt_person | person-registry | persons, organizations |
-| opendebt_case | case-service | cases, case_debt_ids, ACT_* (Flowable) |
-| opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries |
+| opendebt_case | case-service | cases, case_debt_ids, limitation_objection_workflow_record, ACT_* (Flowable) |
+| opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries, foraeldelse_record, afbrydelse_event, tillaegsfrist_event, fordringskompleks_link, limitation_objection_linkage |
 | opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
 | opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts, daekning_fordring, daekning_record |
 | opendebt_letter | letter-service | letters, letter_templates |
@@ -1273,7 +1314,10 @@ See the Communication Pattern diagram above.
 
 Pre-defined API specs (API-first, ADR-0004):
 - `api-specs/openapi-debt-service.yaml` - Debt management APIs
+- `api-specs/openapi-debt-service-limitation.yaml` - Petition059 limitation surface
 - `api-specs/openapi-case-service.yaml` - Case management and workflow APIs
+- `api-specs/openapi-case-service-limitation-internal.yaml` - Debt-service to case-service limitation workflow delegation
+- `api-specs/openapi-wage-garnishment-service-internal.yaml` - Wage-garnishment limitation fact contract
 
 ## Architecture Decision Records (ADRs)
 
@@ -1375,19 +1419,19 @@ Pre-defined API specs (API-first, ADR-0004):
 |---------|--------|-----------|-----------|---------------|
 | opendebt-common | Done | ~41 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
-| debt-service | Done | 94 | 29 | V1-V7 |
-| case-service | Done | 10 | 8 | V1 |
+| debt-service | Done | 94 | 37 | V1-V12 |
+| case-service | Done | 10 | 10 | V1-V3 |
 | rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
 | payment-service | Partial | ~68 | 4 | V1, V2, V3 |
 | integration-gateway | Partial | ~44 (+generated) | 7 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
 | letter-service | Scaffold | 1 | 0 | V1 |
 | offsetting-service | **Merged into debt-service** (ADR-0027) | - | - | - |
-| wage-garnishment-service | Scaffold | 1 | 0 | - |
+| wage-garnishment-service | Partial | 1 | 1 | - |
 | creditor-portal | Partial | ~74 | ~53 | - |
 | citizen-portal | Partial | ~19 | 6 | - |
-| caseworker-portal | Partial | ~5 | 2 | - |
-| **Total** | | **~347** | **~115** | **16** |
+| caseworker-portal | Partial | ~5 | 4 | - |
+| **Total** | | **~347** | **~127** | **23** |
 
 ## Research Spikes
 

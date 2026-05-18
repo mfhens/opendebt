@@ -1,0 +1,136 @@
+status: success
+agent: runtime-integration-conductor
+mode: enforce
+scope: petition059 runtime integration
+startup_path: >-
+  Flyway migration chain verified by static inspection from debt-service baseline migrations through
+  V11__audit_columns_for_auditableentity.sql and V12__limitation.sql, plus fresh petition059 smoke
+  runs for debt-service and caseworker-portal.
+services_checked:
+  - opendebt-debt-service
+  - opendebt-case-service
+  - opendebt-wage-garnishment-service
+  - opendebt-caseworker-portal
+surfaces_checked:
+  opendebt-debt-service:
+    - limitation clients (WageGarnishmentFactClient, LimitationObjectionWorkflowClient)
+    - LimitationConfiguration bean naming vs LimitationPolicyEngine injection
+    - application.yml and application-test.yml service URL wiring
+    - resilience4j circuit-breaker instance wiring
+    - V12__limitation.sql table/index coverage vs repository usage
+    - limitation controller route/security annotations
+  opendebt-case-service:
+    - LimitationObjectionWorkflowInternalController route and security annotations
+    - application.yml base URL/context-path assumptions
+  opendebt-wage-garnishment-service:
+    - WageGarnishmentLimitationFactsController route and security annotations
+    - application.yml port/context-path assumptions
+  opendebt-caseworker-portal:
+    - DebtServiceLimitationClient WebClient.Builder usage and debt-service base URL wiring
+    - LimitationPanelController route reachability assumptions
+findings:
+  - class: BLOCKING
+    service: opendebt-debt-service
+    drift_class: service wiring drift
+    description: >-
+      WageGarnishmentFactClient defaulted to http://localhost:8087 and called the wage-garnishment
+      API without the /wage-garnishment-service servlet context path, which would miss the actual
+      service running on :8088 behind a context-path.
+    remediation: >-
+      Fixed the default URL to :8088, added opendebt.services.wage-garnishment-service.url plus a
+      matching resilience4j circuit-breaker instance in debt-service application.yml, and updated the
+      client URI to /wage-garnishment-service/api/internal/v1/limitation-facts/....
+  - class: BLOCKING
+    service: opendebt-debt-service
+    drift_class: service wiring drift
+    description: >-
+      LimitationObjectionWorkflowClient targeted the case-service host root and omitted the
+      /case-service servlet context path, so internal objection workflow calls would 404 against the
+      deployed case-service base URL.
+    remediation: >-
+      Updated the client to call /case-service/api/internal/v1/limitation-objections and
+      /case-service/api/internal/v1/limitation-objections/{indsigelsesId}/decision while keeping the
+      existing case-service property key and default port (:8081).
+  - class: BLOCKING
+    service: opendebt-caseworker-portal
+    drift_class: service wiring drift
+    description: >-
+      DebtServiceLimitationClient used the correct debt-service host/port property but called
+      /api/v1/... without the /debt-service servlet context path, so the limitation panel would not
+      reach petition059 endpoints in a real runtime.
+    remediation: >-
+      Updated the client URIs to /debt-service/api/v1/foraeldelse/{fordringId} and
+      /debt-service/api/v1/fordringskompleks/{kompleksId}/members. WebClient.Builder usage and the
+      debt-service default URL (:8082) were already correct.
+  - class: INFO
+    service: opendebt-debt-service
+    drift_class: migration startup drift
+    description: >-
+      V12__limitation.sql is well-formed SQL, introduces five new table names that do not collide with
+      V11 or archived baseline tables, and contains no foreign-key references to unresolved objects.
+      Repository-backed lookup columns on kompleks and objection linkage were initially unindexed.
+    remediation: >-
+      Added indexes for foraeldelse_record.kompleks_id, fordringskompleks_link.kompleks_id, and
+      limitation_objection_linkage.fordring_id in both V12__limitation.sql and the matching JPA
+      entities, while preserving the existing fordring_id indexes.
+  - class: INFO
+    service: opendebt-debt-service
+    drift_class: config drift
+    description: >-
+      LimitationConfiguration uses @ConditionalOnMissingBean(name = "limitationClock"), and
+      LimitationPolicyEngine injects a constructor parameter named limitationClock. The bean naming is
+      consistent and test override wiring remains valid through TestConfig.MutableClock.
+    remediation: No change required.
+  - class: WARNING
+    service: opendebt-debt-service, opendebt-case-service, opendebt-wage-garnishment-service
+    drift_class: security drift
+    description: >-
+      Petition059 routes are annotated with @PreAuthorize, but these three modules do not declare a
+      local @EnableMethodSecurity/MethodSecurityConfig. No path allow-list was found that blocks the
+      new routes, but explicit module-level method-security enablement is not visible in runtime
+      wiring.
+    remediation: >-
+      Logged TB-059 in petitions/program-status.yaml to add explicit method-security wiring and a
+      negative 403 smoke test for the petition059 routes.
+verdict: PASS-WITH-WARNINGS
+summary: >-
+  Petition059 had three blocking runtime wiring defects: the wage-garnishment client used the wrong
+  default port and all three new inter-service clients omitted deployed servlet context paths. Those
+  defects are now fixed, the debt-service config and V12 migration are aligned with repository usage,
+  and fresh petition059 Maven smoke runs passed for debt-service and caseworker-portal. One warning
+  remains: debt-service, case-service, and wage-garnishment-service rely on implicit method-security
+  wiring even though the new routes use @PreAuthorize.
+artifacts:
+  - petitions/reviews/petition059-runtime-integration-conductor.yaml
+evidence_checked:
+  - claim: debt-service petition059 runtime wiring is green after remediation
+    proof: mvn -pl opendebt-debt-service test "-Dcucumber.filter.tags=@petition059" -q
+    freshness: current run
+    result: pass
+  - claim: caseworker limitation panel wiring still works with the corrected debt-service route paths
+    proof: mvn -pl opendebt-caseworker-portal test "-Dcucumber.filter.tags=@petition059" -q
+    freshness: current run
+    result: pass
+  - claim: petition059 clients must include servlet context paths when using configured base URLs
+    proof: >-
+      Existing service clients plus k8s/base/configmap.yaml expose CASE_SERVICE_URL, DEBT_SERVICE_URL,
+      and WAGE_GARNISHMENT_SERVICE_URL as host:port values only, while the target services publish
+      context-paths /case-service, /debt-service, and /wage-garnishment-service.
+    freshness: current run
+    result: pass
+  - claim: Flyway migration chain is aligned with petition059 persistence wiring
+    proof: >-
+      Inspected V11__audit_columns_for_auditableentity.sql, V12__limitation.sql, archived V1 debt
+      schema, limitation entities, and limitation repositories. No table-name or FK drift found; added
+      missing lookup indexes for repository-backed columns.
+    freshness: current run
+    result: pass
+warnings:
+  - TB-059: explicit method-security enablement is not visible in debt-service, case-service, or wage-garnishment-service.
+escalations: []
+next_action: >-
+  Petition059 is PR-ready from a runtime wiring perspective after the applied fixes; separately close
+  TB-059 to make method-security enablement explicit and add a negative security smoke test.
+handoff_target: tech-debt-executor
+tb_handoffs:
+  - TB-059

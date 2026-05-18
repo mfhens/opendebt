@@ -1,0 +1,62 @@
+petition_id: petition059
+agent: catala-encoder
+mode: pipeline-phase-3.7
+verdict: PASS-WITH-WARNINGS
+timestamp: '2026-05-16T19:56:30+02:00'
+catala_encoding_summary:
+  petition: P059
+  legal_footprint: true
+  scopes_produced:
+    - file: catala/ga_2_4_foraeldelse.catala_da
+      scopes:
+        - UdskydelsesStatus
+      rules_encoded: 1
+      note: Existing G.A.2.4 oracle extended for petition059 threshold semantics.
+  tests_produced:
+    - file: catala/tests/ga_foraeldelse_tests.catala_da
+      test_count: 25
+      fr_coverage:
+        - FR-2.2
+        - FR-2.3b
+        - FR-4.5
+      note: Added exact DMI threshold-day negative case and six isInUdskydelse boundary cases.
+  typecheck: DEFERRED
+  typecheck_repairs: 0
+  ci_yml_updated: true
+  program_status_updated: false
+  juridisk_usikkerhed_flags: 0
+  knowledge_entries_logged: 1
+  petition_status_updated: false
+  blocking_issues: []
+evidence_checked:
+  - claim: petition059 still warrants Catala treatment
+    proof: >
+      `petitions/petition059-foraeldelse.md` anchors the feature to G.A.2.4, GIL §§ 18 and 18a,
+      Forældelsesl. §§ 3, 5, 18-19, and threshold/date arithmetic rules for udskydelse and
+      afbrydelse. `petitions/program-status.yaml:1401-1418` already marks petition059 as
+      `legal_footprint: true`.
+    freshness: '2026-05-16T19:56:30+02:00'
+    result: pass
+  - claim: existing Catala oracle already covered the original P070 gaps
+    proof: >
+      `catala/ga_2_4_foraeldelse.catala_da:636-659` already encoded GIL § 18a, stk. 7 foreloebig
+      afbrydelse, and `catala/tests/ga_foraeldelse_tests.catala_da:435-455` already exercised that
+      branch. PSRM threshold-day cases already existed at tests 03-05.
+    freshness: '2026-05-16T19:56:30+02:00'
+    result: pass
+  - claim: petition059-specific threshold semantics are now encoded in the Catala oracle
+    proof: >
+      Added `UdskydelsesStatus` at `catala/ga_2_4_foraeldelse.catala_da:166-198`, aligned the DMI
+      positive boundary to exact date `2024-01-01`, added negative boundary `2023-12-31`, and added
+      six `isInUdskydelse` boundary tests in `catala/tests/ga_foraeldelse_tests.catala_da`.
+    freshness: '2026-05-16T19:56:30+02:00'
+    result: pass
+warnings:
+  - >
+    Local Catala validation is deferred in this environment because `catala` was not available on
+    PATH and no `opam`-provisioned Catala executable was discoverable during this run.
+  - >
+    `chub search "catala"` returned zero indexed docs, so the update used repository Catala
+    conventions as the authoritative fallback.
+next_action: Proceed to Phase 4 specifications using the updated G.A.2.4 Catala oracle as reference evidence.
+handoff_target: specs-translator

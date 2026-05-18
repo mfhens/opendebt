@@ -8,6 +8,17 @@ Gæld.bekendtg., SKM2015.718.ØLR
 
 ---
 
+## Contract guardrails
+
+- This outcome contract is ownership-neutral and defines observable public behaviour only.
+  It must not be rewritten into case-service-only public endpoints during architecture
+  elaboration.
+- Public indsigelse commands do not accept caller-supplied `registeredBy`, `decidedBy`, or
+  `debtorPersonId`. Audit identity is derived from authenticated server-side context and
+  debtor linkage is derived from authoritative claim state for the addressed `fordringId`.
+
+---
+
 ## Observable outcomes by functional requirement
 
 ### FR-1: Forældelsesfrist tracking
@@ -27,7 +38,8 @@ Gæld.bekendtg., SKM2015.718.ØLR
   - `isInUdskydelse` (boolean — true if current date is before `udskydelseDato`)
   - `retsgrundlag` (ORDINARY or SAERLIGT_RETSGRUNDLAG)
   - `afbrydelseHistory` (ordered list of all registered afbrydelse events with type,
-    eventDate, legalReference, newFristExpires)
+    eventDate, legalReference, newFristExpires and, for propagated events,
+    `sourceFordringId`, `targetFordringId`, `propagationReason`)
   - `tillaegsfristHistory` (ordered list of all tillægsfrister with type, appliedDate,
     extensionYears, newFristExpires)
   - `status` (ACTIVE, FORAELDET, or INDSIGELSE_PENDING)
@@ -57,12 +69,20 @@ Gæld.bekendtg., SKM2015.718.ØLR
   - `currentFristExpires` cannot be earlier than `2024-11-21` regardless of
     the registration date.
   - `isInUdskydelse` is `true` if the current date is before `2021-11-20`.
+- For a PSRM fordring with registration date = 2015-11-18:
+  - `udskydelseDato = null`.
+  - `isInUdskydelse = false`.
 - For a DMI/SAP38 fordring with registration date ≥ 2024-01-01:
   - `udskydelseDato` is set to `2027-11-20`.
   - `currentFristExpires` cannot be earlier than `2030-11-21`.
   - `isInUdskydelse` is `true` if the current date is before `2027-11-20`.
+- For a DMI/SAP38 fordring with registration date = 2023-12-31:
+  - `udskydelseDato = null`.
+  - `isInUdskydelse = false`.
 - Udskydelse is stored as a non-mutable field. A subsequent afbrydelse event does not
   change `udskydelseDato`.
+- `isInUdskydelse` flips from `true` to `false` on `udskydelseDato` itself and remains
+  `false` after that date.
 - A fordring outside the udskydelse ranges has `udskydelseDato = null` and
   `isInUdskydelse = false`.
 
@@ -123,11 +143,32 @@ Gæld.bekendtg., SKM2015.718.ØLR
 ### FR-4: Fordringskompleks membership and afbrydelse propagation (GIL § 18a, stk. 2 / G.A.2.4.2)
 
 **Preconditions**
-- Two or more fordringer are registered as members of the same fordringskompleks via
-  `POST /fordringskompleks`.
+- Two or more fordringer can be registered as members of the same fordringskompleks via
+  the ownership-neutral public membership operations.
 - An afbrydelse event is registered for one member fordring.
 
-**Trigger**
+**Trigger — create membership**
+- `POST /fordringskompleks` with one or more initial member fordringIds.
+
+**Expected backend behaviour — create membership**
+- The service creates a new fordringskompleks and returns a generated `kompleksId`.
+- The supplied initial members become members of the new kompleks.
+
+**Trigger — add membership**
+- `POST /fordringskompleks/{kompleksId}/members/{fordringId}`.
+
+**Expected backend behaviour — add membership**
+- The addressed `fordringId` becomes a member of the addressed `kompleksId`.
+- Membership is persisted so later propagation uses the same kompleks definition.
+
+**Trigger — list membership**
+- `GET /fordringskompleks/{kompleksId}/members`.
+
+**Expected backend behaviour — list membership**
+- The service returns the current member list for the addressed `kompleksId`.
+- The membership list is part of the observable FR-4 contract and remains ownership-neutral.
+
+**Trigger — propagation**
 - `POST /foraeldelse/{fordringId}/afbrydelse` where `fordringId` is a member of a
   fordringskompleks.
 
@@ -144,9 +185,18 @@ Gæld.bekendtg., SKM2015.718.ØLR
   `ForaeldelseRecord` is updated (atomicity guarantee).
 - `GET /foraeldelse/{anyMemberId}` for any member reflects the propagated event.
 
+**Trigger — empty claim-complex reception**
+- A tomt fordringskompleks is received into inddrivelse.
+
+**Expected backend behaviour — empty claim-complex reception**
+- The service records a provisional interruption for the received fordring.
+- The recorded interruption carries legal reference `GIL § 18a, stk. 7`.
+- `currentFristExpires = receiptDate + 3 years`.
+- The recorded interruption is visible through `GET /foraeldelse/{fordringId}`.
+
 **Expected portal behaviour**
-- The forældelsesstatus panel shows fordringskompleks membership and the source fordringId
-  for any propagated afbrydelse event.
+- The forældelsesstatus panel shows fordringskompleks membership and, for any propagated
+  afbrydelse event, both `sourceFordringId` and `targetFordringId`.
 
 ---
 
@@ -184,6 +234,10 @@ Gæld.bekendtg., SKM2015.718.ØLR
   `POST /foraeldelse/{fordringId}/indsigelse`.
 
 **Expected backend behaviour — registration:**
+- The public command contract does not accept `registeredBy`, `decidedBy`, or
+  `debtorPersonId`; if any are supplied by the caller, the request is rejected as invalid.
+- `registeredBy` is derived from authenticated server-side context and `debtorPersonId` is
+  derived from authoritative claim state for the addressed `fordringId`.
 - Fordring status transitions from `ACTIVE` to `INDSIGELSE_PENDING`.
 - A `ForaeldelseIndsigelse` record is created with a unique `indsigelsesId`, timestamp,
   and caseworker identity.
@@ -195,6 +249,10 @@ Gæld.bekendtg., SKM2015.718.ØLR
   `{ outcome: VALID | INVALID, rationale: string }`.
 
 **Expected backend behaviour — evaluation (VALID):**
+- The public command contract does not accept `registeredBy`, `decidedBy`, or
+  `debtorPersonId`; if any are supplied by the caller, the request is rejected as invalid.
+- `decidedBy` is derived from authenticated server-side context and `debtorPersonId` is
+  derived from authoritative claim state for the addressed `fordringId`.
 - Fordring status transitions to `FORAELDET`.
 - Fordring lifecycle transitions to a terminal inddrivelse state (removed from active
   inddrivelse).
@@ -203,6 +261,10 @@ Gæld.bekendtg., SKM2015.718.ØLR
 - Response: HTTP 200 with updated `ForaeldelseStatusDto` showing `status = FORAELDET`.
 
 **Expected backend behaviour — evaluation (INVALID):**
+- The public command contract does not accept `registeredBy`, `decidedBy`, or
+  `debtorPersonId`; if any are supplied by the caller, the request is rejected as invalid.
+- `decidedBy` is derived from authenticated server-side context and `debtorPersonId` is
+  derived from authoritative claim state for the addressed `fordringId`.
 - Fordring status returns to `ACTIVE`.
 - The rejection rationale is stored in the `ForaeldelseIndsigelse` record.
 - An audit log entry is created with outcome `INVALID`, caseworker identity, timestamp, and
@@ -232,8 +294,8 @@ Gæld.bekendtg., SKM2015.718.ØLR
   - Current status (Aktiv / Forældet / Indsigelse under behandling) prominently displayed.
   - Next expiry date (`currentFristExpires`) in ISO date format.
   - Udskydelse information (applicable date, whether currently in udskydelse window).
-  - Afbrydelse history table (type, date, legal reference, resulting new frist) in
-    chronological order.
+  - Afbrydelse history table (type, date, legal reference, resulting new frist and, for
+    propagated events, `sourceFordringId`/`targetFordringId`) in chronological order.
   - Fordringskompleks membership indicator (name/ID of kompleks, list of member fordringIds).
   - Tillægsfrist history (type, date, extension, new frist) if any tillægsfrister have
     been applied.
@@ -246,16 +308,20 @@ Gæld.bekendtg., SKM2015.718.ØLR
 
 ## Acceptance criteria
 
-1. `GET /foraeldelse/{fordringId}` returns a `ForaeldelseStatusDto` with `currentFristExpires`,
-   `udskydelseDato`, `isInUdskydelse`, `retsgrundlag`, `afbrydelseHistory`,
-   `tillaegsfristHistory`, and `status` (FR-1).
+1. `GET /foraeldelse/{fordringId}` returns a `ForaeldelseStatusDto` with `fordringId`,
+   `currentFristExpires`, `udskydelseDato`, `isInUdskydelse`, `retsgrundlag`,
+   `afbrydelseHistory`, `tillaegsfristHistory`, and `status`; propagated history entries
+   retain `sourceFordringId` and `targetFordringId` where propagation applies (FR-1/FR-4).
 2. A fordring with no afbrydelse events and no udskydelse returns `currentFristExpires` equal
    to the registration date plus 3 years (FR-1).
 3. A PSRM fordring registered from 19-11-2015 has `udskydelseDato = 2021-11-20`; its
-   `currentFristExpires` is never earlier than `2024-11-21` (FR-2).
+   `currentFristExpires` is never earlier than `2024-11-21`, while a PSRM fordring registered
+   on 2015-11-18 has `udskydelseDato = null` (FR-2).
 4. A DMI/SAP38 fordring registered from 2024-01-01 has `udskydelseDato = 2027-11-20`; its
-   `currentFristExpires` is never earlier than `2030-11-21` (FR-2).
-5. `udskydelseDato` is immutable; a subsequent afbrydelse event does not change its value (FR-2).
+   `currentFristExpires` is never earlier than `2030-11-21`, while a DMI/SAP38 fordring
+   registered on 2023-12-31 has `udskydelseDato = null` (FR-2).
+5. `udskydelseDato` is immutable; a subsequent afbrydelse event does not change its value, and
+   `isInUdskydelse` flips from `true` to `false` on the threshold date itself (FR-2).
 6. Registering a BEROSTILLELSE event sets `currentFristExpires = eventDate + 3 years` and
    logs the event with legal reference `GIL § 18a, stk. 8` (FR-3).
 7. Registering a LOENINDEHOLDELSE event with `afgoerelseRegistreret = true` sets
@@ -271,16 +337,22 @@ Gæld.bekendtg., SKM2015.718.ØLR
     successful udlæg for both ORDINARY and SAERLIGT_RETSGRUNDLAG fordringer (FR-3).
 12. Registering a MODREGNING event sets `currentFristExpires = eventDate + 3 years` and logs
     the event with legal reference `Forældelsesl. § 18, stk. 4` (FR-3).
-13. When an afbrydelse event is registered for a fordring that is a member of a
-    fordringskompleks, all other members receive the propagated event in the same
-    transaction; each member's `currentFristExpires` is updated; propagation is logged with
-    `GIL § 18a, stk. 2` (FR-4).
+13. `POST /fordringskompleks`, `POST /fordringskompleks/{kompleksId}/members/{fordringId}`,
+    and `GET /fordringskompleks/{kompleksId}/members` are supported as the public FR-4
+    membership operations; when an afbrydelse event is registered for a member fordring, all
+    other members receive the propagated event in the same transaction; each member's
+    `currentFristExpires` is updated; propagation is logged with `GIL § 18a, stk. 2` and
+    exposes `sourceFordringId`/`targetFordringId` in the observable contract; receipt of a
+    tomt fordringskompleks into inddrivelse records a provisional interruption under
+    `GIL § 18a, stk. 7` with `currentFristExpires = receiptDate + 3 years` (FR-4).
 14. If the fordringskompleks propagation transaction fails for any member, no
     `ForaeldelseRecord` is updated (atomicity) (FR-4).
 15. Registering `INTERN_OPSKRIVNING` tillægsfrist adds 2 years to `currentFristExpires` and
     logs the extension with legal reference `G.A.2.4.4.2` (FR-5).
 16. Registering a forældelsesindsigelse transitions the fordring status to
-    `INDSIGELSE_PENDING` and creates a `ForaeldelseIndsigelse` record with a unique ID (FR-6).
+    `INDSIGELSE_PENDING` and creates a `ForaeldelseIndsigelse` record with a unique ID; the
+    public command rejects caller-supplied `registeredBy`, `decidedBy`, and
+    `debtorPersonId`, deriving those values server-side instead (FR-6).
 17. Evaluating a forældelsesindsigelse as `VALID` transitions the fordring to status
     `FORAELDET` and removes it from active inddrivelse; the outcome is audit-logged (FR-6).
 18. Evaluating a forældelsesindsigelse as `INVALID` returns the fordring to status `ACTIVE`
@@ -310,9 +382,12 @@ Gæld.bekendtg., SKM2015.718.ØLR
 - HTTP 422 returned when LOENINDEHOLDELSE is submitted without confirmed afgørelse.
 - Forgæves udlæg treated identically to successful udlæg.
 - Fordringskompleks propagation is atomic and logged with GIL § 18a, stk. 2 reference.
+- FR-4 membership management preserves create/add/list public operations and propagated
+  history exposes `sourceFordringId` and `targetFordringId`.
 - Tillægsfrister (2-year extension) applied and logged for INTERN_OPSKRIVNING events.
 - Forældelsesindsigelse workflow: register → evaluate (VALID → FORAELDET removes from
-  inddrivelse; INVALID → ACTIVE with stored rationale).
+  inddrivelse; INVALID → ACTIVE with stored rationale), while `registeredBy`/`decidedBy`
+  remain server-derived and `debtorPersonId` remains derived from authoritative claim state.
 - `GET /foraeldelse/{fordringId}` returns correct `ForaeldelseStatusDto` at p99 < 200 ms.
 - Sagsbehandlerportal panel displays all required forældelsesstatus fields.
 - No PII in forældelses-service entities or API responses.
@@ -368,17 +443,26 @@ Gæld.bekendtg., SKM2015.718.ØLR
 ## Failure conditions
 
 - `GET /foraeldelse/{fordringId}` does not return `currentFristExpires`, `udskydelseDato`,
-  `afbrydelseHistory`, or `status` in the response body.
+  `afbrydelseHistory`, propagated `sourceFordringId`/`targetFordringId`, or `status` in the
+  response body.
 - A PSRM fordring (≥ 19-11-2015) has `currentFristExpires` earlier than 2024-11-21.
 - A DMI/SAP38 fordring (≥ 2024-01-01) has `currentFristExpires` earlier than 2030-11-21.
+- A PSRM fordring registered on 2015-11-18 or a DMI/SAP38 fordring registered on 2023-12-31
+  incorrectly receives a system-specific udskydelse date.
 - `udskydelseDato` changes after a subsequent afbrydelse event.
 - LOENINDEHOLDELSE with `afgoerelseRegistreret = false` is accepted (varsel alone afbryder).
 - Varsel-only afbrydelse registration succeeds and updates `currentFristExpires`.
 - A UDLAEG event on a særligt retsgrundlag fordring produces a 3-year (not 10-year) frist.
 - Forgæves udlæg does not constitute afbrydelse.
 - Fordringskompleks propagation is partial (some members updated, others not).
+- FR-4 create/add/list membership operations are absent from the public contract.
+- Receipt of a tomt fordringskompleks does not create a provisional interruption with legal
+  reference `GIL § 18a, stk. 7` and a new 3-year frist.
 - A valid forældelsesindsigelse does not remove the fordring from active inddrivelse.
 - An invalid forældelsesindsigelse does not store the rationale or return the fordring to ACTIVE.
+- Public indsigelse commands accept caller-supplied `registeredBy`, `decidedBy`, or
+  `debtorPersonId`.
 - Any afbrydelse event, tillægsfrist, or indsigelse outcome is not logged to the audit log.
 - CPR, name, address, or other PII appears in any entity or API response.
+- The requirement package is rewritten to case-service-only public endpoints.
 - `behave --dry-run` fails on `petitions/petition059-foraeldelse.feature`.

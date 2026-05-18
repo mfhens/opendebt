@@ -1,0 +1,44 @@
+verdict: REQUEST-CHANGES
+summary: |
+  The petition059 implementation is largely minimal with appropriate abstractions for the complex 
+  domain (Danish prescription law). However, three unused fields were found in DTOs that add no 
+  observable behavior and should be removed. Additionally, one utility method is duplicated across 
+  two service classes. The interface/implementation split follows standard Spring patterns and is 
+  appropriate for transaction boundaries and testing.
+
+findings:
+  - severity: WARNING
+    file: opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/limitation/dto/RegisterObjectionRequest.java
+    symbol: RegisterObjectionRequest.note
+    finding: |
+      The `note` field is defined but never read or used anywhere in the limitation package. 
+      The field exists on line 24 but LimitationObjectionFacade.registerObjection() only checks 
+      hasUnexpectedFields() and never accesses the note field. No other code in the limitation 
+      package references this field.
+    suggestion: |
+      Remove the unused `note` field from RegisterObjectionRequest. If a note/comment is needed 
+      for objections in the future, add it when the requirement emerges.
+
+  - severity: WARNING
+    file: opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/limitation/dto/RegisterAfbrydelseRequest.java
+    symbol: RegisterAfbrydelseRequest.forgaevesUdlaeg
+    finding: |
+      The `forgaevesUdlaeg` field is defined on line 23 but never checked in the implementation. 
+      LimitationStateApplicationServiceImpl.registerInterruption() handles UDLAEG interruptions 
+      but does not read or act on the forgaevesUdlaeg flag. Tests reference it but the actual 
+      business logic ignores it completely.
+    suggestion: |
+      Remove the unused `forgaevesUdlaeg` field. If the distinction between successful and 
+      unsuccessful UDLAEG becomes relevant for limitation calculation, add it when the business 
+      rule requires it.
+
+  - severity: INFO
+    file: opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/limitation/service
+    symbol: currentActor() method
+    finding: |
+      The `currentActor()` method is duplicated identically in both LimitationAuditPublisher 
+      (line 115) and LimitationObjectionFacade (line 82). Both extract the username from 
+      SecurityContext with identical fallback logic to "system".
+    suggestion: |
+      Extract currentActor() to a shared utility class (e.g., SecurityContextUtils) to eliminate 
+      duplication. Both classes can then inject and use the utility.
