@@ -20,7 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.RejectedClaimsClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
 import dk.ufst.opendebt.creditor.dto.RejectedClaimDebtorDto;
@@ -35,7 +35,7 @@ class RejectedClaimsControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
   private static final UUID TEST_CLAIM_ID = UUID.fromString("00000000-0000-0000-0000-000000060001");
 
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private RejectedClaimsClient rejectedClaimsClient;
   @Mock private PortalSessionService portalSessionService;
   @Mock private MessageSource messageSource;
 
@@ -46,7 +46,7 @@ class RejectedClaimsControllerTest {
   @BeforeEach
   void setUp() {
     controller =
-        new RejectedClaimsController(debtServiceClient, portalSessionService, messageSource);
+        new RejectedClaimsController(rejectedClaimsClient, portalSessionService, messageSource);
     ReflectionTestUtils.setField(controller, "showDebtorDetails", true);
     session = new MockHttpSession();
   }
@@ -81,7 +81,7 @@ class RejectedClaimsControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(rejectedClaimsClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -99,7 +99,7 @@ class RejectedClaimsControllerTest {
   void rejectedTableFragment_returnsEmptyList_whenServiceUnavailable() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.listRejectedClaims(any(), any()))
+    when(rejectedClaimsClient.listRejectedClaims(any(), any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     Model model = new ConcurrentModel();
@@ -120,7 +120,7 @@ class RejectedClaimsControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CPR", "0101901234"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(rejectedClaimsClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.rejectedTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -138,7 +138,7 @@ class RejectedClaimsControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(rejectedClaimsClient.listRejectedClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.rejectedTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -164,7 +164,7 @@ class RejectedClaimsControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
 
     RejectedClaimDetailDto detail = buildRejectedClaimDetail();
-    when(debtServiceClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(rejectedClaimsClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     String viewName = controller.rejectedClaimDetail(TEST_CLAIM_ID, model, session);
@@ -182,7 +182,7 @@ class RejectedClaimsControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
 
     RejectedClaimDetailDto detail = buildRejectedClaimDetail();
-    when(debtServiceClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(rejectedClaimsClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.rejectedClaimDetail(TEST_CLAIM_ID, model, session);
@@ -200,7 +200,7 @@ class RejectedClaimsControllerTest {
   void rejectedClaimDetail_handlesServiceError() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getRejectedClaimDetail(TEST_CLAIM_ID))
+    when(rejectedClaimsClient.getRejectedClaimDetail(TEST_CLAIM_ID))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("rejected.detail.error.service"), any(), any()))
         .thenReturn("Service error message");
@@ -217,7 +217,7 @@ class RejectedClaimsControllerTest {
   void rejectedClaimDetail_handlesNotFound() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
+    when(rejectedClaimsClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
     when(messageSource.getMessage(eq("rejected.detail.error.notfound"), any(), any()))
         .thenReturn("Not found message");
 
@@ -235,7 +235,7 @@ class RejectedClaimsControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
 
     RejectedClaimDetailDto detail = buildRejectedClaimDetail();
-    when(debtServiceClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(rejectedClaimsClient.getRejectedClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     // Set flag to false
     ReflectionTestUtils.setField(controller, "showDebtorDetails", false);

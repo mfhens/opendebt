@@ -11,8 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionResponse;
 import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
@@ -30,7 +30,7 @@ public class DashboardController {
   private static final String VIEW_INDEX = "index";
 
   private final CreditorServiceClient creditorServiceClient;
-  private final DebtServiceClient debtServiceClient;
+  private final ClaimQueryClient claimQueryClient;
   private final MessageSource messageSource;
   private final PortalSessionService portalSessionService;
 
@@ -93,7 +93,7 @@ public class DashboardController {
       counts = ClaimCountsDto.builder().build();
     } else {
       try {
-        counts = debtServiceClient.getClaimCounts(actingCreditor);
+        counts = claimQueryClient.getClaimCounts(actingCreditor);
         if (counts == null) {
           counts = ClaimCountsDto.builder().build();
         }

@@ -24,10 +24,10 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-class DebtServiceClientTest {
+class ClaimSubmissionClientTest {
 
   private MockWebServer mockWebServer;
-  private DebtServiceClient client;
+  private ClaimSubmissionClient client;
   private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   @BeforeEach
@@ -36,51 +36,12 @@ class DebtServiceClientTest {
     mockWebServer.start();
     String baseUrl = mockWebServer.url("/").toString();
     baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-    client = new DebtServiceClient(WebClient.builder(), baseUrl);
+    client = new ClaimSubmissionClient(WebClient.builder(), baseUrl);
   }
 
   @AfterEach
   void tearDown() throws Exception {
     mockWebServer.shutdown();
-  }
-
-  @Test
-  void listDebts_returnsPageOfDebts() throws InterruptedException {
-    UUID creditorOrgId = UUID.randomUUID();
-    String pageJson =
-        """
-        {
-          "content": [{"id": "%s", "creditorOrgId": "%s", "principalAmount": 1000.00, "status": "ACTIVE"}],
-          "number": 0,
-          "size": 20,
-          "totalElements": 1,
-          "totalPages": 1
-        }
-        """
-            .formatted(UUID.randomUUID(), creditorOrgId);
-    mockWebServer.enqueue(
-        new MockResponse().setBody(pageJson).addHeader("Content-Type", "application/json"));
-
-    RestPage<PortalDebtDto> result = client.listDebts(creditorOrgId);
-
-    assertThat(result.getContent()).hasSize(1);
-    assertThat(result.getTotalElements()).isEqualTo(1);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-    assertThat(request.getPath())
-        .contains("/debt-service/api/v1/debts")
-        .contains("creditorId=" + creditorOrgId);
-    assertThat(request.getMethod()).isEqualTo("GET");
-  }
-
-  @Test
-  void listDebts_throwsOnServerError() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
-
-    UUID creditorId = UUID.randomUUID();
-    assertThatThrownBy(() -> client.listDebts(creditorId))
-        .isInstanceOf(OpenDebtException.class)
-        .hasMessageContaining("unavailable");
   }
 
   @Test

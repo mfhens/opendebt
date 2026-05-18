@@ -24,8 +24,9 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import dk.ufst.opendebt.creditor.client.ClaimAdjustmentClient;
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.*;
 import dk.ufst.opendebt.creditor.dto.WriteDownReasonCode;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
@@ -37,7 +38,8 @@ class ClaimAdjustmentControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
   private static final UUID TEST_CLAIM_ID = UUID.fromString("00000000-0000-0000-0000-000000000100");
 
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private ClaimAdjustmentClient claimAdjustmentClient;
+  @Mock private ClaimQueryClient claimQueryClient;
   @Mock private CreditorServiceClient creditorServiceClient;
   @Mock private PortalSessionService portalSessionService;
   @Mock private MessageSource messageSource;
@@ -104,7 +106,7 @@ class ClaimAdjustmentControllerTest {
     CreditorAgreementDto agreement =
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     Model model = new ConcurrentModel();
     String viewName = controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_DOWN", model, session);
@@ -129,7 +131,7 @@ class ClaimAdjustmentControllerTest {
             .allowWriteUpAdjustment(true)
             .build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     Model model = new ConcurrentModel();
     String viewName = controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_UP", model, session);
@@ -154,7 +156,7 @@ class ClaimAdjustmentControllerTest {
             .allowWriteDownPayment(true)
             .build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildMultiDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildMultiDebtorClaim());
 
     Model model = new ConcurrentModel();
     controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_DOWN", model, session);
@@ -170,7 +172,7 @@ class ClaimAdjustmentControllerTest {
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
     ClaimDetailDto claim = buildMultiDebtorClaim();
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_DOWN", model, session);
@@ -243,7 +245,7 @@ class ClaimAdjustmentControllerTest {
     CreditorAgreementDto agreement =
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
     when(messageSource.getMessage(
             eq("adjustment.validation.type.notpermitted"), any(), any(Locale.class)))
         .thenReturn("Type not permitted.");
@@ -276,7 +278,7 @@ class ClaimAdjustmentControllerTest {
             .allowWriteDownPayment(true)
             .build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildMultiDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildMultiDebtorClaim());
     when(messageSource.getMessage(
             eq("adjustment.validation.debtor.required"), any(), any(Locale.class)))
         .thenReturn("Select a debtor.");
@@ -308,7 +310,7 @@ class ClaimAdjustmentControllerTest {
     CreditorAgreementDto agreement =
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     AdjustmentReceiptDto receipt =
         AdjustmentReceiptDto.builder()
@@ -317,7 +319,7 @@ class ClaimAdjustmentControllerTest {
             .amount(new BigDecimal("500.00"))
             .adjustmentType("NEDSKRIV")
             .build();
-    when(debtServiceClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
+    when(claimAdjustmentClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
 
     ClaimAdjustmentRequestDto form =
         ClaimAdjustmentRequestDto.builder()
@@ -338,7 +340,7 @@ class ClaimAdjustmentControllerTest {
     assertThat(redirectAttributes.getFlashAttributes())
         .extractingByKey("receipt")
         .isEqualTo(receipt);
-    verify(debtServiceClient).submitAdjustment(eq(TEST_CLAIM_ID), any());
+    verify(claimAdjustmentClient).submitAdjustment(eq(TEST_CLAIM_ID), any());
   }
 
   @Test
@@ -351,7 +353,7 @@ class ClaimAdjustmentControllerTest {
             .allowWriteDownPayment(true)
             .build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     AdjustmentReceiptDto receipt =
         AdjustmentReceiptDto.builder()
@@ -361,7 +363,7 @@ class ClaimAdjustmentControllerTest {
             .debtorIdentifier("0101901234")
             .adjustmentType("NEDSKRIVNING_INDBETALING")
             .build();
-    when(debtServiceClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
+    when(claimAdjustmentClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
 
     ClaimAdjustmentRequestDto form =
         ClaimAdjustmentRequestDto.builder()
@@ -389,8 +391,8 @@ class ClaimAdjustmentControllerTest {
     CreditorAgreementDto agreement =
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
-    when(debtServiceClient.submitAdjustment(eq(TEST_CLAIM_ID), any()))
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimAdjustmentClient.submitAdjustment(eq(TEST_CLAIM_ID), any()))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("adjustment.submit.error"), any(), any(Locale.class)))
         .thenReturn("Submission failed.");
@@ -427,7 +429,7 @@ class ClaimAdjustmentControllerTest {
             .allowWriteUpAdjustment(true)
             .build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     AdjustmentReceiptDto receipt =
         AdjustmentReceiptDto.builder()
@@ -436,7 +438,7 @@ class ClaimAdjustmentControllerTest {
             .amount(new BigDecimal("100.00"))
             .adjustmentType("OPSKRIVNING_REGULERING")
             .build();
-    when(debtServiceClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
+    when(claimAdjustmentClient.submitAdjustment(eq(TEST_CLAIM_ID), any())).thenReturn(receipt);
 
     ClaimAdjustmentRequestDto form =
         ClaimAdjustmentRequestDto.builder()
@@ -464,7 +466,7 @@ class ClaimAdjustmentControllerTest {
     CreditorAgreementDto agreement =
         CreditorAgreementDto.builder().portalActionsAllowed(true).allowWriteDown(true).build();
     when(creditorServiceClient.getCreditorAgreement(TEST_CREDITOR_ORG_ID)).thenReturn(agreement);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     ClaimAdjustmentRequestDto form =
         ClaimAdjustmentRequestDto.builder()
@@ -506,7 +508,7 @@ class ClaimAdjustmentControllerTest {
                 List.of(
                     DebtorInfoDto.builder().identifierType("CPR").identifier("0101901234").build()))
             .build();
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(hoeringClaim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(hoeringClaim);
 
     Model model = new ConcurrentModel();
     controller.showAdjustmentForm(TEST_CLAIM_ID, "WRITE_DOWN", model, session);
@@ -535,7 +537,7 @@ class ClaimAdjustmentControllerTest {
                 List.of(
                     DebtorInfoDto.builder().identifierType("CPR").identifier("0101901234").build()))
             .build();
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(renteClaim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(renteClaim);
     when(messageSource.getMessage(
             eq("adjustment.validation.type.rentefordring"), any(), any(Locale.class)))
         .thenReturn("Opskrivning af rente ikke tilladt via opskrivningsfordring.");

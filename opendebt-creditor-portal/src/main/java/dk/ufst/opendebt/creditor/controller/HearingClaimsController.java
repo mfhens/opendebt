@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.HearingClaimsClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
 import dk.ufst.opendebt.creditor.dto.HearingApproveRequestDto;
@@ -64,7 +64,7 @@ public class HearingClaimsController {
           "OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING",
           "OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING");
 
-  private final DebtServiceClient debtServiceClient;
+  private final HearingClaimsClient hearingClaimsClient;
   private final PortalSessionService portalSessionService;
   private final MessageSource messageSource;
 
@@ -161,7 +161,7 @@ public class HearingClaimsController {
     }
 
     try {
-      debtServiceClient.approveHearingClaim(id, approveForm);
+      hearingClaimsClient.approveHearingClaim(id, approveForm);
       log.info("Hearing claim {} approved by creditor {}", id, actingCreditor);
       redirectAttributes.addFlashAttribute(
           "successMessage",
@@ -198,7 +198,7 @@ public class HearingClaimsController {
     }
 
     try {
-      debtServiceClient.withdrawHearingClaim(id, withdrawForm);
+      hearingClaimsClient.withdrawHearingClaim(id, withdrawForm);
       log.info("Hearing claim {} withdrawn by creditor {}", id, actingCreditor);
       redirectAttributes.addFlashAttribute(
           "successMessage",
@@ -247,7 +247,7 @@ public class HearingClaimsController {
       UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<HearingClaimListItemDto> result =
-          debtServiceClient.listHearingClaims(
+          hearingClaimsClient.listHearingClaims(
               creditorOrgId,
               ClaimSearchParams.builder()
                   .page(params.getPage())
@@ -268,7 +268,7 @@ public class HearingClaimsController {
 
   private HearingClaimDetailDto loadHearingClaimDetail(UUID claimId, Model model) {
     try {
-      HearingClaimDetailDto detail = debtServiceClient.getHearingClaimDetail(claimId);
+      HearingClaimDetailDto detail = hearingClaimsClient.getHearingClaimDetail(claimId);
       if (detail == null) {
         model.addAttribute(
             "serviceError",

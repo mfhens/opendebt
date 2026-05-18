@@ -24,7 +24,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.HearingClaimsClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.HearingApproveRequestDto;
 import dk.ufst.opendebt.creditor.dto.HearingClaimDetailDto;
@@ -40,7 +40,7 @@ class HearingClaimsControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
   private static final UUID TEST_CLAIM_ID = UUID.fromString("00000000-0000-0000-0000-000000050001");
 
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private HearingClaimsClient hearingClaimsClient;
   @Mock private PortalSessionService portalSessionService;
   @Mock private MessageSource messageSource;
 
@@ -85,7 +85,7 @@ class HearingClaimsControllerTest {
 
     List<HearingClaimListItemDto> claimList = List.of(buildHearingClaimListItem("CVR", "12345678"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(hearingClaimsClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -103,7 +103,7 @@ class HearingClaimsControllerTest {
   void hearingTableFragment_returnsEmptyList_whenServiceUnavailable() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.listHearingClaims(any(), any()))
+    when(hearingClaimsClient.listHearingClaims(any(), any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     Model model = new ConcurrentModel();
@@ -125,7 +125,7 @@ class HearingClaimsControllerTest {
     List<HearingClaimListItemDto> claimList =
         List.of(buildHearingClaimListItem("CPR", "0101901234"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(hearingClaimsClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.hearingTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -144,7 +144,7 @@ class HearingClaimsControllerTest {
 
     List<HearingClaimListItemDto> claimList = List.of(buildHearingClaimListItem("CVR", "12345678"));
     RestPage<HearingClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(hearingClaimsClient.listHearingClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.hearingTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -172,7 +172,7 @@ class HearingClaimsControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     HearingClaimDetailDto detail = buildHearingClaimDetail("OPSKRIVNING_REGULERING");
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     String viewName = controller.hearingDetail(TEST_CLAIM_ID, model, session);
@@ -189,7 +189,7 @@ class HearingClaimsControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     HearingClaimDetailDto detail = buildHearingClaimDetail("FEJLAGTIG_HOVEDSTOL_INDBERETNING");
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.hearingDetail(TEST_CLAIM_ID, model, session);
@@ -203,7 +203,7 @@ class HearingClaimsControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     HearingClaimDetailDto detail = buildHearingClaimDetail("NORMAL_SUBMISSION");
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.hearingDetail(TEST_CLAIM_ID, model, session);
@@ -216,7 +216,7 @@ class HearingClaimsControllerTest {
   void hearingDetail_handlesServiceError() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID))
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID))
         .thenThrow(new RuntimeException("Service unavailable"));
     when(messageSource.getMessage(eq("hearing.detail.error.service"), any(), any()))
         .thenReturn("Error loading hearing");
@@ -241,7 +241,7 @@ class HearingClaimsControllerTest {
                 .debtorIdentifier("0101901234")
                 .errorTypes(List.of("INVALID_ADDRESS"))
                 .build()));
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.hearingDetail(TEST_CLAIM_ID, model, session);
@@ -288,14 +288,14 @@ class HearingClaimsControllerTest {
             TEST_CLAIM_ID, form, bindingResult, model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("redirect:/fordringer/hoering/" + TEST_CLAIM_ID);
-    verify(debtServiceClient).approveHearingClaim(TEST_CLAIM_ID, form);
+    verify(hearingClaimsClient).approveHearingClaim(TEST_CLAIM_ID, form);
   }
 
   @Test
   void approveHearing_reloadsDetailOnValidationError() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
     when(messageSource.getMessage(eq("hearing.detail.error.notfound"), any(), any()))
         .thenReturn("Not found");
 
@@ -310,7 +310,7 @@ class HearingClaimsControllerTest {
             TEST_CLAIM_ID, form, bindingResult, model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("claims/hearing-detail");
-    verify(debtServiceClient, never()).approveHearingClaim(any(), any());
+    verify(hearingClaimsClient, never()).approveHearingClaim(any(), any());
   }
 
   @Test
@@ -318,9 +318,9 @@ class HearingClaimsControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     doThrow(new RuntimeException("Backend error"))
-        .when(debtServiceClient)
+        .when(hearingClaimsClient)
         .approveHearingClaim(any(), any());
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
     when(messageSource.getMessage(eq("hearing.approve.error"), any(), any()))
         .thenReturn("Approve failed");
     when(messageSource.getMessage(eq("hearing.detail.error.notfound"), any(), any()))
@@ -377,14 +377,14 @@ class HearingClaimsControllerTest {
             TEST_CLAIM_ID, form, bindingResult, model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("redirect:/fordringer/hoering/" + TEST_CLAIM_ID);
-    verify(debtServiceClient).withdrawHearingClaim(TEST_CLAIM_ID, form);
+    verify(hearingClaimsClient).withdrawHearingClaim(TEST_CLAIM_ID, form);
   }
 
   @Test
   void withdrawHearing_reloadsDetailOnValidationError() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(null);
     when(messageSource.getMessage(eq("hearing.detail.error.notfound"), any(), any()))
         .thenReturn("Not found");
 
@@ -399,7 +399,7 @@ class HearingClaimsControllerTest {
             TEST_CLAIM_ID, form, bindingResult, model, session, redirectAttributes);
 
     assertThat(viewName).isEqualTo("claims/hearing-detail");
-    verify(debtServiceClient, never()).withdrawHearingClaim(any(), any());
+    verify(hearingClaimsClient, never()).withdrawHearingClaim(any(), any());
   }
 
   // --- Write-up action code recognition ---
@@ -410,7 +410,7 @@ class HearingClaimsControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
     HearingClaimDetailDto detail =
         buildHearingClaimDetail("OPSKRIVNING_OMGJORT_NEDSKRIVNING_REGULERING");
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.hearingDetail(TEST_CLAIM_ID, model, session);
@@ -425,7 +425,7 @@ class HearingClaimsControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
     HearingClaimDetailDto detail =
         buildHearingClaimDetail("OPSKRIVNING_ANNULLERET_NEDSKRIVNING_INDBETALING");
-    when(debtServiceClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
+    when(hearingClaimsClient.getHearingClaimDetail(TEST_CLAIM_ID)).thenReturn(detail);
 
     Model model = new ConcurrentModel();
     controller.hearingDetail(TEST_CLAIM_ID, model, session);

@@ -19,7 +19,7 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
@@ -31,7 +31,7 @@ class ClaimsListControllerTest {
   private static final UUID TEST_CREDITOR_ORG_ID =
       UUID.fromString("00000000-0000-0000-0000-000000000001");
 
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private ClaimQueryClient claimQueryClient;
   @Mock private PortalSessionService portalSessionService;
 
   @InjectMocks private ClaimsListController controller;
@@ -73,7 +73,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(claimQueryClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -91,7 +91,7 @@ class ClaimsListControllerTest {
   void recoveryTableFragment_returnsEmptyList_whenServiceUnavailable() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.listClaimsInRecovery(any(), any()))
+    when(claimQueryClient.listClaimsInRecovery(any(), any()))
         .thenThrow(new RuntimeException("Connection refused"));
 
     Model model = new ConcurrentModel();
@@ -112,7 +112,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CPR", "0101901234"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(claimQueryClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.recoveryTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -130,7 +130,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "12345678"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(claimQueryClient.listClaimsInRecovery(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     controller.recoveryTableFragment(0, 20, null, "asc", null, null, null, null, model, session);
@@ -169,7 +169,7 @@ class ClaimsListControllerTest {
 
     List<ClaimListItemDto> claimList = List.of(buildClaimListItem("CVR", "87654321"));
     RestPage<ClaimListItemDto> page = new RestPage<>(claimList, 0, 20, 1, 1);
-    when(debtServiceClient.listZeroBalanceClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
+    when(claimQueryClient.listZeroBalanceClaims(eq(TEST_CREDITOR_ORG_ID), any())).thenReturn(page);
 
     Model model = new ConcurrentModel();
     String viewName =
@@ -198,7 +198,7 @@ class ClaimsListControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     ClaimCountsDto counts = ClaimCountsDto.builder().inRecovery(10).zeroBalance(5).build();
-    when(debtServiceClient.getClaimCounts(TEST_CREDITOR_ORG_ID)).thenReturn(counts);
+    when(claimQueryClient.getClaimCounts(TEST_CREDITOR_ORG_ID)).thenReturn(counts);
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimsCounts(null, null, model, session);
@@ -216,7 +216,7 @@ class ClaimsListControllerTest {
     LocalDate dateFrom = LocalDate.of(2025, 1, 1);
     LocalDate dateTo = LocalDate.of(2025, 3, 31);
     ClaimCountsDto counts = ClaimCountsDto.builder().inRecovery(3).zeroBalance(1).build();
-    when(debtServiceClient.getClaimCountsForDateRange(TEST_CREDITOR_ORG_ID, dateFrom, dateTo))
+    when(claimQueryClient.getClaimCountsForDateRange(TEST_CREDITOR_ORG_ID, dateFrom, dateTo))
         .thenReturn(counts);
 
     Model model = new ConcurrentModel();
@@ -231,7 +231,7 @@ class ClaimsListControllerTest {
   void claimsCounts_returnsEmptyCounts_whenBackendFails() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getClaimCounts(any())).thenThrow(new RuntimeException("timeout"));
+    when(claimQueryClient.getClaimCounts(any())).thenThrow(new RuntimeException("timeout"));
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimsCounts(null, null, model, session);

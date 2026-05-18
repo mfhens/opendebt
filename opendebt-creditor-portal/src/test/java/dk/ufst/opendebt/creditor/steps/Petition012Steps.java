@@ -17,8 +17,9 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
+import dk.ufst.opendebt.creditor.client.ClaimSubmissionClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.controller.DashboardController;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionRequest;
 import dk.ufst.opendebt.creditor.dto.AccessResolutionResponse;
@@ -43,7 +44,8 @@ import io.cucumber.java.en.When;
 public class Petition012Steps {
 
   private CreditorServiceClient creditorServiceClient;
-  private DebtServiceClient debtServiceClient;
+  private ClaimQueryClient claimQueryClient;
+  private ClaimSubmissionClient claimSubmissionClient;
   private MessageSource messageSource;
   private PortalSessionService portalSessionService;
   private DashboardController dashboardController;
@@ -57,7 +59,8 @@ public class Petition012Steps {
   @Before
   public void setUp() {
     creditorServiceClient = Mockito.mock(CreditorServiceClient.class);
-    debtServiceClient = Mockito.mock(DebtServiceClient.class);
+    claimQueryClient = Mockito.mock(ClaimQueryClient.class);
+    claimSubmissionClient = Mockito.mock(ClaimSubmissionClient.class);
     messageSource = Mockito.mock(MessageSource.class);
     when(messageSource.getMessage(
             Mockito.eq("controller.dashboard.backend.unavailable"), any(), any()))
@@ -73,7 +76,7 @@ public class Petition012Steps {
     portalSessionService = new PortalSessionService(creditorServiceClient);
     dashboardController =
         new DashboardController(
-            creditorServiceClient, debtServiceClient, messageSource, portalSessionService);
+            creditorServiceClient, claimQueryClient, messageSource, portalSessionService);
     session = new MockHttpSession();
     model = new ConcurrentModel();
     viewResult = null;
@@ -119,7 +122,7 @@ public class Petition012Steps {
     boundCreditorOrgId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     session.setAttribute("actingCreditorOrgId", boundCreditorOrgId);
 
-    when(debtServiceClient.submitClaimWizard(any(PortalDebtDto.class)))
+    when(claimSubmissionClient.submitClaimWizard(any(PortalDebtDto.class)))
         .thenReturn(
             ClaimSubmissionResultDto.builder()
                 .outcome("UDFOERT")
@@ -130,7 +133,7 @@ public class Petition012Steps {
 
   @When("user {string} submits a manual fordring in the portal")
   public void userSubmitsManualFordring(String userId) {
-    // Same BFF entry point as ClaimCreateController: DebtServiceClient.submitClaimWizard
+    // Same BFF entry point as ClaimCreateController: ClaimSubmissionClient.submitClaimWizard
     // (debt-service POST /api/v1/debts/submit), not createDebt (/api/v1/debts).
     LocalDate today = LocalDate.now();
     PortalDebtDto request =
@@ -144,13 +147,13 @@ public class Petition012Steps {
             .limitationDate(today.plusYears(5))
             .estateProcessing(false)
             .build();
-    debtServiceClient.submitClaimWizard(request);
+    claimSubmissionClient.submitClaimWizard(request);
   }
 
   @Then("the portal sends the claim submit request to debt-service")
   public void portalSendsClaimSubmitRequestToDebtService() {
     ArgumentCaptor<PortalDebtDto> captor = ArgumentCaptor.forClass(PortalDebtDto.class);
-    verify(debtServiceClient).submitClaimWizard(captor.capture());
+    verify(claimSubmissionClient).submitClaimWizard(captor.capture());
     PortalDebtDto sent = captor.getValue();
     assertThat(sent.getCreditorOrgId()).isEqualTo(boundCreditorOrgId);
     assertThat(sent.getPrincipalAmount()).isNotNull();
@@ -162,7 +165,7 @@ public class Petition012Steps {
     // The portal has no JPA repositories and no database of its own.
     // Verification: delegation is via submitClaimWizard only (no local persistence API).
     assertThat(boundCreditorOrgId).isNotNull();
-    verify(debtServiceClient, never()).createDebt(any(PortalDebtDto.class));
+    verify(claimSubmissionClient, never()).createDebt(any(PortalDebtDto.class));
   }
 
   // Scenario 3: A portal user cannot act for an unrelated fordringshaver

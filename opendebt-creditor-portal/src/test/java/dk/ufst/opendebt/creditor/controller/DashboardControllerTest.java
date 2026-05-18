@@ -18,8 +18,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.PortalCreditorDto;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
@@ -31,7 +31,7 @@ class DashboardControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
 
   @Mock private CreditorServiceClient creditorServiceClient;
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private ClaimQueryClient claimQueryClient;
   @Mock private MessageSource messageSource;
   @Mock private PortalSessionService portalSessionService;
 
@@ -130,7 +130,7 @@ class DashboardControllerTest {
         .thenReturn(TEST_CREDITOR_ORG_ID);
     ClaimCountsDto counts =
         ClaimCountsDto.builder().inRecovery(5).inHearing(2).rejected(1).zeroBalance(3).build();
-    when(debtServiceClient.getClaimCounts(TEST_CREDITOR_ORG_ID)).thenReturn(counts);
+    when(claimQueryClient.getClaimCounts(TEST_CREDITOR_ORG_ID)).thenReturn(counts);
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimCounts(model, session);
@@ -156,7 +156,7 @@ class DashboardControllerTest {
   void claimCounts_returnsEmptyCounts_whenBackendFails() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getClaimCounts(any())).thenThrow(new RuntimeException("timeout"));
+    when(claimQueryClient.getClaimCounts(any())).thenThrow(new RuntimeException("timeout"));
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimCounts(model, session);

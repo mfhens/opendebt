@@ -20,8 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import dk.ufst.opendebt.creditor.client.ClaimAdjustmentClient;
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.AdjustmentReceiptDto;
 import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentRequestDto;
 import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentType;
@@ -55,7 +56,8 @@ public class ClaimAdjustmentController {
   private static final String MODEL_CLAIM_ID = "claimId";
   private static final String MODEL_ADJUSTMENT_FORM = "adjustmentForm";
 
-  private final DebtServiceClient debtServiceClient;
+  private final ClaimAdjustmentClient claimAdjustmentClient;
+  private final ClaimQueryClient claimQueryClient;
   private final CreditorServiceClient creditorServiceClient;
   private final PortalSessionService portalSessionService;
   private final MessageSource messageSource;
@@ -177,7 +179,7 @@ public class ClaimAdjustmentController {
     resolveDebtorForPaymentAdjustment(claimDetail, adjustmentForm, id);
 
     try {
-      AdjustmentReceiptDto receipt = debtServiceClient.submitAdjustment(id, adjustmentForm);
+      AdjustmentReceiptDto receipt = claimAdjustmentClient.submitAdjustment(id, adjustmentForm);
       log.info(
           "Adjustment submitted for claim {} by creditor {}, type: {}",
           id,
@@ -320,7 +322,7 @@ public class ClaimAdjustmentController {
 
   private ClaimDetailDto loadClaimDetail(UUID claimId, Model model) {
     try {
-      ClaimDetailDto detail = debtServiceClient.getClaimDetail(claimId);
+      ClaimDetailDto detail = claimQueryClient.getClaimDetail(claimId);
       if (detail == null) {
         model.addAttribute(
             MODEL_SERVICE_ERROR,

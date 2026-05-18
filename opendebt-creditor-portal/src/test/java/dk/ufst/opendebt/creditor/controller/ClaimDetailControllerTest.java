@@ -21,8 +21,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.*;
 import dk.ufst.opendebt.creditor.service.PortalSessionService;
 
@@ -33,7 +33,7 @@ class ClaimDetailControllerTest {
       UUID.fromString("00000000-0000-0000-0000-000000000001");
   private static final UUID TEST_CLAIM_ID = UUID.fromString("00000000-0000-0000-0000-000000000100");
 
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private ClaimQueryClient claimQueryClient;
   @Mock private CreditorServiceClient creditorServiceClient;
   @Mock private PortalSessionService portalSessionService;
   @Mock private MessageSource messageSource;
@@ -61,7 +61,7 @@ class ClaimDetailControllerTest {
   void claimDetail_returnsDetailView_withClaimData() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(buildSingleDebtorClaim());
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -78,7 +78,7 @@ class ClaimDetailControllerTest {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
     ClaimDetailDto multiDebtorClaim = buildMultiDebtorClaim();
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(multiDebtorClaim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(multiDebtorClaim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -90,7 +90,7 @@ class ClaimDetailControllerTest {
   void claimDetail_showsServiceError_whenBackendFails() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getClaimDetail(any()))
+    when(claimQueryClient.getClaimDetail(any()))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("claim.detail.error.service"), any(), any(Locale.class)))
         .thenReturn("Service error occurred.");
@@ -107,7 +107,7 @@ class ClaimDetailControllerTest {
   void claimDetail_showsNotFoundError_whenClaimIsNull() {
     when(portalSessionService.resolveActingCreditor(eq(null), any()))
         .thenReturn(TEST_CREDITOR_ORG_ID);
-    when(debtServiceClient.getClaimDetail(any())).thenReturn(null);
+    when(claimQueryClient.getClaimDetail(any())).thenReturn(null);
     when(messageSource.getMessage(eq("claim.detail.error.notfound"), any(), any(Locale.class)))
         .thenReturn("Claim not found.");
 
@@ -128,7 +128,7 @@ class ClaimDetailControllerTest {
             DebtorInfoDto.builder().identifierType("CPR").identifier("0101901234").build(),
             DebtorInfoDto.builder().identifierType("CVR").identifier("12345678").build()));
     claim.setDebtorCount(2);
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -149,7 +149,7 @@ class ClaimDetailControllerTest {
             .zeroBalanceExpired(true)
             .debtorCount(1)
             .build();
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     String viewName = controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -183,7 +183,7 @@ class ClaimDetailControllerTest {
                 .effectiveDate(LocalDate.of(2025, 4, 1))
                 .annulled(true)
                 .build()));
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -215,7 +215,7 @@ class ClaimDetailControllerTest {
                 .paymentAmount(BigDecimal.ZERO)
                 .balance(new BigDecimal("2000.00"))
                 .build()));
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -240,7 +240,7 @@ class ClaimDetailControllerTest {
                 .balance(new BigDecimal("5000.00"))
                 .status("IN_RECOVERY")
                 .build()));
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);
@@ -263,7 +263,7 @@ class ClaimDetailControllerTest {
                 .date(LocalDate.of(2025, 6, 15))
                 .description("Court ruling")
                 .build()));
-    when(debtServiceClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
+    when(claimQueryClient.getClaimDetail(TEST_CLAIM_ID)).thenReturn(claim);
 
     Model model = new ConcurrentModel();
     controller.claimDetail(TEST_CLAIM_ID, model, session);

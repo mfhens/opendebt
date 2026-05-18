@@ -23,8 +23,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
+import dk.ufst.opendebt.creditor.client.ClaimSubmissionClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.PersonRegistryClient;
 import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.ClaimWizardFormDto;
@@ -38,7 +38,7 @@ class ClaimCreateControllerTest {
 
   @Mock private PortalSessionService portalSessionService;
   @Mock private CreditorServiceClient creditorServiceClient;
-  @Mock private DebtServiceClient debtServiceClient;
+  @Mock private ClaimSubmissionClient claimSubmissionClient;
   @Mock private PersonRegistryClient personRegistryClient;
   @Mock private MessageSource messageSource;
   @Mock private ClsAuditClient clsAuditClient;
@@ -443,7 +443,7 @@ class ClaimCreateControllerTest {
   @Test
   void processSubmission_redirectsToStep4OnSuccess() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenReturn(
             ClaimSubmissionResultDto.builder()
                 .outcome("UDFOERT")
@@ -463,7 +463,7 @@ class ClaimCreateControllerTest {
   @Test
   void processSubmission_redisplaysReviewOnError() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("wizard.submit.error"), any(), any(), any()))
         .thenReturn("Submission failed.");
@@ -480,7 +480,7 @@ class ClaimCreateControllerTest {
   @Test
   void processSubmission_mapsAllWizardFieldsToPortalDebtDto() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenReturn(
             ClaimSubmissionResultDto.builder()
                 .outcome("UDFOERT")
@@ -494,7 +494,7 @@ class ClaimCreateControllerTest {
     controller.processSubmission(new ConcurrentModel(), session);
 
     var captor = ArgumentCaptor.forClass(PortalDebtDto.class);
-    verify(debtServiceClient).submitClaimWizard(captor.capture());
+    verify(claimSubmissionClient).submitClaimWizard(captor.capture());
 
     var dto = captor.getValue();
     assertThat(dto.getDebtorPersonId()).isEqualTo(form.getDebtorPersonId());
@@ -522,7 +522,7 @@ class ClaimCreateControllerTest {
   @Test
   void processSubmission_mapsBlankOptionalNotesToNull() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenReturn(
             ClaimSubmissionResultDto.builder()
                 .outcome("UDFOERT")
@@ -538,7 +538,7 @@ class ClaimCreateControllerTest {
     controller.processSubmission(new ConcurrentModel(), session);
 
     var captor = ArgumentCaptor.forClass(PortalDebtDto.class);
-    verify(debtServiceClient).submitClaimWizard(captor.capture());
+    verify(claimSubmissionClient).submitClaimWizard(captor.capture());
 
     var dto = captor.getValue();
     assertThat(dto.getClaimNote()).isNull();
@@ -549,7 +549,7 @@ class ClaimCreateControllerTest {
   void processSubmission_shipsAuditEventOnSuccess() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
     UUID claimId = UUID.randomUUID();
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenReturn(
             ClaimSubmissionResultDto.builder()
                 .outcome("UDFOERT")
@@ -579,7 +579,7 @@ class ClaimCreateControllerTest {
   @Test
   void processSubmission_shipsAuditEventOnFailure() {
     when(portalSessionService.resolveActingCreditor(null, session)).thenReturn(ACTING_CREDITOR);
-    when(debtServiceClient.submitClaimWizard(any()))
+    when(claimSubmissionClient.submitClaimWizard(any()))
         .thenThrow(new RuntimeException("Connection refused"));
     when(messageSource.getMessage(eq("wizard.submit.error"), any(), any(), any()))
         .thenReturn("Submission failed.");

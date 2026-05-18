@@ -14,8 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.dto.ClaimDetailDto;
 import dk.ufst.opendebt.creditor.dto.CreditorAgreementDto;
 import dk.ufst.opendebt.creditor.dto.DebtorInfoDto;
@@ -37,7 +37,7 @@ public class ClaimDetailController {
   private static final String MODEL_WRITE_UP_ALLOWED = "writeUpAllowed";
   private static final String MODEL_WRITE_DOWN_ALLOWED = "writeDownAllowed";
 
-  private final DebtServiceClient debtServiceClient;
+  private final ClaimQueryClient claimQueryClient;
   private final CreditorServiceClient creditorServiceClient;
   private final PortalSessionService portalSessionService;
   private final MessageSource messageSource;
@@ -80,7 +80,7 @@ public class ClaimDetailController {
     }
 
     try {
-      byte[] receiptData = debtServiceClient.getReceipt(id, deliveryId);
+      byte[] receiptData = claimQueryClient.getReceipt(id, deliveryId);
       if (receiptData == null || receiptData.length == 0) {
         return ResponseEntity.notFound().build();
       }
@@ -128,7 +128,7 @@ public class ClaimDetailController {
 
   private ClaimDetailDto loadClaimDetail(UUID claimId, Model model) {
     try {
-      ClaimDetailDto detail = debtServiceClient.getClaimDetail(claimId);
+      ClaimDetailDto detail = claimQueryClient.getClaimDetail(claimId);
       if (detail == null) {
         model.addAttribute(
             "serviceError",

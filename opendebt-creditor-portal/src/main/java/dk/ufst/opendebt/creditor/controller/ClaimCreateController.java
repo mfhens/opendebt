@@ -21,8 +21,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.common.audit.cls.ClsAuditEvent;
+import dk.ufst.opendebt.creditor.client.ClaimSubmissionClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.client.PersonRegistryClient;
 import dk.ufst.opendebt.creditor.dto.ClaimSubmissionResultDto;
 import dk.ufst.opendebt.creditor.dto.ClaimWizardFormDto;
@@ -58,7 +58,7 @@ public class ClaimCreateController {
 
   private final PortalSessionService portalSessionService;
   private final CreditorServiceClient creditorServiceClient;
-  private final DebtServiceClient debtServiceClient;
+  private final ClaimSubmissionClient claimSubmissionClient;
   private final PersonRegistryClient personRegistryClient;
   private final MessageSource messageSource;
   private final ClsAuditClient clsAuditClient;
@@ -343,7 +343,7 @@ public class ClaimCreateController {
 
     try {
       PortalDebtDto debtRequest = mapWizardFormToDebtRequest(form, creditorOrgId);
-      ClaimSubmissionResultDto result = debtServiceClient.submitClaimWizard(debtRequest);
+      ClaimSubmissionResultDto result = claimSubmissionClient.submitClaimWizard(debtRequest);
 
       log.info(
           "Claim submission result: outcome={}, claimId={}",

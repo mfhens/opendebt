@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-05-18
-  updated_by: TB-061..063 hotspot maintainability backlog added
+  updated_by: TB-061 creditor-portal debt client decomposition completed
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -3054,9 +3054,10 @@ program:
 
     - id: TB-061
       title: Decompose creditor-portal DebtServiceClient into focused API clients
-      status: not_started
+      status: done
       priority: high
       created: 2026-05-18
+      completed: 2026-05-18
       description: |
         `opendebt-creditor-portal` `DebtServiceClient` has grown into a broad, high-churn
         integration hotspot (~989 lines) covering claim lists, counts, submission, hearing,
@@ -3069,6 +3070,14 @@ program:
         No single creditor-portal debt API client remains responsible for unrelated query,
         write, hearing, and adjustment flows; shared WebClient execution/error handling is
         centralized; existing controller behavior and resilience semantics remain unchanged.
+      resolved_note: >
+        Replaced the creditor-portal `DebtServiceClient` with five focused clients:
+        `ClaimQueryClient`, `ClaimSubmissionClient`, `HearingClaimsClient`,
+        `RejectedClaimsClient`, and `ClaimAdjustmentClient`. Shared debt-service request
+        execution, standard error mapping, and query-filter assembly now live in
+        `DebtServiceClientSupport`, while `submitClaimWizard` kept its special no-circuit-breaker
+        behavior and retry semantics. Controllers, unit tests, and creditor-portal BDD step files
+        were rewired to the focused clients.
 
     - id: TB-062
       title: Split CaseServiceImpl by command, query, lifecycle, and party responsibilities

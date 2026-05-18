@@ -12,7 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimCountsDto;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
@@ -36,7 +36,7 @@ public class ClaimsListController {
   private static final String MODEL_CURRENT_PAGE = "currentPage";
   private static final String MODEL_LIST_TYPE = "listType";
 
-  private final DebtServiceClient debtServiceClient;
+  private final ClaimQueryClient claimQueryClient;
   private final PortalSessionService portalSessionService;
 
   /** Renders the claims-in-recovery list page shell. Table body loaded via HTMX. */
@@ -174,7 +174,7 @@ public class ClaimsListController {
       UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<ClaimListItemDto> result =
-          debtServiceClient.listClaimsInRecovery(
+          claimQueryClient.listClaimsInRecovery(
               creditorOrgId,
               ClaimSearchParams.builder()
                   .page(params.getPage())
@@ -197,7 +197,7 @@ public class ClaimsListController {
       UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<ClaimListItemDto> result =
-          debtServiceClient.listZeroBalanceClaims(
+          claimQueryClient.listZeroBalanceClaims(
               creditorOrgId,
               ClaimSearchParams.builder()
                   .page(params.getPage())
@@ -220,9 +220,9 @@ public class ClaimsListController {
     try {
       ClaimCountsDto counts;
       if (dateFrom != null || dateTo != null) {
-        counts = debtServiceClient.getClaimCountsForDateRange(creditorOrgId, dateFrom, dateTo);
+        counts = claimQueryClient.getClaimCountsForDateRange(creditorOrgId, dateFrom, dateTo);
       } else {
-        counts = debtServiceClient.getClaimCounts(creditorOrgId);
+        counts = claimQueryClient.getClaimCounts(creditorOrgId);
       }
       return counts != null ? counts : ClaimCountsDto.builder().build();
     } catch (Exception ex) {

@@ -1,0 +1,77 @@
+package dk.ufst.opendebt.creditor.client;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import dk.ufst.opendebt.common.exception.OpenDebtException;
+import dk.ufst.opendebt.creditor.dto.PortalDebtDto;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+
+class ClaimQueryClientTest {
+
+  private MockWebServer mockWebServer;
+  private ClaimQueryClient client;
+
+  @BeforeEach
+  void setUp() throws Exception {
+    mockWebServer = new MockWebServer();
+    mockWebServer.start();
+    String baseUrl = mockWebServer.url("/").toString();
+    baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    client = new ClaimQueryClient(WebClient.builder(), baseUrl);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mockWebServer.shutdown();
+  }
+
+  @Test
+  void listDebts_returnsPageOfDebts() throws InterruptedException {
+    UUID creditorOrgId = UUID.randomUUID();
+    String pageJson =
+        """
+        {
+          "content": [{"id": "%s", "creditorOrgId": "%s", "principalAmount": 1000.00, "status": "ACTIVE"}],
+          "number": 0,
+          "size": 20,
+          "totalElements": 1,
+          "totalPages": 1
+        }
+        """
+            .formatted(UUID.randomUUID(), creditorOrgId);
+    mockWebServer.enqueue(
+        new MockResponse().setBody(pageJson).addHeader("Content-Type", "application/json"));
+
+    RestPage<PortalDebtDto> result = client.listDebts(creditorOrgId);
+
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getTotalElements()).isEqualTo(1);
+
+    RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getPath())
+        .contains("/debt-service/api/v1/debts")
+        .contains("creditorId=" + creditorOrgId);
+    assertThat(request.getMethod()).isEqualTo("GET");
+  }
+
+  @Test
+  void listDebts_throwsOnServerError() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+
+    UUID creditorId = UUID.randomUUID();
+    assertThatThrownBy(() -> client.listDebts(creditorId))
+        .isInstanceOf(OpenDebtException.class)
+        .hasMessageContaining("unavailable");
+  }
+}

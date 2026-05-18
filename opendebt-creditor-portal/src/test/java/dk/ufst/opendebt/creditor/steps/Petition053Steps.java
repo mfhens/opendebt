@@ -33,8 +33,9 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import dk.ufst.opendebt.creditor.client.ClaimAdjustmentClient;
+import dk.ufst.opendebt.creditor.client.ClaimQueryClient;
 import dk.ufst.opendebt.creditor.client.CreditorServiceClient;
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
 import dk.ufst.opendebt.creditor.controller.ClaimAdjustmentController;
 import dk.ufst.opendebt.creditor.dto.AdjustmentReceiptDto;
 import dk.ufst.opendebt.creditor.dto.ClaimAdjustmentRequestDto;
@@ -98,8 +99,11 @@ public class Petition053Steps {
 
   // ── Direct controller test state (FR-1 submission scenarios) ─────────────────
 
-  /** Mocked DebtServiceClient for controller-level submission tests (FR-1 / AC-5). */
-  private DebtServiceClient mockDebtServiceClient;
+  /** Mocked ClaimAdjustmentClient for controller-level submission tests (FR-1 / AC-5). */
+  private ClaimAdjustmentClient mockClaimAdjustmentClient;
+
+  /** Mocked ClaimQueryClient for detail lookups during controller-level submission tests. */
+  private ClaimQueryClient mockClaimQueryClient;
 
   /** Mocked CreditorServiceClient for controller-level submission tests. */
   private CreditorServiceClient mockCreditorServiceClient;
@@ -129,14 +133,16 @@ public class Petition053Steps {
     lastBindingResult = null;
 
     // Set up mocks for controller-level submission tests (FR-1 / AC-5).
-    mockDebtServiceClient = mock(DebtServiceClient.class);
+    mockClaimAdjustmentClient = mock(ClaimAdjustmentClient.class);
+    mockClaimQueryClient = mock(ClaimQueryClient.class);
     mockCreditorServiceClient = mock(CreditorServiceClient.class);
     PortalSessionService mockPortalSessionService = mock(PortalSessionService.class);
     MessageSource mockMessageSource = mock(MessageSource.class);
 
     controllerUnderTest =
         new ClaimAdjustmentController(
-            mockDebtServiceClient,
+            mockClaimAdjustmentClient,
+            mockClaimQueryClient,
             mockCreditorServiceClient,
             mockPortalSessionService,
             mockMessageSource);
@@ -152,7 +158,7 @@ public class Petition053Steps {
                 .allowWriteDownPayment(true)
                 .allowWriteUpAdjustment(true)
                 .build());
-    when(mockDebtServiceClient.getClaimDetail(DEFAULT_CLAIM_UUID))
+    when(mockClaimQueryClient.getClaimDetail(DEFAULT_CLAIM_UUID))
         .thenReturn(
             ClaimDetailDto.builder()
                 .claimId(DEFAULT_CLAIM_UUID)
@@ -286,7 +292,8 @@ public class Petition053Steps {
             .amount(amount)
             .adjustmentType("NEDSKRIV")
             .build();
-    when(mockDebtServiceClient.submitAdjustment(eq(DEFAULT_CLAIM_UUID), any())).thenReturn(receipt);
+    when(mockClaimAdjustmentClient.submitAdjustment(eq(DEFAULT_CLAIM_UUID), any()))
+        .thenReturn(receipt);
 
     invokeController(form, "WRITE_DOWN");
   }
@@ -310,7 +317,8 @@ public class Petition053Steps {
             .amount(new BigDecimal("100.00"))
             .adjustmentType("NEDSKRIV")
             .build();
-    when(mockDebtServiceClient.submitAdjustment(eq(DEFAULT_CLAIM_UUID), any())).thenReturn(receipt);
+    when(mockClaimAdjustmentClient.submitAdjustment(eq(DEFAULT_CLAIM_UUID), any()))
+        .thenReturn(receipt);
     invokeController(form, "WRITE_DOWN");
   }
 
@@ -470,13 +478,13 @@ public class Petition053Steps {
 
   /**
    * FR-1 / AC-5: BFF must forward {@code WriteDownReasonCode} to debt-service. Verified via
-   * ArgumentCaptor on the mocked {@link DebtServiceClient}.
+   * ArgumentCaptor on the mocked {@link ClaimAdjustmentClient}.
    */
   @Then("the BFF forwards a WriteDownDto to debt-service containing reasonCode {string}")
   public void bffForwardsWriteDownDtoWithReasonCode(String reasonCode) {
     ArgumentCaptor<ClaimAdjustmentRequestDto> captor =
         ArgumentCaptor.forClass(ClaimAdjustmentRequestDto.class);
-    verify(mockDebtServiceClient).submitAdjustment(eq(DEFAULT_CLAIM_UUID), captor.capture());
+    verify(mockClaimAdjustmentClient).submitAdjustment(eq(DEFAULT_CLAIM_UUID), captor.capture());
     ClaimAdjustmentRequestDto captured = captor.getValue();
     assertThat(captured.getWriteDownReasonCode())
         .as(
@@ -546,7 +554,7 @@ public class Petition053Steps {
   /** FR-1 / AC-3, AC-4: BFF must NOT be invoked when portal-side validation fails. */
   @Then("the BFF does not forward any request to debt-service")
   public void bffDoesNotForwardAnyRequest() {
-    verify(mockDebtServiceClient, never()).submitAdjustment(any(), any());
+    verify(mockClaimAdjustmentClient, never()).submitAdjustment(any(), any());
   }
 
   /** FR-1 / AC-4: Generic validation error display — verified via stored binding result. */
@@ -655,11 +663,11 @@ public class Petition053Steps {
 
   /**
    * FR-4 / AC-6c: Portal must forward the retroactive nedskrivning despite the advisory. Verified
-   * via Mockito on the mocked DebtServiceClient.
+   * via Mockito on the mocked ClaimAdjustmentClient.
    */
   @Then("the portal forwards the submission to the BFF")
   public void portalForwardsSubmissionToBff() {
-    verify(mockDebtServiceClient).submitAdjustment(eq(DEFAULT_CLAIM_UUID), any());
+    verify(mockClaimAdjustmentClient).submitAdjustment(eq(DEFAULT_CLAIM_UUID), any());
   }
 
   // ── FR-5 Then steps ─────────────────────────────────────────────────────────

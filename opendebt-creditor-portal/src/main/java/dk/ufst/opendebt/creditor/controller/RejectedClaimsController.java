@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import dk.ufst.opendebt.creditor.client.DebtServiceClient;
+import dk.ufst.opendebt.creditor.client.RejectedClaimsClient;
 import dk.ufst.opendebt.creditor.client.RestPage;
 import dk.ufst.opendebt.creditor.dto.ClaimListItemDto;
 import dk.ufst.opendebt.creditor.dto.ClaimSearchParams;
@@ -39,7 +39,7 @@ public class RejectedClaimsController {
   private static final String CPR_MASK = "****";
   private static final String MODEL_CURRENT_PAGE = "currentPage";
 
-  private final DebtServiceClient debtServiceClient;
+  private final RejectedClaimsClient rejectedClaimsClient;
   private final PortalSessionService portalSessionService;
   private final MessageSource messageSource;
 
@@ -125,7 +125,7 @@ public class RejectedClaimsController {
       UUID creditorOrgId, ClaimSearchParams params) {
     try {
       RestPage<ClaimListItemDto> result =
-          debtServiceClient.listRejectedClaims(
+          rejectedClaimsClient.listRejectedClaims(
               creditorOrgId,
               ClaimSearchParams.builder()
                   .page(params.getPage())
@@ -146,7 +146,7 @@ public class RejectedClaimsController {
 
   private RejectedClaimDetailDto loadRejectedClaimDetail(UUID claimId, Model model) {
     try {
-      RejectedClaimDetailDto detail = debtServiceClient.getRejectedClaimDetail(claimId);
+      RejectedClaimDetailDto detail = rejectedClaimsClient.getRejectedClaimDetail(claimId);
       if (detail == null) {
         model.addAttribute(
             "serviceError",
