@@ -16,7 +16,7 @@ OpenDebt follows the UFST begrebsmodel (concept model) for Danish public debt co
 | Forældelse | Limitation | `limitationDate` |
 | Overdragelse til inddrivelse | Transfer for Collection | `transferForCollection()` |
 | Inddrivelsesskridt | Collection Measure | `CollectionMeasure` |
-| Modregning | Set-off | `offsetting-service` |
+| Modregning | Set-off | `ModregningService` in `debt-service` |
 | Lønindeholdelse | Wage Garnishment | `wage-garnishment-service` |
 | Udlæg | Attachment | `AttachmentService` |
 | Hæftelse | Liability | `LiabilityEntity` |

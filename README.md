@@ -29,12 +29,12 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
                                  |     Keycloak (JWT)      |
                                  +------------+------------+
                                               |
-    +----------------+----------------+-------+---------+----------------+
-    |                |                |                  |                |
-+---+---+      +-----+-----+    +----+------+    +------+----+    +------+----+
-| Case  |      |   Debt    |    | Payment   |    |  Rules    |    | Creditor  |
-|Service|      |  Service  |    |  Service  |    |  Engine   |    |  Service  |
-+-------+      +-----------+    +-----+-----+    +-----------+    +-----------+
+    +----------------+----------------+-------+---------+---------------+
+    |                |                |                 |               |
++---+---+      +-----+-----+    +----+------+    +------+----+
+| Case  |      |   Debt    |    | Payment   |    | Creditor  |
+|Service|      |  Service  |    |  Service  |    |  Service  |
++-------+      +-----------+    +-----+-----+    +-----------+
                                       |
                                +------+------+
                                |   immudb    |
@@ -43,12 +43,14 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
                                +-------------+
 ```
 
+Drools rules are packaged in `ufst-rules-lib` and evaluated in-process by consumer services per
+ADR-0035. There is no standalone `rules-engine` runtime service.
+
 ## Services
 
 | Service | Port | Description |
 |---------|------|-------------|
 | **person-registry** | 8090 | **GDPR data store** — single source of truth for all PII (CPR/CVR encrypted) |
-| **rules-engine** | 8091 | **Business rules** — Drools-based rule evaluation |
 | case-service | 8081 | Case management and workflow (Flowable BPMN) |
 | debt-service | 8082 | Debt registration, lifecycle management, readiness validation, **offsetting/modregning** (ADR-0027, P058) |
 | payment-service | 8083 | Payment processing, double-entry bookkeeping, tamper-evidence ledger |
@@ -59,6 +61,7 @@ OpenDebt is a modern, microservices-based debt collection system designed for Da
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, legacy SOAP (OIO/SKAT) |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
 | caseworker-portal | 8093 | Portal for sagsbehandlere |
+| **ufst-rules-lib** | JAR | **Business rules** — shared in-process Drools library consumed by runtime services (ADR-0035) |
 | **immudb** | 3322 (gRPC) | **Tamper-evidence ledger** — cryptographic integrity for financial postings (ADR-0029) |
 
 ### GDPR Architecture
@@ -80,7 +83,7 @@ Person Registry (PII)          Other Services (NO PII)
 - **Runtime**: Java 21, Spring Boot 3.5
 - **Database**: PostgreSQL 16 (enterprise grade with audit/history)
 - **Tamper-evidence ledger**: immudb 1.10 + immudb4j 1.0.1 (cryptographic integrity, ADR-0029)
-- **Rules Engine**: Drools 9.x (business rules, decision tables)
+- **Rules Engine**: Drools 9.x via `ufst-rules-lib` (shared in-process library, ADR-0035)
 - **Workflow**: Flowable 7.x (BPMN 2.0 case management)
 - **Build**: Maven with Spotless, JaCoCo, OWASP
 - **API**: OpenAPI 3.1, REST

@@ -1,30 +1,37 @@
-# Udviklingsproces: Regler fra Excel og processer fra Qualiware
+# Udviklingsproces: Regler i Drools og processer fra Qualiware
 
-## 1. Regler for gældstyper (Excel decision tables → Drools)
+## 1. Regler for gældstyper og inddrivelse (Drools i `ufst-rules-lib`)
 
-**Kilde:** Forretningsanalytikere vedligeholder gældstype-regler i `.xlsx` Excel decision tables (f.eks. rentesatser, tærskler, indrivelsesparathed).
+**Kilde:** Eksekverbare regler vedligeholdes som Drools-regler i `ufst-rules-lib`. Tidsversionerede
+satser, tærskler og andre forretningsværdier ligger i `business_config`; Excel decision tables er
+ikke længere system of record efter ADR-0035.
 
 ### Processen
 
-1. **Modtag Excel-ark** fra forretningen med regler pr. gældstype (f.eks. skattegæld, børnebidrag, bøder). Formatet skal følge Drools decision table konventionen med kolonner for betingelser og handlinger:
+1. **Afgør om ændringen er data eller logik**:
+   - Hvis ændringen er en sats, tærskel eller anden tidsafhængig forretningsværdi, lægges den i
+     `business_config` med gyldighedsperiode og review-flow.
+   - Hvis ændringen er eksekverbar beslutningslogik, implementeres den som `.drl` i
+     `ufst-rules-lib`.
 
-   | Debt Type | Days Past Due | Interest Rate | Legal Basis |
-   |-----------|---------------|---------------|-------------|
-   | TAX       | 31+           | 10%           | Renteloven §5 |
-   | FINE      | 0+            | 8%            | Standard rate |
+2. **Opdater reglerne** i `ufst-rules-lib/src/main/resources/rules/` og de tilhorende modeller i
+   `dk.ufst.rules.*` (f.eks. request/result-typer, `RulesService`, `KieContainerFactory`).
 
-2. **Placer filen** i `opendebt-rules-engine/src/main/resources/rules/` som `.xlsx`. `DroolsConfig` loader automatisk alle `.drl` og `.xlsx` filer fra denne mappe via `KieFileSystem`.
+3. **For komplekse regler** skrives eller opdateres DRL-filer af udviklere
+   (f.eks. `debt-readiness.drl`, `collection-priority.drl`, `fordring/fordring-validation.drl`).
+   Kaldere resolver selv eksterne input som rates fra `BusinessConfigService` og sender dem ind i
+   rule requests.
 
-3. **For komplekse regler** der kræver programmatisk logik (f.eks. `debt-readiness.drl`, `collection-priority.drl`), skrives DRL-filer af udviklere. Disse bruger request/result-modeller fra `dk.ufst.opendebt.rules.model.*`.
+4. **Eksekvering sker in-process**: Runtime-services injicerer `RulesService` fra
+   `ufst-rules-lib` og evaluerer regler direkte i JVM'en. Der er ikke længere et
+   `/rules-engine` REST-lag.
 
-4. **Exponering via API**: Reglerne kaldes via REST-endpoints i `RulesController`:
-   - `POST /rules-engine/api/v1/rules/readiness/evaluate`
-   - `POST /rules-engine/api/v1/rules/interest/calculate`
-   - `POST /rules-engine/api/v1/rules/priority/evaluate`
+5. **Test**: Skriv eller opdater JUnit 5 integrationstests i `ufst-rules-lib` og relevante
+   consumer-tests i de services, der bruger reglerne. Kør `mvn verify` for at sikre >80% dækning.
 
-5. **Test**: Skriv JUnit 5 tests der validerer regeludførelse med kendte input/output. Kør `mvn verify` for at sikre >80% dækning.
-
-6. **Deployment**: Regelændringer i `.xlsx`-filer kræver re-deploy af `opendebt-rules-engine` servicen, da KieContainer bygges ved opstart.
+6. **Deployment**: Regelændringer kræver ny build/release af `ufst-rules-lib` og re-deploy af de
+   services, der forbruger biblioteket, da `KieContainer` bygges ved opstart. Der er ingen
+   hot-reload i den nuværende arkitektur.
 
 ## 2. BPMN 2.0 processer (Qualiware → Flowable)
 
@@ -63,31 +70,32 @@
 ## 3. Samlet workflow: Fra forretning til kode
 
 ```
-Qualiware (BPMN 2.0)          Excel (gældstype-regler)
+Qualiware (BPMN 2.0)          Drools (.drl) + business_config
        |                              |
        v                              v
-  Eksporter .bpmn20.xml       Eksporter .xlsx decision table
+  Eksporter .bpmn20.xml       Opdater DRL eller config-data
        |                              |
        v                              v
-  Tilpas til Flowable          Placer i rules/
+  Tilpas til Flowable          Opdater ufst-rules-lib
   (delegateExpressions)              |
        |                              v
-       v                        DroolsConfig loader
+       v                        KieContainerFactory loader
   Placer i processes/           automatisk ved opstart
        |                              |
        v                              v
-  Implementer delegates        Exponeres via RulesController
+  Implementer delegates        Forbruges in-process
   (JavaDelegate beans)               |
        |                              v
        v                        Andre services kalder
-  CaseWorkflowService          rules API via REST
+  CaseWorkflowService          RulesService direkte
   eksponerer workflow API
        |
        v
   mvn spotless:apply && mvn verify
 ```
 
-**Vigtigt:** Ændringer i regler (Excel) eller processer (BPMN) kræver begge re-deploy af den respektive service, da de indlæses ved opstart. Der er ingen hot-reload i den nuværende arkitektur.
+**Vigtigt:** Ændringer i regler eller processer kræver re-deploy af de respektive runtime-services,
+da de indlæses ved opstart. Der er ingen hot-reload i den nuværende arkitektur.
 
 ## 4. Finansielle transaktioner og hovedbog (ADR-0018)
 

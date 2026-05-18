@@ -16,18 +16,17 @@ This guide helps new contributors get OpenDebt running locally and understand th
 ```
 opendebt/
 ├── opendebt-common/              # Shared DTOs, exceptions, audit infrastructure
-├── opendebt-debt-service/        # Claim registration, lifecycle, validation (:8082)
+├── opendebt-debt-service/        # Claim registration, lifecycle, validation, set-off (:8082)
 ├── opendebt-case-service/        # Case management with Flowable BPMN (:8081)
 ├── opendebt-payment-service/     # Payment matching, bookkeeping (:8083)
+├── ufst-rules-lib/               # Shared in-process Drools rules library
 ├── opendebt-creditor-service/    # Creditor master data, channel binding (:8092)
 ├── opendebt-person-registry/     # GDPR vault for PII (CPR/CVR) (:8090)
 ├── opendebt-creditor-portal/     # Creditor-facing Thymeleaf+HTMX portal (:8085)
 ├── opendebt-citizen-portal/      # Citizen-facing portal (:8086)
 ├── opendebt-caseworker-portal/   # Caseworker portal (:8093)
 ├── opendebt-integration-gateway/ # DUPLA, SKB, M2M ingress (:8089)
-├── opendebt-rules-engine/        # Drools validation rules (:8091)
 ├── opendebt-letter-service/      # Digital Post integration (:8084)
-├── opendebt-offsetting-service/  # Modregning (set-off) (:8087)
 ├── opendebt-wage-garnishment-service/ # Loenindeholdelse (:8088)
 ├── api-specs/                    # OpenAPI 3.1 specifications
 ├── config/                       # Keycloak realm, PostgreSQL init scripts
@@ -131,7 +130,8 @@ All code uses **English**. Danish domain terms are mapped to English equivalents
 2. **GDPR data isolation** (ADR-0014): All PII (CPR, CVR, names, addresses) is stored only in `person-registry`. Other services store `person_id` UUIDs.
 3. **Injected WebClient.Builder** (ADR-0024): Never use `WebClient.create()`. Always inject `WebClient.Builder` for distributed trace propagation.
 4. **Security annotations**: Every endpoint must have `@PreAuthorize` with appropriate role checks.
-5. **immudb writes are non-blocking** (ADR-0029): The `ImmuLedgerClient.appendAsync()` call must never block or roll back the PostgreSQL `@Transactional` path. immudb failure is logged and handled asynchronously.
+5. **Drools runs in-process** (ADR-0035): Rules live in `ufst-rules-lib` and are evaluated inside consumer services. There is no standalone `rules-engine` service.
+6. **immudb writes are non-blocking** (ADR-0029): The `ImmuLedgerClient.appendAsync()` call must never block or roll back the PostgreSQL `@Transactional` path. immudb failure is logged and handled asynchronously.
 
 ### Time-versioned entities pattern (petition 046)
 

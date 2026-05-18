@@ -1,6 +1,6 @@
 # Architecture
 
-OpenDebt is a microservices-based debt collection system built on Java 21, Spring Boot 3.3, and PostgreSQL 16.
+OpenDebt is a microservices-based debt collection system built on Java 21, Spring Boot 3.5, and PostgreSQL 16.
 
 ## System overview
 
@@ -31,7 +31,6 @@ graph TB
     end
 
     subgraph Foundation["Foundation Services"]
-        RE["rules-engine :8091"]
         PR["person-registry :8090"]
     end
 
@@ -58,29 +57,30 @@ graph TB
     CW --> CS
     CW --> PS
 
-    DS --> RE
     DS --> CRS
     CS --> DS
 ```
+
+Drools rules are packaged in `ufst-rules-lib` and executed in-process by consumer services per
+ADR-0035. There is no standalone `rules-engine` runtime service.
 
 ## Service inventory
 
 | Service | Port | Responsibility |
 |---------|------|----------------|
-| debt-service | 8082 | Claim registration, lifecycle management, validation |
+| debt-service | 8082 | Claim registration, lifecycle management, validation, set-off (ADR-0027) |
 | case-service | 8081 | Case management with Flowable BPMN workflows |
 | payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry), debt event log, immudb tamper-evidence (ADR-0029) |
 | creditor-service | 8092 | Creditor master data, channel binding, access resolution |
 | person-registry | 8090 | GDPR vault for personal data (CPR/CVR encryption) |
-| rules-engine | 8091 | Drools-based validation rules |
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, M2M creditor ingress, legacy SOAP (OIO/SKAT, petition019) |
 | creditor-portal | 8085 | Fordringshaver web portal (Thymeleaf + HTMX); timeline at `/fordring/{id}/tidslinje` |
 | citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX); case detail + timeline at `/cases/{id}/tidslinje` |
 | caseworker-portal | 8093 | Sagsbehandler web portal; unified timeline at `/cases/{id}/tidslinje` |
 | letter-service | 8084 | Digital Post integration |
-| offsetting-service | 8087 | Modregning (set-off) |
 | wage-garnishment-service | 8088 | Loenindeholdelse (wage garnishment) |
 | opendebt-common | JAR | Shared library: audit infrastructure, DTOs, timeline components (petition050) |
+| ufst-rules-lib | JAR | Shared library: in-process Drools rules and KIE container wiring (ADR-0035) |
 | **immudb** | **3322 (gRPC)** | **Cryptographic tamper-evidence KV store for financial ledger entries (ADR-0029)** |
 
 ## Technology stack
@@ -91,7 +91,7 @@ graph TB
 | Framework | Spring Boot 3.5 |
 | Database | PostgreSQL 16 |
 | Authentication | Keycloak (OAuth2/OIDC) |
-| Rules engine | Drools |
+| Rules engine | Drools via `ufst-rules-lib` (in-process) |
 | Workflow engine | Flowable BPMN |
 | Tamper-evidence ledger | immudb 1.10 + immudb4j 1.0.1 |
 | API gateway | DUPLA (external), integration-gateway (internal) |

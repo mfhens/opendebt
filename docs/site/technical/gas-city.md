@@ -16,7 +16,7 @@ gates, and how to diagnose problems.
 | Term | What it means |
 |------|--------------|
 | **City** | A project being orchestrated — this repository is the city |
-| **Rig** | A service sub-directory (e.g. `opendebt-rules-engine`) registered for per-service agents |
+| **Rig** | A service sub-directory (e.g. `opendebt-debt-service`) registered for per-service agents |
 | **Agent** | An AI coding session (tmux window running Claude). Each agent has a role and a prompt template |
 | **Bead** | A work item in the Beads issue tracker (`bd`). Petitions, steps, and human review items are all beads |
 | **Molecule** | A bead hierarchy created from a formula — the running instance of a pipeline |
@@ -96,7 +96,7 @@ gc status
 # Submit a petition for processing
 bd create --title "P055 Forældelse regler" \
   --label petition --label ready \
-  --set-metadata service=rules-engine \
+  --set-metadata service=debt-service \
   --set-metadata petition_path=petitions/petition055/petition055.md \
   --set-metadata catala_tier=A
 
@@ -127,18 +127,18 @@ Edit `city.toml` and uncomment the `[[rigs]]` block:
 
 ```toml
 [[rigs]]
-name = "rules-engine"
-path = "/home/markus/GitHub/opendebt/opendebt-rules-engine"
+name = "debt-service"
+path = "/home/markus/GitHub/opendebt/opendebt-debt-service"
 includes = ["packs/opendebt"]
 ```
 
 Then register it:
 
 ```bash
-gc rig add rules-engine ~/GitHub/opendebt/opendebt-rules-engine
+gc rig add debt-service ~/GitHub/opendebt/opendebt-debt-service
 ```
 
-> **Pilot scope.** Start with `rules-engine` only. Add other services once the pilot
+> **Pilot scope.** Start with `debt-service` only. Add other services once the pilot
 > demonstrates value. Each new rig means a new `tdd-enforcer` pool for that service.
 
 ### 2. Start the controller
@@ -169,7 +169,7 @@ And per-rig agents for each registered service:
 | `{backend-service}/tdd-enforcer` | Implements Java backend code (red → green → refactor) |
 | `{portal}/portal-tdd-enforcer` | Implements portal UI code — Thymeleaf + HTMX (red → green → refactor) |
 
-**Backend service rigs** (get `tdd-enforcer`): rules-engine, debt-service,
+**Backend service rigs** (get `tdd-enforcer`): debt-service,
 payment-service, creditor-service, case-service, integration-gateway,
 person-registry, letter-service, wage-garnishment-service.
 
@@ -205,7 +205,7 @@ petitions/petition0XX/petition0XX.md
 - id: petition055
   title: "Forældelse — statutory limitation rules"
   status: ready_for_implementation   # ← this triggers automatic pickup
-  service: rules-engine
+  service: debt-service
   catala_tier: A                     # A=statutory, B=workflow, C=reference
 ```
 
@@ -234,14 +234,14 @@ bd create \
   --title "P055 Forældelse — statutory limitation rules" \
   --label petition \
   --label ready \
-  --set-metadata service=rules-engine \
+  --set-metadata service=debt-service \
   --set-metadata petition_path=petitions/petition055/petition055.md \
   --set-metadata catala_tier=A
 ```
 
 | Metadata field | Values | Description |
 |----------------|--------|-------------|
-| `service` | `rules-engine`, `debt-service`, … | Target Maven module (without `opendebt-` prefix) |
+| `service` | `debt-service`, `payment-service`, … | Target Maven module (without `opendebt-` prefix) |
 | `petition_path` | `petitions/pXXX/pXXX.md` | Relative path to petition markdown |
 | `catala_tier` | `A`, `B`, `C` | A = statutory rules (triggers Catala encoding); B = workflow; C = reference |
 
@@ -473,7 +473,7 @@ Then reassign back to the tdd-enforcer with context:
 
 ```bash
 bd update <implement_step_bead_id> \
-  --assignee rules-engine/tdd-enforcer \
+  --assignee debt-service/tdd-enforcer \
   --status open \
   --notes "Build broken: <paste the failing test output>"
 ```

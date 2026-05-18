@@ -3,7 +3,7 @@ schema_version: 1
 program:
   name: OpenDebt petition implementation program
   updated_at: 2026-05-18
-  updated_by: TB-060 Playwright E2E harness for petition059 limitation panel done
+  updated_by: TB-061..063 hotspot maintainability backlog added
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -3051,6 +3051,57 @@ program:
         Tests require a running docker-compose stack with ≥5 ACTIVE foraeldelse_record rows.
         Re-seed between full runs: apply-petition059-seed.ps1 -RunTests. Port assignments:
         case-service=8081, debt-service=8082.
+
+    - id: TB-061
+      title: Decompose creditor-portal DebtServiceClient into focused API clients
+      status: not_started
+      priority: high
+      created: 2026-05-18
+      description: |
+        `opendebt-creditor-portal` `DebtServiceClient` has grown into a broad, high-churn
+        integration hotspot (~989 lines) covering claim lists, counts, submission, hearing,
+        adjustments, and detail lookups with repeated WebClient/error-handling patterns.
+        Split it into narrower clients by responsibility (for example query/listing, claim
+        submission, hearing actions, and adjustments) and extract shared request execution,
+        error mapping, and query-parameter assembly so one transport concern change does not
+        require editing the whole creditor BFF surface.
+      acceptance: >
+        No single creditor-portal debt API client remains responsible for unrelated query,
+        write, hearing, and adjustment flows; shared WebClient execution/error handling is
+        centralized; existing controller behavior and resilience semantics remain unchanged.
+
+    - id: TB-062
+      title: Split CaseServiceImpl by command, query, lifecycle, and party responsibilities
+      status: not_started
+      priority: high
+      created: 2026-05-18
+      description: |
+        `opendebt-case-service` `CaseServiceImpl` has become a mixed application-service hotspot
+        (~748 lines) spanning case queries, access filtering, case creation, debt linking,
+        party management, events, objections, journal, legal basis, and relations. Refactor it
+        into smaller cohesive services or internal application components aligned to change axes
+        such as query/read, command/write, assignment/lifecycle, and party handling, while
+        preserving the existing controller and API contract.
+      acceptance: >
+        Case-service responsibilities are separated into smaller cohesive components with clear
+        ownership boundaries; controllers keep the same external contract; tests cover the
+        decomposed services without increasing cross-component coupling.
+
+    - id: TB-063
+      title: Extract debt aggregate mapping and mutation helpers from DebtServiceImpl
+      status: not_started
+      priority: medium
+      created: 2026-05-18
+      description: |
+        `opendebt-debt-service` `DebtServiceImpl` is still manageable (~396 lines) but already
+        mixes CRUD orchestration, creditor authorization, entity construction, DTO mapping,
+        claim-art normalization, balance mutation, and CPR scrubbing. Extract entity factory /
+        update mappers and focused mutation helpers so future changes in claim creation,
+        write-down, and DTO shape do not keep enlarging the same service class.
+      acceptance: >
+        DebtServiceImpl remains the orchestration façade, while entity construction, DTO mapping,
+        and focused debt mutation logic are moved into dedicated helpers with unchanged external
+        behavior and clearer unit-test boundaries.
 
 escalations:
   - id: ESC-055

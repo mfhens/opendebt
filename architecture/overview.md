@@ -2,7 +2,7 @@
 
 ## System Overview
 
-OpenDebt is an open-source debt collection system for Danish public institutions (UFST), designed to replace legacy systems (EFI/DMI). It is built as a microservices architecture using Java 21, Spring Boot 3.3, and PostgreSQL 16, deployed on Kubernetes.
+OpenDebt is an open-source debt collection system for Danish public institutions (UFST), designed to replace legacy systems (EFI/DMI). It is built as a microservices architecture using Java 21, Spring Boot 3.5, and PostgreSQL 16, deployed on Kubernetes.
 
 ```mermaid
 graph TB
@@ -37,7 +37,6 @@ graph TB
     end
 
     subgraph Foundation["Foundation Services"]
-        RE["rules-engine<br/>:8091<br/>Drools"]
         PR["person-registry<br/>:8090<br/>GDPR vault"]
     end
 
@@ -65,17 +64,18 @@ graph TB
     CS --> DS
     CS --> PS
     CS --> LS
-    CS --> OS
     CS --> WG
     CS --> IG
-
-    DS --> RE
     DS --> PR
     DS --> CRS
     CRS --> PR
     CS --> PR
     PS --> DS
 ```
+
+Drools rules are no longer deployed as a standalone service. Per ADR-0035, they are packaged in
+`ufst-rules-lib` and evaluated in-process by consumer services such as `debt-service` and
+`payment-service`.
 
 ### Creditor Interaction Target Architecture (ADR-0020)
 
@@ -475,8 +475,6 @@ sequenceDiagram
     participant IG as integration-gateway
     participant PS as payment-service
     participant DS as debt-service
-    participant RE as rules-engine
-
     SKB->>IG: CREMUL file
     IG->>IG: Parse CREMUL → CreditAdvice
     IG->>PS: POST /api/v1/payments/incoming<br/>(ocrLine, amount, valueDate, cremulRef)
@@ -491,8 +489,7 @@ sequenceDiagram
         DS-->>PS: Updated debt
 
         opt Overpayment (paid > outstanding)
-            PS->>RE: Resolve overpayment outcome<br/>(sagstype, frivillig indbetaling)
-            RE-->>PS: PAYOUT or COVER_OTHER_DEBTS
+            PS->>PS: Evaluate overpayment rules via<br/>ufst-rules-lib (in-process)
         end
 
         PS-->>IG: PaymentMatchResult (autoMatched=true)
@@ -511,7 +508,6 @@ flowchart LR
     end
 
     CS -->|REST| DS[debt-service]
-    CS -->|REST| RE[rules-engine]
     CS -->|REST| PS[payment-service]
     CS -->|REST| LS[letter-service]
     CS -->|REST| WG[wage-garnishment-service]
@@ -522,10 +518,12 @@ flowchart LR
     IG -->|REST| DP[(Digital Post)]
     IG -->|REST| CRS[creditor-service]
 
-    DS -->|REST| RE
     DS -->|REST| PR[person-registry]
     DS -->|REST| CRS
 ```
+
+Rule evaluation happens in-process via `ufst-rules-lib`; there is no REST hop to a separate
+`rules-engine` service.
 
 ## Technology Stack
 
@@ -695,7 +693,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | **Foundation** | | |
 | DebtController | Done | Full CRUD + readiness + lifecycle + submit |
 | DebtService / Impl | Done | Full CRUD + findByOcrLine + writeDown; `scrubCprFromDescription()` strips CPR patterns (`\d{6}-?\d{4}`) from Beskrivelse on claim creation (P002 GDPR defense) |
-| ReadinessValidationService | Done | Calls rules-engine for evaluation |
+| ReadinessValidationService | Done | Evaluates Drools readiness rules in-process via `ufst-rules-lib` |
 | ClaimValidationService / Impl | Done | Drools-based claim validation |
 | ClaimSubmissionService / Impl | Done | End-to-end claim submission flow |
 | KvitteringService / Impl | Done | PSRM kvittering response (UDFOERT/AFVIST/HOERING) |
@@ -873,23 +871,22 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 
 ---
 
-### rules-engine (Port 8091)
+### ufst-rules-lib (Shared JAR)
 
-**Purpose:** Centralized business rules evaluation using Drools. Called by other services via REST.
+**Purpose:** Shared in-process Drools library used by runtime services. Replaces the retired
+standalone `rules-engine` service per ADR-0035.
 
 **Implementation status:** IMPLEMENTED
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| DroolsConfig | Done | Auto-loads .drl and .xlsx from classpath |
-| RulesService / RulesServiceImpl | Done | evaluateReadiness, calculateInterest, determinePriority |
-| FordringValidationService / Impl | Done | Fordring action validation (petition015-018) |
-| RulesController | Done | REST API for all rule types |
+| KieContainerFactory | Done | Builds the shared KIE container from classpath DRL resources |
+| RulesService / RulesServiceImpl | Done | In-process evaluation of readiness, interest, and priority rules |
+| RulesTestHarness | Done | Shared test helper for consumer and library integration tests |
 | debt-readiness.drl | Done | 9 rules including manual review triggers |
 | interest-calculation.drl | Done | Standard rate, small amount exempt, not-due |
 | collection-priority.drl | Done | 5 priority levels (child support > tax > fines > court > other) |
 | fordring-validation.drl | Done | 114 rules: 23 core (petition015) + 14 authorization (petition016) + 32 lifecycle/reference (petition017) + 45 content (petition018) |
-| Flyway migration V1 | Done | Rules audit tables |
 
 **Fordring Validation Rules (petition015-018):**
 | Category | Rules | Error Codes |
@@ -918,11 +915,10 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | Claim type validation | 5 | 509, 537, 550, 574, 575 |
 | Identifier validation | 3 | 486, 602, 603 |
 
-**API endpoints:**
-- `POST /api/v1/rules/readiness/evaluate` - Debt readiness check
-- `POST /api/v1/rules/interest/calculate` - Interest calculation
-- `POST /api/v1/rules/priority/evaluate` - Collection priority
-- `POST /api/v1/rules/priority/sort` - Sort debts by priority
+**Consumption model:**
+- `debt-service` evaluates readiness and claim-validation rules in-process
+- `payment-service` evaluates interest and collection-priority rules in-process
+- The library is versioned and deployed with its consumers; it has no dedicated database or HTTP API
 
 ---
 
@@ -1269,8 +1265,6 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 | opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
 | opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts, daekning_fordring, daekning_record |
 | opendebt_letter | letter-service | letters, letter_templates |
-| opendebt_rules | rules-engine | rule_audit |
-
 All databases include:
 - `audit_log` table with trigger-based audit logging
 - `*_history` tables for temporal versioning (sys_period)
@@ -1421,7 +1415,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | person-registry | Done | 9 | 6 | V1 |
 | debt-service | Done | 94 | 37 | V1-V12 |
 | case-service | Done | 10 | 10 | V1-V3 |
-| rules-engine | Done | 13 | 4 (+ 114 validation rules) | V1 |
+| ufst-rules-lib | Done | 13 | - (in-process shared library) | - |
 | payment-service | Partial | ~68 | 4 | V1, V2, V3 |
 | integration-gateway | Partial | ~44 (+generated) | 7 | - |
 | creditor-service | Done | 35 | 4 | V1, V2 |
