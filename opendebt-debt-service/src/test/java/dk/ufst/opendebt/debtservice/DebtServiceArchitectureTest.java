@@ -1,5 +1,9 @@
 package dk.ufst.opendebt.debtservice;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -18,4 +22,15 @@ class DebtServiceArchitectureTest {
   @ArchTest
   static final ArchRule no_cross_service_db_access =
       SharedArchRules.noAccessToOtherServiceRepositories("debtservice");
+
+  @ArchTest
+  static final ArchRule clients_must_use_injected_webclient_builder =
+      noClasses()
+          .that()
+          .resideInAPackage("..client..")
+          .should()
+          .callMethod(WebClient.class, "create")
+          .orShould()
+          .callMethod(WebClient.class, "create", String.class)
+          .as("Service clients must inject WebClient.Builder for trace propagation (ADR-0024).");
 }

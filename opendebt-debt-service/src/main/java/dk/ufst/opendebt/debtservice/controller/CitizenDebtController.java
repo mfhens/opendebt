@@ -1,5 +1,6 @@
 package dk.ufst.opendebt.debtservice.controller;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import dk.ufst.opendebt.debtservice.dto.CitizenDebtSummaryResponse;
@@ -27,6 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Citizen Debts", description = "Citizen-facing debt operations")
 public class CitizenDebtController {
 
+  private static final int DEFAULT_PAGE_NUMBER = 0;
+  private static final int DEFAULT_PAGE_SIZE = 20;
+  private static final int MAX_PAGE_SIZE = 100;
+
   private final CitizenDebtService citizenDebtService;
 
   @GetMapping
@@ -37,21 +43,30 @@ public class CitizenDebtController {
           "Returns debt list and totals for the authenticated citizen. NO PII, NO creditor internals.")
   public ResponseEntity<CitizenDebtSummaryResponse> getDebtSummary(
       @RequestParam(required = false) String status,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(name = "pageNumber", required = false) Integer pageNumber,
+      @RequestParam(name = "page", required = false) Integer legacyPageNumber,
+      @RequestParam(name = "pageSize", required = false) Integer pageSize,
+      @RequestParam(name = "size", required = false) Integer legacyPageSize,
       @RequestParam(defaultValue = "dueDate") String sortBy,
-      @RequestParam(defaultValue = "ASC") String sortDirection) {
+      @RequestParam(defaultValue = "ASC") String sortDirection,
+      @RequestHeader(value = "X-Person-Id", required = false) String personIdHeader) {
 
-    // Validate and limit page size
-    if (size > 100) {
-      size = 100;
-    }
-    if (size < 1) {
-      size = 20;
+    int resolvedPageNumber =
+        pageNumber != null
+            ? pageNumber
+            : legacyPageNumber != null ? legacyPageNumber : DEFAULT_PAGE_NUMBER;
+    int resolvedPageSize =
+        pageSize != null ? pageSize : legacyPageSize != null ? legacyPageSize : DEFAULT_PAGE_SIZE;
+
+    if (resolvedPageNumber < 0 || resolvedPageSize < 1 || resolvedPageSize > MAX_PAGE_SIZE) {
+      log.warn(
+          "Invalid citizen debt pagination parameters: pageNumber={}, pageSize={}",
+          resolvedPageNumber,
+          resolvedPageSize);
+      return ResponseEntity.badRequest().build();
     }
 
-    // Extract person_id from SecurityContext (set by authentication handler)
-    UUID personId = extractPersonIdFromSecurityContext();
+    UUID personId = extractPersonId(personIdHeader);
     if (personId == null) {
       log.error("No person_id in security context for authenticated CITIZEN user");
       return ResponseEntity.status(500).build();
@@ -75,7 +90,7 @@ public class CitizenDebtController {
         "DESC".equalsIgnoreCase(sortDirection)
             ? Sort.by(sortBy).descending()
             : Sort.by(sortBy).ascending();
-    Pageable pageable = PageRequest.of(page, size, sort);
+    Pageable pageable = PageRequest.of(resolvedPageNumber, resolvedPageSize, sort);
 
     CitizenDebtSummaryResponse response =
         citizenDebtService.getDebtSummary(personId, statusFilter, pageable);
@@ -83,40 +98,71 @@ public class CitizenDebtController {
     return ResponseEntity.ok(response);
   }
 
-  /**
-   * Extract person_id from SecurityContext. The authentication success handler (petition 025)
-   * stores the person_id as an attribute in the Authentication object.
-   */
-  private UUID extractPersonIdFromSecurityContext() {
+  private UUID extractPersonId(String personIdHeader) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UUID jwtPersonId = extractPersonIdFromJwt(authentication);
+    if (jwtPersonId != null) {
+      return jwtPersonId;
+    }
+
+    UUID headerPersonId = extractPersonIdFromHeader(personIdHeader);
+    if (headerPersonId != null) {
+      return headerPersonId;
+    }
+
+    return extractPersonIdFromAuthenticationDetails(authentication);
+  }
+
+  private UUID extractPersonIdFromJwt(Authentication authentication) {
+    if (!(authentication instanceof JwtAuthenticationToken jwtAuthenticationToken)) {
+      return null;
+    }
+
+    String personIdClaim = jwtAuthenticationToken.getToken().getClaimAsString("person_id");
+    if (personIdClaim == null || personIdClaim.isBlank()) {
+      log.debug("JWT authentication present without person_id claim");
+      return null;
+    }
+    return parseUuid(personIdClaim, "JWT person_id claim");
+  }
+
+  private UUID extractPersonIdFromHeader(String personIdHeader) {
+    if (personIdHeader == null || personIdHeader.isBlank()) {
+      return null;
+    }
+    return parseUuid(personIdHeader, "X-Person-Id header");
+  }
+
+  private UUID extractPersonIdFromAuthenticationDetails(Authentication authentication) {
     if (authentication == null) {
       return null;
     }
 
-    // Check for person_id in authentication details (set by OAuth2 success handler)
     Object details = authentication.getDetails();
-    if (details instanceof java.util.Map) {
-      @SuppressWarnings("unchecked")
-      java.util.Map<String, Object> detailsMap = (java.util.Map<String, Object>) details;
+    if (details instanceof Map<?, ?> detailsMap) {
       Object personIdObj = detailsMap.get("person_id");
       if (personIdObj instanceof UUID uuid) {
         return uuid;
       }
       if (personIdObj instanceof String s) {
-        try {
-          return UUID.fromString(s);
-        } catch (IllegalArgumentException e) {
-          log.error("Invalid person_id format in security context: {}", personIdObj);
-        }
+        return parseUuid(s, "authentication details person_id");
       }
     }
 
-    // Fallback: check for person_id attribute (session-based storage)
     Object principalName = authentication.getPrincipal();
     log.warn(
         "person_id not found in authentication details, principal type: {}",
         principalName != null ? principalName.getClass().getName() : "null");
 
     return null;
+  }
+
+  private UUID parseUuid(String rawValue, String source) {
+    try {
+      return UUID.fromString(rawValue);
+    } catch (IllegalArgumentException ex) {
+      log.warn("Invalid {}: {}", source, rawValue);
+      return null;
+    }
   }
 }

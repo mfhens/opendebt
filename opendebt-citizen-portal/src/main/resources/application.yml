@@ -22,7 +22,6 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
           tastselv:
-            issuer-uri: ${TASTSELV_ISSUER_URI}
             authorization-uri: ${TASTSELV_AUTH_URI}
             token-uri: ${TASTSELV_TOKEN_URI}
             user-info-uri: ${TASTSELV_USERINFO_URI}
@@ -65,12 +64,15 @@ opendebt:
   citizen:
     auth:
       cpr-claim-name: "dk:gov:saml:attribute:CprNumberIdentifier"
+    debt-overview:
+      page-size: 100
     tastselv-integration:
       enabled: true
       base-url: ${TASTSELV_BASE_URL:https://www.tastselv.skat.dk}
     external-links:
-      mit-gaeldsoverblik: ${MIT_GAELDSOVERBLIK_URL:https://mitgaeldsoverblik.gaeldst.dk/}
+      mit-gaeldsoverblik: /min-gaeld
       payment-info: ${PAYMENT_INFO_URL:https://gaeldst.dk/borger/saadan-betaler-du-din-gaeld}
+      debt-pdf: ${DEBT_PDF_URL:https://mitgaeldsoverblik.gaeldst.dk/pdf}
       interest-rates: ${INTEREST_RATES_URL:https://gaeldst.dk/borger/betal-min-gaeld/renter-og-gebyrer}
       payment-difficulties: ${PAYMENT_DIFFICULTIES_URL:https://gaeldst.dk/borger/hvis-du-ikke-kan-betale-din-gaeld}
       debt-counselling: ${DEBT_COUNSELLING_URL:https://gaeldst.dk/borger/hvis-du-ikke-kan-betale-din-gaeld/brug-for-raadgivning-om-din-gaeld}
@@ -87,7 +89,7 @@ opendebt:
     person-registry:
       url: ${PERSON_REGISTRY_URL:http://localhost:8090}
     debt-service:
-      url: ${DEBT_SERVICE_URL:http://localhost:8082}
+      url: ${DEBT_SERVICE_URL:http://localhost:8082/debt-service}
     case-service:
       url: ${CASE_SERVICE_URL:http://localhost:8081}
     payment-service:
@@ -115,6 +117,8 @@ resilience4j:
         baseConfig: default
       case-service:
         baseConfig: default
+      debt-service-read:
+        baseConfig: default
       payment-service:
         baseConfig: default
   retry:
@@ -130,6 +134,8 @@ resilience4j:
       person-registry:
         baseConfig: default
       case-service:
+        baseConfig: default
+      debt-service-read:
         baseConfig: default
       payment-service:
         baseConfig: default

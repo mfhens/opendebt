@@ -1,0 +1,34 @@
+petition: petition026
+reviewer: c4-model-validator
+verdict: PASS
+summary: >-
+  The current petition026 model passes enforce-mode validation. The runtime path
+  citizen-portal -> debt-service -> creditor-service is modeled in
+  architecture/workspace.dsl, the reviewed OpenAPI 3.1 contracts describe the
+  petition026 enrichment fields required by the solution architecture, and the
+  slice is rendered in a dedicated P026 component view.
+blocking_findings: []
+warnings: []
+evidence:
+  - claim: Petition026 runtime structure is present in the C4 model.
+    result: PASS
+    proof:
+      - 'architecture/workspace.dsl:77-80 defines DebtOverviewController, CitizenDebtClient, and DebtOverviewView in Citizen Portal.'
+      - 'architecture/workspace.dsl:95-108 defines CreditorController, CitizenDebtController, CitizenDebtService, CreditorDisplayClient, BusinessConfigService, and CitizenDebtPresentationMapper.'
+      - 'architecture/workspace.dsl:177-199 and 242-249 model citizenPortal -> debtService -> creditorService plus the petition026 component request path.'
+      - 'design/solution-architecture-026.md:80-83 requires the same dependency and additive component structure.'
+  - claim: Petition026 inter-service APIs are contract-described per ARCH-010.
+    result: PASS
+    proof:
+      - 'architecture/policies.yaml:79-84 defines ARCH-010 api-first-openapi as a blocking policy.'
+      - 'api-specs/openapi-debt-service.yaml:678-703 describes GET /api/v1/citizen/debts as the /min-gaeld projection with creditor display-name enrichment, citizen-safe status fields, explanation codes, and effective interest-rate metadata.'
+      - 'api-specs/openapi-debt-service.yaml:1533-1688 defines CitizenDebtSummaryResponse, CitizenDebtItem, CitizenEffectiveInterestRate, CitizenDebtStatus, InterestAccrualState, InterestPauseReasonCode, and WrittenOffReasonCode.'
+      - 'api-specs/openapi-creditor-service.yaml:35-58 and 142-163 describe GET /api/v1/creditors/{creditorOrgId} and require displayName in the Creditor schema for petition026 enrichment.'
+  - claim: Petition026 slice is inspectable and security/deployment requirements are represented.
+    result: PASS
+    proof:
+      - 'architecture/workspace.dsl:345-348 includes a Production deployment view with include *.'
+      - 'architecture/workspace.dsl:350-363 defines DebtService_P026_Components and includes the petition026 portal, debt-service, and creditor-service elements.'
+      - 'architecture/policies.yaml:86-92 defines ARCH-011 oauth2-all-endpoints as a blocking policy.'
+      - 'api-specs/openapi-debt-service.yaml:1-29 and api-specs/openapi-creditor-service.yaml:1-26 declare OpenAPI 3.1 and bearerAuth-backed security for the reviewed APIs.'
+timestamp: 2026-06-09T12:29:59.9926653+02:00

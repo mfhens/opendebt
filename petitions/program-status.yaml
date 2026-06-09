@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-05-27
-  updated_by: petition060 closure and contract drift re-audit
+  updated_at: 2026-06-09
+  updated_by: petition026 pipeline implementation closure
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -640,15 +640,24 @@ program:
     petition026:
       title: "\"Mit gaeldsoverblik\" authenticated citizen debt overview page"
       legal_footprint: false
-      status: not_started
+      status: implemented
       phase: phase-8
       psrm_enriched: true
       depends_on:
         - petition022
         - petition024
         - petition025
-      last_reviewed: 2026-03-17
-      next_step: Implement after petitions 024 and 025 provide auth and data access.
+      last_reviewed: 2026-06-09
+      evidence:
+        - Authenticated `/min-gaeld` implemented in opendebt-citizen-portal with accessible table, empty state, service-unavailable state, and landing/login navigation.
+        - `GET /api/v1/citizen/debts` now delivers creditorDisplayName, citizenStatus, explanation codes, effectiveInterestRates, and explicit bearerAuth contract.
+        - Targeted JDK 21 validation passed for citizen-portal, debt-service, petition026 debt BDD, and creditor-service.
+      notes: >
+        Petition026 is now implemented end-to-end across citizen-portal, debt-service, and creditor-service.
+        The portal relays the citizen bearer token downstream and uses an `X-Person-Id` bridge while
+        debt-service still prefers JWT `person_id`. Creditor display names are derived from existing
+        creditor master data; no new PII or cross-service database access was introduced.
+      next_step: Petition027 can now attach self-service payment initiation to the implemented `/min-gaeld` debt overview page.
 
     petition027:
       title: Citizen payment initiation API and self-service payment

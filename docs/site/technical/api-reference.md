@@ -123,7 +123,13 @@ authoritative claim state.
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| `GET` | `/api/v1/citizen/debts` | Citizen's own debts (CITIZEN role; no PII exposed) |
+| `GET` | `/api/v1/citizen/debts` | Citizen's own debts (`bearerAuth`; `pageNumber`/`pageSize`; no PII exposed) |
+
+`GET /api/v1/citizen/debts` is the petition026 citizen projection. The debt-service resolves
+`person_id` from the JWT and tolerates an `X-Person-Id` bridge header for the citizen-portal. The
+response includes `creditorDisplayName`, `citizenStatus`, optional pause/write-off reason codes,
+row-level rate metadata (`interestRuleCode`, `currentInterestRate`), and page-level
+`effectiveInterestRates`.
 
 #### Business Configuration (petition 046/047)
 
@@ -156,7 +162,7 @@ Known config keys:
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | `GET` | `/api/v1/creditors` | List active creditors |
-| `GET` | `/api/v1/creditors/{creditorOrgId}` | Get creditor by org ID |
+| `GET` | `/api/v1/creditors/{creditorOrgId}` | Get creditor by org ID, including citizen-safe `displayName` |
 | `POST` | `/api/v1/creditors/access/resolve` | Resolve channel access for M2M/portal |
 | `POST` | `/api/v1/creditors/{id}/validate-action` | Validate creditor permission for action |
 

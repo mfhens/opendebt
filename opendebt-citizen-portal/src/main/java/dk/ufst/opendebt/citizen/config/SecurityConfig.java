@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -44,11 +45,22 @@ public class SecurityConfig {
                     .deleteCookies("JSESSIONID"));
 
     if (clientRegistrationRepository != null) {
+      SavedRequestAwareAuthenticationSuccessHandler successHandler =
+          new SavedRequestAwareAuthenticationSuccessHandler();
+      successHandler.setDefaultTargetUrl("/min-gaeld");
+
       http.oauth2Login(
           oauth2 -> {
             oauth2
-                .loginPage("/")
-                .defaultSuccessUrl("/dashboard", true)
+                .successHandler(
+                    (request, response, authentication) -> {
+                      if (authentication.getPrincipal() instanceof CitizenOidcUser citizenUser) {
+                        request
+                            .getSession(true)
+                            .setAttribute("person_id", citizenUser.getPersonId());
+                      }
+                      successHandler.onAuthenticationSuccess(request, response, authentication);
+                    })
                 .failureUrl("/error/login-failed");
             if (citizenOidcUserService != null) {
               oauth2.userInfoEndpoint(userInfo -> userInfo.oidcUserService(citizenOidcUserService));

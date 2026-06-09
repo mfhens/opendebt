@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="da" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+  <title th:text="#{debt.overview.page.title}">Mit gæld</title>
+</head>
+<body>
+  <section layout:fragment="breadcrumb" th:text="#{debt.overview.breadcrumb}">Mit gæld</section>
+  <section layout:fragment="content">
+    <h1 th:text="#{debt.overview.heading}">Mit gæld</h1>
+
+    <section class="skat-card" th:if="${!pageView.serviceUnavailable}">
+      <p class="skat-text-caption" th:text="#{debt.overview.total.label}">Samlet saldo</p>
+      <p class="skat-text-display" th:text="${pageView.totalOutstandingAmount}">0,00 kr.</p>
+      <p th:text="#{debt.overview.total.count(${pageView.totalDebtCount})}">0 fordringer</p>
+    </section>
+
+    <nav class="skat-action-links" th:aria-label="#{layout.nav.label}">
+      <a class="skat-button skat-button--primary"
+         th:href="${pageView.paymentInfoUrl}"
+         rel="noopener noreferrer"
+         th:text="#{debt.overview.action.pay}">Betal gæld</a>
+      <a class="skat-button skat-button--secondary"
+         th:href="${pageView.debtPdfUrl}"
+         rel="noopener noreferrer"
+         aria-describedby="debt-overview-pdf-coming-soon"
+         th:text="#{debt.overview.action.pdf}">Download PDF</a>
+      <span id="debt-overview-pdf-coming-soon" th:text="#{debt.overview.action.pdf.coming-soon}">
+        Kommer snart
+      </span>
+      <a class="skat-button skat-button--tertiary"
+         th:href="${pageView.landingPageUrl}"
+         th:text="#{debt.overview.action.back}">Tilbage til forsiden</a>
+    </nav>
+
+    <div class="skat-alert skat-alert--error" role="alert" th:if="${pageView.serviceUnavailable}">
+      <p th:text="#{debt.overview.state.service-unavailable}">
+        Gældsoverblikket er midlertidigt utilgængeligt.
+      </p>
+    </div>
+
+    <div class="skat-alert skat-alert--info" role="status" th:if="${pageView.noDebt}">
+      <p th:text="#{debt.overview.state.none}">Vi fandt ingen gæld.</p>
+    </div>
+
+    <section th:if="${!pageView.serviceUnavailable and !pageView.noDebt}">
+      <table class="skat-table">
+        <caption th:text="#{debt.overview.table.caption}">Dine fordringer</caption>
+        <thead>
+        <tr>
+          <th scope="col" th:text="#{debt.overview.table.column.debt-type}">Gældstype</th>
+          <th scope="col" th:text="#{debt.overview.table.column.creditor}">Fordringshaver</th>
+          <th scope="col" th:text="#{debt.overview.table.column.principal}">Hovedstol</th>
+          <th scope="col" th:text="#{debt.overview.table.column.outstanding}">Saldo</th>
+          <th scope="col" th:text="#{debt.overview.table.column.interest}">Renter</th>
+          <th scope="col" th:text="#{debt.overview.table.column.due-date}">Forfaldsdato</th>
+          <th scope="col" th:text="#{debt.overview.table.column.status}">Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="debt : ${pageView.debts}">
+          <td th:text="${debt.debtTypeName}">Property tax</td>
+          <td th:text="${debt.creditorDisplayName}">Skattestyrelsen</td>
+          <td th:text="${debt.principalAmount}">1.000,00 kr.</td>
+          <td th:text="${debt.outstandingAmount}">1.200,00 kr.</td>
+          <td>
+            <span th:text="${debt.interestAmount}">200,00 kr.</span>
+            <p th:if="${debt.interestDetail != null}" th:text="${debt.interestDetail}">Current interest rate</p>
+          </td>
+          <td th:text="${debt.dueDate}">15. jan. 2026</td>
+          <td>
+            <span th:text="${debt.statusLabel}">Under inddrivelse</span>
+            <p th:if="${debt.statusDetail != null}" th:text="${debt.statusDetail}">Begrundelse</p>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <nav th:if="${pageView.totalPages > 1}"
+         th:aria-label="#{debt.overview.pagination.nav-label}">
+      <ul>
+        <li th:if="${pageView.hasPrevious}">
+          <a th:href="@{/min-gaeld(page=${pageView.previousPage})}"
+             th:text="#{debt.overview.pagination.previous}">Forrige</a>
+        </li>
+        <li>
+          <span th:text="#{debt.overview.pagination.current(${pageView.currentPage + 1}, ${pageView.totalPages})}">
+            Side 1 af 1
+          </span>
+        </li>
+        <li th:if="${pageView.hasNext}">
+          <a th:href="@{/min-gaeld(page=${pageView.nextPage})}"
+             th:text="#{debt.overview.pagination.next}">Næste</a>
+        </li>
+      </ul>
+    </nav>
+
+    <section class="skat-card">
+      <h2 th:text="#{debt.overview.contact.heading}">Har du spørgsmål?</h2>
+      <p th:text="#{debt.overview.contact.body}">Ring til os, hvis du har spørgsmål om din gæld.</p>
+      <p>
+        <a th:href="'tel:' + ${pageView.phoneInternational}" th:text="${pageView.phoneNumber}">70 15 73 04</a>
+      </p>
+    </section>
+
+    <section class="skat-card">
+      <h2 th:text="#{debt.overview.table.column.interest}">Renter</h2>
+      <ul>
+        <li th:text="#{debt.overview.interest.daily-accrual}">Renter tilskrives dagligt.</li>
+        <li th:text="#{debt.overview.interest.priority-order}">Betalinger dækker renter før hovedstol.</li>
+        <li th:each="note : ${pageView.effectiveInterestRateNotes}" th:text="${note}">
+          Aktuel rentesats
+        </li>
+        <li th:text="#{debt.overview.interest.not-tax-deductible}">
+          Inddrivelsesrenter er ikke fradragsberettigede.
+        </li>
+      </ul>
+    </section>
+
+    <p th:text="#{debt.overview.snapshot.notice}">
+      Dette overblik er et øjebliksbillede, og saldoen kan afvige lidt.
+    </p>
+  </section>
+</body>
+</html>

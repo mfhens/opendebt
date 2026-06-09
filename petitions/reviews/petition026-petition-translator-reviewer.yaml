@@ -1,0 +1,34 @@
+petition: petition026
+reviewer: petition-translator-reviewer
+verdict: PASS-WITH-WARNINGS
+summary: "The updated feature now faithfully covers the petition and outcome contract for /min-gaeld, including the explicit user-authoritative resolution that the table shows creditor name and the missing explanation that payments reduce accrued interest before principal. Remaining issues are non-blocking structural or test-style concerns rather than semantic drift."
+blocking_findings: []
+warnings:
+  - id: W-001
+    title: "Scenario titles are not numbered"
+    detail: "The feature is valid Gherkin, but the translator guidance asks for numbered scenarios for traceability and the current file still omits them."
+    evidence:
+      - "petitions\\petition026-citizen-debt-overview-page.feature:8-139"
+  - id: W-002
+    title: "A few steps are implementation-facing rather than purely user-observable"
+    detail: "Steps that assert direct use of session person_id or message bundles are still testable, but they lean toward implementation detail instead of outward business behavior."
+    evidence:
+      - "petitions\\petition026-citizen-debt-overview-page.feature:22-28"
+      - "petitions\\petition026-citizen-debt-overview-page.feature:76-82"
+evidence:
+  - file: "petitions\\petition026-citizen-debt-overview-page.md"
+    claim: "The petition requires authenticated /min-gaeld access, total debt display, a debt table with creditor name, actions, disclaimers, accessibility, and a landing-page CTA update."
+    result: "Covered by the feature's authentication, table, payment/PDF/navigation, explanation, accessibility, and landing-page scenarios."
+  - file: "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md"
+    claim: "The outcome contract acceptance criteria for authentication, debt retrieval, debt columns, no-debt handling, interest explanation, links, accessibility, localization, and service-unavailable handling are translated into Gherkin."
+    result: "All acceptance criteria that belong in feature-level behavior are represented by one or more scenarios or scenario outlines."
+  - file: "petitions\\petition026-citizen-debt-overview-page.feature"
+    claim: "The feature now includes the previously missing explanation that payments reduce accrued interest before principal."
+    result: "Scenario 'Debt overview presents interest, snapshot, and contact explanations' explicitly asserts the payment-allocation explanation at lines 55-65."
+  - file: "petitions\\petition026-citizen-debt-overview-page.feature"
+    claim: "The feature reflects the current-run authoritative resolution that the debt table should show creditor name."
+    result: "The semantic table scenario requires creditor name in both the header and each debt row at lines 30-39, matching the explicit user instruction for this retry."
+  - file: "petitions\\reviews\\petition026-petition-translator-reviewer.yaml"
+    claim: "Prior blocking findings were rechecked in this retry pass."
+    result: "The earlier creditor-display blocker is superseded by the active user instruction, and the earlier missing interest-allocation blocker is resolved in the updated feature."
+timestamp: "2026-06-09T11:27:42.2675928+02:00"

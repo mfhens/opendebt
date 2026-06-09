@@ -36,6 +36,10 @@ paths:
     get:
       tags: [Creditors]
       summary: Resolve creditor master data by organization reference
+      description: |
+        Resolve creditor master data by technical UUID reference to the person-registry organization.
+        For petition026 this response also exposes `displayName`, allowing debt-service to enrich
+        the citizen debt projection without bypassing creditor-service ownership.
       operationId: getCreditorByOrganizationId
       parameters:
         - name: creditorOrgId
@@ -141,6 +145,7 @@ components:
         - id
         - creditorOrgId
         - externalCreditorId
+        - displayName
         - activityStatus
         - connectionType
       properties:
@@ -153,6 +158,9 @@ components:
           description: Technical UUID reference to person-registry organization
         externalCreditorId:
           type: string
+        displayName:
+          type: string
+          description: Resolved organization display name used for UI-safe enrichment flows such as petition026.
         parentCreditorId:
           type: string
           format: uuid

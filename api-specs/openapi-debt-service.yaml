@@ -681,9 +681,14 @@ paths:
       summary: Get debts for the authenticated citizen
       description: |
         Returns debts belonging to the authenticated citizen (identified via JWT `person_id` claim).
+        This citizen debt projection backs `/min-gaeld` and includes creditor display-name
+        enrichment, citizen-safe status fields, explanation codes, and effective interest-rate
+        metadata for the page-level interest note.
         Does NOT expose PII, creditor internals, or readiness status.
         Requires CITIZEN role.
       operationId: getCitizenDebts
+      security:
+        - bearerAuth: []
       parameters:
         - name: status
           in: query
@@ -1529,6 +1534,16 @@ components:
 
     CitizenDebtSummaryResponse:
       type: object
+      description: Citizen debt projection for the authenticated `/min-gaeld` overview. Contains NO PII.
+      required:
+        - debts
+        - totalOutstandingAmount
+        - totalDebtCount
+        - pageNumber
+        - pageSize
+        - totalPages
+        - totalElements
+        - effectiveInterestRates
       properties:
         debts:
           type: array
@@ -1539,16 +1554,37 @@ components:
           format: decimal
         totalDebtCount:
           type: integer
-        page:
+        pageNumber:
           type: integer
-        size:
+        pageSize:
           type: integer
         totalPages:
           type: integer
+        totalElements:
+          type: integer
+          format: int64
+        effectiveInterestRates:
+          type: array
+          description: Effective annual rate metadata used to render the citizen interest-rate note.
+          items:
+            $ref: '#/components/schemas/CitizenEffectiveInterestRate'
 
     CitizenDebtItem:
       type: object
-      description: Debt summary for citizen view — no PII, no readiness internals
+      description: Debt projection for citizen view — no PII, no readiness internals, only citizen-safe status metadata.
+      required:
+        - debtId
+        - debtTypeName
+        - debtTypeCode
+        - creditorDisplayName
+        - principalAmount
+        - outstandingAmount
+        - interestAmount
+        - feesAmount
+        - dueDate
+        - status
+        - citizenStatus
+        - interestAccrualState
       properties:
         debtId:
           type: string
@@ -1557,6 +1593,9 @@ components:
           type: string
         debtTypeCode:
           type: string
+        creditorDisplayName:
+          type: string
+          description: Citizen-safe creditor organization name resolved via creditor-service.
         principalAmount:
           type: number
           format: decimal
@@ -1574,6 +1613,81 @@ components:
           format: date
         status:
           $ref: '#/components/schemas/DebtStatus'
+          description: Legacy debt-state field retained for compatibility with the original petition024 contract.
+        citizenStatus:
+          $ref: '#/components/schemas/CitizenDebtStatus'
+        statusReasonCode:
+          type: string
+          description: Optional machine-readable explanation code backing citizen-facing sub-text for the current citizenStatus.
+          example: LIMITATION_EXPIRED
+        interestAccrualState:
+          $ref: '#/components/schemas/InterestAccrualState'
+        interestPauseReasonCode:
+          $ref: '#/components/schemas/InterestPauseReasonCode'
+        interestRuleCode:
+          type: string
+          description: Presentation-oriented interest rule code derived from versioned business configuration.
+          example: INDR_STD
+        currentInterestRate:
+          type: number
+          format: decimal
+          description: Effective annual interest rate currently applied to this debt.
+        writtenOffReasonCode:
+          $ref: '#/components/schemas/WrittenOffReasonCode'
+          description: Present when citizenStatus is WRITTEN_OFF.
+
+    CitizenEffectiveInterestRate:
+      type: object
+      required:
+        - interestRuleCode
+        - annualRate
+        - validFrom
+      properties:
+        interestRuleCode:
+          type: string
+          description: Interest rule code used in the citizen overview note.
+          example: INDR_STD
+        annualRate:
+          type: number
+          format: decimal
+        validFrom:
+          type: string
+          format: date
+
+    CitizenDebtStatus:
+      type: string
+      description: Citizen-safe debt status rendered in the debt overview table.
+      enum:
+        - IN_COLLECTION
+        - SET_OFF
+        - PAID
+        - WRITTEN_OFF
+        - DISPUTED
+        - INSTALMENT_ARRANGEMENT
+        - WAGE_GARNISHMENT
+
+    InterestAccrualState:
+      type: string
+      enum:
+        - ACTIVE
+        - PAUSED
+
+    InterestPauseReasonCode:
+      type: string
+      description: Explanation code used when interest accrual is paused for the citizen view.
+      enum:
+        - CLAIM_UNCLEAR_DEBTOR_CANNOT_PAY
+
+    WrittenOffReasonCode:
+      type: string
+      description: Citizen-facing written-off reason codes.
+      enum:
+        - LIMITATION_EXPIRED
+        - BANKRUPTCY
+        - ESTATE_OF_DECEASED
+        - DEBT_RESTRUCTURING
+        - RECOVERY_FUTILE
+        - RECOVERY_COST_DISPROPORTIONATE
 
     # ── Business Configuration ────────────────────────────────────────────────
 
@@ -2182,6 +2296,4 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-
-
 

@@ -1,0 +1,84 @@
+petition: petition026
+reviewer: component-mapping-reviewer
+verdict: PASS-WITH-WARNINGS
+summary: >
+  The component assignment is credible enough to hand to solution-architect. It keeps the
+  citizen-facing /min-gaeld page concerns in citizen-portal and the citizen debt read model plus
+  canonical debt-state semantics in debt-service. The remaining open points are explicitly surfaced
+  as architecture choices rather than hidden in the mapping, so they are warnings, not blockers.
+blocking_findings: []
+warnings:
+  - id: W-001
+    title: Creditor display-name ownership is unresolved at contract level
+    detail: >
+      Petition026 now expects creditor name in the overview, but petition024 and the current
+      CitizenDebtItemDto deliberately exclude creditor names. The reviewed mapping surfaces this
+      explicitly, but solution-architect must still choose whether debt-service expands the citizen
+      DTO or citizen-portal resolves names through creditor-service.
+    evidence:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition024-citizen-debt-summary-endpoint.md:42-45,91-92'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-debt-service\src\main\java\dk\ufst\opendebt\debtservice\dto\CitizenDebtItemDto.java:18-28'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:135-148,245-251'
+  - id: W-002
+    title: Citizen-status enrichment needs explicit read-model design
+    detail: >
+      Assigning paused-interest, written-off-reason, and citizen-visible status explanations to
+      debt-service is coherent, but the current citizen DTO does not yet expose those fields and
+      some source facts live in case-service or wage-garnishment-service. Architecture must define
+      how debt-service assembles that projection without blurring ownership.
+    evidence:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\debt-service.yaml:1-16'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\case-service.yaml:1-13'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\wage-garnishment-service.yaml:1-16'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-debt-service\src\main\java\dk\ufst\opendebt\debtservice\dto\CitizenDebtItemDto.java:18-28'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:150-190,257-262'
+  - id: W-003
+    title: Runtime citizen-portal to debt-service dependency is not yet modelled
+    detail: >
+      Petition026's technical approach requires the portal to call debt-service, but workspace.dsl
+      still shows citizenPortal talking to caseService and paymentService only. The mapping
+      surfaces this correctly; solution-architect must add the relation and any portal-side
+      BFF/client elements.
+    evidence:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition026-citizen-debt-overview-page.md:67-73'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\architecture\workspace.dsl:160-168,218-221'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:88-110,268-272'
+  - id: W-004
+    title: Interest-rate note ownership is still unsettled
+    detail: >
+      The interest-rate note sits naturally in the portal's explanatory copy, but the petition also
+      allows it to come from debt-service. The mapping keeps this choice visible; architecture
+      should settle ownership now to avoid split responsibility later.
+    evidence:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition026-citizen-debt-overview-page.md:42,67-73'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:207-219,253-256'
+evidence:
+  - claim: Auth, routing, rendering, accessibility, and localization are correctly centered in citizen-portal.
+    proof:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\citizen-portal.yaml:1-15'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition026-citizen-debt-overview-page.md:27-30,55-65,67-73'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition026-citizen-debt-overview-page.feature:8-20,30-53,55-111'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:46-72,113-148,192-243'
+    result: confirmed
+  - claim: Citizen-scoped debt retrieval and canonical debt-state projection are correctly centered in debt-service.
+    proof:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\debt-service.yaml:1-16'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\petition024-citizen-debt-summary-endpoint.md:35-45,68-74,88-92'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-debt-service\src\main\java\dk\ufst\opendebt\debtservice\service\CitizenDebtService.java:10-22'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\opendebt-debt-service\src\main\java\dk\ufst\opendebt\debtservice\service\impl\CitizenDebtServiceImpl.java:28-96'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:74-111,150-190'
+    result: confirmed
+  - claim: Supporting services remain bounded fact suppliers rather than bucket owners for the page.
+    proof:
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\creditor-service.yaml:1-12'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\payment-service.yaml:1-14'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\case-service.yaml:1-13'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\design\components\wage-garnishment-service.yaml:1-16'
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:129-139,165-180,206-211'
+    result: confirmed
+  - claim: Explicit unresolved design choices are surfaced for architecture resolution instead of being hidden.
+    proof:
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:245-272'
+      - 'C:\Users\AJ849XF\Documents\GitHub\opendebt\petitions\reviews\petition026-petition-translator-reviewer.yaml:1-34'
+    result: confirmed
+timestamp: "2026-06-09T11:51:06.7068957+02:00"

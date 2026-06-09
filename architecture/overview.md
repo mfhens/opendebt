@@ -647,9 +647,9 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | CollectionMeasureEntity | Done | SET_OFF, WAGE_GARNISHMENT, ATTACHMENT with status tracking |
 | CollectionMeasureService / Impl | Done | Initiate, complete, cancel measures (requires OVERDRAGET state) |
 | CollectionMeasureController | Done | REST API for collection measures |
-| **Citizen debt (petition024)** | | |
-| CitizenDebtController | Done | Citizen-facing debt summary (person_id from JWT) |
-| CitizenDebtService / Impl | Done | Pagination, status filter, no PII/creditor internals |
+| **Citizen debt (petition024/026)** | | |
+| CitizenDebtController | Done | Citizen-facing debt summary; bearerAuth + `pageNumber`/`pageSize`; resolves `person_id` from JWT, `X-Person-Id`, or auth details |
+| CitizenDebtService / Impl | Done | Pagination, citizen-safe status mapping, creditor display-name enrichment, pause/write-off reason codes, page-level `effectiveInterestRates` |
 | **Batch processing (petition043)** | | |
 | BatchJobExecutionEntity | Done | Job execution tracking for idempotency and audit |
 | InterestJournalEntry | Done | Storno-compatible interest journal with balance snapshot |
@@ -764,7 +764,7 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 - `POST /api/v1/debts/{debtId}/collection-measures/{id}/complete` - Complete measure
 - `POST /api/v1/debts/{debtId}/collection-measures/{id}/cancel` - Cancel measure
 - `GET /api/v1/debts/{debtId}/collection-measures` - List measures
-- `GET /api/v1/citizen/debts` - Citizen debt summary (CITIZEN role, person_id from JWT)
+- `GET /api/v1/citizen/debts` - Citizen debt summary (CITIZEN bearer auth; `person_id` from JWT with `X-Person-Id` bridge; `pageNumber`/`pageSize`; no PII)
 
 ---
 
@@ -1021,7 +1021,7 @@ standalone `rules-engine` service per ADR-0035.
 | AccessResolutionController | Done | POST /api/v1/creditors/access/resolve (petition010) |
 | CreditorService / CreditorServiceImpl | Done | Creditor lookup, hierarchy, action validation |
 | ChannelBindingService / ChannelBindingServiceImpl | Done | Channel binding CRUD, access resolution |
-| CreditorMapper / ChannelBindingMapper | Done | MapStruct mappers |
+| CreditorMapper / ChannelBindingMapper | Done | MapStruct mappers; creditor projection now derives citizen-safe `displayName` |
 | CreditorRepository | Done | JPA with filtering indexes |
 | ChannelBindingRepository | Done | JPA repository |
 | SecurityConfig | Removed (TB-043) | Replaced by keycloak-oauth2-starter auto-configuration |
@@ -1032,7 +1032,7 @@ standalone `rules-engine` service per ADR-0035.
 | Flyway migration V2 | Done | `channel_bindings`, audit, history |
 
 **API endpoints:**
-- `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference
+- `GET /api/v1/creditors/{creditorOrgId}` - Resolve creditor master data by organization reference, including citizen-safe `displayName`
 - `GET /api/v1/creditors/by-external-id/{externalCreditorId}` - Resolve creditor by legacy external ID
 - `POST /api/v1/creditors/{creditorOrgId}/validate-action` - Validate creditor status and permissions
 - `POST /api/v1/creditors/access/resolve` - Resolve acting and represented creditor for a channel request (petition010); HTTP 200 with `allowed: false` for business denial (portal BFF reads body; not HTTP 403)
@@ -1141,11 +1141,11 @@ standalone `rules-engine` service per ADR-0035.
 
 ### citizen-portal (Port 8086)
 
-**Purpose:** UI/BFF for borgere (citizens) to view debts and make payments. TastSelv/MitID integration via OAuth2/OIDC.
+**Purpose:** UI/BFF for borgere (citizens) to view debts and make payments. The authenticated debt overview lives at `/min-gaeld`. TastSelv/MitID integration via OAuth2/OIDC.
 
 **Accessibility requirement:** Must comply with ADR-0021 and the applicable requirements from EN 301 549 / WCAG 2.1 AA, and must have its own accessibility statement.
 
-**Implementation status:** PARTIALLY IMPLEMENTED (15 Java files)
+**Implementation status:** PARTIALLY IMPLEMENTED (28 Java files)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -1155,19 +1155,26 @@ standalone `rules-engine` service per ADR-0035.
 | LandingPageController | Done | `GET /` landing page with FAQ |
 | AccessibilityController | Done | `GET /was` accessibility statement |
 | I18nConfig / I18nProperties / I18nModelAdvice | Done | i18n infrastructure with locale switching |
-| CitizenLinksProperties / CitizenLinksModelAdvice | Done | Portal link configuration |
+| CitizenLinksProperties / CitizenLinksModelAdvice | Done | Portal link configuration; landing CTA points to internal `/min-gaeld` |
 | Thymeleaf templates | Done | index.html, was.html, layout/default.html, language-selector fragment |
 | messages_da.properties / messages_en_GB.properties | Done | 72 i18n keys per locale |
 | SecurityConfig (public pages) | Done | Permits landing, /was, static resources; requires auth elsewhere |
 | **MitID/TastSelv auth (petition025)** | **Done** | |
-| SecurityConfig (OAuth2) | Done | `.oauth2Login()` with tastselv client registration |
+| SecurityConfig (OAuth2) | Done | `.oauth2Login()` with tastselv client registration; default success target `/min-gaeld`; persists resolved `person_id` in session |
 | CitizenOidcUserService / CitizenOidcUser | Done | Custom OIDC user with CPR extraction and person_id resolution |
 | CitizenAuthProperties | Done | Configurable CPR claim name |
 | PersonRegistryClient | Done | REST client for person-registry CPR lookup (WebClient.Builder, ADR-0024) |
-| WebClientConfig | Done | WebClient.Builder bean with JSON defaults |
+| WebClientConfig | Done | Dev/test WebClient.Builder bean with JSON defaults |
+| **Debt overview (petition026)** | **Done** | |
+| DebtOverviewController | Done | `GET /min-gaeld`; resolves `person_id` from `CitizenOidcUser` or session and renders accessible table/empty/unavailable states |
+| CitizenDebtClient | Done | Calls debt-service `/api/v1/citizen/debts` with `pageNumber`, fixed `pageSize`, `X-Person-Id`, and resilience4j `debt-service-read` |
+| WebClientOAuth2Config | Done | Non-dev/test OAuth2-aware `WebClient.Builder` relays the current citizen bearer token downstream |
+| Debt overview DTO / view models | Done | `CitizenDebtSummaryResponse`, `CitizenDebtItem`, `CitizenEffectiveInterestRate`, `DebtOverviewPageViewModel`, `DebtOverviewRowViewModel` |
+| DebtOverviewServiceUnavailableException | Done | Dedicated portal exception for downstream-unavailable debt overview state |
+| min-gaeld.html | Done | Accessible debt overview with pagination, rate notes, payment/back actions, and no-debt/service-unavailable states |
 | DashboardController | Done | `GET /dashboard` for authenticated citizens |
-| **Tests** | **Done** | LandingPageControllerTest, DashboardControllerTest, SecurityConfigTest, CitizenOidcUserServiceTest, PersonRegistryClientTest, ArchitectureTest |
-| **E2E (Playwright)** | **Done** | `opendebt-e2e/tests/petition022-citizen-landing.spec.ts` — citizen landing + WAS (petition022, ADR 0034); CI omits `@backlog`-tagged tests |
+| **Tests** | **Done** | LandingPageControllerTest, DashboardControllerTest, SecurityConfigTest, DebtOverviewPageMvcTest, CitizenDebtClientTest, CitizenOidcUserServiceTest, PersonRegistryClientTest, CitizenPortalArchitectureTest |
+| **E2E (Playwright)** | **Done** | `opendebt-e2e/tests/petition022-citizen-landing.spec.ts` and `opendebt-e2e/tests/petition026-citizen-debt-overview.spec.ts` — landing CTA, `/min-gaeld`, pagination request contract, and accessible states |
 | **Case detail and timeline (petition050)** | **Done** | |
 | CaseDetailController | Done | `GET /cases/{caseId}` — case detail page with timeline tab |
 | CitizenTimelineController | Done | `GET /cases/{caseId}/tidslinje` + `GET /cases/{caseId}/tidslinje/entries` — citizen-filtered timeline (FINANCIAL, CASE, DEBT_LIFECYCLE categories) |
@@ -1179,6 +1186,7 @@ standalone `rules-engine` service per ADR-0035.
 **Page routes:**
 - `GET /` - Landing page (public)
 - `GET /was` - Accessibility statement (public)
+- `GET /min-gaeld` - Authenticated citizen debt overview (petition026)
 - `GET /dashboard` - Authenticated citizen dashboard
 - `GET /cases/{caseId}` - Case detail page (petition050)
 - `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, petition050)
@@ -1381,7 +1389,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | LiabilityServiceImplTest | debt-service | 12 | SOLE/JOINT_AND_SEVERAL/PROPORTIONAL, share validation, deactivation |
 | ObjectionServiceImplTest | debt-service | 11 | Register, resolve (UPHELD/REJECTED), hasActiveObjection, collection blocking |
 | CollectionMeasureServiceImplTest | debt-service | 11 | SET_OFF/WAGE_GARNISHMENT/ATTACHMENT, state validation, complete, cancel |
-| CitizenDebtServiceImplTest | debt-service | 6 | Citizen debt summary, pagination, status filter |
+| CitizenDebtServiceImplTest | debt-service | 11 | Citizen debt enrichment, pagination, status filter, rate metadata, write-off/pause reasons |
 | HoeringServiceImplTest | debt-service | 7 | Create, approve, reject, withdraw hearings |
 | KvitteringServiceImplTest | debt-service | 3 | UDFOERT/AFVIST/HOERING kvittering responses |
 | ZeroClaimServiceImplTest | debt-service | 9 | 0-fordring pattern for interest references |
@@ -1392,8 +1400,10 @@ Pre-defined API specs (API-first, ADR-0004):
 | LiabilityControllerTest | debt-service | 5 | REST endpoint tests for liability operations |
 | ObjectionControllerTest | debt-service | 4 | REST endpoint tests for objection operations |
 | CollectionMeasureControllerTest | debt-service | 5 | REST endpoint tests for collection measure operations |
-| CitizenDebtControllerTest | debt-service | 6 | REST endpoint tests for citizen debt summary |
-| RunCucumberTest (petition002-007,024,043,060) | debt-service | 73 | BDD scenarios across 9 petitions including section-50 retskraft ordering |
+| CitizenDebtControllerTest | debt-service | 11 | REST endpoint tests for citizen debt summary, pagination aliases, and person_id extraction order |
+| CitizenDebtControllerSecurityTest | debt-service | 2 | 401 behavior and OpenAPI bearerAuth contract for `/api/v1/citizen/debts` |
+| CreditorDisplayClientTest | debt-service | 3 | Creditor `displayName` lookup success and failure handling |
+| RunCucumberTest (petition002-007,024,026,043,060) | debt-service | 83 | BDD scenarios across 10 petitions including citizen debt enrichment/scoping and section-50 ordering |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
 | RunCucumberTest (petition057) | payment-service | 103 | BDD: GIL § 4 8-step payment application order, priority sort, FIFO, simulate endpoint |
 | CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |
@@ -1404,11 +1414,14 @@ Pre-defined API specs (API-first, ADR-0004):
 | Oces3SoapSecurityInterceptorTest | integration-gateway | - | Certificate validation, fordringshaver extraction, auth/authz faults |
 | SoapFaultMappingResolverTest | integration-gateway | - | Exception-to-SOAP-fault mapping, HTTP status preservation |
 | RunCucumberTest (petition019) | integration-gateway | - | BDD: OIO/SKAT SOAP submission, OCES3 auth, malformed SOAP fault, circuit breaker |
-| LandingPageControllerTest | citizen-portal | 3 | Landing page model attributes, FAQ |
-| DashboardControllerTest | citizen-portal | 3 | Authenticated dashboard |
+| LandingPageControllerTest | citizen-portal | 10 | Landing page rendering, accessibility affordances, locale switch, and `/min-gaeld` CTA |
+| DashboardControllerTest | citizen-portal | 2 | Authenticated dashboard |
+| DebtOverviewPageMvcTest | citizen-portal | 4 | `/min-gaeld` auth redirect, semantic table, empty state, and accessible unavailable state |
+| CitizenDebtClientTest | citizen-portal | 1 | Browser page -> downstream `pageNumber` mapping, fixed `pageSize`, `X-Person-Id` header |
 | SecurityConfigTest | citizen-portal | 3 | Public vs authenticated page access |
 | CitizenOidcUserServiceTest | citizen-portal | 4 | CPR extraction, person_id resolution |
 | PersonRegistryClientTest | citizen-portal | 3 | CPR lookup, error handling |
+| CitizenPortalArchitectureTest | citizen-portal | 2 | Repository isolation and `WebClient.Builder` guard for client tracing |
 | CreditorServiceClientTest | creditor-portal | 5 | Creditor lookup, access resolution, error handling |
 | DebtServiceClientTest | creditor-portal | 5 | Debt listing, creation, validation errors, server errors |
 | CaseServiceClientTest | creditor-portal | 2 | Case listing, server error handling |
@@ -1440,7 +1453,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | offsetting-service | **Merged into debt-service** (ADR-0027) | - | - | - |
 | wage-garnishment-service | Partial | 1 | 1 | - |
 | creditor-portal | Partial | ~74 | ~53 | - |
-| citizen-portal | Partial | ~19 | 6 | - |
+| citizen-portal | Partial | 28 | 7 | - |
 | caseworker-portal | Partial | ~5 | 4 | - |
 | **Total** | | **~347** | **~127** | **23** |
 

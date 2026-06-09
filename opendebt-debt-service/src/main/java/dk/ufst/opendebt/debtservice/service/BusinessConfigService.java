@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -168,9 +169,18 @@ public class BusinessConfigService {
   /** Returns the effective config entry for a key on the given date as a DTO. */
   @Transactional(readOnly = true)
   public ConfigEntryDto getEffectiveEntry(String configKey, LocalDate effectiveDate) {
+    return findEffectiveEntry(configKey, effectiveDate)
+        .orElseThrow(() -> new ConfigurationNotFoundException(configKey, effectiveDate));
+  }
+
+  /** Returns the effective config entry for a key on the given date, or empty when none exists. */
+  @Transactional(readOnly = true)
+  public Optional<ConfigEntryDto> findEffectiveEntry(String configKey, LocalDate effectiveDate) {
     List<BusinessConfigEntity> entries = repository.findEffective(configKey, effectiveDate);
-    if (entries.isEmpty()) throw new ConfigurationNotFoundException(configKey, effectiveDate);
-    return toDto(entries.get(0));
+    if (entries.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(toDto(entries.get(0)));
   }
 
   /**

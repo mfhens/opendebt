@@ -10,8 +10,9 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "opendebt.citizen.external-links")
 public class CitizenLinksProperties {
 
-  private String mitGaeldsoverblik = "https://mitgaeldsoverblik.gaeldst.dk/";
+  private String mitGaeldsoverblik = "/min-gaeld";
   private String paymentInfo = "https://gaeldst.dk/borger/saadan-betaler-du-din-gaeld";
+  private String debtPdf = "https://mitgaeldsoverblik.gaeldst.dk/pdf";
   private String interestRates = "https://gaeldst.dk/borger/betal-min-gaeld/renter-og-gebyrer";
   private String paymentDifficulties =
       "https://gaeldst.dk/borger/hvis-du-ikke-kan-betale-din-gaeld";
