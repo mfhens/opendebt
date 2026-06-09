@@ -69,6 +69,9 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
                 limitationPanelController = component "LimitationPanelController" "BFF/controller for the petition059 limitation panel." "Spring MVC / BFF" "Component"
                 limitationPanelView = component "LimitationPanelView" "Rendered view for limitation status, histories, and objection controls." "Thymeleaf view" "Component"
                 limitationPortalClient = component "LimitationPortalClient" "Outbound client used by the portal to call debt-service limitation APIs." "HTTP client" "Component"
+                section50WorklistController = component "Section50WorklistController" "BFF/controller for petition060 section-50 retskraft worklist generation, inspection, and override actions." "Spring MVC / BFF" "Component"
+                section50WorklistView = component "Section50WorklistView" "Rendered view for ranked section-50 worklists, amount windows, and audit explanation." "Thymeleaf view" "Component"
+                section50PortalClient = component "Section50PortalClient" "Outbound client used by the portal to call debt-service section-50 APIs." "HTTP client" "Component"
             }
 
             citizenPortal = container "Citizen Portal" "Web UI for debtors (skyldnere). View debt status, payment history, and correspondence. Authenticated via NemID/MitID." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application"
@@ -112,11 +115,20 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
                 limitationObjectionWorkflowClient = component "LimitationObjectionWorkflowClient" "Internal client from debt-service to the case-service limitation objection workflow API." "HTTP client" "Component"
                 wageGarnishmentFactClient = component "WageGarnishmentFactClient" "Read-only client used by petition059 to resolve decision, notification, covered-claim, and inactivity facts." "HTTP client" "Component"
                 limitationAuditPublisher = component "LimitationAuditPublisher" "Publishes limitation audit events through the shared audit pipeline." "Audit publisher" "Component"
+                section50WorklistApi = component "Section50WorklistApi" "External REST surface for generating, reading, overriding, and annotating section-50 retskraft worklists." "REST API" "Component"
+                section50WorklistApplicationService = component "Section50WorklistApplicationService" "Application seam for request validation, context assembly, persistence, and result composition for petition060." "Application service" "Component"
+                section50OrderingPolicyEngine = component "Section50OrderingPolicyEngine" "Deterministic section-50 legal ordering engine for default, discretionary, expedited, and modregning paths." "Domain service" "Component"
+                accessoryEligibilityEvaluator = component "AccessoryEligibilityEvaluator" "Determines whether accessory items are deferred, eligible, or excluded based on principal state and proportionality." "Domain service" "Component"
+                surplusWindowSelector = component "SurplusWindowSelector" "Calculates remaining amount windows and candidate sets for voluntary-payment and modregning contexts." "Domain service" "Component"
+                paymentCoverageOrderClient = component "PaymentCoverageOrderClient" "Read-only internal client to payment-service simulation for petition057 ordering reuse." "HTTP client" "Component"
+                section50AuditPublisher = component "Section50AuditPublisher" "Publishes section-50 ranking and deviation audit events through the shared audit pipeline." "Audit publisher" "Component"
             }
 
             letterService = container "Letter Service" "Document generation and delivery. Produces legally required notices, decisions, and correspondence." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
 
-            paymentService = container "Payment Service" "Payment processing, reconciliation, and GIL § 4 payment application order (dækningsrækkefølge). Tracks incoming payments, applies them sequentially by PrioritetKategori and FIFO sort key, and posts to financial audit ledger. Owns DaekningRecord persistence and immudb audit appends (P057)." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
+            paymentService = container "Payment Service" "Payment processing, reconciliation, and GIL § 4 payment application order (dækningsrækkefølge). Tracks incoming payments, applies them sequentially by PrioritetKategori and FIFO sort key, and posts to financial audit ledger. Owns DaekningRecord persistence and immudb audit appends (P057)." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
+                daekningsRaekkefoelgeSimulationApi = component "DaekningsRaekkefoelgeSimulationApi" "Simulation API returning principal ordering for a candidate set without applying payment." "REST API" "Component"
+            }
 
             wageGarnishmentService = container "Wage Garnishment Service" "Lønindeholdelse processing. Petition059 uses it as the source of decision, notification, covered-claim, and inactivity facts needed to determine whether wage garnishment interrupts limitation periods." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
                 properties {
@@ -181,6 +193,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         debtService -> cls "Ships limitation audit events via audit-trail-commons / ADR-0022 pipeline" "Structured audit pipeline"
 
         paymentService -> personRegistry "Resolves person data by UUID" "HTTPS/REST"
+        paymentService -> keycloak "Validates tokens via" "OAuth2/OIDC"
         letterService -> personRegistry "Resolves person data for addressing" "HTTPS/REST"
         wageGarnishmentService -> personRegistry "Resolves person data by UUID" "HTTPS/REST"
         wageGarnishmentService -> keycloak "Validates tokens via" "OAuth2/OIDC"
@@ -249,6 +262,22 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         wageGarnishmentFactClient -> limitationFactApi "Calls to obtain decision and inactivity facts" "HTTPS/REST"
         limitationAuditPublisher -> cls "Ships limitation audit events to" "Structured audit pipeline"
         objectionAuditPublisher -> cls "Ships workflow audit events to" "Structured audit pipeline"
+
+        // ---------------------------------------------------------------
+        // Component relationships — P060
+        // ---------------------------------------------------------------
+        section50WorklistController -> section50PortalClient "Uses for section-50 reads and actions" "Java method call"
+        section50WorklistController -> section50WorklistView "Renders section-50 worklist screen" "Java method call"
+        section50PortalClient -> section50WorklistApi "Calls debt-service section-50 surface" "HTTPS/REST"
+        section50WorklistApi -> section50WorklistApplicationService "Delegates generation and decision commands to" "Java method call"
+        section50WorklistApplicationService -> section50OrderingPolicyEngine "Delegates ordering logic to" "Java method call"
+        section50WorklistApplicationService -> accessoryEligibilityEvaluator "Delegates accessory gating to" "Java method call"
+        section50WorklistApplicationService -> surplusWindowSelector "Derives remaining amount windows through" "Java method call"
+        section50WorklistApplicationService -> paymentCoverageOrderClient "Requests petition057 principal ordering through" "Java method call"
+        section50WorklistApplicationService -> section50AuditPublisher "Emits ranking and deviation events through" "Java method call"
+        paymentCoverageOrderClient -> daekningsRaekkefoelgeSimulationApi "Calls payment-service simulation contract" "HTTPS/REST"
+        modregningService -> section50WorklistApplicationService "Supplies modregning-context remaining amount and confirmed-claim facts to" "Java method call"
+        section50AuditPublisher -> cls "Ships section-50 ranking and deviation audit events to" "Structured audit pipeline"
 
         // ---------------------------------------------------------------
         // Deployment environment — required by ARCH-005
@@ -326,6 +355,25 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
             include caseworkerPortal
             include caseService
             include wageGarnishmentService
+            include cls
+            autoLayout lr
+        }
+
+        component debtService "DebtService_P060_Components" "P060 component view — section-50 retskraft ordering, payment-service simulation reuse, and audit relations." {
+            include section50WorklistController
+            include section50WorklistView
+            include section50PortalClient
+            include modregningService
+            include section50WorklistApi
+            include section50WorklistApplicationService
+            include section50OrderingPolicyEngine
+            include accessoryEligibilityEvaluator
+            include surplusWindowSelector
+            include paymentCoverageOrderClient
+            include section50AuditPublisher
+            include daekningsRaekkefoelgeSimulationApi
+            include caseworkerPortal
+            include paymentService
             include cls
             autoLayout lr
         }

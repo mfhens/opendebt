@@ -1,0 +1,78 @@
+petition_id: petition060
+agent: c4-architecture-governor
+mode: pr
+status: success
+verdict: PASS-WITH-WARNINGS
+timestamp: '2026-05-26T22:34:00+02:00'
+blocking_count: 0
+warning_count: 1
+summary: >-
+  PASS-WITH-WARNINGS. The current petition060 PR-scope architecture changes conform to the
+  declared C4 model and policy set at the governance gate. No blocking model drift, undeclared
+  cross-service relationship, trust-boundary violation, or deployment-view regression was
+  evidenced in this run. One non-blocking shared-workspace component-view warning remains from the
+  older petition059 portal slice.
+artifacts:
+  - architecture\workspace.dsl
+  - architecture\policies.yaml
+  - design\solution-architecture-p060-retskraftvurdering.md
+  - petitions\reviews\petition060-solution-architecture-reviewer.yaml
+  - petitions\reviews\petition060-c4-model-validator.yaml
+  - petitions\reviews\petition060-c4-architecture-governor.yaml
+  - petitions\program-status.yaml
+evidence_checked:
+  - claim: PR-scope changes conform to the declared petition060 architecture model
+    proof: >-
+      Reviewed the active petition060 changed-file set in this run. The PR-scope architectural
+      change is the canonical model update in architecture\workspace.dsl, adding the petition060
+      section-50 portal, debt-service, payment-service, and audit elements already approved in the
+      solution architecture package (git diff for architecture\workspace.dsl in this run; design\solution-architecture-p060-retskraftvurdering.md:524-582).
+      The changed elements are now present in the canonical model at
+      architecture\workspace.dsl:72-74, 118-130, 195-196, 267-280, and 361-377.
+    freshness: '2026-05-26T22:34:00+02:00'
+    result: pass
+  - claim: No blocking policy violation was evidenced in this run
+    proof: >-
+      Evaluated architecture\policies.yaml in PR mode against the updated canonical model.
+      No evidence of ARCH-001, ARCH-003, ARCH-004, ARCH-005, ARCH-008, ARCH-009, ARCH-010,
+      or ARCH-011 violation was found for the petition060 slice. The model keeps declared REST
+      boundaries for caseworkerPortal -> debtService and debtService -> paymentService, includes
+      Production deployment coverage, and now models paymentService -> keycloak explicitly
+      (architecture\workspace.dsl:162-223, 267-280, 285-300, 319-377).
+    freshness: '2026-05-26T22:34:00+02:00'
+    result: pass
+  - claim: Updated C4 model remains valid after PR-scope DSL changes
+    proof: >-
+      Because architecture\workspace.dsl was modified in this PR scope, the governance gate
+      consumed the fresh enforce-mode validator result at
+      petitions\reviews\petition060-c4-model-validator.yaml, which returned
+      PASS-WITH-WARNINGS with blocking_count: 0 and may_proceed: true.
+    freshness: '2026-05-26T22:34:00+02:00'
+    result: pass
+  - claim: Next gate may proceed
+    proof: >-
+      This governance verdict artifact was produced in this run, and no blocking drift or policy
+      conflict was identified. The validator and reviewer artifacts both allow the pipeline to
+      advance beyond the architecture governance gate.
+    freshness: '2026-05-26T22:34:00+02:00'
+    result: pass
+warnings:
+  - >-
+    STRUCT-VIEW-001: limitationPanelController, limitationPanelView, and limitationPortalClient
+    remain defined in the canonical workspace without inclusion in any component view
+    (architecture\workspace.dsl; carried forward from petition059). This is non-blocking shared
+    workspace view-coverage drift.
+escalations: []
+next_action: Proceed to Phase 3.7 Catala encoding for petition060.
+handoff_target: catala-encoder
+findings:
+  - severity: warning
+    element: 'Caseworker Portal / LimitationPanelController / LimitationPanelView / LimitationPortalClient'
+    policy_id: ''
+    file: 'architecture\workspace.dsl'
+    description: >-
+      The three petition059 limitation portal components are declared in the canonical model but
+      still do not appear in any component view.
+    fix: >-
+      Add the portal limitation components to an appropriate canonical component view when the
+      team next refreshes shared workspace view coverage.

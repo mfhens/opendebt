@@ -165,6 +165,15 @@ erDiagram
 
 `ForaeldelseRecord`, `AfbrydelseEvent`, `TillaegsfristEvent`, and `LimitationObjectionLinkage` extend `AuditableEntity`, so creation/update metadata is captured without introducing PII into the limitation model.
 
+## Retskraft evaluation entities (petition060)
+
+| Entity | Service | Purpose | Key fields |
+|--------|---------|---------|------------|
+| `Section50CandidateItemEntity` | debt-service | Candidate principal/accessory item prepared for section-50 evaluation | `debtorPersonId`, `claimId`, `itemType`, `claimCategory`, `amount`, `suspectedDataError`, `confirmedRetskraft`, `accessoryOfClaimId` |
+| `Section50WorklistEntity` | debt-service | One persisted petition060 worklist per generation/override cycle | `debtorPersonId`, `contextType`, `orderingMode`, `legalReference`, `amountWindow`, `selectedNextItemId`, `overrideReason`, `modregningOutcome` |
+| `Section50WorklistEntryEntity` | debt-service | Ranked entry within one petition060 worklist | `worklistId`, `rankOrder`, `claimId`, `itemType`, `claimCategory`, `withinAmountWindow`, `selectionReason`, `prioritisationFactors`, `amount` |
+| `Section50DecisionSnapshotEntity` | debt-service | Reproducible decision metadata for audit and caseworker inspection | `worklistId`, `rulePath`, `inputHash`, `selectedNextItemId`, `legalReference`, `auditEventId`, `origin`, `occurredAt`, `notes` |
+
 ### Limitation enums
 
 | Enum | Values | Notes |

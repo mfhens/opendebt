@@ -1,0 +1,66 @@
+scope: petition060 section-50 public and internal worklist contracts
+agent: contract-drift-auditor
+mode: enforce
+status: success
+summary: >-
+  Enforce-mode audit compared the refreshed petition060 spec package, the new public and internal
+  OpenAPI artifacts, debt-service section50 controllers and DTOs, payment-service simulation DTOs
+  and service seam, persistence entities and migration, and petition060 tests. Verdict is PASS:
+  the public section-50 API contract is now published with the full response shape, the petition057
+  reuse seam now carries the petition060 candidate-principal filter through the internal request,
+  and section50 decision snapshots now distinguish system-generated worklists from caseworker
+  override and modregning decisions.
+artifacts:
+  - petitions/reviews/petition060-contract-drift-auditor.yaml
+  - api-specs/openapi-debt-service-retskraft-worklists.yaml
+  - api-specs/openapi-payment-service-retskraft-simulation-internal.yaml
+  - petitions/program-status.yaml
+evidence_checked:
+  - claim: Canonical contract source was explicit for this audit.
+    proof: >-
+      petitions/specs/petition060-specs.yaml plus petitions/petition060-retskraftvurdering.md
+      and petitions/petition060-retskraftvurdering-outcome-contract.md were inspected in this run.
+    freshness: inspected 2026-05-27
+    result: pass
+  - claim: Public section50 API and DTO alignment was inspected.
+    proof: >-
+      api-specs/openapi-debt-service-retskraft-worklists.yaml,
+      opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/section50/controller/Section50WorklistController.java,
+      dto/GenerateSection50WorklistRequest.java, dto/Section50WorklistDto.java,
+      dto/Section50WorklistEntryDto.java, and dto/Section50DecisionSnapshotDto.java were
+      compared in this run.
+    freshness: inspected 2026-05-27
+    result: pass
+  - claim: Petition057 simulation reuse alignment was inspected.
+    proof: >-
+      petitions/specs/petition060-specs.yaml and
+      api-specs/openapi-payment-service-retskraft-simulation-internal.yaml now match
+      DefaultPaymentCoverageOrderClient.java, payment/controller/DaekningsRaekkefoeigenController.java,
+      payment/daekning/dto/SimulateRequestDto.java, and
+      payment/daekning/service/impl/DaekningsRaekkefoeigenServiceImpl.java, including
+      candidatePrincipalClaimIds flow-through for petition060 filtering.
+    freshness: inspected 2026-05-27
+    result: pass
+  - claim: Persistence and audit-origin behavior were inspected.
+    proof: >-
+      opendebt-debt-service/src/main/resources/db/migration/V13__section50_worklists.sql,
+      entity/Section50WorklistEntity.java, entity/Section50WorklistEntryEntity.java,
+      entity/Section50DecisionSnapshotEntity.java, and
+      service/impl/Section50WorklistApplicationServiceImpl.java were compared in this run; the
+      petition060 BDD and focused unit tests now cover both SYSTEM and CASEWORKER origin behavior.
+    freshness: inspected 2026-05-27
+    result: pass
+warnings: []
+escalations: []
+next_action: Proceed to code review and final petition060 status sync.
+handoff_target: code-review
+verdict: PASS
+canonical_source: petitions/specs/petition060-specs.yaml
+layers_checked:
+  - api
+  - dto
+  - mapper
+  - db
+  - tests
+tb_handoff_ids: []
+findings: []

@@ -1,0 +1,376 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Debt Service Section-50 Worklists API
+  description: |
+    Petition060 public debt-service surface for section-50 retskraft evaluation worklists,
+    inspection, override handling, and modregning abstention decisions.
+
+    The API exposes only technical identifiers. Actor identity and audit origin are derived from
+    authenticated server-side context and the `requestedBySystem` generation flag.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+servers:
+  - url: https://api.opendebt.dk/debt-service
+    description: Production
+  - url: https://api-staging.opendebt.dk/debt-service
+    description: Staging
+security:
+  - bearerAuth: []
+tags:
+  - name: Section 50 Worklists
+    description: Petition060 section-50 ranking and audit operations
+paths:
+  /api/v1/debtors/{debtorId}/retskraft-worklists:
+    post:
+      tags: [Section 50 Worklists]
+      summary: Generate a section-50 retskraft worklist
+      operationId: generateSection50Worklist
+      parameters:
+        - $ref: '#/components/parameters/DebtorIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSection50WorklistRequest'
+      responses:
+        '200':
+          description: Ranked worklist generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section50Worklist'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}:
+    get:
+      tags: [Section 50 Worklists]
+      summary: Inspect a persisted section-50 retskraft worklist
+      operationId: getSection50Worklist
+      parameters:
+        - $ref: '#/components/parameters/DebtorIdPath'
+        - $ref: '#/components/parameters/WorklistIdPath'
+      responses:
+        '200':
+          description: Persisted worklist returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section50Worklist'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override:
+    post:
+      tags: [Section 50 Worklists]
+      summary: Apply a documented override or expedited deviation
+      operationId: overrideSection50Worklist
+      parameters:
+        - $ref: '#/components/parameters/DebtorIdPath'
+        - $ref: '#/components/parameters/WorklistIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Section50OverrideRequest'
+      responses:
+        '200':
+          description: Worklist updated with override result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section50Worklist'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision:
+    post:
+      tags: [Section 50 Worklists]
+      summary: Record a partial or no-modregning decision
+      operationId: recordSection50ModregningDecision
+      parameters:
+        - $ref: '#/components/parameters/DebtorIdPath'
+        - $ref: '#/components/parameters/WorklistIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Section50ModregningDecisionRequest'
+      responses:
+        '200':
+          description: Worklist updated with modregning decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section50Worklist'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DebtorIdPath:
+      name: debtorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WorklistIdPath:
+      name: worklistId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Authentication required
+    Forbidden:
+      description: Caller lacks the required role
+    NotFound:
+      description: Worklist was not found for the debtor
+  schemas:
+    ProblemDetail:
+      type: object
+      additionalProperties: true
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+    GenerateSection50WorklistRequest:
+      type: object
+      additionalProperties: false
+      required: [contextType]
+      properties:
+        contextType:
+          $ref: '#/components/schemas/Section50ContextType'
+        availableAmount:
+          type: number
+        confirmedAmountCovered:
+          type: number
+        candidateClaimIds:
+          type: array
+          items:
+            type: string
+        requestedBySystem:
+          type: boolean
+      description: |
+        `availableAmount` is required for `VOLUNTARY_PAYMENT_SURPLUS` and `MODREGNING`.
+        `requestedBySystem=true` records a system-originated snapshot; otherwise origin is caseworker.
+    Section50OverrideRequest:
+      type: object
+      additionalProperties: false
+      required: [overrideReason, legalBasis]
+      properties:
+        overrideReason:
+          type: string
+        legalBasis:
+          type: string
+        expedited:
+          type: boolean
+        selectedClaimOrder:
+          type: array
+          items:
+            type: string
+    Section50ModregningDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [modregningOutcome, reason]
+      properties:
+        modregningOutcome:
+          $ref: '#/components/schemas/Section50ModregningOutcome'
+        reason:
+          type: string
+    Section50Worklist:
+      type: object
+      additionalProperties: false
+      required:
+        - worklistId
+        - debtorId
+        - orderingMode
+        - legalReference
+        - contextType
+        - generatedAt
+        - entries
+        - decisionSnapshot
+      properties:
+        worklistId:
+          type: string
+          format: uuid
+        debtorId:
+          type: string
+          format: uuid
+        orderingMode:
+          $ref: '#/components/schemas/Section50OrderingMode'
+        legalReference:
+          type: string
+        contextType:
+          $ref: '#/components/schemas/Section50ContextType'
+        amountWindow:
+          type: [number, 'null']
+        generatedAt:
+          type: string
+          format: date-time
+        selectedNextItemId:
+          type: [string, 'null']
+        overrideReason:
+          type: [string, 'null']
+        overrideLegalBasis:
+          type: [string, 'null']
+        deviationReason:
+          type: [string, 'null']
+        modregningOutcome:
+          anyOf:
+            - $ref: '#/components/schemas/Section50ModregningOutcome'
+            - type: 'null'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section50WorklistEntry'
+        decisionSnapshot:
+          $ref: '#/components/schemas/Section50DecisionSnapshot'
+    Section50WorklistEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - rank
+        - claimId
+        - itemType
+        - claimCategory
+        - suspectedDataError
+        - confirmedRetskraft
+        - withinAmountWindow
+        - prioritisationFactors
+        - amount
+      properties:
+        rank:
+          type: integer
+        claimId:
+          type: string
+        itemType:
+          $ref: '#/components/schemas/Section50ItemType'
+        claimCategory:
+          $ref: '#/components/schemas/Section50ClaimCategory'
+        suspectedDataError:
+          type: boolean
+        confirmedRetskraft:
+          type: boolean
+        withinAmountWindow:
+          type: boolean
+        selectionReason:
+          type: [string, 'null']
+        prioritisationFactors:
+          type: array
+          items:
+            type: string
+        suppressedReason:
+          type: [string, 'null']
+        amount:
+          type: number
+    Section50DecisionSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - decisionId
+        - worklistId
+        - rulePath
+        - inputHash
+        - legalReference
+        - auditEventId
+        - origin
+        - occurredAt
+        - prioritisationFactors
+      properties:
+        decisionId:
+          type: string
+          format: uuid
+        worklistId:
+          type: string
+          format: uuid
+        rulePath:
+          type: string
+        inputHash:
+          type: string
+        selectedNextItemId:
+          type: [string, 'null']
+        legalReference:
+          type: string
+        auditEventId:
+          type: string
+          format: uuid
+        origin:
+          type: string
+          enum: [SYSTEM, CASEWORKER]
+        occurredAt:
+          type: string
+          format: date-time
+        notes:
+          type: [string, 'null']
+        prioritisationFactors:
+          type: array
+          items:
+            type: string
+    Section50ContextType:
+      type: string
+      enum: [DEFAULT, DATA_ERROR, VOLUNTARY_PAYMENT_SURPLUS, MODREGNING]
+    Section50OrderingMode:
+      type: string
+      enum:
+        [
+          DEFAULT_SECTION_50,
+          OVERRIDE,
+          DATA_ERROR_DISCRETIONARY,
+          EXPEDITED_SURPLUS,
+          MODREGNING_WINDOWED,
+          MODREGNING_ABSTAINED
+        ]
+    Section50ModregningOutcome:
+      type: string
+      enum: [PARTIAL_ABSTENTION, NO_MODREGNING]
+    Section50ClaimCategory:
+      type: string
+      enum: [FINE, PRIVATE_MAINTENANCE, OTHER]
+    Section50ItemType:
+      type: string
+      enum: [PRINCIPAL, ACCESSORY]

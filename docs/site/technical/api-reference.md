@@ -69,6 +69,15 @@ Public FR-6 objection commands reject caller-supplied `registeredBy`, `decidedBy
 `debtorPersonId`; those values are derived server-side from authenticated context and
 authoritative claim state.
 
+#### Retskraft evaluation worklists (petition 060)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists` | Generate a section-50 ranking snapshot for the debtor in default, data-error, voluntary-payment-surplus, or modregning context. |
+| `GET` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}` | Inspect ranked entries, legal reference, decision origin, timestamp, and input hash for an existing petition060 worklist. |
+| `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override` | Persist a caseworker-documented override or expedited deviation on the existing worklist. |
+| `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision` | Record a partial/no-modregning outcome for the current payout context with visible rationale. |
+
 #### Readiness
 
 | Method | Endpoint | Purpose |

@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: OpenDebt - Payment Service Petition060 Simulation Internal API
+  description: |
+    Internal petition060 reuse contract for payment-service simulation of petition057 ordering.
+    Debt-service supplies the available amount window and the candidate principal claim IDs that
+    should be considered for section-50 surplus ordering.
+  version: 1.0.0
+  contact:
+    name: OpenDebt Team
+    email: opendebt@ufst.dk
+servers:
+  - url: http://opendebt-payment-service:8083
+    description: Internal cluster service
+security:
+  - bearerAuth: []
+tags:
+  - name: Coverage Simulation Internal
+    description: Petition060 internal payment-order reuse
+paths:
+  /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate:
+    post:
+      tags: [Coverage Simulation Internal]
+      summary: Simulate petition057 ordering for a petition060 candidate set
+      operationId: simulateCoverageOrderForPetition060
+      parameters:
+        - $ref: '#/components/parameters/DebtorIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageSimulationRequest'
+      responses:
+        '200':
+          description: Ordered simulation positions returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SimulatePosition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DebtorIdPath:
+      name: debtorId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Invalid internal simulation input
+    Unauthorized:
+      description: Authentication required
+    Forbidden:
+      description: Caller lacks the required role
+  schemas:
+    CoverageSimulationRequest:
+      type: object
+      additionalProperties: false
+      required: [beloeb]
+      properties:
+        beloeb:
+          type: number
+          description: Available amount window for petition060 surplus evaluation
+        inddrivelsesindsatsType:
+          type: string
+          enum: [FRIVILLIG]
+          description: Debt-service supplies FRIVILLIG for petition060 surplus reuse.
+        candidatePrincipalClaimIds:
+          type: array
+          items:
+            type: string
+          description: Optional shared-surface filter used by debt-service for petition060 candidate windows.
+    SimulatePosition:
+      type: object
+      additionalProperties: false
+      required:
+        - fordringId
+        - prioritetKategori
+        - gilParagraf
+        - fifoSortKey
+        - tilbaestaaendeBeloeb
+        - daekningBeloeb
+        - fullyCovers
+      properties:
+        fordringId:
+          type: string
+        prioritetKategori:
+          type: string
+        gilParagraf:
+          type: string
+        komponent:
+          anyOf:
+            - type: string
+            - type: 'null'
+        fifoSortKey:
+          type: string
+          format: date
+        tilbaestaaendeBeloeb:
+          type: number
+        opskrivningAfFordringId:
+          anyOf:
+            - type: string
+            - type: 'null'
+        daekningBeloeb:
+          type: number
+        fullyCovers:
+          type: boolean

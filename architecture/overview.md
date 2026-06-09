@@ -612,9 +612,9 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 
 ### debt-service (Port 8082)
 
-**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, batch processing, and limitation state. Also owns the **offsetting (modregning)** domain (ADR-0027).
+**Purpose:** Debt registration, lifecycle management, and downstream collection model for `fordringer`, `restancer`, readiness validation, notifications, liabilities, objections, collection measures, batch processing, limitation state, and section-50 retskraft evaluation worklists. Also owns the **offsetting (modregning)** domain (ADR-0027).
 
-**Implementation status:** IMPLEMENTED (~125 Java files; Flyway migrations documented through V12)
+**Implementation status:** IMPLEMENTED (~125 Java files; Flyway migrations documented through V13)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -672,6 +672,13 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | LimitationObjectionFacade | Done | Keeps the public limitation objection contract in debt-service while delegating workflow lifecycle to case-service (ADR-0038) |
 | LimitationPolicyEngine | Done | Uses injected `limitationClock` for deterministic calculation windows (NFR-1) |
 | OpenAPI spec (limitation) | Done | `api-specs/openapi-debt-service-limitation.yaml` |
+| **Retskraft evaluation (petition060)** | **Done** | |
+| Section50CandidateItemEntity | Done | Candidate item table for principal/accessory evaluation metadata; stores only technical debtor UUID references |
+| Section50WorklistEntity / Entry / DecisionSnapshot | Done | Persistent worklist, ranked entries, and reproducible decision snapshot with input hash and rule-path trace |
+| Section50OrderingPolicyEngine | Done | Implements default section-50 ordering, discretionary data-error ordering, voluntary-payment surplus windowing, expedited deviation, and modregning windowing |
+| Section50WorklistApplicationService / Impl | Done | Generates, loads, overrides, and records no-modregning decisions for petition060 worklists |
+| Section50WorklistController | Done | REST surface under `/api/v1/debtors/{debtorId}/retskraft-worklists` for generation, inspection, override, and modregning decisions |
+| PaymentCoverageOrderClient | Done | Internal seam for reusing GIL section-4 principal ordering in surplus scenarios |
 | **Modregning og Korrektionspulje (petition058)** | | |
 | ModregningEvent | Done | JPA entity — table `modregning_event`; stores GIL § 16 stk. 1 set-off decision with three-tier allocation, klage-frist, rentegodtgoerelse metadata. Idempotency via `nemkontoReferenceId`. Written to immudb (ADR-0029 amendment). |
 | KorrektionspuljeEntry | Done | JPA entity — table `korrektionspulje_entry`; pool entry for reversal/gendaenkning credit pending re-application. Links to originating `ModregningEvent`. |
@@ -713,8 +720,9 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 | Flyway V10 | Done | `collection_measure.tier_level` column |
 | Flyway V11 | Done | Audit columns for `AuditableEntity` adoption |
 | Flyway V12 (P059) | Done | `foraeldelse_record`, `afbrydelse_event`, `tillaegsfrist_event`, `fordringskompleks_link`, `limitation_objection_linkage` |
+| Flyway V13 (P060) | Done | `section50_candidate_item`, `section50_worklist`, `section50_worklist_entry`, `section50_decision_snapshot` |
 
-**API endpoints (37):**
+**API endpoints (41):**
 - `GET /api/v1/debts` - List debts
 - `POST /api/v1/debts` - Internal debt persistence after prior validation
 - `GET/PUT /api/v1/debts/{id}` - Get/update debt
@@ -736,6 +744,10 @@ See `architecture/adr/0028-backup-and-disaster-recovery.md` for the full archite
 - `GET /api/v1/fordringskompleks/{kompleksId}/members` - List claim-complex members (petition059)
 - `POST /api/v1/foraeldelse/{fordringId}/indsigelse` - Register a limitation objection on the public debt-service surface (petition059)
 - `PUT /api/v1/foraeldelse/{fordringId}/indsigelse/{indsigelsesId}` - Evaluate a limitation objection on the public debt-service surface (petition059)
+- `POST /api/v1/debtors/{debtorId}/retskraft-worklists` - Generate a petition060 retskraft evaluation worklist
+- `GET /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}` - Inspect ranked entries and decision snapshot for a petition060 worklist
+- `POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override` - Apply a documented section-50 override to an existing worklist
+- `POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision` - Record a partial/no-modregning petition060 decision for the current payout context
 - `POST /api/v1/modregning/tier2-waiver` - Apply tier-2 waiver to a modregning event (scope `modregning:waiver`; petition058)
 - `GET /api/v1/modregning/events` - Read modregning event log, filterable by debtor/date (scope `modregning:read`; petition058)
 - `DELETE /api/v1/debts/{id}` - Cancel (soft delete)
@@ -1201,12 +1213,17 @@ standalone `rules-engine` service per ADR-0035.
 | LimitationPanelController | Done | `GET /cases/{caseId}/debts/{fordringId}/limitation-panel` — fetches limitation status and renders the caseworker panel |
 | DebtServiceLimitationClient | Done | Reads limitation status and claim-complex members from debt-service |
 | limitation/limitation-panel.html | Done | Thymeleaf panel with status, expiry, claim-complex members, interruption history, supplementary periods, and objection actions |
+| **Section-50 inspection view (petition060)** | **Done** | |
+| Section50WorklistController | Done | `GET /debtors/{debtorId}/retskraft-worklists/{worklistId}` — renders the petition060 inspection surface with override, deviation, modregning, and decision snapshot metadata |
+| Section50WorklistClient | Done | Reads petition060 worklists from debt-service via `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}` |
+| section50/worklist.html | Done | Thymeleaf page with ranked entries, technical identifiers only, and audit evidence sections for override/deviation/modregning visibility |
 
 **Page routes include:**
 - `GET /cases/{caseId}/tidslinje` - Timeline tab fragment (HTMX, all categories, petition050)
 - `GET /cases/{caseId}/tidslinje/entries` - Timeline entries, load-more (HTMX, petition050)
 - `GET /debtors/{debtorId}/daekningsraekkefoelge` - GIL § 4 payment application order view (petition057)
 - `GET /cases/{caseId}/debts/{fordringId}/limitation-panel` - Limitation panel on claim detail (petition059)
+- `GET /debtors/{debtorId}/retskraft-worklists/{worklistId}` - Petition060 section-50 inspection surface for override, deviation, modregning, and decision snapshot evidence
 
 ---
 
@@ -1261,7 +1278,7 @@ Each service owns its own PostgreSQL database (no cross-service DB access, ADR-0
 |----------|---------|------------|
 | opendebt_person | person-registry | persons, organizations |
 | opendebt_case | case-service | cases, case_debt_ids, limitation_objection_workflow_record, ACT_* (Flowable) |
-| opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries, foraeldelse_record, afbrydelse_event, tillaegsfrist_event, fordringskompleks_link, limitation_objection_linkage |
+| opendebt_debt | debt-service | debts, debt_types, claim_lifecycle_events, hoering, notifications, liabilities, objections, collection_measures, batch_job_executions, interest_journal_entries, foraeldelse_record, afbrydelse_event, tillaegsfrist_event, fordringskompleks_link, limitation_objection_linkage, section50_candidate_item, section50_worklist, section50_worklist_entry, section50_decision_snapshot |
 | opendebt_creditor | creditor-service | creditors, channel_bindings, creditor_permissions |
 | opendebt_payment | payment-service | payments, ledger_entries, debt_events, chart_of_accounts, daekning_fordring, daekning_record |
 | opendebt_letter | letter-service | letters, letter_templates |
@@ -1376,7 +1393,7 @@ Pre-defined API specs (API-first, ADR-0004):
 | ObjectionControllerTest | debt-service | 4 | REST endpoint tests for objection operations |
 | CollectionMeasureControllerTest | debt-service | 5 | REST endpoint tests for collection measure operations |
 | CitizenDebtControllerTest | debt-service | 6 | REST endpoint tests for citizen debt summary |
-| RunCucumberTest (petition002-007,024,043) | debt-service | 62 | BDD scenarios across 8 petitions |
+| RunCucumberTest (petition002-007,024,043,060) | debt-service | 73 | BDD scenarios across 9 petitions including section-50 retskraft ordering |
 | OverpaymentRulesServiceImplTest | payment-service | 1 | Placeholder default outcome |
 | RunCucumberTest (petition057) | payment-service | 103 | BDD: GIL § 4 8-step payment application order, priority sort, FIFO, simulate endpoint |
 | CreditorM2mControllerTest | integration-gateway | 5 | M2M claim submission, validation, error handling |
@@ -1413,7 +1430,7 @@ Pre-defined API specs (API-first, ADR-0004):
 |---------|--------|-----------|-----------|---------------|
 | opendebt-common | Done | ~41 | - | - |
 | person-registry | Done | 9 | 6 | V1 |
-| debt-service | Done | 94 | 37 | V1-V12 |
+| debt-service | Done | 94 | 41 | V1-V13 |
 | case-service | Done | 10 | 10 | V1-V3 |
 | ufst-rules-lib | Done | 13 | - (in-process shared library) | - |
 | payment-service | Partial | ~68 | 4 | V1, V2, V3 |

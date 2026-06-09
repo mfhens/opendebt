@@ -1,0 +1,81 @@
+petition_id: petition060
+agent: solution-architecture-reviewer
+status: approved
+verdict: ACCEPT-WITH-FEEDBACK
+summary: >-
+  Accept with feedback. The architecture stays on-petition: debt-service owns the section-50
+  worklist, payment-service is constrained to read-only petition057 simulation for FR-05/FR-06,
+  modregning ownership stays in debt-service, and the DSL block is now present with deployment
+  evidence that closes ARCH-005 for this package. The remaining findings are non-blocking
+  specification follow-ups, not architecture-gate failures.
+artifacts:
+  - petitions\petition060-retskraftvurdering.md
+  - petitions\petition060-retskraftvurdering-outcome-contract.md
+  - petitions\petition060-retskraftvurdering.feature
+  - petitions\petition060_map.yaml
+  - petitions\reviews\petition060-component-mapping-reviewer.yaml
+  - design\solution-architecture-p060-retskraftvurdering.md
+  - architecture\adr\*.md
+  - architecture\policies.yaml
+  - petitions\reviews\petition060-solution-architecture-reviewer.yaml
+evidence_checked:
+  - claim: architecture aligns to the petition and preserves approved ownership
+    proof: >-
+      Petition060 requires default section-50 ordering, override logging, discretionary
+      data-error ranking, voluntary-payment surplus selection, modregning-window handling,
+      caseworker visibility, and traceable audit output without reusing GIL section 4/7 outside
+      the legally permitted surplus cases (petitions/petition060-retskraftvurdering.md:22-46;
+      petitions/petition060-retskraftvurdering-outcome-contract.md:8-17). The architecture keeps
+      those concerns in debt-service, constrains payment-service to a read-only oracle role for
+      FR-05/FR-06, and keeps caseworker-portal presentation-only (design/solution-architecture-p060-retskraftvurdering.md:43-79,
+      103-170, 246-321, 459-473).
+    freshness: '2026-05-26T22:25:00+02:00'
+    result: pass
+  - claim: outcome-contract coverage is traceable and engineer-executable
+    proof: >-
+      The architecture defines canonical information objects, external and internal interface
+      contracts, flow diagrams, and a requirement-to-slice matrix covering FR-01..FR-10 and
+      NFR-01..NFR-03, giving engineers a direct bridge from outcomes to slice responsibilities
+      (design/solution-architecture-p060-retskraftvurdering.md:197-473).
+    freshness: '2026-05-26T22:25:00+02:00'
+    result: pass
+  - claim: DSL and policy evidence are present and non-blocking
+    proof: >-
+      The architecture document contains a non-empty Structurizr DSL block defining all narrative
+      containers and components used by the petition060 slice, plus a production deployment
+      environment for the three petition060 containers, which closes the ARCH-005 deployment-view
+      concern seen in prior reviews. The narrative also states OAuth2/OIDC protection and
+      UUID-only data handling, supporting ARCH-008/009/011 and ADR-0005/0014 compliance
+      expectations (design/solution-architecture-p060-retskraftvurdering.md:433-448, 524-582).
+    freshness: '2026-05-26T22:25:00+02:00'
+    result: pass
+warnings:
+  - >-
+    The architecture defines the section-50 interfaces structurally, but the next specs gate
+    must name the concrete OpenAPI artifact paths for the debt-service public surface and the
+    payment-service internal simulation contract to close ARCH-010 evidence before implementation.
+  - >-
+    ADR-0037 requires a performance classification for new endpoints. The design assumes a
+    synchronous worklist-generation path, but the specs stage should state the target explicitly
+    (for example sync under SLA or async with status feedback) before implementation begins.
+escalations: []
+next_action: >-
+  Proceed to c4-model-validator, then carry the OpenAPI artifact naming and performance
+  classification into the specs stage.
+handoff_target: c4-model-validator
+timestamp: '2026-05-26T22:25:00+02:00'
+findings_count: 2
+blocking_count: 0
+findings:
+  - id: '001'
+    severity: warning
+    description: >-
+      Name the concrete OpenAPI 3.1 artifact files for the section-50 public API and the
+      payment-service internal simulation contract in the next specs package so ARCH-010 is
+      evidenced explicitly rather than only described narratively.
+  - id: '002'
+    severity: warning
+    description: >-
+      Add explicit ADR-0037 performance classification for the new section-50 endpoints in the
+      specs stage; the current architecture implies synchronous delivery but does not state the
+      SLA class yet.

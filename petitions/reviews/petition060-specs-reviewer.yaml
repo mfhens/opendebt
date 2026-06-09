@@ -1,0 +1,92 @@
+petition_id: petition060
+agent: specs-reviewer
+status: success
+verdict: APPROVED
+summary: >-
+  Accept with feedback. The specification package now covers all petition060 functional and
+  petition-specific non-functional requirements, names the concrete OpenAPI artifact paths that
+  the architecture review demanded, and gives the validation contract one observable assertion per
+  Gherkin scenario. The remaining feedback is non-blocking and concerns keeping downstream
+  implementation and test generation disciplined against the intentionally narrow internal
+  simulation contract and the broad injected NFR register.
+artifacts:
+  - petitions/specs/petition060-specs.yaml
+  - petitions/validation/petition060/validation-contract.md
+  - petitions/petition060-retskraftvurdering.md
+  - petitions/petition060-retskraftvurdering-outcome-contract.md
+  - petitions/petition060-retskraftvurdering.feature
+  - design/solution-architecture-p060-retskraftvurdering.md
+  - petitions/reviews/petition060-specs-reviewer.yaml
+evidence_checked:
+  - claim: specs cover the petition and outcome contract without orphaning the source scope
+    proof: >-
+      petitions/specs/petition060-specs.yaml maps FR-01..FR-10 and NFR-01..NFR-03 into the
+      debt-service, payment-service, and caseworker-portal modules, with AC-01..AC-10 linked in
+      module acceptance criteria and validation-facing data models. The supporting petition and
+      outcome contract were checked in this run at petitions/petition060-retskraftvurdering.md:22-46
+      and petitions/petition060-retskraftvurdering-outcome-contract.md:8-17.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+  - claim: specs reflect the approved architecture and close the two phase-4 follow-ups
+    proof: >-
+      The spec package follows the approved ownership split from
+      design/solution-architecture-p060-retskraftvurdering.md:103-193 and 244-316, keeps
+      debt-service authoritative, keeps payment-service read-only, keeps the portal as a
+      composition layer, names concrete OpenAPI artifacts
+      api-specs/openapi-debt-service-retskraft-worklists.yaml and
+      api-specs/openapi-payment-service-retskraft-simulation-internal.yaml, and states ADR-0037
+      synchronous performance classification with the p95 < 500 ms target.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+  - claim: the validation contract is testable and complete for the approved feature file
+    proof: >-
+      petitions/validation/petition060/validation-contract.md contains VAL-P060-001 through
+      VAL-P060-010, one assertion block per petition060 Gherkin scenario, matching the 10 scenarios
+      in petitions/petition060-retskraftvurdering.feature and keeping the checks observable at the
+      user/API surface.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+warnings:
+  - >-
+    The injected NFR register is broad and mostly referenced by ID. Downstream build/test stages
+    must turn the applied auth, resilience, observability, and accessibility refs into concrete
+    automated or reviewable checks rather than treating the refs themselves as sufficient evidence.
+  - >-
+    The payment-service simulation contract is intentionally narrow: it returns ordering for
+    candidate principal claims only. Any later attempt to extend it with additional section-50
+    fields must be justified by fresh petition or architecture evidence rather than convenience.
+escalations: []
+next_action: Proceed to specs-minimality-reviewer.
+handoff_target: specs-minimality-reviewer
+timestamp: '2026-05-26T22:46:16.1479644+02:00'
+findings_count: 5
+blocking_count: 0
+warning_count: 2
+findings:
+  - id: '001'
+    decision: KEEP
+    justification: >-
+      The debt-service module is traceable to FR-01..FR-10 and AC-01..AC-10 and stays aligned with
+      the approved ownership model in the architecture package.
+  - id: '002'
+    decision: KEEP
+    justification: >-
+      The spec package closes the architecture-review follow-up by naming the concrete OpenAPI
+      artifact paths for the public section-50 surface and the internal payment-service simulation
+      contract.
+  - id: '003'
+    decision: KEEP
+    justification: >-
+      The ADR-0037 performance classification is explicit and implementation-ready: the new
+      endpoints are synchronous with the p95 < 500 ms target and an async redesign trigger above
+      1 second.
+  - id: '004'
+    decision: KEEP
+    justification: >-
+      The validation contract is complete and minimal: one observable validation assertion per
+      Gherkin scenario, with no extra assertions beyond the approved feature scope.
+  - id: '005'
+    decision: KEEP
+    justification: >-
+      The remaining issues are non-blocking discipline points for downstream stages, not gaps in
+      spec adequacy, so the pipeline may proceed.

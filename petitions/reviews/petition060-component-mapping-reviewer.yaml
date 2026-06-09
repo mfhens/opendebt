@@ -1,0 +1,38 @@
+petition_id: petition060
+agent: component-mapping-reviewer
+verdict: APPROVED
+timestamp: 2026-05-26T22:09:09.5380438+02:00
+keep_count: 10
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: "001"
+    decision: KEEP
+    justification: "Approve. Default section-50 ranking is a claim-state and legal-ordering concern, and debt-service is the most coherent owner according to its contract as authoritative owner of fordring state and legal calculations."
+  - id: "002"
+    decision: KEEP
+    justification: "Approve. Override handling belongs with the ranking decision in debt-service; audit-trail-commons as secondary keeps audit responsibility adjunct instead of fragmenting ownership."
+  - id: "003"
+    decision: KEEP
+    justification: "Approve. Discretionary ordering for suspected data error remains part of the same section-50 decision surface and fits debt-service without stretching another component."
+  - id: "004"
+    decision: KEEP
+    justification: "Approve. Accessory-versus-principal gating is tightly coupled to authoritative claim status, which is debt-service-owned."
+  - id: "005"
+    decision: KEEP
+    justification: "Approve. Excluding disproportionate accessory evaluation is the same worklist-generation responsibility and stays cohesive in debt-service."
+  - id: "006"
+    decision: KEEP
+    justification: "Approve. debt-service is the coherent primary owner for section-50 evaluation selection, with payment-service correctly secondary because FR-05 reuses petition057 daekningsraekkefolge rather than moving the whole scenario into payment-service."
+  - id: "007"
+    decision: KEEP
+    justification: "Approve. The expedited deviation is still a section-50 decision; payment-service and audit-trail-commons as secondary collaborators preserve cohesion while acknowledging timing and audit dependencies."
+  - id: "008"
+    decision: KEEP
+    justification: "Approve. debt-service explicitly owns offsetting/modregning responsibilities in its component contract, so it is the clearest owner for section-50 ordering in a modregning context."
+  - id: "009"
+    decision: KEEP
+    justification: "Approve. The operational decision to perform partial or no modregning belongs with debt-service's domain ownership, while portal visibility and auditing remain secondary concerns."
+  - id: "010"
+    decision: KEEP
+    justification: "Approve. Caseworker inspection is a user-facing UI concern, so caseworker-portal is the coherent primary owner with debt-service and audit-trail-commons secondary as data sources."

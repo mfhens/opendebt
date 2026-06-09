@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}"
+      th:lang="${#locale.language}" lang="da">
+<head>
+  <title th:text="#{section50.worklist.title}">Retskraftvurdering</title>
+</head>
+<body>
+  <span layout:fragment="breadcrumb">
+    <a th:href="@{/cases}" th:text="#{cases.title}">Sager</a>
+    <span class="skat-breadcrumb__separator" aria-hidden="true">/</span>
+    <span th:text="#{section50.worklist.title}">Retskraftvurdering</span>
+  </span>
+  <section layout:fragment="content">
+    <h1 th:text="#{section50.worklist.title}">Retskraftvurdering — section 50</h1>
+
+    <div class="skat-alert skat-alert--success" th:if="${successMessage}">
+      <span class="ikon ikon-check" aria-hidden="true"></span>
+      <span th:text="${successMessage}">Success</span>
+    </div>
+
+    <div class="skat-alert skat-alert--error" th:if="${errorMessage}">
+      <span class="ikon ikon-problem" aria-hidden="true"></span>
+      <span th:text="${errorMessage}">Error</span>
+    </div>
+
+    <div class="skat-alert skat-alert--error" th:if="${backendError}">
+      <span class="ikon ikon-problem" aria-hidden="true"></span>
+      <span th:text="${backendError}">Backend error</span>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null}" data-testid="section50-worklist">
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{section50.worklist.field.debtorId}">Debtor ID</dt>
+          <dd th:text="${worklist.debtorId}">00000000-0000-0000-0000-000000000000</dd>
+          <dt th:text="#{section50.worklist.field.worklistId}">Worklist ID</dt>
+          <dd th:text="${worklist.worklistId}">00000000-0000-0000-0000-000000000000</dd>
+          <dt th:text="#{section50.worklist.field.orderingMode}">Ordering mode</dt>
+          <dd th:text="${worklist.orderingMode}">OVERRIDE</dd>
+          <dt th:text="#{section50.worklist.field.contextType}">Context type</dt>
+          <dd th:text="${worklist.contextType}">MODREGNING</dd>
+          <dt th:text="#{section50.worklist.field.legalReference}">Legal reference</dt>
+          <dd th:text="${worklist.legalReference}">Section 50 path</dd>
+          <dt th:text="#{section50.worklist.field.amountWindow}">Amount window</dt>
+          <dd th:text="${worklist.amountWindow != null ? worklist.amountWindow : '—'}">500.00</dd>
+          <dt th:text="#{section50.worklist.field.generatedAt}">Generated at</dt>
+          <dd th:text="${worklist.generatedAt}">2026-05-27T08:15:00Z</dd>
+          <dt th:text="#{section50.worklist.field.selectedNextItemId}">Selected next item</dt>
+          <dd th:text="${worklist.selectedNextItemId != null ? worklist.selectedNextItemId : '—'}">C-06022</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null and (worklist.overrideReason != null or worklist.overrideLegalBasis != null)}" style="margin-top: 1rem;" data-testid="section50-override">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.override.title}">Override</h2>
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{section50.worklist.field.overrideReason}">Override reason</dt>
+          <dd th:text="${worklist.overrideReason != null ? worklist.overrideReason : '—'}">Urgent court deadline</dd>
+          <dt th:text="#{section50.worklist.field.overrideLegalBasis}">Override legal basis</dt>
+          <dd th:text="${worklist.overrideLegalBasis != null ? worklist.overrideLegalBasis : '—'}">Section 50 subsection 5</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null and (worklist.deviationReason != null or worklist.modregningOutcome != null)}" style="margin-top: 1rem;" data-testid="section50-modregning">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.deviation.title}">Deviation and modregning</h2>
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{section50.worklist.field.deviationReason}">Deviation reason</dt>
+          <dd th:text="${worklist.deviationReason != null ? worklist.deviationReason : '—'}">Timing pressure</dd>
+          <dt th:text="#{section50.worklist.field.modregningOutcome}">Modregning outcome</dt>
+          <dd th:text="${worklist.modregningOutcome != null ? worklist.modregningOutcome : '—'}">NO_MODREGNING</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null}" style="margin-top: 1rem;">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.entries.title}">Ranked entries</h2>
+      <div class="skat-card__body">
+        <table class="skat-table" data-testid="section50-entries-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th th:text="#{section50.worklist.entries.claimId}">Claim ID</th>
+              <th th:text="#{section50.worklist.entries.itemType}">Item type</th>
+              <th th:text="#{section50.worklist.entries.claimCategory}">Claim category</th>
+              <th th:text="#{section50.worklist.entries.amount}">Amount</th>
+              <th th:text="#{section50.worklist.entries.suspectedDataError}">Suspected data error</th>
+              <th th:text="#{section50.worklist.entries.confirmedRetskraft}">Confirmed retskraft</th>
+              <th th:text="#{section50.worklist.entries.withinAmountWindow}">Within amount window</th>
+              <th th:text="#{section50.worklist.entries.selectionReason}">Selection reason</th>
+              <th th:text="#{section50.worklist.entries.prioritisationFactors}">Prioritisation factors</th>
+              <th th:text="#{section50.worklist.entries.suppressedReason}">Suppressed reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="entry : ${worklist.entries}"
+                data-section50-entry-row="true"
+                th:attr="data-claim-id=${entry.claimId}">
+              <td th:text="${entry.rank}">1</td>
+              <td th:text="${entry.claimId}">C-06022</td>
+              <td th:text="${entry.itemType}">PRINCIPAL</td>
+              <td th:text="${entry.claimCategory}">OTHER</td>
+              <td th:text="${entry.amount}">250.00</td>
+              <td th:text="${entry.suspectedDataError ? 'Ja' : 'Nej'}">Nej</td>
+              <td th:text="${entry.confirmedRetskraft ? 'Ja' : 'Nej'}">Nej</td>
+              <td th:text="${entry.withinAmountWindow ? 'Ja' : 'Nej'}">Ja</td>
+              <td th:text="${entry.selectionReason != null ? entry.selectionReason : '—'}">Override selected claim first</td>
+              <td>
+                <ul th:if="${entry.prioritisationFactors != null and !#lists.isEmpty(entry.prioritisationFactors)}" style="margin: 0; padding-left: 1.2rem;">
+                  <li th:each="factor : ${entry.prioritisationFactors}" th:text="${factor}">urgent</li>
+                </ul>
+                <span th:if="${entry.prioritisationFactors == null or #lists.isEmpty(entry.prioritisationFactors)}">—</span>
+              </td>
+              <td th:text="${entry.suppressedReason != null ? entry.suppressedReason : '—'}">Deferred for accessory sequencing</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p th:if="${worklist.entries == null or #lists.isEmpty(worklist.entries)}" class="skat-empty-state">
+          <span th:text="#{section50.worklist.entries.empty}">No ranked entries found.</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null and worklist.decisionSnapshot != null}" style="margin-top: 1rem;" data-testid="section50-decision-snapshot">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.snapshot.title}">Decision snapshot</h2>
+      <div class="skat-card__body">
+        <dl style="display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem;">
+          <dt th:text="#{section50.worklist.snapshot.decisionId}">Decision ID</dt>
+          <dd th:text="${worklist.decisionSnapshot.decisionId}">00000000-0000-0000-0000-000000000000</dd>
+          <dt th:text="#{section50.worklist.snapshot.rulePath}">Rule path</dt>
+          <dd th:text="${worklist.decisionSnapshot.rulePath}">SECTION_50_OVERRIDE_PATH</dd>
+          <dt th:text="#{section50.worklist.snapshot.inputHash}">Input hash</dt>
+          <dd th:text="${worklist.decisionSnapshot.inputHash}">abc123hash</dd>
+          <dt th:text="#{section50.worklist.snapshot.legalReference}">Legal reference</dt>
+          <dd th:text="${worklist.decisionSnapshot.legalReference}">Section 50 override path</dd>
+          <dt th:text="#{section50.worklist.snapshot.origin}">Origin</dt>
+          <dd th:text="${worklist.decisionSnapshot.origin}">CASEWORKER</dd>
+          <dt th:text="#{section50.worklist.snapshot.occurredAt}">Occurred at</dt>
+          <dd th:text="${worklist.decisionSnapshot.occurredAt}">2026-05-27T08:15:00Z</dd>
+          <dt th:text="#{section50.worklist.snapshot.selectedNextItemId}">Selected next item</dt>
+          <dd th:text="${worklist.decisionSnapshot.selectedNextItemId != null ? worklist.decisionSnapshot.selectedNextItemId : '—'}">C-06022</dd>
+          <dt th:text="#{section50.worklist.snapshot.auditEventId}">Audit event ID</dt>
+          <dd th:text="${worklist.decisionSnapshot.auditEventId}">00000000-0000-0000-0000-000000000000</dd>
+          <dt th:text="#{section50.worklist.snapshot.notes}">Notes</dt>
+          <dd th:text="${worklist.decisionSnapshot.notes != null ? worklist.decisionSnapshot.notes : '—'}">Timing pressure before payout deadline</dd>
+          <dt th:text="#{section50.worklist.snapshot.prioritisationFactors}">Prioritisation factors</dt>
+          <dd>
+            <ul th:if="${worklist.decisionSnapshot.prioritisationFactors != null and !#lists.isEmpty(worklist.decisionSnapshot.prioritisationFactors)}" style="margin: 0; padding-left: 1.2rem;">
+              <li th:each="factor : ${worklist.decisionSnapshot.prioritisationFactors}" th:text="${factor}">timing</li>
+            </ul>
+            <span th:if="${worklist.decisionSnapshot.prioritisationFactors == null or #lists.isEmpty(worklist.decisionSnapshot.prioritisationFactors)}">—</span>
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null and canEdit}" style="margin-top: 1rem;">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.form.override.title}">Registrer override</h2>
+      <div class="skat-card__body">
+        <form id="section50-override-form"
+              method="post"
+              th:action="@{/debtors/{debtorId}/retskraft-worklists/{worklistId}/override(debtorId=${debtorId}, worklistId=${worklistId})}">
+          <div style="margin-bottom: 0.75rem;">
+            <label for="overrideReason" th:text="#{section50.worklist.form.override.reason}">Override-begrundelse</label>
+            <textarea id="overrideReason" name="overrideReason" rows="3" style="display:block; width: 100%;"></textarea>
+          </div>
+          <div style="margin-bottom: 0.75rem;">
+            <label for="legalBasis" th:text="#{section50.worklist.form.override.legalBasis}">Juridisk grundlag</label>
+            <input id="legalBasis" name="legalBasis" type="text" style="display:block; width: 100%;" />
+          </div>
+          <div style="margin-bottom: 0.75rem;">
+            <label for="selectedClaimOrder" th:text="#{section50.worklist.form.override.selectedClaimOrder}">Valgt rækkefølge</label>
+            <textarea id="selectedClaimOrder" name="selectedClaimOrder" rows="3" style="display:block; width: 100%;"></textarea>
+          </div>
+          <div th:if="${showExpeditedForm}" style="margin-bottom: 0.75rem;">
+            <label for="expedited">
+              <input id="expedited" name="expedited" type="checkbox" value="true" />
+              <span th:text="#{section50.worklist.form.override.expedited}">Hurtig afvigelse</span>
+            </label>
+          </div>
+          <button class="skat-btn skat-btn--primary" type="submit" th:text="#{section50.worklist.form.override.submit}">
+            Registrer override
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="skat-card" th:if="${worklist != null and showModregningForm}" style="margin-top: 1rem;">
+      <h2 class="skat-card__title" th:text="#{section50.worklist.form.modregning.title}">Registrer modregningsbeslutning</h2>
+      <div class="skat-card__body">
+        <form id="section50-modregning-form"
+              method="post"
+              th:action="@{/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision(debtorId=${debtorId}, worklistId=${worklistId})}">
+          <div style="margin-bottom: 0.75rem;">
+            <label for="modregningOutcome" th:text="#{section50.worklist.form.modregning.outcome}">Udfald</label>
+            <select id="modregningOutcome" name="modregningOutcome" style="display:block;">
+              <option value="PARTIAL_ABSTENTION">PARTIAL_ABSTENTION</option>
+              <option value="NO_MODREGNING">NO_MODREGNING</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 0.75rem;">
+            <label for="reason" th:text="#{section50.worklist.form.modregning.reason}">Begrundelse</label>
+            <textarea id="reason" name="reason" rows="3" style="display:block; width: 100%;"></textarea>
+          </div>
+          <button class="skat-btn skat-btn--primary" type="submit" th:text="#{section50.worklist.form.modregning.submit}">
+            Registrer modregningsbeslutning
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a class="skat-btn skat-btn--secondary" th:href="@{/cases}">&#8592; <span th:text="#{cases.title}">Sager</span></a>
+    </p>
+  </section>
+</body>
+</html>

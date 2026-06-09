@@ -190,6 +190,14 @@ The capability also follows ADR-0014 privacy constraints. Cross-service contract
 
 Claim-complex propagation is modeled explicitly. `FordringskompleksLink` groups related fordringer, and when a legally effective interruption applies to one member, debt-service records propagated `AfbrydelseEvent` entries for the linked members with source/target claim references and a propagation reason. That keeps the recalculated expiry dates auditable without adding cross-service database coupling.
 
+## Section-50 retskraft evaluation capability (petition060)
+
+Petition060 adds a debt-service-local section-50 capability for generating and persisting retskraft evaluation worklists per debtor. The runtime stores four technical-ID-only tables: candidate items, worklists, ranked worklist entries, and decision snapshots with an input hash for reproducibility. That keeps the legal ordering evidence auditable without leaking CPR, names, or addresses outside person-registry.
+
+The ordering engine supports four paths: default section-50 ordering, discretionary data-error ordering, voluntary-payment surplus windowing that reuses GIL section-4 principal order via an internal client seam, and modregning windowing with an explicit no-modregning outcome. Overrides and expedited deviations are persisted on the existing worklist so the decision trail remains inspectable through one petition060 surface.
+
+The caseworker-facing petition060 surface now lives in `caseworker-portal` at `/debtors/{debtorId}/retskraft-worklists/{worklistId}` (under the portal context path `/caseworker-portal`). That page is intentionally a direct inspection route: it renders override reason, deviation reason, modregning outcome, ranked entries, and the decision snapshot using technical identifiers only, while debt-service remains the sole owner of the legal state and persistence.
+
 ## Key architectural decisions
 
 See the [ADR Index](adr-index.md) for all decisions. The most impactful are:

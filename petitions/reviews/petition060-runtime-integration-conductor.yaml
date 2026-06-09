@@ -1,0 +1,81 @@
+scope: petition060 local caseworker runtime path
+agent: runtime-integration-conductor
+mode: detect
+status: success
+summary: >-
+  Detect-mode runtime audit validated the local petition060 caseworker path against the
+  current demo stack and start-demo.ps1 conventions. The caseworker-path services were healthy,
+  the representative debt-service worklist API returned 200 with the expected live seeded
+  payload, unauthenticated route access redirected to demo-login as expected, and a fresh
+  Playwright browser smoke logged in, opened the petition060 worklist route, observed no
+  console errors, and confirmed the expected override, deviation, modregning, and rule-path
+  signals.
+artifacts:
+  - petitions/reviews/petition060-runtime-integration-conductor.yaml
+  - petitions/validation/petition060/user-testing/flows/main.json
+  - C:/Users/AJ849XF/.copilot/session-state/6a718c15-57be-41e3-9f11-75193f034b3e/files/petition060-runtime-smoke.png
+evidence_checked:
+  - claim: Startup path for the local caseworker demo is explicit.
+    proof: >-
+      start-demo.ps1 was inspected in this run; it documents the local Windows startup flow and
+      the relevant caseworker-path health endpoints for debt-service, person-registry,
+      case-service, payment-service, and caseworker-portal.
+    freshness: inspected 2026-05-27
+    result: pass
+  - claim: Caseworker-path services are healthy.
+    proof: >-
+      Fresh HTTP probes in this run returned 200 for
+      /debt-service/actuator/health,
+      /person-registry/actuator/health on port 8090,
+      /case-service/actuator/health,
+      /payment-service/actuator/health,
+      and /caseworker-portal/actuator/health.
+    freshness: probed 2026-05-27
+    result: pass
+  - claim: Representative petition060 API surface is reachable.
+    proof: >-
+      GET
+      http://localhost:8082/debt-service/api/v1/debtors/06000000-0000-0000-0000-000000000060/retskraft-worklists/befcfca1-dc27-415a-9ef2-9fcb08ee0615
+      returned 200 with the expected live worklist payload, including override, deviation,
+      modregningOutcome, and decisionSnapshot data.
+    freshness: probed 2026-05-27
+    result: pass
+  - claim: UI route and authentication wiring are healthy.
+    proof: >-
+      Unauthenticated GET on the petition060 route redirected to
+      /caseworker-portal/demo-login, and a fresh browser smoke then logged in through
+      /caseworker-portal/demo-login and loaded the worklist route with HTTP 200.
+    freshness: probed 2026-05-27
+    result: pass
+  - claim: Petition060 browser smoke is clean.
+    proof: >-
+      C:/Users/AJ849XF/.copilot/session-state/6a718c15-57be-41e3-9f11-75193f034b3e/files/petition060-runtime-smoke.png
+      plus fresh Playwright JSON output from petition060-playwright.js showed
+      hasWorklistSurface=true, hasOverrideReason=true, hasDeviationReason=true,
+      hasModregningOutcome=true, hasRulePath=true, omitsCpr=true, and consoleErrors=[].
+    freshness: executed 2026-05-27
+    result: pass
+warnings: []
+escalations: []
+next_action: Proceed to code review; no runtime-integration handoff was required from this detect run.
+handoff_target: code-reviewer-strict
+verdict: PASS
+startup_path: .\start-demo.ps1 -Only caseworker (current running equivalent)
+services_expected:
+  - debt-service
+  - person-registry
+  - case-service
+  - payment-service
+  - caseworker-portal
+services_observed:
+  - debt-service
+  - person-registry
+  - case-service
+  - payment-service
+  - caseworker-portal
+surfaces_checked:
+  - startup
+  - health
+  - api
+  - ui
+findings: []

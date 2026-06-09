@@ -1,0 +1,459 @@
+specification_id: SPEC-P060
+petition_id: petition060
+status: success
+summary: >-
+  Minimal package-level specification for petition060 section-50 retskraft worklist
+  generation, override handling, surplus-window reuse of petition057 simulation, modregning
+  decision recording, and caseworker inspection surfaces.
+source_artifacts:
+  - petitions/petition060-retskraftvurdering.md
+  - petitions/petition060-retskraftvurdering-outcome-contract.md
+  - petitions/petition060-retskraftvurdering.feature
+  - petitions/reviews/petition060-gherkin-minimality-reviewer.yaml
+  - petitions/reviews/petition060-petition-translator-reviewer.yaml
+  - petitions/reviews/petition060-solution-architecture-reviewer.yaml
+  - design/solution-architecture-p060-retskraftvurdering.md
+  - catala/ga_2_5_retskraftvurdering.catala_da
+  - catala/tests/ga_retskraftvurdering_tests.catala_da
+  - compliance/nfr-register.yaml
+nfr_injection_summary:
+  applied:
+    - NFR-SEC-001
+    - NFR-SEC-002
+    - NFR-SEC-003
+    - NFR-SEC-004
+    - NFR-SEC-005
+    - NFR-SEC-006
+    - NFR-GDPR-001
+    - NFR-GDPR-002
+    - NFR-GDPR-003
+    - NFR-GDPR-004
+    - NFR-GDPR-005
+    - NFR-AUDIT-001
+    - NFR-RIGS-001
+    - NFR-RIGS-002
+    - NFR-PERF-001
+    - NFR-PERF-002
+    - NFR-PERF-003
+    - NFR-RES-001
+    - NFR-RES-002
+    - NFR-RES-003
+    - NFR-OBS-001
+    - NFR-OBS-002
+    - NFR-OBS-003
+    - NFR-API-001
+    - NFR-API-002
+    - NFR-ACC-001
+    - NFR-ACC-002
+    - NFR-ARCH-001
+    - NFR-ARCH-002
+    - NFR-ARCH-003
+    - NFR-ARCH-004
+  skipped_scope_mismatch:
+    - NFR-AUDIT-002
+    - NFR-AUDIT-003
+  register_gaps:
+    - id: NFR-SEC-006
+      reason: must NFR with no automated stage hook in the register
+    - id: NFR-ACC-001
+      reason: must NFR with no automated stage hook in the register
+warnings:
+  - NFR-SEC-006 requires manual dependency-vulnerability evidence outside the default petition stage hooks.
+  - NFR-ACC-001 requires explicit accessibility review of the caseworker worklist and action forms.
+  - >-
+    ADR-0037 classification is set to synchronous for the new section-50 endpoints; if
+    implementation evidence shows worklist generation exceeds 1 second, the petition must be
+    redesigned to async status feedback before closure.
+modules:
+  - module: opendebt-debt-service.section50
+    source_requirement:
+      petition_refs: [FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, NFR-01, NFR-02, NFR-03]
+      outcome_contract_refs: [AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10]
+      gherkin_scenarios:
+        - Default ordering without suspected data error
+        - Special circumstances override records why default order was changed
+        - Suspected data error uses discretionary ordering instead of default ranking
+        - Accessory amounts stay behind a principal claim until the principal is retskraftig
+        - Disproportionate accessory evaluation removes the accessory amount from the worklist
+        - Voluntary payment surplus limits which doubtful claims are selected for evaluation
+        - Expedited voluntary-payment deviation is logged when normal ordering would delay coverage
+        - Modregning uses confirmed claims first and evaluates doubtful claims within the remaining amount window
+        - Partial or no modregning can be chosen for operational reasons and must be visible
+        - Caseworkers can inspect the rule path and audit details for an ordering decision
+    api_contracts:
+      - artifact: api-specs/openapi-debt-service-retskraft-worklists.yaml
+        reason: OpenAPI 3.1 contract for the public section-50 worklist surface required by ADR-0004 and ARCH-010 follow-up.
+    interface:
+      inputs:
+        rest_endpoints:
+          - method: POST
+            path: /api/v1/debtors/{debtorId}/retskraft-worklists
+            request:
+              path_params: [debtorId]
+              body_fields: [contextType]
+              optional_body_fields: [availableAmount, confirmedAmountCovered, candidateClaimIds, requestedBySystem]
+          - method: GET
+            path: /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}
+            request:
+              path_params: [debtorId, worklistId]
+              body: none
+          - method: POST
+            path: /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override
+            request:
+              path_params: [debtorId, worklistId]
+              body_fields: [overrideReason, legalBasis]
+              optional_body_fields: [expedited, selectedClaimOrder]
+          - method: POST
+            path: /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision
+            request:
+              path_params: [debtorId, worklistId]
+              body_fields: [modregningOutcome, reason]
+              body_enums:
+                modregningOutcome: [PARTIAL_ABSTENTION, NO_MODREGNING]
+      outputs:
+        response_models:
+          - name: Section50WorklistDto
+            fields:
+              - worklistId
+              - debtorId
+              - orderingMode
+              - legalReference
+              - contextType
+              - amountWindow
+              - generatedAt
+              - selectedNextItemId
+              - overrideReason
+              - overrideLegalBasis
+              - deviationReason
+              - modregningOutcome
+              - entries
+              - decisionSnapshot
+          - name: Section50WorklistEntryDto
+            fields:
+              - rank
+              - claimId
+              - itemType
+              - claimCategory
+              - suspectedDataError
+              - confirmedRetskraft
+              - withinAmountWindow
+              - selectionReason
+              - prioritisationFactors
+              - suppressedReason
+          - name: Section50DecisionSnapshotDto
+            fields:
+              - decisionId
+              - worklistId
+              - rulePath
+              - inputHash
+              - selectedNextItemId
+              - legalReference
+              - auditEventId
+              - origin
+              - occurredAt
+              - notes
+              - prioritisationFactors
+      error_handling:
+        - availableAmount is mandatory for VOLUNTARY_PAYMENT_SURPLUS and MODREGNING worklist generation.
+        - override requests require both overrideReason and legalBasis; empty values return a structured validation error.
+        - modregning decision requests require both modregningOutcome and reason; empty values return a structured validation error.
+        - payloads accept only technical identifiers; caller-supplied PII fields are rejected.
+    data_models:
+      - name: Section50Worklist
+        fields:
+          - worklistId
+          - debtorId
+          - contextType
+          - orderingMode
+          - legalReference
+          - amountWindow
+          - generatedAt
+          - selectedNextItemId
+          - overrideReason
+          - overrideLegalBasis
+          - deviationReason
+          - modregningOutcome
+          - entries
+          - decisionSnapshot
+      - name: Section50WorklistEntry
+        fields:
+          - worklistId
+          - rank
+          - claimId
+          - itemType
+          - claimCategory
+          - suspectedDataError
+          - confirmedRetskraft
+          - withinAmountWindow
+          - selectionReason
+          - prioritisationFactors
+          - suppressedReason
+          - amount
+      - name: Section50DecisionSnapshot
+        fields:
+          - decisionId
+          - worklistId
+          - rulePath
+          - inputHash
+          - selectedNextItemId
+          - legalReference
+          - origin
+          - auditEventId
+          - occurredAt
+          - notes
+          - prioritisationFactors
+    persistence:
+      - debt-service persists each generated worklist and decision snapshot so FR-09 and FR-10 can be inspected later.
+      - persisted section-50 state stores only technical identifiers; no CPR, name, address, email, or phone is allowed.
+      - accessory items written off because evaluation is disproportionate are excluded from the ranked worklist and recorded only through suppressedReason or audit evidence.
+      - override, expedited-deviation, and modregning-abstention decisions are stored with rulePath, legalReference, reason, and origin.
+    non_functional:
+      petition_specific:
+        - id: P060-NFR-01
+          description: Identical input state and no manual override produce the same ordering result.
+          source: petitions/petition060-retskraftvurdering.md#Non-Functional Requirements
+        - id: P060-NFR-02
+          description: Every override or discretionary ordering decision is auditable with legal reference, timestamp, and actor or system origin.
+          source: petitions/petition060-retskraftvurdering.md#Non-Functional Requirements
+        - id: P060-NFR-03
+          description: Debtors and creditors are referenced only by technical identifiers; no PII is introduced outside Person Registry.
+          source: petitions/petition060-retskraftvurdering.md#Non-Functional Requirements
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-SEC-006
+        - NFR-GDPR-001
+        - NFR-GDPR-002
+        - NFR-GDPR-003
+        - NFR-GDPR-004
+        - NFR-GDPR-005
+        - NFR-AUDIT-001
+        - NFR-RIGS-001
+        - NFR-RIGS-002
+        - NFR-PERF-001
+        - NFR-PERF-002
+        - NFR-PERF-003
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-RES-003
+        - NFR-OBS-001
+        - NFR-OBS-002
+        - NFR-OBS-003
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ACC-001
+        - NFR-ACC-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+        - NFR-ARCH-003
+        - NFR-ARCH-004
+      performance_classification:
+        - endpoint: POST /api/v1/debtors/{debtorId}/retskraft-worklists
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+        - endpoint: GET /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+        - endpoint: POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+        - endpoint: POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+        - escalation_rule: If observed execution exceeds 1 second, redesign to async status feedback before petition closure.
+    acceptance_criteria:
+      - id: AC-01
+        description: Default worklist ranks fines before private maintenance claims and those before all other claims.
+      - id: AC-02
+        description: Override output includes the changed ranking, override reason, and legal basis.
+      - id: AC-03
+        description: Discretionary data-error ranking exposes the factors used for prioritisation.
+      - id: AC-04
+        description: Accessory items never outrank a non-retskraftig principal claim and written-off accessories are excluded.
+      - id: AC-07
+        description: Modregning worklists use confirmed retskraftige claims first and limit doubtful evaluation to the remaining amount window with accessory items last.
+      - id: AC-08
+        description: Partial or no modregning decisions are recorded with visible reason.
+      - id: AC-09
+        description: Returned worklists expose ordering mode, claim category, amount window when relevant, suspected data-error flag, and deviation reason.
+      - id: AC-10
+        description: Inspection returns timestamp, rule path, legal reference, origin, selected next item, and technical-ID-only audit detail.
+    rationale: >-
+      This module owns the authoritative section-50 worklist and its persisted audit snapshot,
+      because petition060 is about legal evaluation ordering rather than payment execution.
+
+  - module: opendebt-payment-service.coverage-simulation-internal
+    source_requirement:
+      petition_refs: [FR-05, FR-06]
+      outcome_contract_refs: [AC-05, AC-06]
+      gherkin_scenarios:
+        - Voluntary payment surplus limits which doubtful claims are selected for evaluation
+        - Expedited voluntary-payment deviation is logged when normal ordering would delay coverage
+    api_contracts:
+      - artifact: api-specs/openapi-payment-service-retskraft-simulation-internal.yaml
+        reason: OpenAPI 3.1 contract for the internal petition057 simulation reuse required by FR-05 and FR-06.
+    interface:
+      inputs:
+        rest_endpoints:
+          - method: POST
+            path: /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate
+            request:
+              path_params: [debtorId]
+              body_fields: [beloeb]
+              optional_body_fields: [inddrivelsesindsatsType, candidatePrincipalClaimIds]
+      outputs:
+        response_models:
+          - name: SimulatePositionDto
+            fields:
+              - fordringId
+              - prioritetKategori
+              - gilParagraf
+              - komponent
+              - fifoSortKey
+              - tilbaestaaendeBeloeb
+              - opskrivningAfFordringId
+              - daekningBeloeb
+              - fullyCovers
+      error_handling:
+        - beloeb is mandatory for the shared simulation request surface.
+        - debt-service supplies inddrivelsesindsatsType=FRIVILLIG and candidatePrincipalClaimIds for petition060 surplus-window reuse.
+        - accessory items, override reasons, and deviation reasons remain out of scope for this contract and stay in debt-service.
+    data_models:
+      - name: CoverageSimulationRequest
+        fields:
+          - debtorId
+          - beloeb
+          - inddrivelsesindsatsType
+          - candidatePrincipalClaimIds
+      - name: SimulatePosition
+        fields:
+          - fordringId
+          - prioritetKategori
+          - gilParagraf
+          - komponent
+          - fifoSortKey
+          - tilbaestaaendeBeloeb
+          - opskrivningAfFordringId
+          - daekningBeloeb
+          - fullyCovers
+    persistence:
+      - this contract is read-only reuse of petition057 semantics and does not persist section-50 override or audit state.
+    non_functional:
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-PERF-001
+        - NFR-PERF-002
+        - NFR-PERF-003
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-OBS-002
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+      performance_classification:
+        - endpoint: POST /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+        - escalation_rule: If simulation latency pushes the caller above 1 second, the debt-service flow must be redesigned before closure.
+    acceptance_criteria:
+      - id: AC-05
+        description: Surplus-window selection is limited to the remaining amount and uses GIL section 4 ordering only for principal claims.
+      - id: AC-06
+        description: Expedited deviation remains a debt-service decision, but the reused simulation contract exposes the principal ordering baseline that the deviation departs from.
+    rationale: >-
+      Petition060 may reuse petition057 ordering only as a read-only internal contract, which
+      avoids duplicating GIL section 4 logic while keeping section-50 ownership in debt-service.
+
+  - module: opendebt-caseworker-portal.section50
+    source_requirement:
+      petition_refs: [FR-02, FR-08, FR-09, FR-10]
+      outcome_contract_refs: [AC-02, AC-08, AC-09, AC-10]
+      gherkin_scenarios:
+        - Special circumstances override records why default order was changed
+        - Expedited voluntary-payment deviation is logged when normal ordering would delay coverage
+        - Partial or no modregning can be chosen for operational reasons and must be visible
+        - Caseworkers can inspect the rule path and audit details for an ordering decision
+    interface:
+      inputs:
+        web_actions:
+          - method: GET
+            path: /debtors/{debtorId}/retskraft-worklists/{worklistId}
+            purpose: Render one ranked worklist with the associated decision snapshot.
+          - method: POST
+            path: /debtors/{debtorId}/retskraft-worklists/{worklistId}/override
+            form_fields: [overrideReason, legalBasis, expedited, selectedClaimOrder]
+          - method: POST
+            path: /debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision
+            form_fields: [modregningOutcome, reason]
+      outputs:
+        views:
+          - name: Section50WorklistView
+            fields:
+              - worklistId
+              - orderingMode
+              - claimCategory
+              - amountWindow
+              - suspectedDataError
+              - prioritisationFactors
+              - overrideReason
+              - deviationReason
+              - legalReference
+              - actorOrSystemOrigin
+              - generatedAt
+              - selectedNextItemId
+      error_handling:
+        - the portal renders debt-service validation errors without inventing a new business state.
+        - the portal shows only technical identifiers and must not display PII.
+    data_models:
+      - name: Section50WorklistViewModel
+        fields:
+          - worklistId
+          - orderingMode
+          - entries
+          - amountWindow
+          - overrideReason
+          - deviationReason
+          - legalReference
+          - actorOrSystemOrigin
+          - generatedAt
+          - selectedNextItemId
+    persistence:
+      - the portal does not own section-50 legal state; it renders and submits actions against debt-service only.
+    non_functional:
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-005
+        - NFR-OBS-001
+        - NFR-API-001
+        - NFR-ACC-001
+        - NFR-ACC-002
+        - NFR-ARCH-002
+      performance_classification:
+        - endpoint: GET /debtors/{debtorId}/retskraft-worklists/{worklistId}
+          class: synchronous
+          target: p95 < 500 ms under normal load
+          source: architecture/adr/0037-performance-sla.md
+    acceptance_criteria:
+      - id: AC-02
+        description: The caseworker can see the override reason and legal basis when the default order is changed.
+      - id: AC-08
+        description: A partial or no-modregning decision and its reason are visible to the caseworker.
+      - id: AC-09
+        description: The rendered worklist exposes ordering mode, claim category, amount window when relevant, suspected data-error indicator, and deviation reason.
+      - id: AC-10
+        description: The inspection surface exposes legal reference, timestamp, actor or system origin, selected next item, and technical identifiers only.
+    rationale: >-
+      Petition060 requires a caseworker-visible inspection and action surface, but the portal stays
+      a composition layer and does not own ranking logic or audit truth.

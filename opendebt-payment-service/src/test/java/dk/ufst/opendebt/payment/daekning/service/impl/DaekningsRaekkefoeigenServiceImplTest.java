@@ -190,12 +190,36 @@ class DaekningsRaekkefoeigenServiceImplTest {
       when(fordringRepo.findByDebtorId(DEBTOR)).thenReturn(List.of(f));
 
       List<SimulatePositionDto> positions =
-          svc.simulate(DEBTOR, new BigDecimal("300.00"), InddrivelsesindsatsType.FRIVILLIG, NOW);
+          svc.simulate(
+              DEBTOR, new BigDecimal("300.00"), InddrivelsesindsatsType.FRIVILLIG, null, NOW);
 
       assertThat(positions).hasSize(1);
       assertThat(positions.get(0).fordringId()).isEqualTo("F1");
       assertThat(positions.get(0).daekningBeloeb()).isEqualByComparingTo("300.00");
       assertThat(positions.get(0).fullyCovers()).isFalse();
+    }
+
+    @Test
+    @DisplayName("filters simulation to candidate principal claims when provided")
+    void filtersToCandidatePrincipalClaims() {
+      DaekningFordringEntity included =
+          fordring("F_INCLUDED", LOW_PRIORITY, "500.00", false, false);
+      DaekningFordringEntity excluded =
+          fordring("F_EXCLUDED", HIGH_PRIORITY, "500.00", false, false);
+      when(fordringRepo.findByDebtorId(DEBTOR)).thenReturn(List.of(excluded, included));
+
+      List<SimulatePositionDto> positions =
+          svc.simulate(
+              DEBTOR,
+              new BigDecimal("300.00"),
+              InddrivelsesindsatsType.FRIVILLIG,
+              List.of("F_INCLUDED"),
+              NOW);
+
+      assertThat(positions)
+          .singleElement()
+          .extracting(SimulatePositionDto::fordringId)
+          .isEqualTo("F_INCLUDED");
     }
   }
 

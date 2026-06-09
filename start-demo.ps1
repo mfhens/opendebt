@@ -38,6 +38,8 @@ $KeycloakIssuerUri = "http://localhost:8080/realms/opendebt"
 $CaseworkerPortalClientSecret = "caseworker-portal-dev-secret"
 $CreditorPortalClientSecret = "creditor-portal-dev-secret"
 $CitizenPortalClientSecret = "citizen-dev-secret"
+$BackendHealthTimeoutSec = 120
+$PortalHealthTimeoutSec = 60
 
 function Write-Status($msg) { Write-Host $msg -ForegroundColor Yellow }
 function Write-Ok($msg)     { Write-Host $msg -ForegroundColor Green }
@@ -331,26 +333,26 @@ if ($startCreditor) {
 $step++
 Write-Status "[$step/$totalSteps] Waiting for backend services..."
 
-$ok = Wait-ForUrl "http://localhost:8082/debt-service/actuator/health"
+$ok = Wait-ForUrl "http://localhost:8082/debt-service/actuator/health" $BackendHealthTimeoutSec
 if (-not $ok) { Write-Err "  debt-service failed! Check .demo-logs\debt-service-err.log"; exit 1 }
 Write-Ok "  debt-service ready."
 
-$ok = Wait-ForUrl "http://localhost:8090/person-registry/actuator/health"
+$ok = Wait-ForUrl "http://localhost:8090/person-registry/actuator/health" $BackendHealthTimeoutSec
 if (-not $ok) { Write-Err "  person-registry failed! Check .demo-logs\person-registry-err.log"; exit 1 }
 Write-Ok "  person-registry ready."
 
 if ($startCaseworker -or $startCitizen) {
-    $ok = Wait-ForUrl "http://localhost:8081/case-service/actuator/health"
+    $ok = Wait-ForUrl "http://localhost:8081/case-service/actuator/health" $BackendHealthTimeoutSec
     if (-not $ok) { Write-Err "  case-service failed! Check .demo-logs\case-service-err.log"; exit 1 }
     Write-Ok "  case-service ready."
 
-    $ok = Wait-ForUrl "http://localhost:8083/payment-service/actuator/health"
+    $ok = Wait-ForUrl "http://localhost:8083/payment-service/actuator/health" $BackendHealthTimeoutSec
     if (-not $ok) { Write-Err "  payment-service failed! Check .demo-logs\payment-service-err.log"; exit 1 }
     Write-Ok "  payment-service ready."
 }
 
 if ($startCreditor) {
-    $ok = Wait-ForUrl "http://localhost:8092/creditor-service/actuator/health"
+    $ok = Wait-ForUrl "http://localhost:8092/creditor-service/actuator/health" $BackendHealthTimeoutSec
     if (-not $ok) { Write-Err "  creditor-service failed! Check .demo-logs\creditor-service-err.log"; exit 1 }
     Write-Ok "  creditor-service ready."
 }
@@ -368,7 +370,7 @@ if ($startCaseworker) {
             "KEYCLOAK_CLIENT_SECRET" = $CaseworkerPortalClientSecret
         }
 
-    $ok = Wait-ForUrl "http://localhost:8087/caseworker-portal/actuator/health" 30
+    $ok = Wait-ForUrl "http://localhost:8087/caseworker-portal/actuator/health" $PortalHealthTimeoutSec
     if (-not $ok) { Write-Err "  caseworker-portal failed! Check .demo-logs\caseworker-portal-err.log"; exit 1 }
     Write-Ok "  caseworker-portal ready."
 }
@@ -382,7 +384,7 @@ if ($startCreditor) {
             "KEYCLOAK_CLIENT_SECRET" = $CreditorPortalClientSecret
         }
 
-    $ok = Wait-ForUrl "http://localhost:8085/creditor-portal/" 30
+    $ok = Wait-ForUrl "http://localhost:8085/creditor-portal/actuator/health" $PortalHealthTimeoutSec
     if (-not $ok) { Write-Err "  creditor-portal failed! Check .demo-logs\creditor-portal-err.log"; exit 1 }
     Write-Ok "  creditor-portal ready."
 }
@@ -396,7 +398,7 @@ if ($startCitizen) {
             "TASTSELV_CLIENT_SECRET" = $CitizenPortalClientSecret
         }
 
-    $ok = Wait-ForUrl "http://localhost:8086/borger/actuator/health" 30
+    $ok = Wait-ForUrl "http://localhost:8086/borger/actuator/health" $PortalHealthTimeoutSec
     if (-not $ok) { Write-Err "  citizen-portal failed! Check .demo-logs\citizen-portal-err.log"; exit 1 }
     Write-Ok "  citizen-portal ready."
 }

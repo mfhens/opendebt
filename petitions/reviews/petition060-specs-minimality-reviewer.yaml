@@ -1,0 +1,98 @@
+petition_id: petition060
+agent: specs-minimality-reviewer
+status: success
+verdict: APPROVED
+summary: >-
+  Approved. The petition060 specs package now contains only the minimum necessary implementation
+  content justified by the petition, outcome contract, feature file, and injected NFR register:
+  one public section-50 worklist surface, one narrow internal petition057 simulation contract,
+  one caseworker inspection/action surface, and the explicit OpenAPI/performance classifications
+  required by the upstream architecture review.
+artifacts:
+  - petitions/petition060-retskraftvurdering.md
+  - petitions/petition060-retskraftvurdering-outcome-contract.md
+  - petitions/petition060-retskraftvurdering.feature
+  - petitions/specs/petition060-specs.yaml
+  - petitions/reviews/petition060-specs-minimality-reviewer.yaml
+evidence_checked:
+  - claim: each retained spec group is necessary for a petition060 requirement or contract clause
+    proof: >-
+      The debt-service worklist surface and data fields cover FR-01..FR-10 and AC-01..AC-10 from
+      petitions/petition060-retskraftvurdering.md:22-37 and
+      petitions/petition060-retskraftvurdering-outcome-contract.md:8-17, while the feature file
+      scenarios require the same observable branches for default ordering, override, data error,
+      accessory suppression, surplus selection, expedited deviation, modregning, and inspection.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+  - claim: the internal payment-service contract is minimal rather than speculative
+    proof: >-
+      FR-05 and FR-06 authorize reuse of petition057 ordering only for principal claims in
+      surplus-payment context. The spec keeps that contract to a single internal POST surface with
+      candidatePrincipalClaimIds and orderedPrincipalClaimIds, which matches the architecture
+      statement at design/solution-architecture-p060-retskraftvurdering.md:306-316 and does not
+      add extra section-50 state to payment-service.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+  - claim: the explicit OpenAPI artifact paths and ADR-0037 classification are justified rather than bloat
+    proof: >-
+      The architecture-review gate explicitly required Phase 4 to name the concrete OpenAPI
+      artifacts and state endpoint performance classification before implementation
+      (petitions/reviews/petition060-solution-architecture-reviewer.yaml:54-60 and 73-80).
+      petitions/specs/petition060-specs.yaml therefore keeps only those concrete additions:
+      api-specs/openapi-debt-service-retskraft-worklists.yaml,
+      api-specs/openapi-payment-service-retskraft-simulation-internal.yaml, and synchronous
+      p95 < 500 ms classification from ADR-0037.
+    freshness: '2026-05-26T22:46:16.1479644+02:00'
+    result: pass
+warnings: []
+escalations: []
+next_action: Proceed to test generation.
+handoff_target: test_generation
+timestamp: '2026-05-26T22:46:16.1479644+02:00'
+keep_count: 8
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: '001'
+    decision: KEEP
+    justification: >-
+      The NFR injection summary is required because compliance/nfr-register.yaml exists and the
+      specs stage must inject applicable cross-cutting NFRs rather than ignore them.
+  - id: '002'
+    decision: KEEP
+    justification: >-
+      The debt-service worklist generation, read, override, and modregning-decision surfaces are
+      directly required by FR-01..FR-10, AC-01..AC-10, and the corresponding 10 Gherkin scenarios.
+  - id: '003'
+    decision: KEEP
+    justification: >-
+      The debt-service response and persistence fields retained in the spec are limited to the
+      observable ranking basis and inspection data required by FR-03, FR-09, FR-10, AC-03, AC-09,
+      and AC-10.
+  - id: '004'
+    decision: KEEP
+    justification: >-
+      The petition-specific non-functional requirements for determinism, auditability, and
+      technical-ID-only handling are explicit in petitions/petition060-retskraftvurdering.md:35-37.
+  - id: '005'
+    decision: KEEP
+    justification: >-
+      The payment-service internal simulation contract is necessary for FR-05 and FR-06 because the
+      petition explicitly reuses petition057 ordering for principal claims in surplus-payment cases.
+  - id: '006'
+    decision: KEEP
+    justification: >-
+      The caseworker-portal section50 module is necessary for FR-02, FR-08, FR-09, FR-10 and
+      AC-02, AC-08, AC-09, AC-10 because those requirements demand visible override, abstention,
+      and audit inspection behavior.
+  - id: '007'
+    decision: KEEP
+    justification: >-
+      The explicit OpenAPI artifact paths are necessary because the prior architecture review made
+      them a mandatory Phase 4 follow-up before implementation.
+  - id: '008'
+    decision: KEEP
+    justification: >-
+      The ADR-0037 synchronous classification is necessary because the prior architecture review
+      required Phase 4 to state whether the new endpoints are synchronous or async before build work
+      begins.

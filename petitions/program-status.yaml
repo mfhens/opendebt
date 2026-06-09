@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-05-18
-  updated_by: TB-061 creditor-portal debt client decomposition completed
+  updated_at: 2026-05-27
+  updated_by: petition060 closure and contract drift re-audit
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1437,20 +1437,26 @@ program:
       catala_typecheck_note: >
         catala not on PATH on encoding host; opam not installed in WSL archlinux.
         CI job (catala-tests) will perform typecheck on next push to Linux runner.
-      status: in_progress
+      status: implemented
       phase: phase-18
       depends_on:
         - petition057
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-05-27
       notes: >
         G.A.2.5: formalization of the § 50 retskraft hierarchy — which creditors take priority
         when multiple fordringer compete for the same inddrivelsesprovenu. PSRM enforces
         retskraftrækkefølge automatically; petition scopes the UI surface and case-handler
-        visibility of the ranking. Tier A — no Catala companion (rule is a priority enumeration,
-        not date arithmetic).
+        visibility of the ranking. Tier A + Catala companion required — although the rule is a
+        priority enumeration, the statutory ordering, override paths, and payment/modregning
+        exception branches should be encoded formally for regression and comparison.
+        Implemented across debt-service (section50 worklists and audit snapshot origin), payment-service
+        (petition057 simulation candidate filtering), caseworker-portal inspection surface, Catala
+        companion, and published OpenAPI contracts. Latest contract-drift re-audit passed on
+        2026-05-27; prior runtime integration evidence from 2026-05-27 remains representative because
+        the closure delta stayed within contract and mapper seams rather than startup or route wiring.
       next_step: >
-        Draft petition document. Coordinate with petition057 (dækningsrækkefølge) for consistent
-        payment application model.
+        PR ready. Keep petition057 and petition058 interplay under regression watch and let CI perform
+        the deferred Catala typecheck on the Linux runner.
 
     # --- Phase 19: G.A.3 enkel inddrivelse tools ---
 
@@ -3112,6 +3118,63 @@ program:
         and focused debt mutation logic are moved into dedicated helpers with unchanged external
         behavior and clearer unit-test boundaries.
 
+    - id: TB-064
+      title: "Publish and align petition060 public section50 API contract"
+      status: done
+      source_agent: contract-drift-auditor
+      petition: petition060
+      category: contract-drift
+      remediation_target: api
+      drift_class: compatibility drift
+      symbol: debt-service section50 public API
+      severity: warning
+      evidence_artifact: petitions/reviews/petition060-contract-drift-auditor.yaml
+      resolved: 2026-05-27
+      resolved_note: "Public section50 OpenAPI artifact now exists and the published response shape includes override, deviation, modregning, and decision snapshot fields."
+      notes: >
+        petition060-specs.yaml requires api-specs/openapi-debt-service-retskraft-worklists.yaml,
+        but no public OpenAPI artifact exists and the published contract under-describes the
+        implemented response fields (overrideLegalBasis, deviationReason, modregningOutcome,
+        decisionSnapshot, decisionSnapshot.prioritisationFactors).
+
+    - id: TB-065
+      title: "Align petition060 petition057 simulation reuse contract"
+      status: done
+      source_agent: contract-drift-auditor
+      petition: petition060
+      category: contract-drift
+      remediation_target: api
+      drift_class: field presence drift
+      symbol: petition057 coverage-order reuse seam
+      severity: blocking
+      evidence_artifact: petitions/reviews/petition060-contract-drift-auditor.yaml
+      resolved: 2026-05-27
+      resolved_note: "Contract drift remediated and re-audited PASS; debt-service now reuses the payment-service simulate API with amount-bearing request payload and candidate filtering."
+      notes: >
+        petition060-specs.yaml declares POST /api/v1/debtors/{debtorId}/daekningsraekkefoelge/simulate
+        with availableAmount and candidatePrincipalClaimIds, but the current implementation is
+        only a local PaymentCoverageOrderClient.orderPrincipalClaimIds(UUID, List<String>) echo
+        stub with no amount-bearing request model or internal API boundary.
+
+    - id: TB-066
+      title: "Persist real petition060 audit origin for caseworker decisions"
+      status: done
+      source_agent: contract-drift-auditor
+      petition: petition060
+      category: contract-drift
+      remediation_target: mapper
+      drift_class: mapper drift
+      symbol: Section50DecisionSnapshot.origin
+      severity: warning
+      evidence_artifact: petitions/reviews/petition060-contract-drift-auditor.yaml
+      resolved: 2026-05-27
+      resolved_note: "Section50 snapshot origin now distinguishes SYSTEM-generated worklists from CASEWORKER override and modregning decisions, with focused tests for both branches."
+      notes: >
+        Section50WorklistApplicationServiceImpl persists origin as SYSTEM for all section50
+        snapshots, requestedBySystem is unused, and current petition060 tests normalize that
+        behavior instead of distinguishing caseworker-triggered decisions from system-triggered
+        ones.
+
 escalations:
   - id: ESC-055
     petition: P055
@@ -3172,3 +3235,23 @@ escalations:
       commands now reject caller-supplied `registeredBy`, `decidedBy`, and `debtorPersonId` while
       deriving those values server-side before debt-service delegates to case-service.
     created: 2026-05-16
+  - id: ESC-060
+    petition: P060
+    phase: 1
+    agent: gherkin-minimality-reviewer
+    reason: >
+      petition060-retskraftvurdering.feature over-specifies exact output values not explicitly
+      authorized by petition060-retskraftvurdering.md or
+      petition060-retskraftvurdering-outcome-contract.md. Scenario 1 pins ordering mode to
+      `DEFAULT_SECTION_50`, scenario 2 pins legal reference to `Section 50 subsection 2`, and
+      scenario 3 pins ordering mode to `DATA_ERROR_DISCRETIONARY`. The petition/outcome authorize
+      ordering mode and legal-basis visibility, but not these exact tokens. Human clarification or
+      feature tightening is required before the minimality gate can approve.
+    status: resolved
+    resolution: >
+      petition060-retskraftvurdering.feature was tightened to remove the unauthorized exact
+      output tokens `DEFAULT_SECTION_50` and `DATA_ERROR_DISCRETIONARY` and the exact legal
+      reference string `Section 50 subsection 2`. The rerun minimality review approved all
+      10 scenarios as directly justified by petition060-retskraftvurdering.md and
+      petition060-retskraftvurdering-outcome-contract.md.
+    created: 2026-05-26

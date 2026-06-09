@@ -1,0 +1,19 @@
+petition_id: petition060
+agent: bdd-test-coverage-auditor
+verdict: APPROVED
+timestamp: 2026-05-27T05:51:57.2404091+02:00
+keep_count: 3
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: COVERAGE-CANONICAL-SCENARIOS
+    decision: KEEP
+    justification: "All 10 canonical petition060 scenarios remain present in the generated debt-service feature and matched by executable step definitions."
+  - id: DRY-RUN-DEBT-SERVICE
+    decision: KEEP
+    justification: "Targeted cucumber-jvm dry-run succeeded in opendebt-debt-service for @petition060."
+  - id: GAP-P060-NFR-01-RESOLVED
+    decision: KEEP
+    justification: "Scenario `Identical input produces the same ordering without manual override` now covers petition NFR-01 / spec P060-NFR-01 with explicit repeat-evaluation traceability."
+gaps: []
+overreach: []

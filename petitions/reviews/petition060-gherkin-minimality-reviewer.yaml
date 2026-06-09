@@ -1,0 +1,38 @@
+petition_id: petition060
+agent: gherkin-minimality-reviewer
+verdict: APPROVED
+timestamp: 2026-05-26T22:02:40.5798463+02:00
+keep_count: 10
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: S01
+    decision: KEEP
+    justification: "Authorized by petition FR-01 (petition060-retskraftvurdering.md lines 22-23) and outcome AC-01 (petition060-retskraftvurdering-outcome-contract.md line 8). The scenario now asserts only the default section-50 ordering path, not an unauthorized exact token."
+  - id: S02
+    decision: KEEP
+    justification: "Authorized by petition FR-02 (petition060-retskraftvurdering.md line 23) and outcome AC-02 (petition060-retskraftvurdering-outcome-contract.md line 9). The scenario now requires visibility of the legal basis for the override, which is explicitly authorized."
+  - id: S03
+    decision: KEEP
+    justification: "Authorized by petition FR-03 (petition060-retskraftvurdering.md line 24) and outcome AC-03 (petition060-retskraftvurdering-outcome-contract.md line 10). The scenario now asserts only that a discretionary data-error ordering path was used."
+  - id: S04
+    decision: KEEP
+    justification: "Authorized by petition FR-04 (petition060-retskraftvurdering.md line 25) and outcome AC-04 (petition060-retskraftvurdering-outcome-contract.md line 11): accessory amounts are not ranked ahead of a principal claim until the principal is retskraftig."
+  - id: S05
+    decision: KEEP
+    justification: "Authorized by petition FR-04 (petition060-retskraftvurdering.md line 25) and outcome AC-04 (petition060-retskraftvurdering-outcome-contract.md line 11): written-off accessory amounts are excluded from the worklist."
+  - id: S06
+    decision: KEEP
+    justification: "Authorized by petition FR-05 (petition060-retskraftvurdering.md line 26) and outcome AC-05 (petition060-retskraftvurdering-outcome-contract.md line 12): evaluation is limited to the remaining amount window, follows GIL section 4 ordering for principal claims, and ranks accessory amounts last."
+  - id: S07
+    decision: KEEP
+    justification: "Authorized by petition FR-06 (petition060-retskraftvurdering.md line 27) and outcome AC-06 (petition060-retskraftvurdering-outcome-contract.md line 13): expedited deviation is allowed when normal ordering would delay application and the reason must be recorded."
+  - id: S08
+    decision: KEEP
+    justification: "Authorized by petition FR-07 (petition060-retskraftvurdering.md line 28) and outcome AC-07 (petition060-retskraftvurdering-outcome-contract.md line 14): modregning uses confirmed claims first and evaluates doubtful claims only within the remaining amount window, with accessory amounts last."
+  - id: S09
+    decision: KEEP
+    justification: "Authorized by petition FR-08 (petition060-retskraftvurdering.md line 29) and outcome AC-08 (petition060-retskraftvurdering-outcome-contract.md line 15): the system may decide on partial or no modregning for operational reasons and must record that reason."
+  - id: S10
+    decision: KEEP
+    justification: "Authorized by petition FR-09 and FR-10 (petition060-retskraftvurdering.md lines 30-31) and outcome AC-09 and AC-10 (petition060-retskraftvurdering-outcome-contract.md lines 16-17): caseworkers can inspect ordering mode, legal reference, actor or system origin, timestamp, and technical-ID-only audit details."

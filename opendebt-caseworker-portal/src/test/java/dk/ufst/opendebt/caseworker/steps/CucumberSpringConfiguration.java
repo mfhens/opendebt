@@ -7,6 +7,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import dk.ufst.opendebt.caseworker.client.PaymentServiceClient;
 import dk.ufst.opendebt.caseworker.limitation.DebtServiceLimitationClient;
+import dk.ufst.opendebt.caseworker.section50.Section50WorklistClient;
 
 import io.cucumber.spring.CucumberContextConfiguration;
 
@@ -29,4 +30,7 @@ public class CucumberSpringConfiguration {
 
   /** Mocked debt-service limitation client — configured per-scenario in Petition059PortalSteps. */
   @MockitoBean public DebtServiceLimitationClient debtServiceLimitationClient;
+
+  /** Mocked debt-service section50 client — configured per-scenario in Petition060PortalSteps. */
+  @MockitoBean public Section50WorklistClient section50WorklistClient;
 }

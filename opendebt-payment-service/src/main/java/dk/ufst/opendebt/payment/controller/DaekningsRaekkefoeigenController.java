@@ -51,6 +51,10 @@ public class DaekningsRaekkefoeigenController {
       @PathVariable String debtorId, @Valid @RequestBody SimulateRequestDto request) {
     return ResponseEntity.ok(
         service.simulate(
-            debtorId, request.beloeb(), request.inddrivelsesindsatsType(), Instant.now(clock)));
+            debtorId,
+            request.beloeb(),
+            request.inddrivelsesindsatsType(),
+            request.candidatePrincipalClaimIds(),
+            Instant.now(clock)));
   }
 }

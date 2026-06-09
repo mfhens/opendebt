@@ -80,10 +80,17 @@ public class DaekningsRaekkefoeigenServiceImpl implements DaekningsRaekkefoeigen
       String debtorId,
       BigDecimal beloeb,
       InddrivelsesindsatsType inddrivelsesindsatsType,
+      List<String> candidatePrincipalClaimIds,
       Instant applicationTimestamp) {
 
     List<DaekningFordringEntity> all = fordringRepository.findByDebtorId(debtorId);
     List<DaekningFordringEntity> filtered = filterByTimestamp(all, applicationTimestamp);
+    if (candidatePrincipalClaimIds != null && !candidatePrincipalClaimIds.isEmpty()) {
+      filtered =
+          filtered.stream()
+              .filter(fordring -> candidatePrincipalClaimIds.contains(fordring.getFordringId()))
+              .toList();
+    }
 
     return buildSimulation(filtered, beloeb, inddrivelsesindsatsType);
   }

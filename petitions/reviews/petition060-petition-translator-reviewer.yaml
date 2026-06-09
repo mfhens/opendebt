@@ -1,0 +1,38 @@
+petition_id: petition060
+agent: petition-translator-reviewer
+verdict: APPROVED
+timestamp: 2026-05-26T22:04:53.3589350+02:00
+keep_count: 10
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: S01
+    decision: KEEP
+    justification: "Faithful to FR-01 and AC-01: the default section-50 ordering for fines, private maintenance claims, and other claims is captured directly without adding unauthorized behaviour."
+  - id: S02
+    decision: KEEP
+    justification: "Faithful to FR-02 and AC-02: override capability, justification capture, and legal-basis visibility are translated directly."
+  - id: S03
+    decision: KEEP
+    justification: "Faithful to FR-03 and AC-03: discretionary ordering for suspected data error includes operational factors and visibility of those factors."
+  - id: S04
+    decision: KEEP
+    justification: "Faithful to FR-04 and AC-04: accessory amounts stay behind a non-retskraftig principal claim."
+  - id: S05
+    decision: KEEP
+    justification: "Faithful to FR-04 and AC-04: accessory amounts written off due to disproportionate evaluation are excluded."
+  - id: S06
+    decision: KEEP
+    justification: "Faithful to FR-05 and AC-05: voluntary-payment surplus limits evaluation to the remaining amount window and ranks accessory amounts last."
+  - id: S07
+    decision: KEEP
+    justification: "Faithful to FR-06 and AC-06: expedited deviation for faster application of surplus amounts is translated with explicit reason capture."
+  - id: S08
+    decision: KEEP
+    justification: "Faithful to FR-07 and AC-07: modregning uses confirmed claims first and evaluates doubtful claims only within the remaining amount window."
+  - id: S09
+    decision: KEEP
+    justification: "Faithful to FR-08 and AC-08: the system may decide on partial or no modregning for operational reasons and must expose the reason."
+  - id: S10
+    decision: KEEP
+    justification: "Faithful to FR-09, FR-10, AC-09, and AC-10: inspection of ordering mode, legal reference, actor/system origin, timestamp, and technical-ID-only audit detail is covered."

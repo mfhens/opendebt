@@ -256,6 +256,18 @@ dk.ufst.opendebt.caseworkerportal.daekning/
 
 `PaymentServiceClient` in `caseworker-portal` extended with `getDaekningsraekkefoelge(UUID debtorId)` → `GET /api/v1/debtors/{debtorId}/daekningsraekkefoelge` on payment-service (petition057). i18n: 12 new keys/locale (5 priority category labels, 6 interest component labels, 1 view title).
 
+`caseworker-portal` has `section50/` view sub-package for petition060 retskraft worklists:
+
+```
+dk.ufst.opendebt.caseworker.section50/
+├── Section50WorklistController.java      # GET /debtors/{debtorId}/retskraft-worklists/{worklistId}
+│                                         # POST .../override and .../modregning-decision
+├── Section50WorklistClient.java          # Calls debt-service section-50 endpoints via /debt-service/api/v1/...
+└── PortalSection50*.java                 # Portal-local DTOs for worklist, entries, and decision snapshot
+```
+
+`Section50WorklistClient` in `caseworker-portal` uses `WebClient.Builder` plus the `debt-service-read` resilience profile for `GET /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}`, `POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override`, and `POST /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision` on debt-service (petition060).
+
 Shared code in `opendebt-common` base package `dk.ufst.opendebt.common`:
 
 ```

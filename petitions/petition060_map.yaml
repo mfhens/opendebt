@@ -1,0 +1,131 @@
+# petition060_map.yaml
+# Component Assignment Map for Petition 060:
+#   Retskraftvurdering — section 50 priority ordering (G.A.2.5)
+#
+# Legal basis: gaeldsinddrivelsesbekendtgoerelsens section 50, GIL section 18c,
+#              GIL section 4 subsection 2-5, GIL section 7 subsection 1-2,
+#              GIL section 16 subsection 1
+#
+# Component definitions were read from design/components/*.yaml.
+# Components below follow the module-level ownership boundaries declared there.
+#
+# Component legend:
+#   opendebt-debt-service       — authoritative owner of fordring state, legal
+#                                 calculations, offsetting, and enforcement-type
+#                                 classification; best-fit host for section-50
+#                                 ordering logic and worklist generation.
+#   opendebt-payment-service    — owner of daekningsraekkefolge and voluntary
+#                                 payment distribution rules referenced by FR-05.
+#   opendebt-caseworker-portal  — caseworker UI surface that renders section-50
+#                                 worklists and decision explanations.
+#   audit-trail-commons         — shared immutable audit publishing used for
+#                                 state-changing or decision-trace events.
+
+petition_id: petition060
+
+scenarios:
+
+  - id: "001"
+    title: "Default ordering without suspected data error"
+    component: opendebt-debt-service
+    fr_refs: [FR-01]
+    rationale: >
+      The default section-50 ranking is a legal ordering calculation over claims under
+      collection. debt-service is the authoritative owner of fordring state and legal
+      calculations, so it is the best-fit host for generating the base retskraft worklist.
+
+  - id: "002"
+    title: "Special circumstances override records why default order was changed"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+    fr_refs: [FR-02]
+    rationale: >
+      Override handling belongs with the section-50 ordering decision itself in
+      debt-service. audit-trail-commons is secondary because the override justification
+      and legal basis must be recorded as immutable audit evidence.
+
+  - id: "003"
+    title: "Suspected data error uses discretionary ordering instead of default ranking"
+    component: opendebt-debt-service
+    fr_refs: [FR-03]
+    rationale: >
+      Discretionary ranking under suspected data error is another section-50 ordering
+      branch over claim state, amount, and investigation factors. That sits most naturally
+      in debt-service as the authoritative legal-state service.
+
+  - id: "004"
+    title: "Accessory amounts stay behind a principal claim until the principal is retskraftig"
+    component: opendebt-debt-service
+    fr_refs: [FR-04]
+    rationale: >
+      Determining whether accessory amounts may enter the worklist depends on the
+      authoritative retskraft status of the principal claim, which is debt-service-owned
+      claim state.
+
+  - id: "005"
+    title: "Disproportionate accessory evaluation removes the accessory amount from the worklist"
+    component: opendebt-debt-service
+    fr_refs: [FR-04]
+    rationale: >
+      Excluding accessory amounts after a disproportionate-evaluation decision is part of
+      the same section-50 worklist-generation logic and therefore belongs in debt-service.
+
+  - id: "006"
+    title: "Voluntary payment surplus limits which doubtful claims are selected for evaluation"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-payment-service
+    fr_refs: [FR-05]
+    rationale: >
+      The section-50 worklist and surplus-amount window are part of retskraft-evaluation
+      selection and fit debt-service. payment-service is secondary because FR-05 explicitly
+      reuses the petition057 daekningsraekkefolge ordering it owns.
+
+  - id: "007"
+    title: "Expedited voluntary-payment deviation is logged when normal ordering would delay coverage"
+    component: opendebt-debt-service
+    secondary_components:
+      - opendebt-payment-service
+      - audit-trail-commons
+    fr_refs: [FR-06]
+    rationale: >
+      The decision to deviate for faster payment application is a section-50 exception
+      decision and belongs in debt-service. payment-service is secondary because the
+      deviation responds to payment-application timing, and audit-trail-commons is
+      secondary because the deviation reason must be recorded.
+
+  - id: "008"
+    title: "Modregning uses confirmed claims first and evaluates doubtful claims within the remaining amount window"
+    component: opendebt-debt-service
+    fr_refs: [FR-07]
+    rationale: >
+      debt-service explicitly owns offsetting/modregning responsibilities in its component
+      definition, making it the best-fit component for section-50 evaluation ordering in
+      a modregning context.
+
+  - id: "009"
+    title: "Partial or no modregning can be chosen for operational reasons and must be visible"
+    component: opendebt-debt-service
+    secondary_components:
+      - audit-trail-commons
+      - opendebt-caseworker-portal
+    fr_refs: [FR-08, FR-09]
+    rationale: >
+      The operational decision to perform partial or no modregning belongs with
+      debt-service's offsetting domain logic. audit-trail-commons is secondary for the
+      recorded reason, and caseworker-portal is secondary because the outcome must be
+      visible to the caseworker.
+
+  - id: "010"
+    title: "Caseworkers can inspect the rule path and audit details for an ordering decision"
+    component: opendebt-caseworker-portal
+    secondary_components:
+      - opendebt-debt-service
+      - audit-trail-commons
+    fr_refs: [FR-09, FR-10]
+    rationale: >
+      The inspection surface is a caseworker-facing UI concern, so caseworker-portal is
+      primary. debt-service is secondary as the source of ordering mode, legal reference,
+      and decision detail; audit-trail-commons is secondary as the source of immutable
+      actor/timestamp audit payloads.

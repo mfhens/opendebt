@@ -1,0 +1,124 @@
+{
+  "petition": "petition060",
+  "generated": "2026-05-27T11:11:41.0053250+02:00",
+  "flows": [
+    {
+      "id": "flow-retskraft-worklist-inspection",
+      "assertions": [
+        "VAL-P060-002",
+        "VAL-P060-007",
+        "VAL-P060-009",
+        "VAL-P060-010"
+      ],
+      "persona": "CASEWORKER",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "http://localhost:8087/caseworker-portal/demo-login",
+          "evidence": []
+        },
+        {
+          "action": "click",
+          "target": "#caseworkerId + button[type=submit]",
+          "value": "anna-jensen",
+          "evidence": []
+        },
+        {
+          "action": "navigate",
+          "target": "http://localhost:8087/caseworker-portal/debtors/06000000-0000-0000-0000-000000000060/retskraft-worklists/befcfca1-dc27-415a-9ef2-9fcb08ee0615",
+          "evidence": [
+            "screenshots",
+            "network",
+            "console_errors"
+          ]
+        },
+        {
+          "action": "assert_visible",
+          "target": "[data-testid='section50-worklist']",
+          "evidence": [
+            "screenshots"
+          ]
+        },
+        {
+          "action": "assert_text",
+          "target": "[data-testid='section50-override']",
+          "value": "Urgent court deadline on C-06022 | Section 50 subsection 5",
+          "evidence": [
+            "screenshots"
+          ]
+        },
+        {
+          "action": "assert_text",
+          "target": "[data-testid='section50-modregning']",
+          "value": "Timing pressure before payout deadline | NO_MODREGNING",
+          "evidence": [
+            "screenshots"
+          ]
+        },
+        {
+          "action": "assert_text",
+          "target": "[data-testid='section50-decision-snapshot']",
+          "value": "SECTION_50_MODREGNING_ABSTAINED_PATH",
+          "evidence": [
+            "screenshots",
+            "network"
+          ]
+        },
+        {
+          "action": "assert_absent",
+          "target": "CPR or non-technical debtor identifiers",
+          "value": "0101701234",
+          "evidence": [
+            "screenshots",
+            "network"
+          ]
+        }
+      ],
+      "result": "pass",
+      "evidence": {
+        "screenshots": [
+          "petitions/validation/petition060/user-testing/flows/petition060-worklist.png"
+        ],
+        "network": [
+          {
+            "url": "http://localhost:8087/caseworker-portal/debtors/06000000-0000-0000-0000-000000000060/retskraft-worklists/befcfca1-dc27-415a-9ef2-9fcb08ee0615",
+            "status": 200,
+            "body": {
+              "title": "Retskraftvurdering — section 50",
+              "selectors": [
+                "section50-worklist",
+                "section50-override",
+                "section50-modregning",
+                "section50-decision-snapshot"
+              ]
+            }
+          },
+          {
+            "url": "http://localhost:8082/debt-service/api/v1/debtors/06000000-0000-0000-0000-000000000060/retskraft-worklists/befcfca1-dc27-415a-9ef2-9fcb08ee0615",
+            "status": 200,
+            "body": {
+              "worklistId": "befcfca1-dc27-415a-9ef2-9fcb08ee0615",
+              "debtorId": "06000000-0000-0000-0000-000000000060",
+              "orderingMode": "MODREGNING_ABSTAINED",
+              "contextType": "MODREGNING",
+              "amountWindow": 500.0,
+              "overrideReason": "Urgent court deadline on C-06022",
+              "overrideLegalBasis": "Section 50 subsection 5",
+              "deviationReason": "Timing pressure before payout deadline",
+              "modregningOutcome": "NO_MODREGNING",
+              "selectedNextItemId": "C-06021",
+              "decisionSnapshot": {
+                "rulePath": "SECTION_50_MODREGNING_ABSTAINED_PATH",
+                "legalReference": "Section 50 subsection 5 abstention",
+                "origin": "SYSTEM",
+                "occurredAt": "2026-05-27T08:56:00.731851Z"
+              }
+            }
+          }
+        ],
+        "console_errors": []
+      }
+    }
+  ],
+  "summary": "Phase 6.5 rerun passed for petition060. The live caseworker route under /caseworker-portal/debtors/{debtorId}/retskraft-worklists/{worklistId} rendered override, deviation, modregning, and decision-snapshot details for seeded debtor 06000000-0000-0000-0000-000000000060 and worklist befcfca1-dc27-415a-9ef2-9fcb08ee0615, with no browser console errors."
+}

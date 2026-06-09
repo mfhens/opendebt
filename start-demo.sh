@@ -30,6 +30,8 @@ KEYCLOAK_ISSUER_URI="http://localhost:8080/realms/opendebt"
 CASEWORKER_PORTAL_CLIENT_SECRET="caseworker-portal-dev-secret"
 CREDITOR_PORTAL_CLIENT_SECRET="creditor-portal-dev-secret"
 CITIZEN_PORTAL_CLIENT_SECRET="citizen-dev-secret"
+BACKEND_HEALTH_TIMEOUT=120
+PORTAL_HEALTH_TIMEOUT=60
 
 # ---------------------------------------------------------------------------
 # Colour helpers
@@ -318,30 +320,30 @@ fi
 STEP=$(( STEP + 1 ))
 status "[$STEP/$TOTAL_STEPS] Waiting for backend services..."
 
-if ! wait_for_url "http://localhost:8082/debt-service/actuator/health"; then
+if ! wait_for_url "http://localhost:8082/debt-service/actuator/health" "$BACKEND_HEALTH_TIMEOUT"; then
     err "  debt-service failed! Check $LOG_DIR/debt-service-err.log"; exit 1
 fi
 ok "  debt-service ready."
 
-if ! wait_for_url "http://localhost:8090/person-registry/actuator/health"; then
+if ! wait_for_url "http://localhost:8090/person-registry/actuator/health" "$BACKEND_HEALTH_TIMEOUT"; then
     err "  person-registry failed! Check $LOG_DIR/person-registry-err.log"; exit 1
 fi
 ok "  person-registry ready."
 
 if $START_CASEWORKER || $START_CITIZEN; then
-    if ! wait_for_url "http://localhost:8081/case-service/actuator/health"; then
+    if ! wait_for_url "http://localhost:8081/case-service/actuator/health" "$BACKEND_HEALTH_TIMEOUT"; then
         err "  case-service failed! Check $LOG_DIR/case-service-err.log"; exit 1
     fi
     ok "  case-service ready."
 
-    if ! wait_for_url "http://localhost:8083/payment-service/actuator/health"; then
+    if ! wait_for_url "http://localhost:8083/payment-service/actuator/health" "$BACKEND_HEALTH_TIMEOUT"; then
         err "  payment-service failed! Check $LOG_DIR/payment-service-err.log"; exit 1
     fi
     ok "  payment-service ready."
 fi
 
 if $START_CREDITOR; then
-    if ! wait_for_url "http://localhost:8092/creditor-service/actuator/health"; then
+    if ! wait_for_url "http://localhost:8092/creditor-service/actuator/health" "$BACKEND_HEALTH_TIMEOUT"; then
         err "  creditor-service failed! Check $LOG_DIR/creditor-service-err.log"; exit 1
     fi
     ok "  creditor-service ready."
@@ -358,7 +360,7 @@ if $START_CASEWORKER; then
         "--KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI" \
         "--KEYCLOAK_CLIENT_SECRET=$CASEWORKER_PORTAL_CLIENT_SECRET"
 
-    if ! wait_for_url "http://localhost:8087/caseworker-portal/actuator/health" 30; then
+    if ! wait_for_url "http://localhost:8087/caseworker-portal/actuator/health" "$PORTAL_HEALTH_TIMEOUT"; then
         err "  caseworker-portal failed! Check $LOG_DIR/caseworker-portal-err.log"; exit 1
     fi
     ok "  caseworker-portal ready."
@@ -371,7 +373,7 @@ if $START_CREDITOR; then
         "--KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI" \
         "--KEYCLOAK_CLIENT_SECRET=$CREDITOR_PORTAL_CLIENT_SECRET"
 
-    if ! wait_for_url "http://localhost:8085/creditor-portal/" 30; then
+    if ! wait_for_url "http://localhost:8085/creditor-portal/actuator/health" "$PORTAL_HEALTH_TIMEOUT"; then
         err "  creditor-portal failed! Check $LOG_DIR/creditor-portal-err.log"; exit 1
     fi
     ok "  creditor-portal ready."
@@ -384,7 +386,7 @@ if $START_CITIZEN; then
         "--KEYCLOAK_ISSUER_URI=$KEYCLOAK_ISSUER_URI" \
         "--TASTSELV_CLIENT_SECRET=$CITIZEN_PORTAL_CLIENT_SECRET"
 
-    if ! wait_for_url "http://localhost:8086/borger/actuator/health" 30; then
+    if ! wait_for_url "http://localhost:8086/borger/actuator/health" "$PORTAL_HEALTH_TIMEOUT"; then
         err "  citizen-portal failed! Check $LOG_DIR/citizen-portal-err.log"; exit 1
     fi
     ok "  citizen-portal ready."

@@ -12,11 +12,11 @@ and the flow schema used to validate browser-visible surfaces against VAL-P* ass
 
 | Service | Base URL | Notes |
 |---|---|---|
-| Caseworker Portal | `http://localhost:8087` | Thymeleaf + HTMX; primary UI surface |
-| Creditor Portal   | `http://localhost:8085` | Thymeleaf + HTMX |
-| Citizen Portal    | `http://localhost:8086` | Thymeleaf + HTMX |
-| Debt Service API  | `http://localhost:8081` | REST, no UI |
-| Case Service API  | `http://localhost:8082` | REST, no UI |
+| Caseworker Portal | `http://localhost:8087/caseworker-portal` | Thymeleaf + HTMX; primary UI surface |
+| Creditor Portal   | `http://localhost:8085/creditor-portal` | Thymeleaf + HTMX |
+| Citizen Portal    | `http://localhost:8086/borger` | Thymeleaf + HTMX |
+| Debt Service API  | `http://localhost:8082/debt-service` | REST, no UI |
+| Case Service API  | `http://localhost:8081/case-service` | REST, no UI |
 
 All services run from `docker-compose.yml` at the repository root.
 Start with: `docker compose up -d`
@@ -27,50 +27,49 @@ Start with: `docker compose up -d`
 
 ### CASEWORKER (write)
 ```yaml
-username: sagsbehandler1
-password: test
+caseworkerId: anna-jensen
 role: CASEWORKER
-scope: read:debts write:debts read:limitation write:limitation read:cases write:cases
+description: Sagsbehandler
 ```
 - Has access to all caseworker-portal pages.
 - Can register afbrydelse, objections, and objection decisions.
 - Sees all write-action buttons on the limitation panel.
+- Can inspect override, deviation, modregning, and decision-snapshot details on petition060 worklists.
 
 ### CASEWORKER_READONLY
 ```yaml
-username: sagsbehandler_readonly
-password: test
-role: CASEWORKER_READONLY
-scope: read:debts read:limitation read:cases
+caseworkerId: erik-sorensen
+role: SENIOR_CASEWORKER
+description: Senior sagsbehandler
 ```
 - Can view all caseworker-portal pages.
 - Cannot register any write actions.
 - Write-action buttons must be absent from all limitation panel views.
+- Can inspect petition060 worklists, but does not gain extra write capability from that surface.
 
 ### ADMIN
 ```yaml
-username: admin1
-password: test
+caseworkerId: system-admin
 role: ADMIN
-scope: read:debts write:debts read:limitation write:limitation read:cases write:cases admin
+description: Systemadministrator
 ```
 
 ---
 
 ## Authentication
 
-The caseworker portal authenticates via Keycloak (OIDC).
-Login URL: `http://localhost:8087/login` (Spring Security OAuth2 redirect).
+The production caseworker portal authenticates via Keycloak (OIDC), but the local validation
+harness runs against demo mode.
+Login URL for local/demo validation: `http://localhost:8087/caseworker-portal/demo-login`.
 
-For Playwright flows, authenticate by navigating to the portal and submitting credentials
-on the Keycloak login form:
+For Playwright flows, authenticate by navigating to the portal and selecting the demo
+caseworker:
 
 ```typescript
-await page.goto('http://localhost:8087/');
-await page.fill('#username', persona.username);
-await page.fill('#password', persona.password);
-await page.click('input[type=submit]');
-await page.waitForURL('http://localhost:8087/**');
+await page.goto('http://localhost:8087/caseworker-portal/demo-login');
+await page.selectOption('#caseworkerId', 'anna-jensen');
+await page.click('button[type=submit]');
+await page.waitForURL(/caseworker-portal\/cases/);
 ```
 
 Store auth state per persona using `storageState` in `playwright.config.ts` to avoid
@@ -83,11 +82,22 @@ re-authenticating on every test.
 ### Claim detail page
 
 ```
-http://localhost:8087/debts/{debtId}
+http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}
 ```
 
 The limitation panel is rendered as a collapsible section with heading
 "Forældelsesstatus" on the claim detail page.
+
+### Petition060 worklist page
+
+```
+http://localhost:8087/caseworker-portal/debtors/{debtorId}/retskraft-worklists/{worklistId}
+```
+
+The petition060 surface is a direct inspection page. Because the current backend exposes
+`GET /api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}` but no debtor-level list endpoint,
+browser flows must generate or otherwise obtain a valid `{worklistId}` for a seeded `{debtorId}`
+before navigating there after demo-login.
 
 ### Limitation panel anchor
 
@@ -165,6 +175,10 @@ a Playwright flow and must appear in `main.json`.
 | VAL-P059-047 | network | No — covered by BDD |
 | VAL-P059-048 | network | No — covered by BDD |
 | VAL-P059-049 | network | No — covered by BDD |
+| VAL-P060-002 | screenshots, console_errors, network | **Yes** — `flow-retskraft-worklist-inspection` |
+| VAL-P060-007 | screenshots, console_errors, network | **Yes** — `flow-retskraft-worklist-inspection` |
+| VAL-P060-009 | screenshots, console_errors, network | **Yes** — `flow-retskraft-worklist-inspection` |
+| VAL-P060-010 | screenshots, console_errors, network | **Yes** — `flow-retskraft-worklist-inspection` |
 
 ---
 
@@ -177,7 +191,7 @@ Pre-condition: A claim exists with known limitation state (status ACTIVE,
 `currentFristExpires`, `udskydelseDato`, `isInUdskydelse = true`).
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert limitation panel visible (`#limitation-panel`)
 3. Assert text matching status label (e.g. "ACTIVE" or localised equivalent)
 4. Assert text matching expiry date in ISO format (`yyyy-MM-dd`)
@@ -195,7 +209,7 @@ Persona: CASEWORKER
 Pre-condition: A claim exists with two or more afbrydelse entries.
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert history table visible within `#limitation-panel`
 3. Assert expected row count in history table
 4. For each visible row: assert columns `type`, `date`, `legalReference`, `newExpiry` are non-empty
@@ -213,7 +227,7 @@ Pre-condition: A claim exists that is a member of a claim complex and has a till
 with a propagated entry (sourceFordringId, targetFordringId visible).
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert claim-complex section visible within `#limitation-panel`
 3. Assert expected member IDs listed in the complex section
 4. Assert tillaegsfrist history section visible with at least one row
@@ -229,7 +243,7 @@ Persona: CASEWORKER
 Pre-condition: A claim in ACTIVE status exists.
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert button with text "Registrer forældelsesindsigelse" is visible
 3. Capture screenshots + console_errors
 
@@ -243,7 +257,7 @@ Persona: CASEWORKER
 Pre-condition: A claim exists in INDSIGELSE_PENDING status.
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert evaluation form visible (VALID + INVALID options and rationale field)
 3. Assert button "Registrer forældelsesindsigelse" is NOT visible
 4. Capture screenshots + console_errors
@@ -258,7 +272,7 @@ Persona: CASEWORKER
 Pre-condition: A claim exists in FORAELDET status with a rationale.
 
 Steps:
-1. Navigate to `http://localhost:8087/debts/{debtId}`
+1. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 2. Assert prescribed outcome label visible (e.g. "FORAELDET")
 3. Assert rationale text visible and non-empty
 4. Assert button "Registrer forældelsesindsigelse" is NOT visible
@@ -275,7 +289,7 @@ Pre-condition: Any claim in ACTIVE or INDSIGELSE_PENDING status.
 
 Steps:
 1. Authenticate as CASEWORKER_READONLY
-2. Navigate to `http://localhost:8087/debts/{debtId}`
+2. Navigate to `http://localhost:8087/caseworker-portal/cases/{caseId}/debts/{debtId}`
 3. Assert limitation panel visible (`#limitation-panel`)
 4. Assert button "Registrer forældelsesindsigelse" is NOT present
 5. Assert evaluation form (VALID/INVALID) is NOT present
@@ -286,15 +300,34 @@ Pass: panel visible, all write controls absent.
 
 ---
 
+### flow-retskraft-worklist-inspection (VAL-P060-002 / 007 / 009 / 010)
+
+Persona: CASEWORKER
+Pre-condition: Petition060 candidate items are seeded for a known `{debtorId}`, a worklist is
+generated through debt-service, and the resulting page can expose override, deviation,
+modregning, and decision-snapshot details.
+
+Steps:
+1. Authenticate via `http://localhost:8087/caseworker-portal/demo-login`
+2. Navigate to `http://localhost:8087/caseworker-portal/debtors/{debtorId}/retskraft-worklists/{worklistId}`
+3. Assert `[data-testid="section50-worklist"]` is visible
+4. Assert `[data-testid="section50-override"]` contains the override reason and legal basis
+5. Assert `[data-testid="section50-modregning"]` contains the deviation reason and modregning outcome
+6. Assert `[data-testid="section50-decision-snapshot"]` contains the rule path, legal reference, origin, timestamp, and selected next item
+7. Assert only technical identifiers are shown (no CPR/name test data)
+8. Capture screenshots + network + console_errors
+
 ## Pre-flight Checklist
 
 Before running flows, verify:
 
 - [ ] `docker compose up -d` completed with all services healthy
-- [ ] `http://localhost:8087/actuator/health` returns `{"status":"UP"}`
-- [ ] `http://localhost:8081/actuator/health` returns `{"status":"UP"}` (debt-service)
+- [ ] `http://localhost:8087/caseworker-portal/actuator/health` returns `{"status":"UP"}`
+- [ ] `http://localhost:8082/debt-service/actuator/health` returns `{"status":"UP"}` (debt-service)
+- [ ] `http://localhost:8081/case-service/actuator/health` returns `{"status":"UP"}` (case-service)
 - [ ] Test data seeded: claims in states ACTIVE, INDSIGELSE_PENDING, FORAELDET
-- [ ] Keycloak test users exist (sagsbehandler1, sagsbehandler_readonly, admin1)
+- [ ] Petition060 seed (if used): a valid `{debtorId}` / `{worklistId}` pair is created through debt-service or direct database setup before the browser step
+- [ ] Demo caseworkers exist on `/caseworker-portal/demo-login` (anna-jensen, erik-sorensen, system-admin)
 - [ ] Playwright installed: `npm ci` in `opendebt-e2e/`
 
 ---

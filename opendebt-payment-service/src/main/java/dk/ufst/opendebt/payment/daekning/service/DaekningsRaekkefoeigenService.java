@@ -30,6 +30,7 @@ public interface DaekningsRaekkefoeigenService {
       String debtorId,
       BigDecimal beloeb,
       InddrivelsesindsatsType inddrivelsesindsatsType,
+      List<String> candidatePrincipalClaimIds,
       Instant applicationTimestamp);
 
   /**

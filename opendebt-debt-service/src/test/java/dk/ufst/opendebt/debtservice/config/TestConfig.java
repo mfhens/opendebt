@@ -31,6 +31,7 @@ import dk.ufst.opendebt.debtservice.limitation.client.dto.CreateObjectionWorkflo
 import dk.ufst.opendebt.debtservice.limitation.client.dto.ObjectionDecisionRequest;
 import dk.ufst.opendebt.debtservice.limitation.client.dto.ObjectionWorkflowResult;
 import dk.ufst.opendebt.debtservice.limitation.client.dto.WageGarnishmentLimitationFacts;
+import dk.ufst.opendebt.debtservice.section50.client.PaymentCoverageOrderClient;
 import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
 import dk.ufst.rules.model.InterestCalculationRequest;
 import dk.ufst.rules.model.InterestCalculationResult;
@@ -191,6 +192,15 @@ public class TestConfig {
                 .decisionRegistered(false)
                 .coveredFordringIds(List.of())
                 .build());
+    return mockClient;
+  }
+
+  @Bean
+  @Primary
+  public PaymentCoverageOrderClient paymentCoverageOrderClient() {
+    PaymentCoverageOrderClient mockClient = mock(PaymentCoverageOrderClient.class);
+    when(mockClient.orderPrincipalClaimIds(any(UUID.class), any(), any(List.class)))
+        .thenAnswer(invocation -> List.copyOf(invocation.getArgument(2)));
     return mockClient;
   }
 
