@@ -1,0 +1,55 @@
+petition: petition026
+reviewer: c4-architecture-governor
+verdict: PASS-WITH-WARNINGS
+summary: >-
+  The current petition026 PR diff is architecturally conformant at the C4 level:
+  architecture/workspace.dsl now models the citizen-portal -> debt-service ->
+  creditor-service path required by solution-architecture-026, the reviewed
+  OpenAPI contracts cover the petition026 data-shape changes, and no runtime
+  source or IaC drift appears ahead of the declared model. One non-blocking
+  governance warning remains: the reviewed debt-service citizen endpoint still
+  inherits a global bearerAuth-or-oces3Certificate security declaration, so the
+  contract does not explicitly pin /api/v1/citizen/debts to the Keycloak/MitID
+  browser flow described by petition026.
+blocking_findings: []
+warnings:
+  - id: GOV-026-001
+    policy: ARCH-011
+    element: /api/v1/citizen/debts
+    file: 'api-specs/openapi-debt-service.yaml:27-29,678-706'
+    finding: >-
+      The petition026 citizen endpoint is described as an authenticated citizen
+      flow requiring a CITIZEN role, but it inherits the debt-service global
+      security array (bearerAuth OR oces3Certificate) and has no operation-level
+      security override. The C4 model routes the flow through Keycloak/MitID, so
+      the contract should state bearerAuth explicitly to remove ambiguity.
+    action: >-
+      Add an operation-level security stanza for /api/v1/citizen/debts that
+      requires bearerAuth/Keycloak semantics only, or document why OCES3 is
+      intentionally allowed for this citizen endpoint.
+evidence:
+  - claim: Petition026 runtime structure is declared in the C4 model and aligned with the solution architecture.
+    proof:
+      - 'architecture/workspace.dsl:77-80 defines DebtOverviewController, CitizenDebtClient, and DebtOverviewView in Citizen Portal.'
+      - 'architecture/workspace.dsl:95-108 defines CreditorController, CitizenDebtController, CitizenDebtService, CreditorDisplayClient, BusinessConfigService, and CitizenDebtPresentationMapper.'
+      - 'architecture/workspace.dsl:178-199 and 242-249 declare citizenPortal -> debtService -> creditorService and the petition026 component request path.'
+      - 'design/solution-architecture-026.md:23-31 and 80-83 require the authenticated /min-gaeld flow, creditor-name enrichment, and those exact added dependencies/components.'
+    freshness: reviewed from current working tree diff against main on 2026-06-09
+    result: PASS
+  - claim: The PR diff keeps petition026 API-first and avoids service-boundary drift.
+    proof:
+      - 'architecture/policies.yaml:79-84 defines ARCH-010 api-first-openapi as a blocking policy.'
+      - 'api-specs/openapi-debt-service.yaml:678-706 and 1533-1655 describe GET /api/v1/citizen/debts and the enriched CitizenDebtSummaryResponse/CitizenDebtItem contract for /min-gaeld.'
+      - 'api-specs/openapi-creditor-service.yaml:35-58 and 142-163 add displayName on the creditor lookup contract used for debt-service enrichment.'
+      - 'git diff main shows no runtime source or IaC additions ahead of the updated model; the reviewed architectural delta is contract/model-first.'
+    freshness: reviewed from current working tree diff against main on 2026-06-09
+    result: PASS
+  - claim: The reviewed petition026 slice is modeled in views and deployable context, but the citizen endpoint security contract remains ambiguous.
+    proof:
+      - 'architecture/workspace.dsl:311-326 and 345-363 place the affected containers in the Production deployment view and define the DebtService_P026_Components view.'
+      - 'petitions/reviews/petition026-c4-model-validator.yaml:1-34 currently records a PASS validator result for the updated workspace.dsl.'
+      - 'architecture/policies.yaml:86-92 defines ARCH-011 oauth2-all-endpoints as blocking.'
+      - 'api-specs/openapi-debt-service.yaml:27-29 declares global security as bearerAuth or oces3Certificate, while api-specs/openapi-debt-service.yaml:678-706 adds petition026 semantics to /api/v1/citizen/debts without an operation-level security override.'
+    freshness: reviewed from current working tree diff against main on 2026-06-09
+    result: WARN
+timestamp: 2026-06-09T12:37:07.0271601+02:00

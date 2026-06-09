@@ -1,0 +1,42 @@
+petition: petition026-citizen-debt-overview-page
+reviewer: gherkin-minimality-reviewer
+verdict: PASS
+summary: >
+  Retry pass succeeds. The feature now stays within the petition, the outcome contract,
+  and the explicit current-run user resolution that creditor display must use creditor
+  name. The prior blocker about an invented mandatory status taxonomy is gone, and no
+  new blocking over-specification was found.
+blocking_findings: []
+warnings: []
+evidence:
+  - claim: Redirect and landing-page routing scenarios are explicitly authorized.
+    proof:
+      - petitions\petition026-citizen-debt-overview-page.md:27-29,64-65
+      - petitions\petition026-citizen-debt-overview-page-outcome-contract.md:5-7,19-20,24-30
+      - petitions\petition026-citizen-debt-overview-page.feature:8-20
+    result: supported
+  - claim: Debt retrieval and overview table scenarios are authorized, including creditor name for this retry.
+    proof:
+      - petitions\petition026-citizen-debt-overview-page.md:29-41,57-60
+      - petitions\petition026-citizen-debt-overview-page-outcome-contract.md:7-18,24-27
+      - 'User input: "Important current-run context: the active user explicitly resolved the creditor-display ambiguity in favor of creditor name; treat that user instruction as authoritative context for this retry rather than a blocker."'
+      - petitions\petition026-citizen-debt-overview-page.feature:22-53
+    result: supported
+  - claim: Interest, snapshot, navigation, localization, accessibility, service-error, and no-JavaScript scenarios are explicitly grounded in the canonical inputs.
+    proof:
+      - petitions\petition026-citizen-debt-overview-page.md:42-60,72,96-99,102-110,144-145
+      - petitions\petition026-citizen-debt-overview-page-outcome-contract.md:11-20,27-33,35-47
+      - petitions\petition026-citizen-debt-overview-page.feature:55-123
+    result: supported
+  - claim: Paused-interest, non-tax-deductible-interest, and written-off-reason scenarios are explicitly authorized by the PSRM-enriched petition text.
+    proof:
+      - petitions\petition026-citizen-debt-overview-page.md:109-110,123-138
+      - petitions\petition026-citizen-debt-overview-page.feature:113-139
+    result: supported
+  - claim: The prior taxonomy blocker is resolved because the feature now requires only the returned debt status, not an invented mandatory status list.
+    proof:
+      - Prior review artifact inspected in this run flagged an invented fixed collection-status taxonomy as the blocker.
+      - petitions\petition026-citizen-debt-overview-page.feature:41-45
+      - petitions\petition026-citizen-debt-overview-page.md:34-40,112-121
+    result: supported
+timestamp: 2026-06-09T11:26:39.5068727+02:00

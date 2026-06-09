@@ -71,11 +71,11 @@ ADR-0035. There is no standalone `rules-engine` runtime service.
 | debt-service | 8082 | Claim registration, lifecycle management, validation, set-off (ADR-0027) |
 | case-service | 8081 | Case management with Flowable BPMN workflows |
 | payment-service | 8083 | Payment matching (OCR), bookkeeping (double-entry), debt event log, immudb tamper-evidence (ADR-0029) |
-| creditor-service | 8092 | Creditor master data, channel binding, access resolution |
+| creditor-service | 8092 | Creditor master data, channel binding, access resolution, citizen-safe creditor display names |
 | person-registry | 8090 | GDPR vault for personal data (CPR/CVR encryption) |
 | integration-gateway | 8089 | DUPLA, SKB CREMUL/DEBMUL, M2M creditor ingress, legacy SOAP (OIO/SKAT, petition019) |
 | creditor-portal | 8085 | Fordringshaver web portal (Thymeleaf + HTMX); timeline at `/fordring/{id}/tidslinje` |
-| citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX); case detail + timeline at `/cases/{id}/tidslinje` |
+| citizen-portal | 8086 | Skyldner web portal (Thymeleaf + HTMX); debt overview at `/min-gaeld`; case detail + timeline at `/cases/{id}/tidslinje` |
 | caseworker-portal | 8093 | Sagsbehandler web portal; unified timeline at `/cases/{id}/tidslinje` |
 | letter-service | 8084 | Digital Post integration |
 | wage-garnishment-service | 8088 | Loenindeholdelse (wage garnishment) |
@@ -84,6 +84,18 @@ ADR-0035. There is no standalone `rules-engine` runtime service.
 | **immudb** | **3322 (gRPC)** | **Cryptographic tamper-evidence KV store for financial ledger entries (ADR-0029)** |
 
 ## Technology stack
+
+## Citizen debt overview (petition026)
+
+The petition026 debt overview is split across three services:
+
+- `citizen-portal` owns the authenticated `/min-gaeld` page, pagination links, accessible
+  no-debt/service-unavailable states, and the OAuth2-aware `WebClient.Builder` used outside
+  `dev/test`.
+- `debt-service` owns `GET /api/v1/citizen/debts`, including bearer-auth protection, `pageNumber` /
+  `pageSize`, person scoping, citizen-safe status mapping, and page-level `effectiveInterestRates`.
+- `creditor-service` remains the source for creditor projection data and now exposes a
+  citizen-safe `displayName` so the portal does not fan out to creditor-service directly.
 
 | Layer | Technology |
 |-------|-----------|

@@ -74,7 +74,11 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
                 section50PortalClient = component "Section50PortalClient" "Outbound client used by the portal to call debt-service section-50 APIs." "HTTP client" "Component"
             }
 
-            citizenPortal = container "Citizen Portal" "Web UI for debtors (skyldnere). View debt status, payment history, and correspondence. Authenticated via NemID/MitID." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application"
+            citizenPortal = container "Citizen Portal" "Web UI for debtors (skyldnere). View debt status, payment history, and correspondence. Authenticated via NemID/MitID." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application" {
+                debtOverviewController = component "DebtOverviewController" "BFF/controller for GET /min-gaeld. Orchestrates the authenticated citizen debt overview page and its accessible empty/error states." "Spring MVC / BFF" "Component"
+                citizenDebtClient = component "CitizenDebtClient" "Outbound client from citizen-portal to debt-service for the petition026 citizen debt summary." "HTTP client" "Component"
+                debtOverviewView = component "DebtOverviewView" "Rendered Thymeleaf view for the citizen debt overview table, explanations, and configured actions." "Thymeleaf view" "Component"
+            }
 
             creditorPortal = container "Creditor Portal" "Web UI for creditors (fordringshavere). Submit and monitor debt claims, view settlement status." "Java 21 / Spring Boot 3.3, Thymeleaf" "Web Application"
 
@@ -88,12 +92,20 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
                 objectionAuditPublisher = component "ObjectionAuditPublisher" "Publishes workflow audit events through the shared audit pipeline." "Audit publisher" "Component"
             }
 
-            creditorService = container "Creditor Service" "Creditor and master data management. Maintains creditor profiles, agreements, and claim submission rules." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
+            creditorService = container "Creditor Service" "Creditor and master data management. Maintains creditor profiles, agreements, and claim submission rules." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
+                creditorController = component "CreditorController" "Internal creditor lookup surface. For petition026 it returns displayName together with creditor data for creditorOrgId-based resolution." "REST API" "Component"
+            }
 
             debtService = container "Debt Service" "Fordring management. For petition059 it additionally owns the authoritative limitation state and the external limitation surface required by the petition/outcome contract." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
                 properties {
                     "domain.concepts" "fordring, foraeldelse, fordringskompleks, modregning"
                 }
+
+                citizenDebtController = component "CitizenDebtController" "External REST surface for GET /api/v1/citizen/debts." "REST API" "Component"
+                citizenDebtService = component "CitizenDebtService" "Application service assembling the citizen debt projection, including creditor display names and citizen-safe status mapping." "Application service" "Component"
+                creditorDisplayClient = component "CreditorDisplayClient" "Internal client resolving creditor display names from creditor-service by creditorOrgId." "HTTP client" "Component"
+                businessConfigService = component "BusinessConfigService" "Resolves effective versioned interest-rate metadata for the citizen overview note." "Application service" "Component"
+                citizenDebtPresentationMapper = component "CitizenDebtPresentationMapper" "Maps internal debt status, lifecycle, write-off, and paused-interest facts into citizen-safe enums and reason codes." "Presentation mapper" "Component"
 
                 publicDisbursementEventConsumer = component "PublicDisbursementEventConsumer" "Receives PublicDisbursementEvent from Nemkonto. Validates fields and idempotency. Delegates to ModregningService.initiateModregning(). Dead-letters validation failures." "Java 21, Spring @Component, Event Consumer" "Component"
                 offsettingReversalEventConsumer = component "OffsettingReversalEventConsumer" "Receives OffsettingReversalEvent from P053. Guards against duplicate KorrektionspuljeEntry. Delegates to KorrektionspuljeService.processReversal()." "Java 21, Spring @Component, Event Consumer" "Component"
@@ -163,6 +175,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         caseworkerPortal -> debtService "Reads debt detail, limitation status, modregning history, and submits debt actions via" "HTTPS/REST"
         caseworkerPortal -> letterService "Requests documents via" "HTTPS/REST"
         citizenPortal -> caseService "Reads case status via" "HTTPS/REST"
+        citizenPortal -> debtService "Reads the citizen debt overview via" "HTTPS/REST"
         citizenPortal -> paymentService "Views payment history via" "HTTPS/REST"
         creditorPortal -> creditorService "Manages creditor data via" "HTTPS/REST"
         creditorPortal -> debtService "Submits claims via" "HTTPS/REST"
@@ -183,6 +196,7 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         caseService -> cls "Ships workflow audit events via audit-trail-commons / ADR-0022 pipeline" "Structured audit pipeline"
 
         debtService -> caseService "Delegates limitation objection workflow registration/evaluation via internal API" "HTTPS/REST"
+        debtService -> creditorService "Resolves creditor display names for the citizen projection via" "HTTPS/REST"
         debtService -> personRegistry "Resolves person data by UUID" "HTTPS/REST"
         debtService -> paymentService "Delegates tier-2 partial allocation to DaekningsRaekkefoeigenService (P057, ADR-0007)" "HTTPS/REST"
         debtService -> paymentService "Posts double-entry ledger entries via LedgerServiceClient (ADR-0018)" "HTTPS/REST"
@@ -221,6 +235,18 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         citizenPortal -> nemIdMitId "Delegates citizen authentication to" "OIDC redirect"
         keycloak -> nemIdMitId "Federates citizen identity from" "OIDC"
         caseService -> flowable "Executes workflow processes via" "Embedded/API"
+
+        // ---------------------------------------------------------------
+        // Component relationships — P026
+        // ---------------------------------------------------------------
+        debtOverviewController -> citizenDebtClient "Requests the citizen debt summary through" "Java method call"
+        debtOverviewController -> debtOverviewView "Renders the debt overview page through" "Java method call"
+        citizenDebtClient -> citizenDebtController "Calls the citizen debt summary contract on" "HTTPS/REST"
+        citizenDebtController -> citizenDebtService "Delegates citizen debt projection assembly to" "Java method call"
+        citizenDebtService -> creditorDisplayClient "Resolves creditor display names through" "Java method call"
+        citizenDebtService -> businessConfigService "Resolves effective interest-rate metadata through" "Java method call"
+        citizenDebtService -> citizenDebtPresentationMapper "Maps internal debt facts to citizen-safe view fields through" "Java method call"
+        creditorDisplayClient -> creditorController "Calls creditor lookup for display-name enrichment on" "HTTPS/REST"
 
         // ---------------------------------------------------------------
         // Component relationships — P058 + P059
@@ -318,6 +344,21 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
 
         deployment openDebt "Production" "ProductionDeployment" "Production deployment view for OpenDebt." {
             include *
+            autoLayout lr
+        }
+
+        component debtService "DebtService_P026_Components" "P026 component view — citizen debt overview projection, creditor display-name enrichment, and page-rate metadata." {
+            include debtOverviewController
+            include citizenDebtClient
+            include debtOverviewView
+            include citizenDebtController
+            include citizenDebtService
+            include creditorDisplayClient
+            include businessConfigService
+            include citizenDebtPresentationMapper
+            include creditorController
+            include citizenPortal
+            include creditorService
             autoLayout lr
         }
 

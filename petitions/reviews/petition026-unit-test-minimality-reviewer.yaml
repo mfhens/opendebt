@@ -1,0 +1,101 @@
+petition_id: petition026
+agent: unit-test-minimality-reviewer
+verdict: APPROVED
+timestamp: '2026-06-09T14:08:45.7588324+02:00'
+keep_count: 14
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: CitizenPortalArchitectureTest.clients_must_use_injected_webclient_builder
+    decision: KEEP
+    justification: >-
+      Direct match to the petition026 requirement that CitizenDebtClient uses injected
+      WebClient.Builder and never WebClient.create() for trace propagation
+      (petitions/specs/petition026-specs.yaml:257,273;
+      petitions/petition026-citizen-debt-overview-page-outcome-contract.md:29).
+  - id: CitizenDebtClientTest.getDebtSummary_mapsBrowserPageToPageNumberAndUsesConfiguredPageSize
+    decision: KEEP
+    justification: >-
+      Directly validates the explicit /min-gaeld paging contract: browser page input maps to pageNumber,
+      while pageSize stays fixed from configuration on the downstream citizen-debt call
+      (petitions/specs/petition026-specs.yaml:98-116,169,200,270).
+  - id: DebtOverviewPageMvcTest.getMinGaeld_unauthenticatedRedirectsIntoTastSelvLoginFlow
+    decision: KEEP
+    justification: >-
+      Straight-line coverage for the explicit requirement that unauthenticated GET /min-gaeld redirects
+      into the MitID/TastSelv login flow
+      (petitions/petition026-citizen-debt-overview-page.feature:8-11;
+      petitions/specs/petition026-specs.yaml:91-92,156,278).
+  - id: DebtOverviewPageMvcTest.getMinGaeld_authenticatedCallsDebtServiceWithConfiguredPagingAndSemanticTable
+    decision: KEEP
+    justification: >-
+      Directly maps to the authenticated page-load obligation: use session-driven debt retrieval, send
+      configured pageSize downstream, and render semantic table primitives such as caption/thead/th scope
+      (petitions/specs/petition026-specs.yaml:104-119,166-171,270-271;
+      petitions/petition026-citizen-debt-overview-page-outcome-contract.md:24-27).
+  - id: DebtOverviewPageMvcTest.getMinGaeld_noDebtRendersAccessibleEmptyStateWithoutEmptyTable
+    decision: KEEP
+    justification: >-
+      Directly validates the explicit no-debt acceptance criterion: accessible empty state and no empty
+      table rendering
+      (petitions/petition026-citizen-debt-overview-page.feature:47-53;
+      petitions/specs/petition026-specs.yaml:157,166,284).
+  - id: DebtOverviewPageMvcTest.getMinGaeld_serviceUnavailableRendersAccessibleAlertWithoutStackTrace
+    decision: KEEP
+    justification: >-
+      Direct match to the explicit error-state requirement: accessible service-unavailable rendering with
+      no stack-trace leakage
+      (petitions/petition026-citizen-debt-overview-page.feature:97-103;
+      petitions/specs/petition026-specs.yaml:158,294).
+  - id: CitizenDebtControllerSecurityTest.getDebtSummary_withoutAuthentication_returns401
+    decision: KEEP
+    justification: >-
+      Directly validates the petition026 security obligation that unauthenticated GET
+      /api/v1/citizen/debts returns 401
+      (petitions/specs/petition026-specs.yaml:383,437-439,461).
+  - id: CitizenDebtControllerSecurityTest.getDebtSummary_openApiDeclaresBearerAuthSecurityContract
+    decision: KEEP
+    justification: >-
+      Directly maps to the explicit operation-level bearerAuth contract requirement for
+      /api/v1/citizen/debts
+      (petitions/specs/petition026-specs.yaml:324,437-439,461).
+  - id: CitizenDebtControllerTest.getDebtSummary_petition026Projection_includesEnrichedSummaryAndCitizenFields
+    decision: KEEP
+    justification: >-
+      Direct petition026 coverage for the enriched citizen projection fields added to the HTTP response,
+      including creditorDisplayName, citizenStatus, interestAccrualState, and rate metadata
+      (petitions/specs/petition026-specs.yaml:349-372,398-399,457).
+  - id: CitizenDebtControllerTest.getDebtSummary_petition026Projection_exposesConditionalFieldsWhenApplicable
+    decision: KEEP
+    justification: >-
+      Directly validates the conditional-field rules for statusReasonCode, interestPauseReasonCode,
+      currentInterestRate, and writtenOffReasonCode
+      (petitions/specs/petition026-specs.yaml:373-380,400-404,457).
+  - id: CitizenDebtServiceImplTest.citizenDebtSummaryResponse_matchesPetition026SummaryContract
+    decision: KEEP
+    justification: >-
+      Now maps cleanly to the explicit petition026 obligation that contract tests assert OpenAPI
+      coverage for every summary response field on /api/v1/citizen/debts, without freezing Java DTO
+      implementation details
+      (petitions/specs/petition026-specs.yaml:350-358,457).
+  - id: CitizenDebtServiceImplTest.citizenDebtItemDto_matchesPetition026CitizenProjectionContract
+    decision: KEEP
+    justification: >-
+      Now maps cleanly to the explicit petition026 obligation that contract tests assert OpenAPI
+      coverage for the enriched CitizenDebtItem fields and conditional-field rules, without declared-field
+      reflection on the Java DTO
+      (petitions/specs/petition026-specs.yaml:359-380,400-404,457).
+  - id: CitizenDebtServiceImplTest.citizenProjectionPresentationEnums_matchPetition026OpenApiValues
+    decision: KEEP
+    justification: >-
+      Direct match to the petition026 contract requirement that the citizen projection uses the explicit
+      presentation enums/codes defined for the endpoint
+      (design/solution-architecture-026.md:205-236;
+      petitions/specs/petition026-specs.yaml:405-429,457).
+  - id: CitizenDebtServiceImplTest.creditorOpenApi_requiresDisplayNameForPetition026Enrichment
+    decision: KEEP
+    justification: >-
+      Now maps cleanly to the explicit petition026 requirement that contract coverage for
+      GET /api/v1/creditors/{creditorOrgId} requires displayName, without asserting a concrete
+      CitizenDebtServiceImpl collaborator shape
+      (petitions/specs/petition026-specs.yaml:345-347,462).

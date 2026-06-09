@@ -1,0 +1,74 @@
+petition: petition026
+reviewer: specs-minimality-reviewer
+verdict: PASS-WITH-WARNINGS
+summary: >-
+  Retry pass removed the previous non-minimal blockers: pagination is now explicit end-to-end,
+  state-dependent fields are conditional again, and the status contract is trimmed to the
+  petition-observable slice. Necessary implementation detail is still intact for portal
+  rendering, debt-service enrichment, creditor-name resolution, localization, accessibility,
+  and validation coverage.
+blocking_findings: []
+warnings:
+  - id: SMR-026-W01
+    finding: >-
+      The specs file still carries review and NFR bookkeeping material in source_artifacts
+      and nfr_injection_summary. Useful for audit traceability, but not part of the
+      minimum implementation contract for petition026.
+    evidence:
+      - 'petitions\specs\petition026-specs.yaml:5-14'
+      - 'petitions\specs\petition026-specs.yaml:31-72'
+  - id: SMR-026-W02
+    finding: >-
+      P026-DEBT-001 still retains compatibility-heavy response fields beyond the observable
+      /min-gaeld delta, especially feesAmount and legacy status. Acceptable as carry-over,
+      but they should not drive new petition026 implementation work.
+    evidence:
+      - 'petitions\specs\petition026-specs.yaml:359-370'
+      - 'petitions\specs\petition026-specs.yaml:397-400'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:30-65'
+evidence:
+  - claim: Retry removed the earlier pagination ambiguity without dropping necessary paging behavior.
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:94-116'
+      - 'petitions\specs\petition026-specs.yaml:169-171'
+      - 'petitions\specs\petition026-specs.yaml:338-343'
+      - 'petitions\validation\petition026\validation-contract.md:23-45'
+      - 'design\solution-architecture-026.md:340-350'
+    freshness: current repo and current run
+    result: supported
+  - claim: Retry restored conditional state-specific fields, removing over-specification while preserving the paused-interest and written-off implementation contract.
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:146-154'
+      - 'petitions\specs\petition026-specs.yaml:373-404'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:113-139'
+      - 'design\solution-architecture-026.md:183-194'
+    freshness: current repo and current run
+    result: supported
+  - claim: Retry trimmed the citizen-status surface to the petition-grounded minimum instead of hard-wiring the wider architecture example enum.
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:237-247'
+      - 'petitions\specs\petition026-specs.yaml:405-429'
+      - 'petitions\petition026-citizen-debt-overview-page.md:34-40'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:41-45'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:125-139'
+      - 'design\solution-architecture-026.md:205-234'
+    freshness: current repo and current run
+    result: supported
+  - claim: Retry did not lose required behavior coverage; the validation contract still mirrors the feature package.
+    proof:
+      - 'petitions\validation\petition026\validation-contract.md:3-165'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:8-139'
+    freshness: current repo and current run
+    result: supported
+  - claim: Necessary implementation detail remains intact for the approved single-hop portal-to-debt-service slice and creditor-name enrichment path.
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:20-30'
+      - 'petitions\specs\petition026-specs.yaml:103-180'
+      - 'petitions\specs\petition026-specs.yaml:321-404'
+      - 'petitions\petition026-citizen-debt-overview-page-outcome-contract.md:5-33'
+      - 'design\solution-architecture-026.md:69-83'
+      - 'design\solution-architecture-026.md:128-159'
+      - 'design\solution-architecture-026.md:254-265'
+    freshness: current repo and current run
+    result: supported
+timestamp: '2026-06-09T13:02:44.8029839+02:00'

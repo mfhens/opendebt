@@ -1,0 +1,86 @@
+petition: petition026
+reviewer: solution-architecture-reviewer
+verdict: PASS-WITH-WARNINGS
+summary: >-
+  The architecture is sound enough to guide implementation. It includes the required
+  Structurizr DSL block, closes the previously flagged design choices
+  (creditor-name source, interest-rate ownership, citizen-status enrichment,
+  debt-type semantics, and the missing citizenPortal -> debtService relation),
+  and keeps the runtime path API-only with UUID-scoped citizen context. No
+  direct cross-service database access or debtor-PII leakage is introduced.
+blocking_findings: []
+warnings:
+  - id: W-001
+    title: OpenAPI contracts are still behind the approved architecture
+    detail: >-
+      The solution is explicit about the required debt-service and
+      creditor-service contract changes, but the canonical OpenAPI specs still
+      expose the older shapes. Do not let engineers implement against the stale
+      specs; update the contracts first, then code against them.
+    evidence:
+      - 'design\solution-architecture-026.md:267-276,444-447'
+      - 'api-specs\openapi-debt-service.yaml:1530-1577'
+      - 'api-specs\openapi-creditor-service.yaml:35-55,137-178'
+  - id: W-002
+    title: The petition package still contains stale creditor-name ambiguity
+    detail: >-
+      The architecture correctly resolves the table column to creditor name, but
+      the petition text still says creditor-name resolution is a future
+      enhancement. The architecture package is internally coherent; the petition
+      package is not. Normalize the petition wording so engineers do not reopen a
+      decision that this design has already closed.
+    evidence:
+      - 'petitions\petition026-citizen-debt-overview-page.md:34-41,150-158'
+      - 'petitions\petition026-citizen-debt-overview-page-outcome-contract.md:8-12'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:30-39'
+      - 'design\solution-architecture-026.md:15,76-84,183-188'
+  - id: W-003
+    title: ADR status wording is ahead of repository governance state
+    detail: >-
+      The document treats ADR-0036 and ADR-0037 as binding, but both ADR files
+      are still marked proposed. The architectural choices themselves are fine;
+      the governance wording is sloppy. Either accept those ADRs or stop calling
+      them binding in downstream review packages.
+    evidence:
+      - 'design\solution-architecture-026.md:13'
+      - 'architecture\adr\0036-security-baseline.md:1-5'
+      - 'architecture\adr\0037-performance-sla.md:1-5'
+evidence:
+  - claim: Architecture aligns to the petition and outcome contract.
+    proof:
+      - 'petitions\petition026-citizen-debt-overview-page.md:27-53,62-65'
+      - 'petitions\petition026-citizen-debt-overview-page-outcome-contract.md:5-20,24-33'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:22-39,55-73,97-103'
+      - 'design\solution-architecture-026.md:23-31,69-84,387-397'
+    freshness: current repo and current run
+    result: confirmed
+  - claim: The previously flagged open architecture choices are resolved in the design.
+    proof:
+      - 'C:\Users\AJ849XF\.copilot\session-state\aa376ae9-0b79-43f2-847f-daa8c9c6f6c9\files\petition026-component-assignment.yaml:245-272'
+      - 'petitions\reviews\petition026-component-mapping-reviewer.yaml:11-54'
+      - 'design\solution-architecture-026.md:55-84,183-204,254-276'
+    freshness: current repo and current run
+    result: confirmed
+  - claim: The document contains the required Structurizr DSL block and uses it to close the missing runtime-model gap.
+    proof:
+      - 'design\solution-architecture-026.md:455-493'
+      - 'architecture\workspace.dsl:160-168,218-221'
+    freshness: current repo and current run
+    result: confirmed
+  - claim: The architecture respects ADR-0007 and ADR-0014 by keeping the page flow API-only and UUID-scoped.
+    proof:
+      - 'design\solution-architecture-026.md:80-83,138-159,370-372,423-425'
+      - 'architecture\adr\0007-no-direct-database-connections.md:15-27,45-49,77-78'
+      - 'architecture\adr\0014-gdpr-data-isolation.md:25-27,47-58'
+      - 'architecture\policies.yaml:64-77'
+    freshness: current repo and current run
+    result: confirmed
+  - claim: The architecture is specific enough for engineers to implement without inventing the slice boundaries.
+    proof:
+      - 'design\solution-architecture-026.md:112-122,130-173'
+      - 'design\solution-architecture-026.md:183-276'
+      - 'design\solution-architecture-026.md:280-348'
+      - 'design\solution-architecture-026.md:365-381'
+    freshness: current repo and current run
+    result: confirmed
+timestamp: '2026-06-09T12:09:34.1829284+02:00'

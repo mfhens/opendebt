@@ -1,0 +1,64 @@
+petition: petition026
+reviewer: specs-reviewer
+verdict: PASS-WITH-WARNINGS
+summary: >-
+  The retry pass closes the two prior blockers. The portal spec now mandates
+  fixed pageSize propagation on every GET /api/v1/citizen/debts request, and
+  both portal and debt-service contracts correctly keep explanation and rate
+  fields conditional rather than universally required. The package is now
+  implementation-ready, with only non-blocking validation and source-text
+  cleanup concerns remaining.
+blocking_findings: []
+warnings:
+  - id: SR-026-W01
+    finding: >-
+      The accessibility validation path still relies mainly on screenshots and
+      console output; keep screen-reader transcript or equivalent manual
+      evidence in the validation run so WCAG-facing acceptance is defensible.
+    evidence:
+      - 'petitions\validation\petition026\validation-contract.md:104-113'
+      - 'petitions\specs\petition026-specs.yaml:268-275'
+  - id: SR-026-W02
+    finding: >-
+      The source petition still contradicts itself on creditor display: the
+      functional requirements demand creditor name, while the out-of-scope
+      section calls creditor-name resolution a future enhancement. The approved
+      architecture and specs are aligned, but the petition source should be
+      normalized to avoid future review churn.
+    evidence:
+      - 'petitions\petition026-citizen-debt-overview-page.md:33-40'
+      - 'petitions\petition026-citizen-debt-overview-page.md:150-158'
+      - 'design\solution-architecture-026.md:78-83'
+      - 'petitions\specs\petition026-specs.yaml:20-26'
+evidence:
+  - claim: Prior blocker SR-026-001 is resolved.
+    result: PASS
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:94-117'
+      - 'petitions\specs\petition026-specs.yaml:166-170'
+      - 'petitions\specs\petition026-specs.yaml:338-343'
+      - 'petitions\validation\petition026\validation-contract.md:23-45'
+      - 'design\solution-architecture-026.md:340-350'
+  - claim: Prior blocker SR-026-002 is resolved.
+    result: PASS
+    proof:
+      - 'petitions\specs\petition026-specs.yaml:135-154'
+      - 'petitions\specs\petition026-specs.yaml:373-381'
+      - 'petitions\specs\petition026-specs.yaml:399-404'
+      - 'design\solution-architecture-026.md:183-194'
+  - claim: Requirements, outcome contract, feature scenarios, and architecture are aligned in the current package.
+    result: PASS
+    proof:
+      - 'petitions\petition026-citizen-debt-overview-page-outcome-contract.md:5-33'
+      - 'petitions\petition026-citizen-debt-overview-page.feature:8-140'
+      - 'petitions\validation\petition026\validation-contract.md:3-165'
+      - 'petitions\specs\petition026-specs.yaml:76-280'
+      - 'petitions\specs\petition026-specs.yaml:300-455'
+  - claim: The package is implementation-ready on this retry pass.
+    result: PASS
+    proof:
+      - 'design\solution-architecture-026.md:69-83'
+      - 'petitions\specs\petition026-specs.yaml:21-30'
+      - 'petitions\specs\petition026-specs.yaml:248-275'
+      - 'petitions\specs\petition026-specs.yaml:430-455'
+timestamp: 2026-06-09T13:02:09.7390959+02:00

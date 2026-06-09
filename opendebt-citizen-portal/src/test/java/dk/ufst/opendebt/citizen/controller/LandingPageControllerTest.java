@@ -80,4 +80,12 @@ class LandingPageControllerTest {
   void landingPage_switchToEnglish() throws Exception {
     mockMvc.perform(get("/").param("lang", "en-GB")).andExpect(status().isOk());
   }
+
+  @Test
+  void landingPage_mitIdCallToActionPointsToInternalDebtOverview() throws Exception {
+    mockMvc
+        .perform(get("/"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(org.hamcrest.Matchers.containsString("/min-gaeld")));
+  }
 }

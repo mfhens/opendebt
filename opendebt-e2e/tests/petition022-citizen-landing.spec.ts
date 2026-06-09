@@ -24,12 +24,14 @@ test.describe('Citizen portal landing page', () => {
     await expect(page.locator('.skat-faq__item')).toHaveCount(7);
   });
 
-  test('Landing page includes a link to MitID self-service', async ({ page }) => {
+  test('Landing page includes a link to the internal MitID self-service debt overview', async ({ page }) => {
     await page.goto(`${CITIZEN}/`);
     const cta = page.locator('a.skat-button--primary').filter({ hasText: /gæld|debt/i });
     await expect(cta).toBeVisible();
     const href = await cta.getAttribute('href');
-    expect(href, 'Mit debt overview URL').toMatch(/^https:\/\//);
+    expect(href, 'Mit debt overview URL').toMatch(
+      /(^\/(borger\/)?min-gaeld$|^https?:\/\/[^/]+\/(?:borger\/)?min-gaeld$)/i,
+    );
   });
 
   test('Landing page explains interest accrues daily', async ({ page }) => {

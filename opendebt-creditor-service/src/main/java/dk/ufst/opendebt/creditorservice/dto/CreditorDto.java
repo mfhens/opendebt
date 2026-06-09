@@ -16,6 +16,7 @@ public class CreditorDto {
 
   private UUID creditorOrgId;
   private String externalCreditorId;
+  private String displayName;
   private UUID parentCreditorId;
   private CreditorType creditorType;
   private PaymentType paymentType;

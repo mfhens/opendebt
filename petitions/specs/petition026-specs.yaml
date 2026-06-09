@@ -1,0 +1,480 @@
+specification_id: P026-SPECS
+petition: petition026
+title: Citizen debt overview page
+status: success
+source_artifacts:
+  petition: "petitions\\petition026-citizen-debt-overview-page.md"
+  outcome_contract: "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md"
+  feature: "petitions\\petition026-citizen-debt-overview-page.feature"
+  solution_architecture: "design\\solution-architecture-026.md"
+  reviews:
+    - "petitions\\reviews\\petition026-specs-reviewer.yaml"
+    - "petitions\\reviews\\petition026-specs-minimality-reviewer.yaml"
+  nfr_register: "compliance\\nfr-register.yaml"
+out_of_scope:
+  - Payment processing
+  - PDF generation
+  - Instalment plan management
+  - Objection submission
+  - Debt drilldown pages
+approved_architecture_constraints:
+  - decision: The portal serves /min-gaeld as a UI/BFF and calls debt-service only for page-time data.
+    source: "design\\solution-architecture-026.md:71-83, 128-140"
+  - decision: debt-service returns creditorDisplayName and resolves it through creditor-service; the portal does not call creditor-service or person-registry directly.
+    source: "design\\solution-architecture-026.md:15, 80-83, 146-159, 239-265"
+  - decision: Numeric interest-rate metadata comes from debt-service; the portal owns localized prose only.
+    source: "design\\solution-architecture-026.md:81-83, 254-265"
+  - decision: The debt-type column uses Claim Type semantics, not Claim Art semantics.
+    source: "design\\solution-architecture-026.md:57-63"
+  - decision: /api/v1/citizen/debts must declare explicit bearerAuth semantics or a documented exception, closing GOV-026-001.
+    source: "petitions\\reviews\\petition026-c4-architecture-governor.yaml:15-29"
+nfr_injection_summary:
+  source: "compliance\\nfr-register.yaml"
+  applied:
+    - NFR-SEC-001
+    - NFR-SEC-002
+    - NFR-SEC-003
+    - NFR-SEC-004
+    - NFR-SEC-005
+    - NFR-SEC-006
+    - NFR-GDPR-001
+    - NFR-GDPR-002
+    - NFR-GDPR-003
+    - NFR-GDPR-004
+    - NFR-GDPR-005
+    - NFR-AUDIT-001
+    - NFR-RIGS-001
+    - NFR-RIGS-002
+    - NFR-PERF-001
+    - NFR-PERF-002
+    - NFR-PERF-003
+    - NFR-RES-001
+    - NFR-RES-002
+    - NFR-RES-003
+    - NFR-OBS-001
+    - NFR-OBS-002
+    - NFR-OBS-003
+    - NFR-API-001
+    - NFR-API-002
+    - NFR-ACC-001
+    - NFR-ACC-002
+    - NFR-ARCH-001
+    - NFR-ARCH-002
+    - NFR-ARCH-003
+    - NFR-ARCH-004
+  skipped_scope_mismatch:
+    - NFR-AUDIT-002
+    - NFR-AUDIT-003
+  register_gaps:
+    - id: NFR-SEC-006
+      reason: must NFR with no automated stage hook in the register
+    - id: NFR-ACC-001
+      reason: must NFR with no automated stage hook in the register
+specifications:
+  - specification_id: P026-PORTAL-001
+    module: opendebt-citizen-portal
+    source_requirement:
+      petition:
+        - "petitions\\petition026-citizen-debt-overview-page.md:27-65"
+        - "petitions\\petition026-citizen-debt-overview-page.md:91-99"
+      outcome_contract:
+        - "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md:5-20"
+        - "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md:24-33"
+      feature:
+        - "petitions\\petition026-citizen-debt-overview-page.feature:8-112"
+      architecture:
+        - "design\\solution-architecture-026.md:71-84"
+        - "design\\solution-architecture-026.md:128-140"
+        - "design\\solution-architecture-026.md:313-348"
+    routes:
+      - method: GET
+        path: /min-gaeld
+        auth: Authenticated citizen browser route. Unauthenticated requests redirect to the MitID/TastSelv login flow and return to /min-gaeld after successful login.
+        controller: DebtOverviewController
+        query_parameters:
+          - name: page
+            required: false
+            default: 0
+            maps_to: pageNumber
+            note: Browser input selects only the page index. The portal never accepts pageSize from the browser.
+      - method: GET
+        path: /
+        change: Landing page MitID CTA target is driven by opendebt.citizen.external-links.mit-gaeldsoverblik and MUST resolve to /min-gaeld.
+    interface:
+      inputs:
+        session_attributes:
+          - person_id
+        downstream_http:
+          - method: GET
+            base_url_property: opendebt.services.debt-service.url
+            path: /api/v1/citizen/debts
+            mapped_query:
+              pageNumber:
+                source: page
+              pageSize:
+                source: opendebt.citizen.debt-overview.page-size
+                rule: The portal sends the configured fixed page size on every downstream request.
+            response: CitizenDebtSummaryResponse
+      outputs:
+        template: min-gaeld.html
+        page_view_model:
+          required_fields:
+            - totalOutstandingAmount
+            - totalDebtCount
+            - debts
+            - effectiveInterestRates
+            - noDebt
+            - serviceUnavailable
+            - paymentInfoUrl
+            - debtPdfUrl
+            - phoneNumber
+            - phoneInternational
+            - landingPageUrl
+            - currentPage
+            - totalPages
+        row_view_model:
+          required_fields:
+            - debtId
+            - debtTypeName
+            - creditorDisplayName
+            - principalAmount
+            - outstandingAmount
+            - interestAmount
+            - dueDate
+            - citizenStatus
+            - interestAccrualState
+          conditional_fields:
+            - name: statusReasonCode
+              present_when: citizenStatus requires explanatory sub-text beyond the base label.
+            - name: interestPauseReasonCode
+              present_when: interestAccrualState = PAUSED.
+            - name: currentInterestRate
+              present_when: the debt carries an effective recovery-interest rate.
+            - name: writtenOffReasonCode
+              present_when: citizenStatus = WRITTEN_OFF.
+      error_handling:
+        - unauthenticated: redirect to MitID/TastSelv login flow
+        - no_debt: render an accessible no-debt state and do not render an empty table
+        - service_unavailable: render an accessible service-unavailable state, keep navigation and contact actions visible, and never expose stack traces
+    data_models:
+      - name: DebtOverviewPageViewModel
+        kind: portal-local view model
+        derived_from:
+          - CitizenDebtSummaryResponse
+          - opendebt.citizen.external-links.*
+        rules:
+          - The semantic debt table renders only when debts is non-empty.
+          - The portal renders citizenStatus and explanation codes; legacy status is not the primary label source.
+          - The portal renders the interest-rate note from effectiveInterestRates and never hardcodes the numeric annual rate.
+          - The portal always sends pageNumber from the page query parameter and pageSize from opendebt.citizen.debt-overview.page-size.
+          - opendebt.citizen.debt-overview.page-size must be set to the maximum page size approved by openapi-debt-service.yaml for the first release.
+          - Hidden pagination is forbidden; when totalPages > 1, the page exposes accessible pagination controls backed by the page query parameter.
+      - name: DebtOverviewRowViewModel
+        kind: portal-local table row
+        derived_from:
+          - CitizenDebtItem
+        rules:
+          - creditorDisplayName is mandatory for each visible row.
+          - statusReasonCode sub-text appears only when statusReasonCode is present.
+          - writtenOffReasonCode sub-text appears only when citizenStatus = WRITTEN_OFF.
+          - paused-interest text appears only when interestAccrualState = PAUSED and interestPauseReasonCode is present.
+    persistence:
+      - No new persistence. The page is read-only and stores no debtor or creditor data locally.
+    config_keys:
+      existing_to_update:
+        - key: opendebt.citizen.external-links.mit-gaeldsoverblik
+          value: /min-gaeld
+          purpose: landing page self-service CTA target
+      existing_to_reuse:
+        - key: opendebt.citizen.external-links.payment-info
+          purpose: external payment link
+        - key: opendebt.citizen.external-links.phone-number
+          purpose: citizen contact number
+        - key: opendebt.citizen.external-links.phone-international
+          purpose: international contact number
+        - key: opendebt.services.debt-service.url
+          purpose: CitizenDebtClient base URL
+      new_to_add:
+        - key: opendebt.citizen.debt-overview.page-size
+          default: "maximum size approved by openapi-debt-service.yaml"
+          purpose: fixed pageSize sent to GET /api/v1/citizen/debts; browser input cannot override it
+        - key: opendebt.citizen.external-links.debt-pdf
+          default: https://mitgaeldsoverblik.gaeldst.dk/pdf
+          purpose: PDF placeholder target or fallback link
+    i18n_keys:
+      bundles:
+        - "opendebt-citizen-portal\\src\\main\\resources\\messages_da.properties"
+        - "opendebt-citizen-portal\\src\\main\\resources\\messages_en_GB.properties"
+      required:
+        - debt.overview.page.title
+        - debt.overview.breadcrumb
+        - debt.overview.heading
+        - debt.overview.total.label
+        - debt.overview.table.caption
+        - debt.overview.table.column.debt-type
+        - debt.overview.table.column.creditor
+        - debt.overview.table.column.principal
+        - debt.overview.table.column.outstanding
+        - debt.overview.table.column.due-date
+        - debt.overview.table.column.status
+        - debt.overview.table.column.interest
+        - debt.overview.state.none
+        - debt.overview.state.service-unavailable
+        - debt.overview.pagination.nav-label
+        - debt.overview.pagination.previous
+        - debt.overview.pagination.next
+        - debt.overview.snapshot.notice
+        - debt.overview.interest.daily-accrual
+        - debt.overview.interest.priority-order
+        - debt.overview.interest.current-rate
+        - debt.overview.interest.not-tax-deductible
+        - debt.overview.contact.heading
+        - debt.overview.contact.body
+        - debt.overview.action.pay
+        - debt.overview.action.pdf
+        - debt.overview.action.pdf.coming-soon
+        - debt.overview.action.back
+        - debt.overview.status.IN_COLLECTION
+        - debt.overview.status.SET_OFF
+        - debt.overview.status.PAID
+        - debt.overview.status.WRITTEN_OFF
+        - debt.overview.interest.pause.CLAIM_UNCLEAR_DEBTOR_CANNOT_PAY
+        - debt.overview.writeoff.LIMITATION_EXPIRED
+        - debt.overview.writeoff.BANKRUPTCY
+        - debt.overview.writeoff.ESTATE_OF_DECEASED
+        - debt.overview.writeoff.DEBT_RESTRUCTURING
+        - debt.overview.writeoff.RECOVERY_FUTILE
+        - debt.overview.writeoff.RECOVERY_COST_DISPROPORTIONATE
+    non_functional:
+      petition_critical:
+        - id: NFR-SEC-001
+          requirement: /min-gaeld requires authenticated citizen access and redirects unauthenticated users to MitID/TastSelv.
+          source: "compliance\\nfr-register.yaml#NFR-SEC-001"
+        - id: NFR-GDPR-002
+          requirement: The portal uses session person_id UUID only and renders no debtor PII.
+          source: "compliance\\nfr-register.yaml#NFR-GDPR-002"
+        - id: NFR-OBS-002
+          requirement: CitizenDebtClient uses injected WebClient.Builder for trace propagation.
+          source: "compliance\\nfr-register.yaml#NFR-OBS-002"
+        - id: NFR-RES-001
+          requirement: The debt-service read call uses the configured read-side circuit breaker.
+          source: "compliance\\nfr-register.yaml#NFR-RES-001"
+        - id: NFR-RES-002
+          requirement: Transient debt-service failures use retry/backoff and degrade to the service-unavailable state.
+          source: "compliance\\nfr-register.yaml#NFR-RES-002"
+        - id: NFR-ACC-001
+          requirement: The page uses semantic table HTML, keyboard navigation, screen-reader compatible no-debt and error states, and a no-JavaScript baseline.
+          source: "compliance\\nfr-register.yaml#NFR-ACC-001"
+    test_obligations:
+      automated:
+        - MVC or integration coverage for login redirect, post-login arrival at /min-gaeld, landing-page CTA target, fixed pageSize propagation to GET /api/v1/citizen/debts, multi-page navigation when totalPages > 1, no-debt state, service-unavailable state, and no-JavaScript rendering.
+        - Template assertions for caption, thead, th scope="col", and absence of an empty table in the no-debt state.
+        - Locale coverage for da and en-GB, including DKK formatting and bundle-based copy resolution.
+        - ArchUnit or equivalent guard that CitizenDebtClient never uses WebClient.create().
+      manual_review:
+        - Capture WCAG 2.1 AA evidence for keyboard navigation and screen-reader announcement because NFR-ACC-001 has no automated test_hook.
+    acceptance_criteria:
+      - assertion_id: VAL-P026-001
+        statement: GET /min-gaeld redirects unauthenticated citizens into the MitID/TastSelv login flow.
+      - assertion_id: VAL-P026-002
+        statement: The landing-page MitID CTA resolves to /min-gaeld and arrives there after successful login.
+      - assertion_id: VAL-P026-004
+        statement: The page renders the total outstanding amount, a semantic debt table with the required columns, and accessible pagination controls whenever totalPages > 1.
+      - assertion_id: VAL-P026-006
+        statement: Citizens with no outstanding debt see an accessible no-debt state instead of an empty table.
+      - assertion_id: VAL-P026-007
+        statement: The page renders the interest, snapshot, and contact explanations from service data plus portal copy.
+      - assertion_id: VAL-P026-008
+        statement: The page exposes payment, PDF placeholder, and back-navigation links without starting payment processing.
+      - assertion_id: VAL-P026-009
+        statement: All user-facing copy is bundle-driven in da and en-GB and amounts are locale-formatted DKK values.
+      - assertion_id: VAL-P026-010
+        statement: The page is keyboard-navigable and screen-reader compatible.
+      - assertion_id: VAL-P026-011
+        statement: Service outages render an accessible error state with no stack trace leakage.
+      - assertion_id: VAL-P026-012
+        statement: The debt overview remains readable without client-side scripting.
+    rationale: >
+      Keep opendebt-citizen-portal as a UI/BFF: one citizen-facing route, one downstream debt-service
+      call, portal-owned config and i18n, and portal-owned accessible rendering only.
+  - specification_id: P026-DEBT-001
+    module: opendebt-debt-service
+    source_requirement:
+      petition:
+        - "petitions\\petition026-citizen-debt-overview-page.md:29-43"
+        - "petitions\\petition026-citizen-debt-overview-page.md:50-53"
+        - "petitions\\petition026-citizen-debt-overview-page.md:91-98"
+        - "petitions\\petition026-citizen-debt-overview-page.md:104-147"
+      outcome_contract:
+        - "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md:7-18"
+        - "petitions\\petition026-citizen-debt-overview-page-outcome-contract.md:24-33"
+      feature:
+        - "petitions\\petition026-citizen-debt-overview-page.feature:22-65"
+        - "petitions\\petition026-citizen-debt-overview-page.feature:113-139"
+      architecture:
+        - "design\\solution-architecture-026.md:72-83"
+        - "design\\solution-architecture-026.md:146-159"
+        - "design\\solution-architecture-026.md:176-279"
+      reviews:
+        - "petitions\\reviews\\petition026-c4-model-validator.yaml:13-33"
+        - "petitions\\reviews\\petition026-c4-architecture-governor.yaml:15-29"
+    routes:
+      - method: GET
+        path: /api/v1/citizen/debts
+        auth: Explicit bearerAuth citizen endpoint. Operation-level OpenAPI security MUST not inherit the global oces3Certificate alternative unless an approved exception is documented.
+        owner: CitizenDebtController
+      - method: GET
+        path: /api/v1/creditors/{creditorOrgId}
+        auth: Internal debt-service dependency for creditor-name enrichment only.
+        owner: creditor-service
+    interface:
+      inputs:
+        authenticated_context:
+          - person_id claim or equivalent authenticated citizen context
+        query_parameters:
+          - name: status
+            required: false
+            note: Legacy filter retained from the petition024 contract.
+          - name: pageNumber
+            required: true
+            note: Mapped from /min-gaeld?page=<n>; first release starts at page 0.
+          - name: pageSize
+            required: true
+            note: The portal supplies the fixed configured overview page size on every request; the service must not silently apply a different size.
+        downstream_http:
+          - method: GET
+            path: /api/v1/creditors/{creditorOrgId}
+            required_field: displayName
+      outputs:
+        response_dto: CitizenDebtSummaryResponse
+        required_summary_fields:
+          - debts
+          - totalOutstandingAmount
+          - totalDebtCount
+          - pageNumber
+          - pageSize
+          - totalPages
+          - totalElements
+          - effectiveInterestRates
+        required_item_fields:
+          - debtId
+          - debtTypeName
+          - debtTypeCode
+          - creditorDisplayName
+          - principalAmount
+          - outstandingAmount
+          - interestAmount
+          - feesAmount
+          - dueDate
+          - status
+          - citizenStatus
+          - interestAccrualState
+          - interestRuleCode
+        conditional_item_fields:
+          - name: statusReasonCode
+            present_when: citizenStatus requires explanatory sub-text beyond the base label.
+          - name: interestPauseReasonCode
+            present_when: interestAccrualState = PAUSED.
+          - name: currentInterestRate
+            present_when: the debt carries an effective recovery-interest rate.
+          - name: writtenOffReasonCode
+            present_when: citizenStatus = WRITTEN_OFF.
+      error_handling:
+        - unauthorized: return 401
+        - creditor_lookup_failure: fail the citizen summary predictably so the portal can render the service-unavailable state; the portal must not perform a compensating lookup
+        - unknown_citizen: return an empty debts collection with valid page metadata when the citizen has no outstanding debt
+    data_models:
+      - name: CitizenDebtSummaryResponse
+        kind: API DTO
+        rules:
+          - Contains no debtor PII.
+          - pageNumber and pageSize echo the applied request values.
+          - totalElements and totalPages must match actual pagination behavior so the portal can expose every page; hidden truncation is forbidden.
+          - effectiveInterestRates is the only page-level source for numeric interest-rate notes.
+      - name: CitizenDebtItem
+        kind: API DTO
+        rules:
+          - debtTypeName and debtTypeCode use Claim Type semantics.
+          - creditorDisplayName is mandatory and is resolved server-side.
+          - citizenStatus is the user-facing status field; status remains legacy compatibility only.
+          - statusReasonCode, interestPauseReasonCode, and writtenOffReasonCode are machine-readable localization codes, not prose, and are omitted when not applicable.
+          - statusReasonCode is present only when citizenStatus requires explanatory sub-text.
+          - interestPauseReasonCode is present only when interestAccrualState = PAUSED.
+          - currentInterestRate is present only when the debt carries an effective recovery-interest rate.
+          - writtenOffReasonCode is present only when citizenStatus = WRITTEN_OFF.
+      - name: CitizenDebtStatus
+        kind: presentation enum
+        allowed_values:
+          - IN_COLLECTION
+          - SET_OFF
+          - PAID
+          - WRITTEN_OFF
+      - name: InterestAccrualState
+        kind: presentation enum
+        allowed_values:
+          - ACTIVE
+          - PAUSED
+      - name: InterestPauseReasonCode
+        kind: presentation enum
+        allowed_values:
+          - CLAIM_UNCLEAR_DEBTOR_CANNOT_PAY
+      - name: WrittenOffReasonCode
+        kind: presentation enum
+        allowed_values:
+          - LIMITATION_EXPIRED
+          - BANKRUPTCY
+          - ESTATE_OF_DECEASED
+          - DEBT_RESTRUCTURING
+          - RECOVERY_FUTILE
+          - RECOVERY_COST_DISPROPORTIONATE
+    persistence:
+      - No new portal-facing storage. Compose the response from existing debt data, creditor lookup, and business configuration.
+    non_functional:
+      petition_critical:
+        - id: NFR-API-001
+          requirement: openapi-debt-service.yaml is the canonical contract for /api/v1/citizen/debts before implementation.
+          source: "compliance\\nfr-register.yaml#NFR-API-001"
+        - id: NFR-SEC-001
+          requirement: The citizen endpoint requires authenticated citizen bearer semantics and closes GOV-026-001 by explicit operation-level security.
+          source: "compliance\\nfr-register.yaml#NFR-SEC-001"
+        - id: NFR-GDPR-002
+          requirement: Scope by person_id UUID only and expose no debtor PII.
+          source: "compliance\\nfr-register.yaml#NFR-GDPR-002"
+        - id: NFR-ARCH-001
+          requirement: Enrich creditor display names via REST to creditor-service, never via database access.
+          source: "compliance\\nfr-register.yaml#NFR-ARCH-001"
+        - id: NFR-OBS-002
+          requirement: CreditorDisplayClient uses injected WebClient.Builder for trace propagation.
+          source: "compliance\\nfr-register.yaml#NFR-OBS-002"
+        - id: NFR-RES-001
+          requirement: Creditor lookup is protected by read-side circuit breaker behavior.
+          source: "compliance\\nfr-register.yaml#NFR-RES-001"
+        - id: NFR-RES-002
+          requirement: Transient creditor lookup failures use retry/backoff and deterministic failure behavior.
+          source: "compliance\\nfr-register.yaml#NFR-RES-002"
+    test_obligations:
+      automated:
+        - Contract tests must assert OpenAPI coverage for every petition026 response field, conditional field rule, and enum on /api/v1/citizen/debts.
+        - Service tests must assert person_id scoping so only the authenticated citizen's debts are returned.
+        - Service tests must cover multi-page datasets so pageNumber, pageSize, totalPages, and totalElements remain consistent across page changes.
+        - Mapping tests must cover citizenStatus, paused-interest explanation code, interest-rate metadata, and every written-off reason code.
+        - Security tests must assert 401 behavior and the operation-level bearerAuth contract for /api/v1/citizen/debts.
+        - Contract coverage for GET /api/v1/creditors/{creditorOrgId} must require displayName.
+        - ArchUnit or equivalent guard must reject WebClient.create() in CreditorDisplayClient.
+      manual_review:
+        - Keep dependency-check CI evidence because NFR-SEC-006 is mandatory but lacks a petition-local automated hook.
+    acceptance_criteria:
+      - assertion_id: VAL-P026-003
+        statement: Debt data loads by session person_id and only that citizen's data is returned.
+      - assertion_id: VAL-P026-005
+        statement: The row status shown to the citizen reflects the returned citizen-safe status.
+      - assertion_id: VAL-P026-013
+        statement: Paused interest is represented by interestAccrualState = PAUSED and the matching pause reason code.
+      - assertion_id: VAL-P026-014
+        statement: Debts with recovery interest provide enough data for the portal to show the non-tax-deductible notice.
+      - assertion_id: VAL-P026-015
+        statement: Written-off debts return WRITTEN_OFF plus a machine-readable written-off reason code.
+    rationale: >
+      debt-service already owns the citizen debt projection. Petition026 extends that projection with
+      creditor-name enrichment, citizen-safe status mapping, explanation codes, and rate metadata so
+      the portal remains single-hop and presentation-only.

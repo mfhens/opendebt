@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Primary;
 
 import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
+import dk.ufst.opendebt.debtservice.client.CreditorDisplayClient;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
@@ -131,6 +132,15 @@ public class TestConfig {
         .thenReturn(ValidateActionResponse.builder().allowed(true).build());
     when(mockClient.isCreditorAllowedToCreateClaim(any(UUID.class))).thenReturn(true);
     when(mockClient.isCreditorAllowedToUpdateClaim(any(UUID.class))).thenReturn(true);
+    return mockClient;
+  }
+
+  @Bean
+  @Primary
+  public CreditorDisplayClient creditorDisplayClient() {
+    CreditorDisplayClient mockClient = mock(CreditorDisplayClient.class);
+    when(mockClient.getDisplayName(any(UUID.class)))
+        .thenAnswer(invocation -> "Creditor-" + invocation.getArgument(0, UUID.class).toString());
     return mockClient;
   }
 

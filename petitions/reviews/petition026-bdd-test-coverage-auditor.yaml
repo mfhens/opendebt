@@ -1,0 +1,40 @@
+petition_id: petition026
+agent: bdd-test-coverage-auditor
+verdict: APPROVED
+timestamp: 2026-06-09T14:03:56.8290558+02:00
+keep_count: 4
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: BDD-026-F01
+    decision: KEEP
+    justification: >-
+      Blocker 1 closed in this focused re-audit. The petition026 Playwright suite is no longer backlog-tagged
+      (opendebt-e2e\tests\petition026-citizen-debt-overview.spec.ts:406-409), CI still excludes only @backlog
+      titles via grepInvert (opendebt-e2e\playwright.config.ts:3-18), and
+      `npx playwright test --list petition026-citizen-debt-overview` collected 15 tests both locally and with
+      CI=1.
+  - id: BDD-026-F02
+    decision: KEEP
+    justification: >-
+      Blocker 2 closed. VAL-P026-003 requires network evidence for GET /api/v1/citizen/debts including both
+      pageNumber and the portal-supplied fixed pageSize (petitions\validation\petition026\validation-contract.md:23-32;
+      petitions\specs\petition026-specs.yaml:94-117, 268-273), and the Playwright scenario now waits for the
+      downstream request and asserts pathname, pageNumber='0', and pageSize=DEBT_OVERVIEW_PAGE_SIZE
+      (opendebt-e2e\tests\petition026-citizen-debt-overview.spec.ts:348-363, 453-485).
+  - id: BDD-026-F03
+    decision: KEEP
+    justification: >-
+      Blocker 3 closed. The debt-service spec requires explicit service tests for person_id scoping
+      (petitions\specs\petition026-specs.yaml:455-459), and the current Cucumber slice now includes a dedicated
+      scoping scenario plus step assertions that only the requested citizen's debt IDs are returned while
+      out-of-scope IDs are excluded and totals remain scoped
+      (opendebt-debt-service\src\test\resources\features\petition026.feature:57-66;
+      opendebt-debt-service\src\test\java\dk\ufst\opendebt\debtservice\steps\Petition026Steps.java:159-218, 344-366).
+  - id: BDD-026-F04
+    decision: KEEP
+    justification: >-
+      No prior petition026 review artifact currently exposes discard_count or escalate_count, so this focused
+      blocker re-audit has no inherited governance stop from petitions\reviews\petition026-*.yaml.
+gaps: []
+overreach: []
