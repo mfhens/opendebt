@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dk.ufst.opendebt.debtservice.client.DaekningsRaekkefoeigenServiceClient;
 import dk.ufst.opendebt.debtservice.entity.KorrektionspuljeEntry;
+import dk.ufst.opendebt.debtservice.entity.ModregningEvent;
+import dk.ufst.opendebt.debtservice.exception.ModregningEventNotFoundException;
 import dk.ufst.opendebt.debtservice.repository.KorrektionspuljeEntryRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
 
@@ -142,13 +144,13 @@ public class KorrektionspuljeService {
     entry.setRenteGodtgoerelseAccrued(accrual);
     BigDecimal total = entry.getSurplusAmount().add(accrual);
 
-    // Re-enter modregning workflow
-    modregningService.initiateModregning(
-        entry.getDebtorPersonId(),
-        total,
-        PaymentType.KORREKTIONSPULJE_SETTLEMENT,
-        null,
-        entry.isBoerneYdelseRestriction());
+    ModregningEvent originEvent =
+        modregningEventRepository
+            .findById(entry.getOriginEventId())
+            .orElseThrow(() -> new ModregningEventNotFoundException(entry.getOriginEventId()));
+
+    modregningService.createCorrectionPoolSettlementDecision(
+        entry, originEvent, total, settlementDate, entry.isBoerneYdelseRestriction());
 
     entry.setSettledAt(Instant.now());
     entryRepository.save(entry);

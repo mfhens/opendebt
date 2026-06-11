@@ -70,12 +70,16 @@ legally grounded specification.
 | Tier 3 | Priority tier 3 | Andre fordringer under opkrævning, in registration order in RIM's register |
 | Rentegodtgørelse | Interest compensation | Interest payable to the debtor on amounts held pending modregning decision (GIL § 8b) |
 | Korrektionspulje | Correction pool | Pool collecting surplus amounts from reversed coverages for deferred settlement (GIL § 4, stk. 5–10) |
-| Gendækning | Re-coverage | Application of a correction-pool surplus to another fordring using P057 ordering |
+| Gendækning | Re-coverage | Redistribution of surplus after reversal; material gendækning that becomes the operative outcome produces a debtor-facing gendækning reallocation decision |
 | Inddrivelsesindsats | Enforcement action | A debt recovery measure type (e.g. SET_OFF, WAGE_GARNISHMENT, ATTACHMENT) |
 | PublicDisbursementEvent | Public disbursement event | Inbound event from Nemkonto signalling an interceptable public payment |
 | OffsettingReversalEvent | Offsetting reversal event | Internal event emitted when a previously offset fordring is written down or cancelled |
-| ModregningEvent | Set-off event | The persisted record of a modregning decision, including fordringer covered, amounts, and klage deadline |
-| KorrektionspuljeEntry | Correction pool entry | A pool balance record for one surplus amount awaiting settlement |
+| Set-off decision | Set-off decision | A debtor-facing legal decision in a set-off lineage |
+| ModregningEvent | Set-off decision record | The current persistence record name for a debtor-facing set-off decision |
+| decisionReference | Decision reference | Debtor-facing identifier for one specific set-off decision |
+| lineageReference | Lineage reference | Stable identifier grouping the related decisions derived from one classified external disbursement |
+| Superseding decision | Superseding decision | A new decision that replaces the operative effect of an earlier decision while leaving it in history |
+| KorrektionspuljeEntry | Correction pool entry | An internal accounting state for pooled surplus awaiting settlement |
 | Klage | Appeal | Administrative appeal against the modregning decision (3-month window from notice, GIL § 17) |
 | Underretning | Notice | Mandatory Digital Post notification to debtor after each modregning decision (GIL § 9a) |
 | Partshøring | Party hearing | Pre-decision right to be heard; not required for automated modregning (GIL § 9a, stk. 1) |
@@ -239,9 +243,12 @@ or tier-3 fordringer to be covered before or instead of tier-2 fordringer.
 **FR-2.1 — Caseworker waiver decision API**  
 Endpoint: `POST /debtors/{debtorId}/modregning-events/{eventId}/tier2-waiver`  
 Body: `{ "waiverReason": "<free text>", "caseworkerId": "<UUID>" }`  
-Effect: sets `tier2WaiverApplied = true` on the `ModregningEvent` and re-runs the
-ordering engine, skipping tier-2 for this event. The caseworker must hold the
-`modregning:waiver` OAuth2 scope.
+Effect: creates a new superseding waiver decision in the same `lineageReference`. The
+previously operative decision remains in history with its original notice and appeal metadata;
+the new decision receives its own `decisionReference`, notice, appeal deadline, and stable
+business idempotency key. Tier-1 remains fixed from the earlier operative decision, while the
+ordering engine re-runs only for the post-tier-1 residual, skipping tier-2. The caseworker must
+hold the `modregning:waiver` OAuth2 scope.
 
 **FR-2.2 — Waiver recorded on CollectionMeasure**  
 When a waiver is applied, the `CollectionMeasureEntity` for each covered fordring carries
@@ -249,10 +256,12 @@ When a waiver is applied, the `CollectionMeasureEntity` for each covered fordrin
 
 **FR-2.3 — Waiver audit log**  
 The waiver decision is written to the CLS audit log with `gilParagraf = "GIL § 4, stk. 11"`,
-`caseworkerId`, `waiverReason`, and the `ModregningEvent.id`.
+`caseworkerId`, `waiverReason`, the superseding `decisionReference`, and the predecessor
+decision reference.
 
 **Acceptance criteria (FR-2):**
-- A caseworker with scope `modregning:waiver` can submit a waiver; the event is re-processed
+- A caseworker with scope `modregning:waiver` can submit a waiver; a new superseding waiver
+  decision is created in the same lineage, preserving the original tier-1 allocation and
   skipping tier-2.
 - A caller without `modregning:waiver` scope receives HTTP 403.
 - The CLS audit log entry for the waiver carries `gilParagraf = "GIL § 4, stk. 11"`.
@@ -281,13 +290,16 @@ The remaining surplus is applied to other fordringer under inddrivelse using the
   DMI-originated fordringer (correctionPoolTarget = `DMI`), or fordringer partially covered
   retroactively (GIL § 4, stk. 6).
 
-No Digital Post notice is required for gendækning.
+Purely internal gendækning requires no Digital Post notice. If material gendækning becomes the
+operative outcome without a later settlement decision, the system creates a debtor-facing
+gendækning reallocation decision with its own notice, appeal deadline, and predecessor link.
 
 **FR-3.3 — Step 3: KorrektionspuljeEntry creation**  
 Surplus not consumed by gendækning is placed in a `KorrektionspuljeEntry`. The entry carries:
 `surplusAmount`, `correctionPoolTarget` (`PSRM` or `DMI`), `originEventId` (the reversed
 `ModregningEvent.id`), `boerneYdelseRestriction` (preserved if the original disbursement
-was børne- og ungeydelse, GIL § 4, stk. 7, nr. 3), and `renteGodtgoerelseStartDate`.
+was børne- og ungeydelse, GIL § 4, stk. 7, nr. 3), and `renteGodtgoerelseStartDate`. The
+`KorrektionspuljeEntry` is an internal accounting state, not a debtor-facing decision.
 
 **FR-3.4 — Monthly settlement job**  
 A scheduled `KorrektionspuljeSettlementJob` (same pattern as `InterestAccrualJob`) runs
@@ -295,11 +307,12 @@ monthly (configurable). For each `KorrektionspuljeEntry` with `correctionPoolTar
 
 1. If `surplusAmount < 50 DKK`: mark the entry for annual-only settlement; skip this monthly
    run.
-2. Otherwise: treat the settled amount as a new independent Nemkonto payment. Invoke FR-1
-   to apply the settled amount against the debtor's active fordringer (it loses its "origin
-   nature" after settlement — transporter/udlæg restrictions from the original payment do NOT
-   carry over, per GIL § 4, stk. 7, nr. 4, except for transporter notified before
-   1 October 2021).
+2. Otherwise: create a correction-pool settlement decision in the same `lineageReference`.
+   The settlement preserves the original payment category for category-based restrictions, uses
+   settlement-time timing for timing-sensitive rules, and applies tier-2 then tier-3 ordering
+   (tier-1 omitted unless law explicitly restores it). Transporter/udlæg restrictions from the
+   original payment do NOT carry over, per GIL § 4, stk. 7, nr. 4, except for transporter
+   notified before 1 October 2021.
 3. Add accrued `renteGodtgoerelseAccrued` to the settlement and clear the entry.
 
 **FR-3.5 — Børne-og-ungeydelse restriction**  
@@ -314,9 +327,9 @@ Rentegodtgørelse accrues on each `KorrektionspuljeEntry` from:
   date, if surplus originated from a modregning reversal.
 - The payment date, if surplus originated from a non-modregning collection reversal.
 
-Rentegodtgørelse stops accruing when the pool entry is settled. After settlement, the
-transferred amount enters a new forrentning period under Nemkonto § 16, stk. 1 rules
-(5-banking-day window applies again — FR-4).
+Rentegodtgørelse stops accruing when the pool entry is settled. After settlement, the resulting
+settlement decision uses settlement-time timing for any new timing-sensitive consequences,
+without reusing the original external receipt date.
 
 **Acceptance criteria (FR-3):**
 - A reversed modregning event produces a `KorrektionspuljeEntry` carrying the correct
@@ -363,6 +376,14 @@ set to `true`.
 notice informs the debtor that rentegodtgørelse is not taxable income (GIL § 8b, stk. 2,
 3. pkt.).
 
+**FR-4.7 — Timing basis by decision kind**  
+Timing-sensitive consequences are computed per debtor-facing decision kind:
+- external disbursement decisions use the external `receiptDate` and their own `decisionDate`;
+- superseding waiver decisions and gendækning reallocation decisions reuse the original
+  `receiptDate` with their new `decisionDate`;
+- correction-pool settlement decisions use settlement-time timing, while preserving the
+  original payment category for category-based restrictions.
+
 **Acceptance criteria (FR-4):**
 - A modregning decided 3 banking days after `receiptDate` produces
   `renteGodtgoerelseAccrued = 0.00 DKK` (5-banking-day exception).
@@ -377,20 +398,28 @@ notice informs the debtor that rentegodtgørelse is not taxable income (GIL § 8
 ### FR-5: Klage (appeal) deadline tracking
 
 **FR-5.1 — Klage deadline computation**  
-On every `ModregningEvent`, the field `klageFristDato` is computed as follows:
+On every debtor-facing set-off decision, the field `klageFristDato` is computed as follows:
 - If `noticeDelivered = true`: `klageFristDato` = notice delivery date + 3 calendar months.
-- If `noticeDelivered = false`: `klageFristDato` = `ModregningEvent.decisionDate` + 1 year.
+- If `noticeDelivered = false`: `klageFristDato` = `decisionDate` + 1 year.
+
+Superseded decisions retain their own appeal metadata and remain appealable by their own
+`decisionReference` until their individual deadline expires.
 
 **FR-5.2 — Read model endpoint**  
 Endpoint: `GET /debtors/{id}/modregning-events`  
-Returns: a paginated list of `ModregningEventSummary` records, each containing:
-`eventId`, `decisionDate`, `totalOffsetAmount`, `tier1Amount`, `tier2Amount`,
-`tier3Amount`, `residualPayoutAmount`, `klageFristDato`, `noticeDelivered`, `tier2WaiverApplied`.
+Returns: a paginated list of operative set-off decisions by default, each containing:
+`decisionReference`, `lineageReference`, `decisionKind`, `operative`,
+`supersedesDecisionReference`, `hasHistory`, `decisionDate`, `totalOffsetAmount`,
+`tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`,
+and `noticeDelivered`. Technical transport references such as `nemkontoReferenceId` are kept
+out of debtor-facing and default read-model surfaces.
 
 **FR-5.3 — Caseworker portal view**  
-The caseworker portal includes a `modregning-events` view for each debtor, displaying the
-read-model list with `klageFristDato` highlighted in amber if within 14 days, and red if
-past, so caseworkers can act before appeal windows expire.
+The caseworker portal includes a `modregning-events` view for each debtor, displaying operative
+decisions by default with `klageFristDato` highlighted in amber if within 14 days, and red if
+past. The portal provides explicit access to the full decision history within each
+`lineageReference`, so caseworkers can inspect superseded decisions and predecessor links
+without losing the default focus on the operative legal position.
 
 **Acceptance criteria (FR-5):**
 - When `noticeDelivered = true` on date 2025-03-15, `klageFristDato = 2025-06-15`.
@@ -412,10 +441,11 @@ commits (via a transactional outbox pattern, same as P052).
 
 ### NFR-2: Auditability
 
-Every modregning decision — including each fordring covered, the tier applied, the GIL §
-reference, and the rentegodtgørelse basis — is written to the CLS audit log. Each CLS log
-entry carries `gilParagraf` (e.g. `"GIL § 7, stk. 1, nr. 2"`), `modregningEventId`,
-`debtorPersonId`, and `fordringId`.
+Every debtor-facing set-off decision kind — external disbursement, superseding waiver,
+gendækning reallocation, and correction-pool settlement — is written to the CLS audit log and
+falls within the tamper-evident decision scope captured by ADR-0029 as amended and ADR-0039.
+Each CLS log entry carries `gilParagraf`, the debtor-facing `decisionReference`, the
+`lineageReference`, and the decision kind alongside the affected debtor and fordring context.
 
 ### NFR-3: GDPR
 
@@ -424,10 +454,11 @@ names, or other direct identifiers are stored in the P058 domain tables.
 
 ### NFR-4: Idempotency
 
-`PublicDisbursementEvent` processing must be idempotent: replaying the same event (identified
-by `nemkontoReferenceId`) must not create a duplicate `ModregningEvent` or a duplicate
-`SET_OFF` `CollectionMeasureEntity`. The `nemkontoReferenceId` is stored as a unique key on
-the `modregning_event` table.
+Root external `PublicDisbursementEvent` processing must be idempotent: replaying the same event
+(identified by `nemkontoReferenceId`) must not create a duplicate root set-off decision or a
+duplicate `SET_OFF` `CollectionMeasureEntity`. Internal debtor-facing decisions use their own
+stable business idempotency keys derived from origin + decision kind; random generated
+references are not sufficient for legal replay safety.
 
 ### NFR-5: Performance
 

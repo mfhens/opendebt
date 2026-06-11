@@ -1,0 +1,155 @@
+cr_id: CR-002
+parent_petition: petition058
+title: "Align petition058 with lineage-based set-off decision model"
+status: implemented
+requested_by: "Markus (audit/hardening pass)"
+requested_date: "2026-06-10"
+
+observed_behaviour: |
+  petition058 is already tracked as implemented, and the current implementation plus accepted
+  ADRs treat debtor-facing set-off outcomes as a lineage of legal decisions rather than a
+  single mutable ModregningEvent. However the original petition058 requirement artifacts
+  described older behaviour and identity semantics:
+  - tier-2 waiver was framed as in-place mutation instead of a new superseding decision
+  - correction-pool settlement was framed as a fresh unrestricted Nemkonto-style payment
+    instead of a same-lineage settlement decision preserving original payment category
+  - gendaekning was treated as always internal, even when a material reallocation becomes
+    the operative debtor-facing outcome
+  - read-model and appeal identity centered on eventId or nemkontoReferenceId rather than
+    decisionReference, lineageReference, and decision-specific appeal targeting
+  - idempotency and immudb wording mixed transport identifiers with debtor-facing legal identity
+  This left the delivered feature's official scope and expected behaviour inconsistent with the
+  implemented model and made future amendments ambiguous.
+
+desired_behaviour: |
+  petition058 is formally amended so its canonical behaviour is the lineage-based set-off
+  decision model captured in ADR-0039:
+  - debtor-facing decision kinds are external disbursement decision, superseding waiver
+    decision, gendaekning reallocation decision, and correction-pool settlement decision
+  - each debtor-facing decision has its own immutable decisionReference, stable
+    lineageReference, notice, appeal window, and business idempotency key
+  - correction-pool settlement remains in the same lineage, preserves original payment
+    category, uses settlement-time timing, and omits tier-1 unless statute explicitly restores it
+  - material gendaekning that becomes the operative outcome emits a debtor-facing
+    reallocation decision, while internal correction-pool accounting state remains non-debtor-facing
+  - default read surfaces expose operative decisions with lineage summary fields rather than
+    transport-first identity
+  - downstream implementation, review, and documentation work against petition058 must use the
+    amended petition, outcome contract, solution architecture, spec, and feature file as the
+    delta baseline
+
+scope:
+  modified_scenarios:
+    - "Gendaekning efter fordring-nedskrivning — surplus dækker anden fordring via P057"
+    - "Korrektionspulje månedlig afregning — surplus behandles som ny selvstændig Nemkonto-udbetaling"
+    - "Klage-deadline registreres korrekt — underretning leveret og ikke leveret"
+    - "Sagsbehandler fravælger tier-2 prioritet — GIL § 4 stk. 11 fravalg"
+  new_scenarios: []
+  removed_scenarios: []
+  affected_components:
+    - opendebt-debt-service
+    - opendebt-payment-service
+    - opendebt-caseworker-portal
+  out_of_scope: |
+    - reopening petition058 as a new parent petition; the petition remains implemented and this CR carries the amendment
+    - any new petition outside the existing petition058 footprint
+    - wholesale replacement of petition057 ordering semantics; petition058 continues to depend on petition057
+    - transport-identifier migration outside the petition058 surfaces already touched by this amendment
+    - any implementation-complete, regression-green, or PR-ready claim without fresh evidence from a later CR phase
+
+legal_reference: |
+  Gældsinddrivelsesloven § 4, stk. 11
+  Gældsinddrivelsesloven § 7, stk. 1
+  Gældsinddrivelsesloven § 8 b
+  Gældsinddrivelsesloven § 16, stk. 1
+
+acceptance_criteria: |
+  - petition058 remains the implemented parent petition; this amendment is tracked as CR-002 under change_requests.
+  - The petition, outcome contract, solution architecture, spec, and feature file all describe
+    the same lineage-based set-off decision model and no longer describe in-place legal mutation.
+  - The modified feature scenarios consistently express superseding waiver decisions,
+    same-lineage correction-pool settlement decisions, lineage-summary read-model fields, and
+    conditional debtor-facing gendaekning visibility.
+  - Amended artifacts use decisionReference and lineageReference as the debtor-facing identity
+    model, and appeals target a specific decisionReference.
+  - Amended artifacts preserve originalPaymentCategory across the lineage and distinguish
+    correction-pool settlement origin from statutory payment category.
+  - This CR creation alone makes no implementation-complete, regression-green, or PR-ready claim.
+
+linked_artifacts:
+  outcome_contract: petitions/petition058-modregning-korrektionspulje-outcome-contract.md
+  feature_file: petitions/petition058-modregning-korrektionspulje.feature
+  spec_file: petitions/specs/petition058-modregning-korrektionspulje-specs.md
+
+pipeline_log:
+  - phase: 0
+    date: "2026-06-10"
+    outcome: accepted
+    notes: >
+      petition058 confirmed implemented in petitions/program-status.yaml. Scope is bounded to a
+      post-delivery amendment within the existing petition058 footprint. Existing artifact deltas
+      already prepared during the 2026-06-10 audit/hardening pass in the petition, outcome
+      contract, solution architecture, spec, and feature files will serve as the baseline for
+      downstream CR phases. CR status set to accepted.
+  - phase: 1
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Delta requirements are already materialized in
+      petitions/petition058-modregning-korrektionspulje.feature. The four scoped modified
+      scenarios remain in place and now express superseding waiver decisions, same-lineage
+      correction-pool settlement behaviour, lineage-summary read-model fields, and conditional
+      debtor-facing gendaekning visibility. No new scenarios were required for this amendment.
+  - phase: 2
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Delta specification and contract surfaces are already materialized in
+      petitions/petition058-modregning-korrektionspulje.md,
+      petitions/petition058-modregning-korrektionspulje-outcome-contract.md,
+      petitions/petition058-modregning-korrektionspulje-solution-architecture.md, and
+      petitions/specs/petition058-modregning-korrektionspulje-specs.md. These artifacts now align
+      to ADR-0039 and the lineage-based decision model without requiring regeneration in this run.
+  - phase: 3
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      CR-002 runtime delta implemented in opendebt-debt-service. The delivered behavior now persists
+      lineage-aware debtor-facing decisions, scopes tier-2 waiver to the path debtor, reruns waiver
+      allocation with explicit skip-tier1 + skip-tier2 semantics, and preserves
+      boerneYdelseRestriction during correction-pool settlement by excluding non-maintenance debts
+      from re-application. Fresh targeted compile, unit, and @petition058 Cucumber proof was rerun
+      in this conductor closeout.
+  - phase: 3.5
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Contract drift gate passed. petitions/reviews/petition058-contract-drift-auditor.yaml records
+      verdict PASS across the api, dto, entity, db, and tests layers, with no blocking semantic
+      drift remaining after the lineage-model implementation.
+  - phase: 3.7
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Runtime integration gate passed with warnings. petitions/reviews/petition058-runtime-
+      integration-conductor.yaml records verdict PASS-WITH-WARNINGS for the documented local
+      startup path, migrations, health, and representative API route. The only open warning remains
+      /debt-service/api-docs returning 500, already tracked as TB-067.
+  - phase: 4
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Review close passed. petitions/reviews/petition058-code-reviewer-strict.yaml records verdict
+      APPROVED with quality_score 92. petitions/reviews/petition058-code-minimality-reviewer.yaml
+      records verdict APPROVED with 12 KEEP findings, 0 DISCARD, and 0 ESCALATE. The remaining
+      review signal is warning-level hotspot debt in ModregningService, not a blocker.
+  - phase: 5
+    date: "2026-06-10"
+    outcome: done
+    notes: >
+      Completion verification passed from freshly inspected evidence in this conductor run:
+      re-executed compile and targeted P058 test commands completed successfully, strict review is
+      approved, code minimality is approved, contract drift is PASS, and runtime integration is
+      PASS-WITH-WARNINGS. CR-002 is therefore implemented. Fresh branch-state evidence still shows
+      unrelated non-CR deletions in the working tree, so this closeout does not make a PR-ready
+      claim.

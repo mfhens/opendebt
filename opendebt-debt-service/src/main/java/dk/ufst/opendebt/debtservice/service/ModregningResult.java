@@ -6,6 +6,12 @@ import java.util.List;
 import java.util.UUID;
 
 public record ModregningResult(
+    String decisionReference,
+    String lineageReference,
+    ModregningDecisionKind decisionKind,
+    boolean operative,
+    String supersedesDecisionReference,
+    boolean hasHistory,
     UUID eventId,
     UUID debtorPersonId,
     LocalDate decisionDate,

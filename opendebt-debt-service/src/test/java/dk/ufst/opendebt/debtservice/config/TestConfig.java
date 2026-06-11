@@ -9,8 +9,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,6 +25,7 @@ import dk.ufst.opendebt.common.audit.cls.ClsAuditClient;
 import dk.ufst.opendebt.debtservice.client.CaseServiceClient;
 import dk.ufst.opendebt.debtservice.client.CreditorDisplayClient;
 import dk.ufst.opendebt.debtservice.client.CreditorServiceClient;
+import dk.ufst.opendebt.debtservice.client.DaekningsRaekkefoeigenServiceClient;
 import dk.ufst.opendebt.debtservice.client.ValidateActionRequest;
 import dk.ufst.opendebt.debtservice.client.ValidateActionResponse;
 import dk.ufst.opendebt.debtservice.dto.ClaimValidationResult;
@@ -34,6 +37,7 @@ import dk.ufst.opendebt.debtservice.limitation.client.dto.ObjectionWorkflowResul
 import dk.ufst.opendebt.debtservice.limitation.client.dto.WageGarnishmentLimitationFacts;
 import dk.ufst.opendebt.debtservice.section50.client.PaymentCoverageOrderClient;
 import dk.ufst.opendebt.debtservice.service.ClaimValidationService;
+import dk.ufst.opendebt.debtservice.service.FordringAllocation;
 import dk.ufst.rules.model.InterestCalculationRequest;
 import dk.ufst.rules.model.InterestCalculationResult;
 import dk.ufst.rules.service.RulesService;
@@ -212,6 +216,52 @@ public class TestConfig {
     when(mockClient.orderPrincipalClaimIds(any(UUID.class), any(), any(List.class)))
         .thenAnswer(invocation -> List.copyOf(invocation.getArgument(2)));
     return mockClient;
+  }
+
+  @Bean
+  @Primary
+  public StubDaekningsRaekkefoeigenServiceClient stubDaekningsRaekkefoeigenServiceClient() {
+    return new StubDaekningsRaekkefoeigenServiceClient();
+  }
+
+  public static class StubDaekningsRaekkefoeigenServiceClient
+      extends DaekningsRaekkefoeigenServiceClient {
+
+    private final Map<UUID, List<FordringAllocation>> allocationsByDebtor = new HashMap<>();
+    private UUID lastDebtorPersonId;
+    private BigDecimal lastAmount;
+    private List<FordringAllocation> lastAllocations = List.of();
+
+    @Override
+    public List<FordringAllocation> allocate(UUID debtorPersonId, BigDecimal amount) {
+      lastDebtorPersonId = debtorPersonId;
+      lastAmount = amount;
+      lastAllocations = allocationsByDebtor.getOrDefault(debtorPersonId, List.of());
+      return lastAllocations;
+    }
+
+    public void setAllocations(UUID debtorPersonId, List<FordringAllocation> allocations) {
+      allocationsByDebtor.put(debtorPersonId, List.copyOf(allocations));
+    }
+
+    public UUID getLastDebtorPersonId() {
+      return lastDebtorPersonId;
+    }
+
+    public BigDecimal getLastAmount() {
+      return lastAmount;
+    }
+
+    public List<FordringAllocation> getLastAllocations() {
+      return lastAllocations;
+    }
+
+    public void clear() {
+      allocationsByDebtor.clear();
+      lastDebtorPersonId = null;
+      lastAmount = null;
+      lastAllocations = List.of();
+    }
   }
 
   public static class MutableClock extends Clock {

@@ -62,17 +62,19 @@ All P058 components are deployed within `opendebt-debt-service` (ADR-0027). The 
 | ADR-0027 | Modregning merged into debt-service | P058 components live in `dk.ufst.opendebt.debtservice.offsetting` package under `opendebt-debt-service`. |
 | ADR-0029 | immudb for financial ledger integrity | Every `ModregningEvent` and every `CollectionMeasureEntity` with `SET_OFF` is dual-written to immudb after PostgreSQL commit (see ADR-0029 Exception in §2.2). CLS audit log entries are **not** written to immudb — ADR-0029 explicitly excludes audit log tables; CLS/Filebeat provides the external anchor. immudb failure does not roll back PostgreSQL. |
 | ADR-0031 | Statutory codes as Java enums | Payment types (`OVERSKYDENDE_SKAT`, `BOERNE_OG_UNGEYDELSE`, etc.), `correctionPoolTarget` (`PSRM`, `DMI`), and `ExceptionType` (`NONE`, `FIVE_BANKING_DAY`, `KILDESKATTELOV`) are Java enums, not free-text configuration. |
+| ADR-0039 | Lineage-based set-off decision model | P058 models debtor-facing outcomes as lineage-linked set-off decisions with explicit `decisionReference`, `lineageReference`, `decisionKind`, immutable identity fields, and decision-specific notice/appeal semantics instead of mutating one legal decision in place. |
 
 ### 2.2 Architectural Decisions Made by This Document
 
 | Decision | Rationale |
 |----------|-----------|
 | **P058 does not re-implement GIL § 4 ordering** | `ModregningsRaekkefoeigenEngine` delegates all tier-2 partial-coverage logic to `DaekningsRaekkefoeigenService` (P057) via a single HTTP call. Re-implementing violates the single-responsibility principle and would create a maintenance divergence risk for a statutory algorithm. |
+| **Debtor-facing outcomes are lineage-linked set-off decisions** | External disbursement decisions, superseding waiver decisions, gendækning reallocation decisions, and correction-pool settlement decisions each carry their own `decisionReference`, notice, appeal deadline, and stable business idempotency key. This keeps legal acts explicit and prevents in-place rewriting of decision identity. |
 | **`RenteGodtgoerelseRateEntry` table is the authoritative rate store** | Rates seeded from `BusinessConfigService`-aware tooling; `computeRate()` queries `rentegodt_rate_entry` with effective-date ordering. This supports the 5-banking-day delayed rate-change effect without special-casing logic in the service. |
-| **Korrektionspulje settlement re-enters FR-1** | `KorrektionspuljeService.settleEntry()` calls `ModregningService.initiateModregning()` with the settled amount. This ensures settled pool amounts are processed through the full three-tier ordering engine, including ledger entry generation and Digital Post notice, without duplicating that logic. |
+| **Korrektionspulje settlement stays in the same lineage but does not recreate tier-1 by default** | `KorrektionspuljeService.settleEntry()` creates a correction-pool settlement decision in the same `lineageReference`. The settlement preserves the original payment category for category-based restrictions, uses settlement-time timing, and applies tier-2 then tier-3 ordering unless statute explicitly restores tier-1. When `boerneYdelseRestriction = true`, non-maintenance-claim allocations are excluded rather than being re-applied as unrestricted settlement coverage. |
 | **Digital Post via transactional outbox** | The `notification_outbox` table write is within the `@Transactional` boundary of `initiateModregning`; actual dispatch by `NotificationService` outbox poller happens post-commit. This prevents dispatch before commit (a legally significant failure condition). |
 | **immudb write is best-effort, not transactional** | The immudb append happens in a post-commit listener. A failed immudb write logs an alert metric but does not roll back the PostgreSQL transaction. immudb is a tamper-evidence audit trail, not the source of truth. |
-| **`nemkontoReferenceId` as the idempotency key** | The UNIQUE constraint on `modregning_event.nemkonto_reference_id` and a pre-check SELECT guard ensure that replaying the same Nemkonto event produces no duplicate state. Race-condition concurrent inserts are caught via `DataIntegrityViolationException`. |
+| **External and internal decisions use distinct stable business idempotency keys** | Root external disbursement decisions use `nemkontoReferenceId`; superseding waiver decisions, gendækning reallocation decisions, and correction-pool settlement decisions derive stable business idempotency keys from their origin and decision kind. Random generated references are not used for debtor-facing legal acts. |
 | **[ADR-0029 Exception] `ModregningEvent` and `SET_OFF` records written to immudb** | ADR-0029 defines immudb scope as "financial ledger entries only" in payment-service tables (`ledger_entries`, `debt_events`). Writing `ModregningEvent` and `SET_OFF` `CollectionMeasureEntity` records from debt-service to immudb constitutes a scope expansion. Legal justification: these are legally-binding offsetting decision records subject to Rigsrevisionen audit exposure under GIL § 7, stk. 1 legal-standing requirements, and Gæld.bekendtg. § 7 traceability obligations. CLS audit log entries remain excluded per ADR-0029. **Open item: an ADR-0029 amendment documenting this scope expansion and its legal justification must be approved before the P058 deployment gate.** |
 
 ---
@@ -85,14 +87,14 @@ All components reside in `opendebt-debt-service` under root package `dk.ufst.ope
 
 | Component | Package | Type | Responsibility |
 |-----------|---------|------|----------------|
-| `ModregningService` | `.service` | Spring `@Service` | Orchestrates the complete FR-1 workflow. Implements `OffsettingService` interface (P007 stub replaced). Handles idempotency, tier delegation, ledger posting (via `LedgerServiceClient`), outbox write. Entry point for FR-2 waiver. At initial persist, `klageFristDato = decisionDate + 1 year` (failure-case value); recomputed to `noticeDeliveryDate + 3 months` in the post-commit callback when notice delivery succeeds. |
+| `ModregningService` | `.service` | Spring `@Service` | Orchestrates lineage-linked debtor-facing set-off decisions. Creates root external disbursement decisions, superseding waiver decisions, and correction-pool settlement decisions; handles idempotency, tier delegation, ledger posting (via `LedgerServiceClient`), lineage links, and outbox write. At initial persist, `klageFristDato = decisionDate + 1 year` (failure-case value); recomputed to `noticeDeliveryDate + 3 months` in the post-commit callback when notice delivery succeeds. |
 | `ModregningsRaekkefoeigenEngine` | `.service` | Spring `@Service` | Executes the three-tier GIL § 7 allocation algorithm. Queries active fordringer via internal API. Delegates tier-2 partial allocation to `DaekningsRaekkefoeigenServiceClient`. Pure stateless computation — no persistence. |
-| `KorrektionspuljeService` | `.service` | Spring `@Service` | Processes `OffsettingReversalEvent`: Step 1 (same-fordring residual), Step 2 (gendækning via P057), Step 3 (KorrektionspuljeEntry creation). Settles pool entries by re-invoking `ModregningService`. |
+| `KorrektionspuljeService` | `.service` | Spring `@Service` | Processes `OffsettingReversalEvent`: Step 1 (same-fordring residual), Step 2 (gendækning via P057), Step 3 (`KorrektionspuljeEntry` creation). Material gendækning that becomes the operative outcome emits a debtor-facing gendækning reallocation decision; pool entries remain internal accounting state. Settles pool entries by creating correction-pool settlement decisions through `ModregningService`. |
 | `RenteGodtgoerelseService` | `.service` | Spring `@Service` | Computes rentegodtgørelse start date (with 5-banking-day and kildeskattelov exceptions) and rate (from `rentegodt_rate_entry` table). Pure date/rate computation — no side effects. |
 | `KorrektionspuljeSettlementJob` | `.batch` | Spring `@Scheduled` | Monthly and annual scheduled jobs that iterate unsettled PSRM-target pool entries and invoke `KorrektionspuljeService.settleEntry()` per entry. Each settlement is its own transaction. |
 | `PublicDisbursementEventConsumer` | `.consumer` | Event consumer | Receives `PublicDisbursementEvent` from Nemkonto. Validates required fields. Delegates to `ModregningService.initiateModregning()`. Dead-letters validation-failed events. |
 | `OffsettingReversalEventConsumer` | `.consumer` | Event consumer | Receives `OffsettingReversalEvent` from P053. Validates idempotency (no existing `KorrektionspuljeEntry` for `originModregningEventId`). Delegates to `KorrektionspuljeService.processReversal()`. |
-| `ModregningController` | `.controller` | Spring `@RestController` | Exposes: `POST .../tier2-waiver` (FR-2, scope `modregning:waiver`); `GET .../modregning-events` (FR-5, scope `modregning:read`). |
+| `ModregningController` | `.controller` | Spring `@RestController` | Exposes: `POST .../tier2-waiver` (FR-2, scope `modregning:waiver`); `GET .../modregning-events` (FR-5, scope `modregning:read`) returning operative decisions by default with lineage summary fields (`decisionReference`, `lineageReference`, `decisionKind`, `operative`, `supersedesDecisionReference`, `hasHistory`). |
 | `DaekningsRaekkefoeigenServiceClient` | `.client` | HTTP client | HTTP client for P057's internal allocation API in `opendebt-payment-service`. Called at most once per engine run. |
 | `LedgerServiceClient` | `.client` | HTTP client | Posts double-entry debit/credit ledger entries to payment-service bookkeeping API (ADR-0018, ADR-0007). Called from `ModregningService` within the `@Transactional` boundary — one call per covered fordring allocation. Each entry references `ModregningEvent.id` and the GIL § 7 tier applied. HTTP failure propagates and triggers full `@Transactional` rollback. |
 | `FordringQueryPort` | `.port` | Spring `@Component` | Internal adapter for TB-040 active-fordringer queries within `opendebt-debt-service` (same-service — no inter-service HTTP). Exposes typed Java API `getActiveFordringer(debtorPersonId, tier, payingAuthorityOrgId)` backed by JPA repository. Consumed exclusively by `ModregningsRaekkefoeigenEngine`. |
@@ -132,6 +134,14 @@ KorrektionspuljeSettlementJob
 ### 4.1 New Tables
 
 #### `modregning_event` (FR-1, FR-2, FR-4, FR-5)
+
+**ADR-0039 lineage amendment:** `modregning_event` is treated as the persistence store for
+lineage-linked debtor-facing set-off decisions rather than a single mutable legal event. In
+addition to the existing financial/timing fields, each persisted decision requires immutable
+domain identity (`decision_reference`, `lineage_reference`, `decision_kind`,
+`business_idempotency_key`, `original_payment_type`) plus lineage navigation
+(`supersedes_event_id`, `operative`). `nemkonto_reference_id` applies only to root external
+disbursement decisions; internal decision kinds rely on their own stable business keys.
 
 | Column | SQL type | Nullable | Constraint | Notes |
 |--------|----------|----------|------------|-------|
@@ -203,6 +213,8 @@ KorrektionspuljeSettlementJob
 | V5 | `V5__korrektionspulje_entry.sql` | CREATE TABLE `korrektionspulje_entry`; partial index; FK |
 | V6 | `V6__rentegodt_rate_entry.sql` | CREATE TABLE `rentegodt_rate_entry`; UNIQUE on `publication_date` |
 | V7 | `V7__collection_measure_modregning_cols.sql` | ALTER TABLE `collection_measure` ADD three new columns; NOT NULL check for SET_OFF rows |
+| V8–V13 | existing active migrations | Previously delivered debt-service changes retained in order |
+| V14 | `V14__modregning_lineage_model.sql` | Adds lineage identity columns to `modregning_event`, backfills root defaults, and indexes operative lineage reads |
 
 ---
 
@@ -239,7 +251,7 @@ ModregningService.initiateModregning()              ──────── @Tr
                                                                                                        │
 ──────────────── COMMIT ────────────────────────────────────────────────────────────────────────────────┘
    │
-   ├─▶ immudb append (post-commit, best-effort): modregning:{eventId}, measure:{measureId}
+   ├─▶ immudb append (post-commit, best-effort): modregning-decision:{decisionReference}, measure:{measureId}
    └─▶ NotificationService outbox poller:
           Dispatch Digital Post notice → on success/failure:
              Update ModregningEvent.noticeDelivered, noticeDeliveryDate
@@ -264,18 +276,18 @@ ModregningController
    ▼
 ModregningService.applyTier2Waiver()                ──────── @Transactional ───────────────────────┐
    │                                                                                                 │
-   ├─▶ Load ModregningEvent; assert tier2WaiverApplied = false (409 if already applied)             │
-   ├─▶ Set tier2WaiverApplied = true                                                                 │
-   ├─▶ Set waiver_applied = true, caseworker_id = caseworkerId on existing tier-2 CollectionMeasures │
-   ├─▶ Reverse ledger entries for tier-2 allocations                                                 │
-   ├─▶ ModregningsRaekkefoeigenEngine.allocate(skipTier2 = true)                                    │
-   │      [Re-run with tier-1 amounts already fixed; residual applied to tier-3 only]               │
-   ├─▶ Create new CollectionMeasureEntity for tier-3 fordringer (waiver_applied = true)              │
-   ├─▶ Update ModregningEvent tier amounts (tier2Amount = 0)                                         │
+   ├─▶ Load operative decision; assert no prior waiver decision exists (409 if already applied)      │
+   ├─▶ Mark prior operative decision as superseded (history retained)                                 │
+   ├─▶ Set waiver_applied = true, caseworker_id = caseworkerId on reversed tier-2 CollectionMeasures │
+   ├─▶ Reverse ledger entries for prior tier-2 allocations                                            │
+   ├─▶ ModregningsRaekkefoeigenEngine.allocate(skipTier2 = true)                                     │
+   │      [Tier-1 fixed from prior operative decision; residual applied after tier-1 only]           │
+   ├─▶ Persist new superseding waiver decision with new decisionReference, same lineageReference      │
+   ├─▶ Create new CollectionMeasureEntity rows for re-applied allocations                             │
    └─▶ Write CLS audit log (eventType = MODREGNING_TIER2_WAIVER, gilParagraf = "GIL § 4, stk. 11") │
                                                                                                      │
 ──────────────── COMMIT ──────────────────────────────────────────────────────────────────────────────┘
-   └─▶ Return updated ModregningResult (HTTP 200)
+   └─▶ Return superseding decision summary (HTTP 200)
 ```
 
 ### 5.3 Korrektionspulje Workflow (FR-3)
@@ -296,7 +308,8 @@ KorrektionspuljeService.processReversal()           ──────── @Tr
    ├─▶ STEP 2: Gendækning (GIL § 4, stk. 5–6)                                                      │
    │      IF optOut (correctionPoolTarget=DMI, debt-under-collection, retroactive partial): skip    │
    │      ELSE: DaekningsRaekkefoeigenServiceClient.allocate(debtorPersonId, remaining)             │
-   │            [No Digital Post notice for gendækning]                                              │
+   │            [Purely internal gendækning sends no notice; material operative reallocation emits   │
+   │             a gendækning reallocation decision in the same lineage]                             │
    │                                                                                                 │
    └─▶ STEP 3: Create KorrektionspuljeEntry if remaining > 0                                        │
           {surplusAmount, correctionPoolTarget, boerneYdelseRestriction,                             │
@@ -322,11 +335,12 @@ KorrektionspuljeSettlementJob.runMonthlySettlement()   [Cron: 3 AM on 1st of mon
          │      accrued = surplusAmount × (rate/100) × days/365  [HALF_UP, 2 dp]                    │
          │      Persist accrued on entry                                                              │
          ├─▶ total = surplusAmount + renteGodtgoerelseAccrued                                         │
-         ├─▶ ModregningService.initiateModregning(                                                    │
-         │        debtorPersonId, total, paymentType, null,                                           │
+         ├─▶ ModregningService.createCorrectionPoolSettlementDecision(                                 │
+         │        debtorPersonId, total, same lineageReference, originalPaymentCategory,              │
+         │        timingBasis = settlement-time, skipTier1 = true unless law restores it,            │
          │        restrictedPayment = entry.boerneYdelseRestriction)                                  │
-         │      [Note: origin-nature lost — transporter/udlæg do NOT carry over, except pre-2021]   │
-         │      [boerneYdelseRestriction = true RETAINS the børne-og-ungeydelse restriction]         │
+         │      [Transporter/udlæg do NOT carry over, except pre-2021; category-based restrictions   │
+         │       derived from the original payment category remain in force]                          │
          └─▶ Set entry.settledAt = Instant.now()                                                      │
                                                                                                        │
          ──── COMMIT ────────────────────────────────────────────────────────────────────────────────── ┘
@@ -389,8 +403,8 @@ RenteGodtgoerelseService.computeRate(referenceDate)
 |-----------|-------|
 | Required scope | `modregning:read` OR `modregning:waiver` |
 | Query params | `page` (default 0), `size` (default 20, max 100), `sort` (default `decisionDate,desc`) |
-| Success | HTTP 200 — paginated array of `ModregningEventSummary` |
-| Mandatory response fields | `eventId`, `decisionDate`, `totalOffsetAmount`, `tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`, `noticeDelivered`, `tier2WaiverApplied`, `renteGodtgoerelseNonTaxable`, `renteGodtgoerelseStartDate` |
+| Success | HTTP 200 — paginated array of operative set-off decisions with lineage summary |
+| Mandatory response fields | `decisionReference`, `lineageReference`, `decisionKind`, `operative`, `supersedesDecisionReference`, `hasHistory`, `decisionDate`, `totalOffsetAmount`, `tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`, `noticeDelivered`, `renteGodtgoerelseNonTaxable`, `renteGodtgoerelseStartDate` |
 | Error 403 | Missing required scope |
 | Error 404 | `debtorId` not found in Person Registry |
 
@@ -519,17 +533,17 @@ RenteGodtgoerelseService.computeRate(referenceDate)
 
 1. `ModregningService.initiateModregning()` commits to PostgreSQL within the `@Transactional` boundary.
 2. A Spring `@TransactionalEventListener(phase = AFTER_COMMIT)` appends to immudb with keys:
-   - `modregning:{eventId}` — serialised `ModregningEvent`
+   - `modregning-decision:{decisionReference}` — serialised debtor-facing set-off decision record
    - `measure:{measureId}` — per SET_OFF `CollectionMeasureEntity`
 3. If the immudb write fails: PostgreSQL is NOT rolled back; failure is logged and an alert metric is emitted.
 
 **Key format convention:**
 ```
-modregning:{UUID}     → ModregningEvent record
-measure:{UUID}        → CollectionMeasureEntity (SET_OFF)
+modregning-decision:{decisionReference} → debtor-facing set-off decision record
+measure:{UUID}                          → CollectionMeasureEntity (SET_OFF)
 ```
 
-> **Note:** CLS audit log entries are explicitly excluded from immudb per ADR-0029 ("audit_log tables: CLS/Filebeat provides sufficient external anchor"). Only `ModregningEvent` and `SET_OFF` `CollectionMeasureEntity` records are appended to immudb (see ADR-0029 Exception in §2.2).
+> **Note:** CLS audit log entries are explicitly excluded from immudb per ADR-0029 ("audit_log tables: CLS/Filebeat provides sufficient external anchor"). Debtor-facing set-off decision records and `SET_OFF` `CollectionMeasureEntity` records are appended to immudb; internal correction-pool accounting rows are not.
 
 ### 7.3 Transactional Outbox Pattern (ADR-0019)
 

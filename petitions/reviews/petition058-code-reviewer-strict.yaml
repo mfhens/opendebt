@@ -1,0 +1,59 @@
+petition_id: 058
+agent: code-reviewer-strict
+verdict: APPROVED
+timestamp: "2026-06-10T21:47:34.2121063+02:00"
+quality_score: 92
+keep_count: 4
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: CR002-RERUN-KEEP-001
+    decision: KEEP
+    severity: info
+    justification: "applyTier2Waiver now reruns allocation through the explicit skip-tier1 + skip-tier2 engine path, preserving the predecessor's fixed tier-1 result while reapplying only the residual successor coverage (ModregningService.java:135-193, ModregningServiceTest.java:715-804, petition058 specs.md:230-239)."
+  - id: CR002-RERUN-KEEP-002
+    decision: KEEP
+    severity: info
+    justification: "restrictedPayment now changes settlement behavior. Child-benefit-restricted settlement excludes non-maintenance claim allocations and leaves the excluded amount residual instead of treating it as unrestricted coverage (FordringQueryPort.java:58-78, ModregningService.java:225-368, ModregningServiceTest.java:955-1041, petition058 outcome contract.md:147-160)."
+  - id: CR002-RERUN-KEEP-003
+    decision: KEEP
+    severity: info
+    justification: "AC-11 is now a real behavior proof: the BDD fixture seeds mixed eligible/ineligible tier-2 debts, drives a mixed P057 allocation, and asserts reduced covered amount, positive residual, and maintenance-only coverage (Petition058Steps.java:242-290, Petition058Steps.java:1309-1344, Petition058Steps.java:1682-1716, petition058.feature:190-205)."
+  - id: CR002-RERUN-KEEP-004
+    decision: KEEP
+    severity: info
+    justification: "The petition spec and solution architecture now describe the implemented same-lineage restricted settlement behavior instead of the stale generic rerun wording (petition058 specs.md:303-313, petition058 solution-architecture.md:74)."
+hotspot_summary:
+  policy_version: structural_hotspot_v1
+  baseline_ref: 0d4a2effb10986e4a673fe25e86d1aad4fbfac0d
+  blocking_count: 0
+  warning_count: 1
+  context_count: 0
+hotspots:
+  - finding_id: HS-44b61dd70aaf
+    file: opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/ModregningService.java
+    severity: warning
+    verdict: WARN
+    reason_codes:
+      - HOTSPOT_HIGH_CHURN
+      - HOTSPOT_IMPORT_FANOUT
+    metrics:
+      file_loc: 402
+      max_complexity: ~
+      max_nesting: ~
+      public_methods: 1
+      constructor_params: 0
+      import_fanout: 24
+      churn_90d: 6
+    baseline_metrics:
+      file_loc: 392
+      max_complexity: ~
+      max_nesting: ~
+      public_methods: 1
+      constructor_params: 0
+      import_fanout: 26
+      churn_90d: 6
+    worsened_metrics: []
+    tb_required: true
+    confidence: high
+    baseline_available: true

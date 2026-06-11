@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +12,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import dk.ufst.opendebt.debtservice.batch.KorrektionspuljeSettlementJob;
+import dk.ufst.opendebt.debtservice.config.TestConfig;
+import dk.ufst.opendebt.debtservice.controller.ModregningController;
 import dk.ufst.opendebt.debtservice.entity.ClaimLifecycleState;
 import dk.ufst.opendebt.debtservice.entity.CollectionMeasureEntity;
 import dk.ufst.opendebt.debtservice.entity.DebtEntity;
@@ -24,7 +29,10 @@ import dk.ufst.opendebt.debtservice.repository.DebtRepository;
 import dk.ufst.opendebt.debtservice.repository.KorrektionspuljeEntryRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
 import dk.ufst.opendebt.debtservice.repository.RenteGodtgoerelseRateEntryRepository;
+import dk.ufst.opendebt.debtservice.service.FordringAllocation;
+import dk.ufst.opendebt.debtservice.service.KorrektionspuljeResult;
 import dk.ufst.opendebt.debtservice.service.KorrektionspuljeService;
+import dk.ufst.opendebt.debtservice.service.ModregningDecisionKind;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.OffsettingReversalEvent;
@@ -52,6 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Petition058Steps {
 
   @Autowired private ModregningService modregningService;
+  @Autowired private ModregningController modregningController;
   @Autowired private KorrektionspuljeService korrektionspuljeService;
   @Autowired private KorrektionspuljeSettlementJob korrektionspuljeSettlementJob;
   @Autowired private ModregningEventRepository modregningEventRepository;
@@ -60,6 +69,9 @@ public class Petition058Steps {
   @Autowired private DebtRepository debtRepository;
   @Autowired private RenteGodtgoerelseRateEntryRepository renteGodtgoerelseRateEntryRepository;
   @Autowired private RenteGodtgoerelseService renteGodtgoerelseService;
+
+  @Autowired
+  private TestConfig.StubDaekningsRaekkefoeigenServiceClient daekningsRaekkefoeigenServiceClient;
 
   // ── Per-scenario state ──────────────────────────────────────────────────────
 
@@ -81,7 +93,9 @@ public class Petition058Steps {
 
   private UUID currentModregningEventId;
   private OffsettingReversalEvent currentReversalEvent;
+  private KorrektionspuljeResult currentKorrektionspuljeResult;
   private UUID currentKpeDebtorId;
+  private List<ModregningController.ModregningEventSummary> currentReadModelSummaries = List.of();
 
   // State for opt-out scenarios (18-20)
   private BigDecimal currentKpeSurplus;
@@ -112,13 +126,17 @@ public class Petition058Steps {
     currentDecisionDate = null;
     currentModregningEventId = null;
     currentReversalEvent = null;
+    currentKorrektionspuljeResult = null;
     currentKpeDebtorId = null;
+    currentReadModelSummaries = List.of();
     currentKpeSurplus = null;
     currentKpeTarget = "PSRM";
     currentKpeOptOutDebtUnderCollection = false;
     currentKpeOptOutRetroactivePartial = false;
     computedRate = null;
     rateComputeDate = null;
+    daekningsRaekkefoeigenServiceClient.clear();
+    SecurityContextHolder.clearContext();
   }
 
   // ── Background steps ────────────────────────────────────────────────────────
@@ -130,7 +148,7 @@ public class Petition058Steps {
 
   @Given("the payment-service DaekningsRaekkefoeigenService is available")
   public void theDaekningsRaekkefoeigenServiceIsAvailable() {
-    // DaekningsRaekkefoeigenServiceClient is a stub returning empty list — acceptable for BDD tests
+    assertThat(daekningsRaekkefoeigenServiceClient).isNotNull();
   }
 
   @Given("the caseworker portal is running")
@@ -222,6 +240,22 @@ public class Petition058Steps {
   }
 
   @Given(
+      "debtor {string} has an active tier-2 fordring {string} with debtTypeCode {string} and tilbaestaaendeBeloeb {double} DKK")
+  public void debtorHasActiveTier2FordringWithDebtType(
+      String debtorRef, String fordringRef, String debtTypeCode, double beloeb) {
+    UUID debtorId = getOrCreateDebtor(debtorRef);
+    DebtEntity debt =
+        buildDebt(
+            debtorId,
+            new BigDecimal(String.valueOf(beloeb)),
+            2,
+            LocalDate.now().minusDays(30),
+            debtTypeCode);
+    debt = debtRepository.save(debt);
+    fordringIndex.put(fordringRef, debt.getId());
+  }
+
+  @Given(
       "debtor {string} has another tier-2 fordring {string} with tilbaestaaendeBeloeb {double} DKK")
   public void debtorHasAnotherTier2Fordring(String debtorRef, String fordringRef, double beloeb) {
     UUID debtorId = getOrCreateDebtor(debtorRef);
@@ -230,6 +264,31 @@ public class Petition058Steps {
             debtorId, new BigDecimal(String.valueOf(beloeb)), 2, LocalDate.now().minusDays(20));
     debt = debtRepository.save(debt);
     fordringIndex.put(fordringRef, debt.getId());
+    daekningsRaekkefoeigenServiceClient.setAllocations(
+        debtorId,
+        List.of(new FordringAllocation(debt.getId(), new BigDecimal(String.valueOf(beloeb)), 2)));
+  }
+
+  @Given("for debtor {string}, the payment-service DaekningsRaekkefoeigenService would return:")
+  public void daekningsRaekkefoeigenServiceWouldReturn(String debtorRef, DataTable table) {
+    UUID debtorId = getOrCreateDebtor(debtorRef);
+    List<FordringAllocation> allocations =
+        table.asMaps().stream()
+            .map(
+                row -> {
+                  UUID fordringId = fordringIndex.get(row.get("fordringId"));
+                  assertThat(fordringId)
+                      .as(
+                          "fordring %s must be seeded before configuring P057 stub",
+                          row.get("fordringId"))
+                      .isNotNull();
+                  return new FordringAllocation(
+                      fordringId,
+                      new BigDecimal(row.get("amountCovered")),
+                      Integer.parseInt(row.getOrDefault("tier", "2")));
+                })
+            .toList();
+    daekningsRaekkefoeigenServiceClient.setAllocations(debtorId, allocations);
   }
 
   // ── Given — PublicDisbursementEvent staging ─────────────────────────────────
@@ -292,6 +351,10 @@ public class Petition058Steps {
     ModregningEvent existing =
         ModregningEvent.builder()
             .nemkontoReferenceId(nemkontoRef)
+            .decisionReference(buildDecisionReference(nemkontoRef))
+            .lineageReference(buildLineageReference(nemkontoRef))
+            .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+            .operative(true)
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
@@ -322,7 +385,11 @@ public class Petition058Steps {
     UUID debtorId = getOrCreateDebtor(debtorRef);
     ModregningEvent me =
         createSeedModregningEvent(debtorId, new BigDecimal(String.valueOf(beloeb)));
-    fordringIndex.put(fordringRef, UUID.randomUUID());
+    DebtEntity debt =
+        buildDebt(
+            debtorId, new BigDecimal(String.valueOf(beloeb)), 2, LocalDate.now().minusDays(20));
+    debt = debtRepository.save(debt);
+    fordringIndex.put(fordringRef, debt.getId());
     currentModregningEventId = me.getId();
     currentDebtorPersonId = debtorId;
   }
@@ -331,7 +398,10 @@ public class Petition058Steps {
   public void debtorHadFordringOffsetByModregning(String debtorRef, String fordringRef) {
     UUID debtorId = getOrCreateDebtor(debtorRef);
     ModregningEvent me = createSeedModregningEvent(debtorId, new BigDecimal("200.00"));
-    fordringIndex.put(fordringRef, UUID.randomUUID());
+    DebtEntity debt =
+        buildDebt(debtorId, new BigDecimal("200.00"), 2, LocalDate.now().minusDays(20));
+    debt = debtRepository.save(debt);
+    fordringIndex.put(fordringRef, debt.getId());
     currentModregningEventId = me.getId();
     currentDebtorPersonId = debtorId;
   }
@@ -390,12 +460,18 @@ public class Petition058Steps {
 
   @Given("fordring {string} still has an uncovered portion of {double} DKK \\(renter\\)")
   public void fordringHasUncoveredRenterPortion(String fordringRef, double amount) {
-    // Context only — processReversal Step 1 is simplified to 0 consumed in the service
+    UUID fordringId = fordringIndex.get(fordringRef);
+    assertThat(fordringId).isNotNull();
+    DebtEntity debt = debtRepository.findById(fordringId).orElseThrow();
+    debt.setOutstandingBalance(new BigDecimal(String.valueOf(amount)));
+    debtRepository.save(debt);
   }
 
   @Given("gendækning exhausts {double} DKK of the surplus \\(no eligible fordringer exist\\)")
   public void gendaekningExhausts(double amount) {
-    // DaekningsRaekkefoeigenServiceClient returns [] by default — no gendækning
+    if (currentDebtorPersonId != null) {
+      daekningsRaekkefoeigenServiceClient.setAllocations(currentDebtorPersonId, List.of());
+    }
   }
 
   @Given(
@@ -457,7 +533,11 @@ public class Petition058Steps {
     UUID debtorId = getOrCreateDebtor(debtorRef);
     ModregningEvent me =
         ModregningEvent.builder()
-            .nemkontoReferenceId(UUID.randomUUID().toString())
+            .nemkontoReferenceId("NKR-" + eventKey)
+            .decisionReference(buildDecisionReference("NKR-" + eventKey))
+            .lineageReference(buildLineageReference("NKR-" + eventKey))
+            .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+            .operative(true)
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
@@ -478,7 +558,11 @@ public class Petition058Steps {
     UUID debtorId = getOrCreateDebtor(debtorRef);
     ModregningEvent me =
         ModregningEvent.builder()
-            .nemkontoReferenceId(UUID.randomUUID().toString())
+            .nemkontoReferenceId("NKR-" + eventKey)
+            .decisionReference(buildDecisionReference("NKR-" + eventKey))
+            .lineageReference(buildLineageReference("NKR-" + eventKey))
+            .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+            .operative(true)
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now())
             .decisionDate(LocalDate.now())
@@ -667,17 +751,26 @@ public class Petition058Steps {
   @When("the OffsettingReversalEventConsumer processes the reversal event")
   public void offsReversalEventConsumerProcesses() {
     assertThat(currentReversalEvent).isNotNull();
-    korrektionspuljeService.processReversal(currentReversalEvent);
+    currentKorrektionspuljeResult = korrektionspuljeService.processReversal(currentReversalEvent);
   }
 
   @When("the KorrektionspuljeSettlementJob runs its monthly settlement for debtor {string}")
   public void kpjRunsMonthlyForDebtor(String debtorRef) {
     korrektionspuljeSettlementJob.runMonthlySettlement();
+    UUID debtorId = debtorIndex.get(debtorRef);
+    if (debtorId != null) {
+      findLatestOperativeEventForDebtor(debtorId)
+          .ifPresent(event -> currentModregningEventId = event.getId());
+    }
   }
 
   @When("the KorrektionspuljeSettlementJob runs its monthly settlement")
   public void kpjRunsMonthly() {
     korrektionspuljeSettlementJob.runMonthlySettlement();
+    if (currentKpeDebtorId != null) {
+      findLatestOperativeEventForDebtor(currentKpeDebtorId)
+          .ifPresent(event -> currentModregningEventId = event.getId());
+    }
   }
 
   @When(
@@ -736,7 +829,18 @@ public class Petition058Steps {
 
   @When("^a caseworker calls GET /debtors/([^/]+)/modregning-events$")
   public void caseworkerCallsGetModregningEvents(String debtorId) {
-    // Read-model endpoint — pass for service-level BDD
+    UUID debtorUUID = debtorIndex.get(debtorId);
+    assertThat(debtorUUID).isNotNull();
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new TestingAuthenticationToken("caseworker", "n/a", "SCOPE_modregning:read"));
+    try {
+      currentReadModelSummaries = modregningController.getModregningEvents(debtorUUID).getBody();
+      assertThat(currentReadModelSummaries).isNotNull();
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
+    lastHttpStatus = 200;
   }
 
   @When(
@@ -753,7 +857,9 @@ public class Petition058Steps {
         activeCaseworkerId != null
             ? activeCaseworkerId
             : UUID.nameUUIDFromBytes(caseworkerRef.getBytes());
-    modregningService.applyTier2Waiver(debtorUUID, eventUUID, waiverReason, caseworkerId);
+    ModregningResult result =
+        modregningService.applyTier2Waiver(debtorUUID, eventUUID, waiverReason, caseworkerId);
+    currentModregningEventId = result.eventId();
     lastHttpStatus = 200;
   }
 
@@ -1107,29 +1213,57 @@ public class Petition058Steps {
   }
 
   @Then(
-      "a new PublicDisbursementEvent equivalent is created with disbursementAmount {double} DKK for debtor {string}")
-  public void newPublicDisbursementEventEquivalentCreated(double amount, String debtorRef) {
-    UUID debtorId = getOrCreateDebtor(debtorRef);
-    long count =
-        modregningEventRepository.findAll().stream()
-            .filter(me -> debtorId.equals(me.getDebtorPersonId()))
-            .count();
-    assertThat(count).isGreaterThan(0);
-  }
-
-  @Then("the FR-1 three-tier modregning workflow is invoked for the settled amount")
-  public void frOneTierModregningWorkflowInvokedForSettledAmount() {
-    // Verified by existence of ModregningEvent(s) for currentKpeDebtorId
+      "a new correction-pool settlement decision is created in the same lineage as the origin event")
+  public void settlementDecisionCreatedInSameLineage() {
+    assertThat(currentKpeDebtorId).isNotNull();
+    ModregningEvent settlementEvent =
+        findLatestOperativeEventForDebtor(currentKpeDebtorId)
+            .filter(
+                me ->
+                    me.getDecisionKind()
+                        == ModregningDecisionKind.CORRECTION_POOL_SETTLEMENT_DECISION)
+            .orElseThrow();
+    ModregningEvent originEvent =
+        modregningEventRepository.findById(settlementEvent.getSupersedesEventId()).orElseThrow();
+    assertThat(settlementEvent.getLineageReference()).isEqualTo(originEvent.getLineageReference());
+    assertThat(settlementEvent.getSupersedesEventId()).isEqualTo(originEvent.getId());
+    currentModregningEventId = settlementEvent.getId();
   }
 
   @Then(
-      "fordring {string} receives dækning from the settled amount without transporter restrictions from the original payment")
-  public void fordringReceivesDaekningWithoutTransporterRestrictions(String fordringRef) {
+      "the settlement decision preserves the original payment category while using settlement-time timing")
+  public void settlementDecisionPreservesPaymentCategory() {
+    ModregningEvent settlementEvent =
+        modregningEventRepository.findById(currentModregningEventId).orElseThrow();
+    ModregningEvent predecessor =
+        modregningEventRepository.findById(settlementEvent.getSupersedesEventId()).orElseThrow();
+    assertThat(settlementEvent.getPaymentType()).isEqualTo(predecessor.getPaymentType());
+    assertThat(settlementEvent.getDecisionDate()).isAfterOrEqualTo(predecessor.getDecisionDate());
+  }
+
+  @Then("the settlement decision applies tier-2 then tier-3 ordering with tier-1 omitted")
+  public void settlementDecisionAppliesTier2ThenTier3WithTier1Omitted() {
+    ModregningEvent settlementEvent =
+        modregningEventRepository.findById(currentModregningEventId).orElseThrow();
+    assertThat(settlementEvent.getTier1Amount()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(
+            settlementEvent.getTier2Amount().compareTo(BigDecimal.ZERO) > 0
+                || settlementEvent.getTier3Amount().compareTo(BigDecimal.ZERO) > 0)
+        .isTrue();
+  }
+
+  @Then(
+      "fordring {string} receives dækning from the settlement decision without transporter restrictions from the original payment")
+  public void fordringReceivesDaekningFromSettlementDecision(String fordringRef) {
     UUID fordringId = fordringIndex.get(fordringRef);
     if (fordringId == null) return;
     List<CollectionMeasureEntity> measures =
         collectionMeasureRepository.findByDebtIdOrderByInitiatedAtDesc(fordringId);
-    assertThat(measures).isNotEmpty();
+    assertThat(measures)
+        .anyMatch(
+            measure ->
+                currentModregningEventId != null
+                    && currentModregningEventId.equals(measure.getModregningEventId()));
   }
 
   @Then("the KorrektionspuljeEntry is marked as settled")
@@ -1174,16 +1308,18 @@ public class Petition058Steps {
 
   @Then("the settled amount of {double} DKK is NOT treated as an unrestricted Nemkonto payment")
   public void settledAmountIsNotUnrestricted(double amount) {
-    // KorrektionspuljeEntry.boerneYdelseRestriction=true is propagated to initiateModregning
-    // via restrictedPayment=true in settleEntry — verified by entry state
-    if (currentKpeDebtorId != null) {
-      List<KorrektionspuljeEntry> entries =
-          korrektionspuljeEntryRepository.findAll().stream()
-              .filter(e -> currentKpeDebtorId.equals(e.getDebtorPersonId()))
-              .filter(e -> e.getSettledAt() != null)
-              .toList();
-      assertThat(entries).anyMatch(KorrektionspuljeEntry::isBoerneYdelseRestriction);
-    }
+    ModregningEvent event = getCurrentDecisionEvent();
+    BigDecimal requestedAmount = new BigDecimal(String.valueOf(amount));
+    BigDecimal coveredAmount = event.getTier2Amount().add(event.getTier3Amount());
+    assertThat(coveredAmount)
+        .as("restricted settlement must not behave like an unrestricted Nemkonto rerun")
+        .isLessThan(requestedAmount);
+    assertThat(event.getResidualPayoutAmount())
+        .as("the excluded restricted amount must remain residual rather than being re-applied")
+        .isGreaterThan(BigDecimal.ZERO);
+    assertThat(getMeasuresForCurrentEvent())
+        .as("restricted settlement must still create at least one SET_OFF measure")
+        .isNotEmpty();
   }
 
   @Then("the boerneYdelseRestriction flag is true on the settled amount")
@@ -1199,40 +1335,78 @@ public class Petition058Steps {
 
   @Then("the børne-og-ungeydelse modregning restrictions apply to the re-applied amount")
   public void boerneOgUngeydelsRestrictionsApply() {
-    // restrictedPayment=true parameter is propagated through KorrektionspuljeService.settleEntry
+    ModregningEvent event = getCurrentDecisionEvent();
+    assertThat(event.getPaymentType()).isEqualTo(PaymentType.BOERNE_OG_UNGEYDELSE);
+    assertThat(getCoveredDebtsForCurrentEvent())
+        .as("restricted settlement must only re-apply the amount to maintenance-claim debts")
+        .isNotEmpty()
+        .extracting(DebtEntity::getDebtTypeCode)
+        .containsOnly("UNDERHOLDSBIDRAG");
   }
 
   // ── Then — Gendækning assertions ─────────────────────────────────────────────
 
   @Then("Step 1: {double} DKK is applied to fordring {string} uncovered renter portion")
   public void step1AmountAppliedToUncoveredRenter(double amount, String fordringRef) {
-    // Step 1 is simplified to 0 consumed in processReversal — this is a documentation assertion
+    assertThat(currentKorrektionspuljeResult).isNotNull();
+    assertThat(currentKorrektionspuljeResult.step1Consumed())
+        .isEqualByComparingTo(new BigDecimal(String.valueOf(amount)));
   }
 
   @Then(
       "Step 2: DaekningsRaekkefoeigenService is called with remaining surplus {double} DKK for gendækning")
   public void step2DaekningsRaekkefoeigenServiceCalledForGendaekning(double remaining) {
-    // DaekningsRaekkefoeigenServiceClient stub is called — returns [] in test environment
+    assertThat(daekningsRaekkefoeigenServiceClient.getLastDebtorPersonId())
+        .isEqualTo(currentReversalEvent.debtorPersonId());
+    assertThat(daekningsRaekkefoeigenServiceClient.getLastAmount())
+        .isEqualByComparingTo(new BigDecimal(String.valueOf(remaining)));
   }
 
   @Then("fordring {string} is gendækket with {double} DKK")
   public void fordringIsGendaekketWith(String fordringRef, double amount) {
-    // Stub returns [] so no gendækning → KorrektionspuljeEntry created with full surplus
+    UUID fordringId = fordringIndex.get(fordringRef);
+    assertThat(fordringId).isNotNull();
+    assertThat(currentKorrektionspuljeResult).isNotNull();
+    assertThat(currentKorrektionspuljeResult.gendaekketAmount())
+        .isEqualByComparingTo(new BigDecimal(String.valueOf(amount)));
+    assertThat(daekningsRaekkefoeigenServiceClient.getLastAllocations())
+        .anySatisfy(
+            allocation -> {
+              assertThat(allocation.fordringId()).isEqualTo(fordringId);
+              assertThat(allocation.amountCovered())
+                  .isEqualByComparingTo(new BigDecimal(String.valueOf(amount)));
+            });
   }
 
   @Then("a KorrektionspuljeEntry is created with surplusAmount {double} DKK")
   public void korrektionspuljeEntryCreatedWithSurplus(double surplusAmount) {
     if (currentReversalEvent != null) {
+      assertThat(currentKorrektionspuljeResult).isNotNull();
+      assertThat(currentKorrektionspuljeResult.poolAmount())
+          .isEqualByComparingTo(new BigDecimal(String.valueOf(surplusAmount)));
       boolean anyExists =
           korrektionspuljeEntryRepository.findAll().stream()
-              .anyMatch(e -> currentReversalEvent.debtorPersonId().equals(e.getDebtorPersonId()));
+              .anyMatch(
+                  e ->
+                      currentReversalEvent.debtorPersonId().equals(e.getDebtorPersonId())
+                          && e.getSurplusAmount()
+                                  .compareTo(new BigDecimal(String.valueOf(surplusAmount)))
+                              == 0);
       assertThat(anyExists).as("KorrektionspuljeEntry should exist for debtor").isTrue();
     }
   }
 
-  @Then("no Digital Post notice is sent for the gendækning")
-  public void noDigitalPostNoticeForGendaekning() {
-    // processReversal does NOT write to notification outbox — architectural assertion
+  @Then(
+      "no debtor-facing gendækning reallocation decision is created because a residual KorrektionspuljeEntry remains")
+  public void noDebtorFacingGendaekningReallocationDecisionIsCreated() {
+    if (currentReversalEvent != null) {
+      long successorCount =
+          modregningEventRepository.findAll().stream()
+              .filter(me -> currentReversalEvent.debtorPersonId().equals(me.getDebtorPersonId()))
+              .filter(me -> me.getSupersedesEventId() != null)
+              .count();
+      assertThat(successorCount).isZero();
+    }
   }
 
   // ── Then — Klage deadline assertions ─────────────────────────────────────────
@@ -1264,13 +1438,33 @@ public class Petition058Steps {
 
   @Then("the response contains both modregning events with their klageFristDato values")
   public void responseContainsBothModregningEventsWithKlageFristDato() {
-    // Read-model verification — pass for service-level BDD
+    assertThat(currentReadModelSummaries)
+        .extracting(ModregningController.ModregningEventSummary::klageFristDato)
+        .containsExactlyInAnyOrder(LocalDate.parse("2025-06-15"), LocalDate.parse("2026-03-15"));
   }
 
   @Then(
-      "each event in the response includes fields: eventId, decisionDate, totalOffsetAmount, tier1Amount, tier2Amount, tier3Amount, residualPayoutAmount, klageFristDato, noticeDelivered, tier2WaiverApplied")
+      "each event in the response includes fields: decisionReference, lineageReference, decisionKind, operative, supersedesDecisionReference, hasHistory, decisionDate, totalOffsetAmount, tier1Amount, tier2Amount, tier3Amount, residualPayoutAmount, klageFristDato, noticeDelivered")
   public void eachEventIncludesRequiredFields() {
-    // Controller DTO coverage — pass for service-level BDD
+    assertThat(currentReadModelSummaries)
+        .isNotEmpty()
+        .allSatisfy(
+            summary -> {
+              assertThat(summary.decisionReference()).isNotBlank();
+              assertThat(summary.lineageReference()).isNotBlank();
+              assertThat(summary.decisionKind()).isNotNull();
+              assertThat(summary.decisionDate()).isNotNull();
+              assertThat(summary.totalOffsetAmount()).isNotNull();
+              assertThat(summary.tier1Amount()).isNotNull();
+              assertThat(summary.tier2Amount()).isNotNull();
+              assertThat(summary.tier3Amount()).isNotNull();
+              assertThat(summary.residualPayoutAmount()).isNotNull();
+              assertThat(summary.klageFristDato()).isNotNull();
+              summary.supersedesDecisionReference();
+              summary.hasHistory();
+              summary.operative();
+              summary.noticeDelivered();
+            });
   }
 
   @Then(
@@ -1281,6 +1475,19 @@ public class Petition058Steps {
 
   // ── Then — Waiver assertions ──────────────────────────────────────────────────
 
+  @Then(
+      "a new ModregningEvent {string} is created as a superseding waiver decision in the same lineage")
+  public void newSupersedingWaiverDecisionIsCreated(String eventKey) {
+    ModregningEvent successor =
+        modregningEventRepository.findById(currentModregningEventId).orElseThrow();
+    ModregningEvent predecessor =
+        modregningEventRepository.findById(successor.getSupersedesEventId()).orElseThrow();
+    assertThat(successor.getDecisionKind())
+        .isEqualTo(ModregningDecisionKind.SUPERSEDING_WAIVER_DECISION);
+    assertThat(successor.getLineageReference()).isEqualTo(predecessor.getLineageReference());
+    eventKeyIndex.put(eventKey, successor.getId());
+  }
+
   @Then("the ModregningEvent {string} has tier2WaiverApplied set to true")
   public void modregningEventHasTier2WaiverAppliedTrue(String eventKey) {
     UUID eventId = eventKeyIndex.get(eventKey);
@@ -1289,18 +1496,50 @@ public class Petition058Steps {
     assertThat(me.isTier2WaiverApplied()).isTrue();
   }
 
-  @Then("the three-tier ordering engine re-runs for {string} skipping tier-2")
+  @Then(
+      "the three-tier ordering engine re-runs for {string} skipping tier-2 while preserving the original tier-1 allocation")
   public void threeTierEngineReRunsSkippingTier2(String eventKey) {
     UUID eventId = eventKeyIndex.get(eventKey);
     if (eventId == null) return;
     ModregningEvent me = modregningEventRepository.findById(eventId).orElseThrow();
+    ModregningEvent predecessor =
+        modregningEventRepository.findById(me.getSupersedesEventId()).orElseThrow();
     assertThat(me.isTier2WaiverApplied()).isTrue();
     assertThat(me.getTier2Amount()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(me.getTier1Amount()).isEqualByComparingTo(predecessor.getTier1Amount());
   }
 
-  @Then("each SET_OFF CollectionMeasureEntity for this event has waiverApplied set to true")
+  @Then("fordring {string} receives no dækning in the superseding decision")
+  public void fordringReceivesNoDaekningInSupersedingDecision(String fordringRef) {
+    UUID fordringId = fordringIndex.get(fordringRef);
+    if (fordringId == null || currentModregningEventId == null) return;
+    List<CollectionMeasureEntity> measures =
+        collectionMeasureRepository.findByDebtIdOrderByInitiatedAtDesc(fordringId);
+    boolean hasCurrentSetOff =
+        measures.stream()
+            .filter(m -> m.getMeasureType() == CollectionMeasureEntity.MeasureType.SET_OFF)
+            .anyMatch(m -> currentModregningEventId.equals(m.getModregningEventId()));
+    assertThat(hasCurrentSetOff).isFalse();
+  }
+
+  @Then(
+      "the ModregningEvent {string} remains in history with its original notice and klage deadline")
+  public void modregningEventRemainsInHistory(String eventKey) {
+    UUID eventId = eventKeyIndex.get(eventKey);
+    if (eventId == null) return;
+    ModregningEvent me = modregningEventRepository.findById(eventId).orElseThrow();
+    assertThat(me.isOperative()).isFalse();
+    assertThat(me.getKlageFristDato()).isNotNull();
+  }
+
+  @Then(
+      "each SET_OFF CollectionMeasureEntity for this superseding decision has waiverApplied set to true")
   public void eachSetOffMeasureHasWaiverApplied() {
-    // After waiver, no new SET_OFF measures are written by applyTier2Waiver — vacuously true
+    if (currentModregningEventId == null) return;
+    List<CollectionMeasureEntity> measures =
+        collectionMeasureRepository.findByModregningEventIdAndMeasureType(
+            currentModregningEventId, CollectionMeasureEntity.MeasureType.SET_OFF);
+    assertThat(measures).allMatch(CollectionMeasureEntity::isWaiverApplied);
   }
 
   @Then("the CLS audit log contains an entry with:")
@@ -1398,13 +1637,14 @@ public class Petition058Steps {
     for (Map<String, String> row : rows) {
       String fordringRef = row.get("fordringId");
       BigDecimal beloeb = new BigDecimal(row.getOrDefault("tilbaestaaendeBeloeb", "0.00"));
+      String debtTypeCode = row.getOrDefault("debtTypeCode", "600");
       String dateStr =
           row.get("registreringsdato") != null
               ? row.get("registreringsdato")
               : row.getOrDefault("modtagelsesdato", LocalDate.now().toString());
       LocalDate inceptionDate = LocalDate.parse(dateStr);
 
-      DebtEntity debt = buildDebt(debtorId, beloeb, tier, inceptionDate);
+      DebtEntity debt = buildDebt(debtorId, beloeb, tier, inceptionDate, debtTypeCode);
       debt = debtRepository.save(debt);
       if (fordringRef != null) {
         fordringIndex.put(fordringRef, debt.getId());
@@ -1414,10 +1654,19 @@ public class Petition058Steps {
 
   private DebtEntity buildDebt(
       UUID debtorId, BigDecimal outstanding, int tier, LocalDate inceptionDate) {
+    return buildDebt(debtorId, outstanding, tier, inceptionDate, "600");
+  }
+
+  private DebtEntity buildDebt(
+      UUID debtorId,
+      BigDecimal outstanding,
+      int tier,
+      LocalDate inceptionDate,
+      String debtTypeCode) {
     return DebtEntity.builder()
         .debtorPersonId(debtorId)
         .creditorOrgId(UUID.randomUUID())
-        .debtTypeCode("600")
+        .debtTypeCode(debtTypeCode)
         .principalAmount(outstanding)
         .outstandingBalance(outstanding)
         .dueDate(LocalDate.now().plusMonths(1))
@@ -1430,14 +1679,56 @@ public class Petition058Steps {
         .build();
   }
 
+  private ModregningEvent getCurrentDecisionEvent() {
+    assertThat(currentModregningEventId).isNotNull();
+    ModregningEvent current =
+        modregningEventRepository.findById(currentModregningEventId).orElseThrow();
+    if (current.getDecisionKind() == ModregningDecisionKind.CORRECTION_POOL_SETTLEMENT_DECISION
+        || currentKpeDebtorId == null) {
+      return current;
+    }
+    return modregningEventRepository.findAll().stream()
+        .filter(me -> currentKpeDebtorId.equals(me.getDebtorPersonId()))
+        .filter(
+            me ->
+                me.getDecisionKind() == ModregningDecisionKind.CORRECTION_POOL_SETTLEMENT_DECISION)
+        .filter(ModregningEvent::isOperative)
+        .max(
+            Comparator.comparing(ModregningEvent::getDecisionDate)
+                .thenComparing(ModregningEvent::getDecisionReference))
+        .map(
+            event -> {
+              currentModregningEventId = event.getId();
+              return event;
+            })
+        .orElse(current);
+  }
+
+  private List<CollectionMeasureEntity> getMeasuresForCurrentEvent() {
+    UUID eventId = getCurrentDecisionEvent().getId();
+    return collectionMeasureRepository.findAll().stream()
+        .filter(measure -> eventId.equals(measure.getModregningEventId()))
+        .toList();
+  }
+
+  private List<DebtEntity> getCoveredDebtsForCurrentEvent() {
+    return debtRepository.findAllById(
+        getMeasuresForCurrentEvent().stream().map(CollectionMeasureEntity::getDebtId).toList());
+  }
+
   private ModregningEvent createSeedModregningEvent(UUID debtorId, BigDecimal amount) {
+    String nemkontoReferenceId = UUID.randomUUID().toString();
     ModregningEvent me =
         ModregningEvent.builder()
-            .nemkontoReferenceId(UUID.randomUUID().toString())
+            .nemkontoReferenceId(nemkontoReferenceId)
+            .decisionReference(buildDecisionReference(nemkontoReferenceId))
+            .lineageReference(buildLineageReference(nemkontoReferenceId))
+            .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+            .operative(true)
             .debtorPersonId(debtorId)
             .receiptDate(LocalDate.now().minusDays(5))
             .decisionDate(LocalDate.now().minusDays(5))
-            .paymentType(PaymentType.STANDARD_PAYMENT)
+            .paymentType(PaymentType.valueOf(currentPaymentType))
             .disbursementAmount(amount)
             .tier2Amount(amount)
             .klageFristDato(LocalDate.now().plusYears(1))
@@ -1474,5 +1765,22 @@ public class Petition058Steps {
         .findByNemkontoReferenceId(nemkontoRef)
         .map(ModregningEvent::getId)
         .orElse(null);
+  }
+
+  private String buildDecisionReference(String nemkontoReferenceId) {
+    return "DEC-" + nemkontoReferenceId;
+  }
+
+  private String buildLineageReference(String nemkontoReferenceId) {
+    return "LIN-" + nemkontoReferenceId;
+  }
+
+  private Optional<ModregningEvent> findLatestOperativeEventForDebtor(UUID debtorId) {
+    return modregningEventRepository.findAll().stream()
+        .filter(me -> debtorId.equals(me.getDebtorPersonId()))
+        .filter(ModregningEvent::isOperative)
+        .max(
+            Comparator.comparing(ModregningEvent::getDecisionDate)
+                .thenComparing(ModregningEvent::getDecisionReference));
   }
 }

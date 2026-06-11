@@ -32,6 +32,14 @@ This specification covers exactly the five functional requirements stated in P05
 - Manual caseworker-initiated modregning
 - Børne-og-ungeydelse restriction enforcement rules beyond flag persistence
 
+## 1.1 ADR-0039 lineage amendment
+
+P058 debtor-facing outcomes are specified as a **single set-off decision family** with explicit
+`decisionKind`, immutable `decisionReference`, stable `lineageReference`, immutable
+`originalPaymentCategory`, and explicit predecessor links where one decision supersedes another.
+`ModregningEvent` remains the current persistence name, but in this specification it denotes a
+stored debtor-facing set-off decision record rather than a single mutable legal event.
+
 ---
 
 ## 2. Data Model
@@ -43,6 +51,12 @@ This specification covers exactly the five functional requirements stated in P05
 **Package:** `dk.ufst.opendebt.debtservice.entity`  
 **Table:** `modregning_event`  
 **Legal basis:** GIL §§ 7 stk. 1, 8b, 9a, 17 stk. 1
+
+**ADR-0039 amendment:** each persisted debtor-facing decision also requires immutable domain
+identity (`decision_reference`, `lineage_reference`, `decision_kind`, `business_idempotency_key`,
+`original_payment_type`) plus lineage navigation (`supersedes_event_id`, `operative`). External
+disbursement decisions use `nemkonto_reference_id`; internal debtor-facing decisions use their
+own stable business keys derived from origin + decision kind.
 
 | Column | Java type | SQL type | Nullable | Constraints | Notes |
 |--------|-----------|----------|----------|-------------|-------|
@@ -153,8 +167,8 @@ Enforced by: application-level guard in `ModregningService` before persist.
 
 **Naming convention:** `V{N}__{snake_description}.sql`  
 **Location:** `opendebt-debt-service/src/main/resources/db/migration/`  
-**Existing migrations:** V1, V2, V3 (active); V4–V7 archived and NOT in active migration path.  
-**New migrations start at V4** (archived V4–V7 are not in `db/migration/` and will not conflict).
+**Existing migrations:** V1–V13 are active in `db/migration/`.  
+**New lineage amendment migration:** V14 extends the active chain with the lineage decision columns.
 
 | Migration | File | Content |
 |-----------|------|---------|
@@ -162,6 +176,8 @@ Enforced by: application-level guard in `ModregningService` before persist.
 | **V5** | `V5__korrektionspulje_entry.sql` | CREATE TABLE `korrektionspulje_entry`; partial index on unsettled entries; FK to `modregning_event` |
 | **V6** | `V6__rentegodt_rate_entry.sql` | CREATE TABLE `rentegodt_rate_entry`; UNIQUE on `publication_date` |
 | **V7** | `V7__collection_measure_modregning_cols.sql` | ALTER TABLE `collection_measure` ADD COLUMN `modregning_event_id uuid`, ADD COLUMN `waiver_applied boolean NOT NULL DEFAULT false`, ADD COLUMN `caseworker_id uuid`; FK constraint on `modregning_event_id`; partial NOT NULL check constraint for SET_OFF rows |
+| **V8–V13** | existing active migrations | Unrelated debt-service changes retained in order; see `db/migration/` for the full active chain |
+| **V14** | `V14__modregning_lineage_model.sql` | ALTER TABLE `modregning_event` ADD `decision_reference`, `lineage_reference`, `decision_kind`, `supersedes_event_id`, `operative`; backfill root decision defaults; add lineage indexes |
 
 Each migration file contains only DDL. No DML seeding. Each file is idempotent via `IF NOT EXISTS` guards.
 
@@ -204,25 +220,25 @@ ModregningService implements OffsettingService {
 **Method contracts:**
 
 `initiateModregning`:
-- **Input:** `debtorPersonId` (non-null UUID), `availableAmount` (> 0), `paymentType` (non-null, must be in configured eligible-payment-types), `sourceEvent` (nullable), `restrictedPayment` (boolean; `true` when called from korrektionspulje settlement with `boerneYdelseRestriction = true`, bypassing the "origin nature lost" rule for børne-og-ungeydelse payments; `false` in all other cases including direct disbursement events)
-- **Idempotency:** if `sourceEvent.nemkontoReferenceId` already exists in `modregning_event.nemkonto_reference_id`, return the existing `ModregningResult` without executing any further logic
-- **Execution:** delegates tier ordering to `ModregningsRaekkefoeigenEngine`; delegates rentegodtgørelse start date to `RenteGodtgoerelseService`; persists `ModregningEvent`; creates `CollectionMeasureEntity` per covered fordring; generates ledger entries; enqueues Digital Post outbox message
+- **Input:** `debtorPersonId` (non-null UUID), `availableAmount` (> 0), `paymentType` (non-null explicit statutory payment category), `sourceEvent` (present for root external disbursement decisions, absent for internal decision kinds), `restrictedPayment` (boolean derived from the immutable `originalPaymentCategory`)
+- **Idempotency:** root external disbursement decisions use `sourceEvent.nemkontoReferenceId`; internal decision kinds use a stable business idempotency key derived from origin + decision kind
+- **Execution:** delegates tier ordering to `ModregningsRaekkefoeigenEngine`; delegates rentegodtgørelse start date to `RenteGodtgoerelseService`; persists a debtor-facing set-off decision record with `decisionReference`, `lineageReference`, `decisionKind`, and immutable identity fields; creates `CollectionMeasureEntity` per covered fordring; generates ledger entries; enqueues Digital Post outbox message
 - **Transaction:** entire method runs in a single `@Transactional` boundary; Digital Post outbox write is part of the same transaction (outbox pattern)
 - **Output:** `ModregningResult` (see §5 for DTO definition)
-- **Error:** throws `DuplicateNemkontoReferenceException` (HTTP 409) if idempotency guard triggered mid-transaction (race condition); throws `EligiblePaymentTypeException` (HTTP 422) if payment type is not in eligible set
+- **Error:** throws `DuplicateNemkontoReferenceException` (HTTP 409) if external idempotency guard triggered mid-transaction (race condition); throws `EligiblePaymentTypeException` (HTTP 422) if payment type is not an explicit statutory category
 
 `applyTier2Waiver`:
 - **Input:** `debtorPersonId`, `modregningEventId`, `waiverReason` (non-null, max 500 chars), `caseworkerId` (non-null UUID)
-- **Precondition:** `ModregningEvent` with given id exists and belongs to `debtorPersonId`; `tier2WaiverApplied = false`
+- **Precondition:** the operative debtor-facing decision with given id exists and belongs to `debtorPersonId`; no prior superseding waiver decision already exists for that predecessor
 - **Execution — state transitions (AC-6):**
-  1. Sets `tier2WaiverApplied = true` on the `ModregningEvent`.
-  2. For each existing tier-2 `CollectionMeasureEntity` linked to this event: sets `waiver_applied = true` and `caseworker_id = caseworkerId`; reverses the corresponding ledger entries in the same transaction. These rows are NOT deleted — they remain as the historical record of the reversed tier-2 measures.
-  3. Re-runs `ModregningsRaekkefoeigenEngine.allocate` with `skipTier2 = true`, using the event's original `disbursementAmount` minus the tier-1 amounts already allocated as the available residual.
-  4. Creates new `CollectionMeasureEntity` rows for any tier-3 fordringer covered in the re-run; each new row has `modregning_event_id` set, `waiver_applied = true`, and `caseworker_id = caseworkerId`.
-  5. Updates `ModregningEvent.tier2Amount = 0.00`; updates `tier3Amount` = sum of newly covered tier-3 allocations; updates `residualPayoutAmount` = any uncovered residual.
-  6. Writes CLS audit entry with `gilParagraf = "GIL § 4, stk. 11"`, `caseworkerId`, and `waiverReason`.
+  1. Marks the prior operative decision as superseded while retaining its original notice and appeal metadata.
+  2. For each existing tier-2 `CollectionMeasureEntity` linked to the predecessor decision: sets `waiver_applied = true` and `caseworker_id = caseworkerId`; reverses the corresponding ledger entries in the same transaction. These rows are NOT deleted — they remain as the historical record of the reversed tier-2 measures.
+  3. Re-runs `ModregningsRaekkefoeigenEngine.allocate` with `skipTier2 = true`, using the predecessor decision's original `disbursementAmount` minus the fixed tier-1 amount as the available residual.
+  4. Persists a new **superseding waiver decision** with a new `decisionReference`, the same `lineageReference`, a `supersedes_event_id` link to the predecessor, and its own notice/appeal lifecycle.
+  5. Creates new `CollectionMeasureEntity` rows for re-applied allocations; each new row has `modregning_event_id` set, `waiver_applied = true`, and `caseworker_id = caseworkerId`.
+  6. Writes CLS audit entry with `gilParagraf = "GIL § 4, stk. 11"`, `caseworkerId`, `waiverReason`, and both predecessor/superseding decision references.
 - **Transaction:** `@Transactional`; all steps 1–6 execute within a single transaction boundary; CLS audit write is within the same boundary
-- **Output:** updated `ModregningResult`
+- **Output:** `ModregningResult` for the new superseding waiver decision
 - **Error:** throws `ModregningEventNotFoundException` (HTTP 404) if event not found; throws `WaiverAlreadyAppliedException` (HTTP 409) if `tier2WaiverApplied` already true
 
 ---
@@ -278,8 +294,8 @@ KorrektionspuljeService {
 `processReversal`:
 - **Input:** `reversalEvent` (non-null); contains `originModregningEventId`, `surplusAmount`, `debtorPersonId`, `reversedFordringId`
 - **Step 1 — residual same-fordring coverage:** applies `surplusAmount` to uncovered portion of `reversedFordringId` (including renter sub-positions in P057 order); any amount consumed here is persisted as a ledger adjustment; remaining = surplus − step1Consumed
-- **Step 2 — gendækning:** if remaining > 0 and gendækning is not opted-out (see opt-out rules below), calls `DaekningsRaekkefoeigenService` to allocate remaining against other active tier-2 fordringer; gendækning opt-out applies when: `correctionPoolTarget = DMI`, OR original payment was from `inddrivelsesindsats` of type debt-under-collection with a debt-under-collection opt-out flag, OR fordring was partially covered retroactively; no Digital Post notice is sent for gendækning
-- **Step 3 — pool entry creation:** if remaining > 0 after gendækning (or gendækning skipped), persists `KorrektionspuljeEntry` with `surplusAmount = remaining`, `correctionPoolTarget` derived from origin event, `boerneYdelseRestriction` derived from origin event's `paymentType = BOERNE_OG_UNGEYDELSE`, `renteGodtgoerelseStartDate = origin event decisionDate + 1 day`, `annualOnlySettlement = (remaining < 50.00)`
+- **Step 2 — gendækning:** if remaining > 0 and gendækning is not opted-out (see opt-out rules below), calls `DaekningsRaekkefoeigenService` to allocate remaining against other active tier-2 fordringer; gendækning opt-out applies when: `correctionPoolTarget = DMI`, OR original payment was from `inddrivelsesindsats` of type debt-under-collection with a debt-under-collection opt-out flag, OR fordring was partially covered retroactively; purely internal gendækning sends no Digital Post notice, but material gendækning that becomes the operative outcome emits a debtor-facing **gendækning reallocation decision**
+- **Step 3 — pool entry creation:** if remaining > 0 after gendækning (or gendækning skipped), persists `KorrektionspuljeEntry` with `surplusAmount = remaining`, `correctionPoolTarget` derived from origin event, `boerneYdelseRestriction` derived from origin event's `paymentType = BOERNE_OG_UNGEYDELSE`, `renteGodtgoerelseStartDate = origin event decisionDate + 1 day`, `annualOnlySettlement = (remaining < 50.00)`; this entry is internal accounting state, not a debtor-facing decision
 - **Transaction:** `@Transactional`
 - **Output:** `KorrektionspuljeResult` (stepConsumed, gendaekketAmount, poolEntryId, poolAmount)
 - **Error:** throws `OriginEventNotFoundException` (HTTP 404) if `originModregningEventId` not found; throws `InvalidReversalAmountException` (HTTP 422) if `surplusAmount ≤ 0`
@@ -294,7 +310,7 @@ KorrektionspuljeService {
   - When `renteGodtgoerelseStartDate IS NULL`: `renteGodtgoerelseAccrued` remains `0.00`
   - The accrual update is persisted within the same `@Transactional` boundary as settlement
   - **Schedule alignment:** this computation runs at settlement time, which is driven by the monthly (`runMonthlySettlement`) and annual (`runAnnualSettlement`) job schedules (FR-3.4)
-- **Execution:** computes `total = entry.surplusAmount + entry.renteGodtgoerelseAccrued`; invokes `ModregningService.initiateModregning(entry.debtorPersonId, total, paymentType, null, entry.boerneYdelseRestriction)` — `restrictedPayment` is passed as `entry.boerneYdelseRestriction`, bypassing the "origin nature lost" rule when `true`; transporter notified before 2021-10-01 is preserved via a flag on the P057 call; sets `settledAt = Instant.now()` on the entry
+- **Execution:** computes `total = entry.surplusAmount + entry.renteGodtgoerelseAccrued`; invokes `ModregningService` to create a new **correction-pool settlement decision** in the same `lineageReference`, preserving the immutable `originalPaymentCategory`, using settlement-time timing, omitting tier-1 unless law explicitly restores it, and passing category-derived restrictions such as `boerneYdelseRestriction`; when `boerneYdelseRestriction = true`, re-application MUST exclude non-maintenance claim allocations rather than treating the amount as unrestricted; sets `settledAt = Instant.now()` on the entry
 - **Constraint:** MUST NOT be called for entries with `correctionPoolTarget = DMI`
 
 ---
@@ -488,7 +504,8 @@ IF remaining > 0 AND NOT optOut:
     p057Result ← DaekningsRaekkefoeigenService.allocate(debtorPersonId, remaining)
     gendaekketAmount ← SUM(p057Result.allocations.amountCovered)
     remaining ← remaining − gendaekketAmount
-    // No Digital Post notice for gendækning
+    // Purely internal gendækning sends no notice; material operative reallocation emits a
+    // gendækning reallocation decision in the same lineage
 
 // STEP 3: KorrektionspuljeEntry creation
 IF remaining > 0:
@@ -564,6 +581,10 @@ computeKlageFristDato(noticeDelivered, noticeDeliveryDate, decisionDate):
 
 This computation MUST be executed and `klageFristDato` MUST be stored on the `ModregningEvent` within the same transaction as the event creation. It MUST be updated after Digital Post delivery outcome is known (within the post-commit outbox processing, the event is updated with `noticeDelivered` and `noticeDeliveryDate`, then `klageFristDato` is recomputed and persisted in a follow-up transaction).
 
+For all debtor-facing decision kinds, failed notice delivery does **not** block operativity; it
+only changes the appeal-window fallback from 3 months after delivery to 1 year after
+`decisionDate`.
+
 ---
 
 ## 5. REST API
@@ -601,7 +622,11 @@ POST /api/v1/debtors/{debtorId}/modregning-events/{eventId}/tier2-waiver
 
 ```json
 {
-  "eventId": "uuid",
+  "decisionReference": "string",
+  "lineageReference": "string",
+  "decisionKind": "SUPERSEDING_WAIVER_DECISION",
+  "operative": true,
+  "supersedesDecisionReference": "string",
   "debtorPersonId": "uuid",
   "decisionDate": "2025-03-15",
   "tier1Amount": 0.00,
@@ -647,7 +672,7 @@ GET /api/v1/debtors/{debtorId}/modregning-events
 |-----------|------|---------|-------------|
 | `page` | integer | 0 | Zero-based page number |
 | `size` | integer | 20 | Page size (max 100) |
-| `sort` | string | `decisionDate,desc` | Sort field and direction |
+| `sort` | string | `decisionDate,desc` | Sort field and direction for operative decisions |
 
 **Success response: HTTP 200**
 
@@ -655,7 +680,12 @@ GET /api/v1/debtors/{debtorId}/modregning-events
 {
   "content": [
     {
-      "eventId": "uuid",
+      "decisionReference": "string",
+      "lineageReference": "string",
+      "decisionKind": "EXTERNAL_DISBURSEMENT_DECISION",
+      "operative": true,
+      "supersedesDecisionReference": null,
+      "hasHistory": true,
       "decisionDate": "2025-03-15",
       "totalOffsetAmount": 10000.00,
       "tier1Amount": 3000.00,
@@ -680,7 +710,12 @@ GET /api/v1/debtors/{debtorId}/modregning-events
 
 | Field | Source | Mandatory in response |
 |-------|--------|----------------------|
-| `eventId` | `ModregningEvent.id` | YES |
+| `decisionReference` | Immutable debtor-facing decision identifier | YES |
+| `lineageReference` | Stable lineage identifier shared across related decisions | YES |
+| `decisionKind` | Decision-family discriminator | YES |
+| `operative` | Derived from supersession state | YES |
+| `supersedesDecisionReference` | Predecessor decision identifier | NO |
+| `hasHistory` | Derived from lineage size > 1 | YES |
 | `decisionDate` | `ModregningEvent.decisionDate` | YES |
 | `totalOffsetAmount` | `tier1Amount + tier2Amount + tier3Amount` | YES |
 | `tier1Amount` | `ModregningEvent.tier1Amount` | YES |
@@ -708,7 +743,13 @@ GET /api/v1/debtors/{debtorId}/modregning-events
 
 ```java
 record ModregningResult(
-    UUID eventId,
+    String decisionReference,
+    String lineageReference,
+    String decisionKind,
+    boolean operative,
+    String supersedesDecisionReference,   // nullable
+    boolean hasHistory,
+    UUID eventId,                         // internal persistence id; not default debtor-facing identity
     UUID debtorPersonId,
     LocalDate decisionDate,
     BigDecimal disbursementAmount,
@@ -963,7 +1004,7 @@ All tests reside in `opendebt-debt-service/src/test/` following existing test co
 **Scenario:** Same `PublicDisbursementEvent` processed twice  
 **Assertions:**
 - Exactly one `ModregningEvent` row in DB after two calls
-- Second call returns the same `eventId` as the first
+- Second call returns the same root `decisionReference` as the first
 - No additional `CollectionMeasureEntity` created on the second call
 
 ### AC-6: Tier-2 Waiver Applied by Authorized Caseworker
@@ -973,8 +1014,9 @@ All tests reside in `opendebt-debt-service/src/test/` following existing test co
 **Scenario:** Caller JWT contains `modregning:waiver` scope  
 **Assertions:**
 - HTTP 200
-- `ModregningEvent.tier2WaiverApplied = true` in DB
-- `ModregningEvent.tier2Amount = 0.00` in DB
+- A new superseding waiver decision exists in DB with `decisionKind = SUPERSEDING_WAIVER_DECISION`
+- The superseding decision has `tier2WaiverApplied = true` and `tier2Amount = 0.00`
+- The predecessor decision remains in history and is no longer operative
 - CLS audit entry exists with `gilParagraf = "GIL § 4, stk. 11"`, `caseworkerId`, `waiverReason`
 - All original tier-2 `CollectionMeasureEntity` rows linked to this event have `waiver_applied = true` and `caseworker_id` set; they are NOT deleted
 - New `CollectionMeasureEntity` rows exist for any tier-3 fordringer covered in the re-run, each with `waiver_applied = true` and `caseworker_id` set
@@ -1073,7 +1115,7 @@ All tests reside in `opendebt-debt-service/src/test/` following existing test co
 **Assertions:**
 - HTTP 200
 - Response body contains both events
-- Each event object in `content` array contains ALL of: `eventId`, `decisionDate`, `totalOffsetAmount`, `tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`, `noticeDelivered`, `tier2WaiverApplied`
+- Each event object in `content` array contains ALL of: `decisionReference`, `lineageReference`, `decisionKind`, `operative`, `supersedesDecisionReference`, `hasHistory`, `decisionDate`, `totalOffsetAmount`, `tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`, `noticeDelivered`
 - No field is absent or null when it should be non-null
 
 ### AC-17: Portal Amber/Red Highlighting

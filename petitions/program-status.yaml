@@ -2,8 +2,8 @@ schema_version: 1
 
 program:
   name: OpenDebt petition implementation program
-  updated_at: 2026-06-09
-  updated_by: petition026 pipeline implementation closure
+  updated_at: 2026-06-10
+  updated_by: CR-002 creation for petition058 lineage amendment
   psrm_reference:
     source_docs: docs/psrm-reference/
     enriched_petitions: [petition002, petition003, petition004, petition005, petition006, petition007, petition015, petition017, petition018, petition024, petition026]
@@ -1564,20 +1564,23 @@ program:
     petition066:
       title: Udlæg — skærpet inddrivelse PSRM workflow (G.A.3.2)
       legal_footprint: true
-      status: not_started
+      status: in_progress
       phase: phase-20
       depends_on:
         - petition062
-      last_reviewed: 2026-03-29
+      last_reviewed: 2026-06-11
       notes: >
-        G.A.3.2: PSRM-side udlægsforretning workflow — dispatch of udlægsafgørelse to
-        fogedretten, status tracking (anmodet, under behandling, afsluttet/forgæves),
-        and downstream effects on prescription (udlæg afbryder forældelse per petition059).
-        Scoped to PSRM side only; court procedures (fast ejendom, løsøre, virksomhedspant)
-        are Tier C reference-only — no implementation. Tier B.
+        G.A.3.2: PSRM-side udlægsforretning workflow with dedicated debt-service aggregate,
+        debtor-scoped command surface, async dispatch/callback correlation by workflowReference,
+        strict idempotent state machine (REQUESTED, IN_COURT_PROCESS, COMPLETED,
+        UNSUCCESSFUL, WITHDRAWN), and atomic petition059 interruption coupling for terminal
+        outcomes. External court traffic terminates at integration-gateway (OCES3 mTLS +
+        replay protection) before internal debt-service APIs. Scoped to PSRM side only;
+        court procedures (fast ejendom, løsøre, virksomhedspant) are Tier C reference-only
+        — no implementation. Tier B.
       next_step: >
-        Draft petition document. Coordinate with petition059 for afbrydelse effect on
-        prescription date.
+        Run pipeline-conductor for petition066 and implement debt-service attachment workflow
+        aggregate plus petition059 interruption integration.
 
     petition067:
       title: Særlige inddrivelsesværktøjer (G.A.3.5)
@@ -1799,6 +1802,13 @@ program:
       phase: 4
       requested_date: "2026-04-10"
       file: petitions/change-requests/CR-001.yaml
+    CR-002:
+      parent: petition058
+      title: "Align petition058 with lineage-based set-off decision model"
+      status: implemented
+      phase: 5
+      requested_date: "2026-06-10"
+      file: petitions/change-requests/CR-002.yaml
 
   technical_backlog:
     - id: TB-001
@@ -3183,6 +3193,23 @@ program:
         snapshots, requestedBySystem is unused, and current petition060 tests normalize that
         behavior instead of distinguishing caseworker-triggered decisions from system-triggered
         ones.
+
+    - id: TB-067
+      title: "Resolve runtime integration drift: API smoke drift in /debt-service/api-docs"
+      status: pending
+      source_agent: runtime-integration-conductor
+      petition: petition058
+      category: runtime-integration-drift
+      remediation_target: docs
+      drift_class: API smoke drift
+      symbol: /debt-service/api-docs
+      severity: warning
+      evidence_artifact: petitions/reviews/petition058-runtime-integration-conductor.yaml
+      notes: >
+        The documented local runtime path now boots debt-service cleanly, applies Flyway V14,
+        serves actuator health, and returns 401 on the secured petition058 modregning route, but
+        GET /debt-service/api-docs still returns 500 INTERNAL_ERROR and needs a focused Springdoc
+        follow-up.
 
 escalations:
   - id: ESC-055

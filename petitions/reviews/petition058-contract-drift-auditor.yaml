@@ -1,0 +1,60 @@
+scope: "petition058 lineage-based set-off decision model"
+agent: "contract-drift-auditor"
+mode: "enforce"
+status: "success"
+verdict: "PASS"
+summary: "No blocking semantic contract drift remained across the lineage DTO, controller summary, entity, and migration layers after the CR-002 implementation."
+canonical_source:
+  - "architecture/adr/0039-lineage-based-set-off-decision-model.md:7-9"
+  - "petitions/petition058-modregning-korrektionspulje-outcome-contract.md:89-97"
+  - "petitions/petition058-modregning-korrektionspulje-outcome-contract.md:152-160"
+  - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:220-240"
+  - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:312-312"
+  - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:712-759"
+layers_checked:
+  - "api"
+  - "dto"
+  - "entity"
+  - "db"
+  - "tests"
+artifacts:
+  - "petitions/reviews/petition058-contract-drift-auditor.yaml"
+evidence_checked:
+  - claim: "Read-model contract exposes lineage identifiers and operative-history fields."
+    proof:
+      - "petitions/petition058-modregning-korrektionspulje-outcome-contract.md:233-245"
+      - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:682-717"
+      - "opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/controller/ModregningController.java:79-153"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Persistence model supports lineage identity and operative-history transitions."
+    proof:
+      - "architecture/adr/0039-lineage-based-set-off-decision-model.md:7-9"
+      - "opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/entity/ModregningEvent.java:34-108"
+      - "opendebt-debt-service/src/main/resources/db/migration/V14__modregning_lineage_model.sql:1-32"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Waiver and settlement flows preserve same-lineage semantics and payment-category behavior."
+    proof:
+      - "petitions/petition058-modregning-korrektionspulje-outcome-contract.md:90-97"
+      - "petitions/petition058-modregning-korrektionspulje-outcome-contract.md:152-160"
+      - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:230-239"
+      - "petitions/specs/petition058-modregning-korrektionspulje-specs.md:312-312"
+      - "opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/ModregningService.java:163-291"
+      - "opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/KorrektionspuljeService.java:125-156"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Fresh regression coverage exists for the lineage contract."
+    proof:
+      - "opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/controller/ModregningControllerTest.java:43-148"
+      - "opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/ModregningServiceTest.java:133-163"
+      - "opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/ModregningServiceTest.java:671-790"
+      - "opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/KorrektionspuljeServiceTest.java:391-445"
+      - "opendebt-debt-service/src/test/resources/features/petition058.feature:207-315"
+    freshness: "2026-06-10"
+    result: "pass"
+findings: []
+warnings: []
+escalations: []
+next_action: "Proceed to runtime-integration and review gates for CR-002."
+handoff_target: "runtime-integration-conductor"

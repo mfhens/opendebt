@@ -38,5 +38,7 @@
 | 0036 | Security baseline | Consolidated cross-cutting security baseline for authentication, authorization, secrets, transport security, validation, audit logging, and vulnerability management |
 | 0037 | Performance SLA | Cross-cutting performance targets for response time, database access, async processing, load testing, and observability |
 | 0038 | Prescription objection boundary with debt-service façade | Keep the petition-aligned limitation surface in debt-service while case-service owns objection workflow lifecycle |
+| 0039 | Lineage-based set-off decision model | P058 set-off uses lineage-linked debtor-facing decisions with explicit decision kinds, references, notice/appeal semantics, and internal-only pool states |
+| 0040 | Attachment workflow boundary and prescription linkage | Petition066 uses a dedicated debt-service attachment aggregate with async court callbacks, strict idempotent state handling, and atomic UDLAEG interruption coupling |
 
 ADR source files are in `architecture/adr/` in the repository.

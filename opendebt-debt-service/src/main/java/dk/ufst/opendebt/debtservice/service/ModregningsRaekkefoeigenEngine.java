@@ -41,12 +41,29 @@ public class ModregningsRaekkefoeigenEngine {
    */
   public TierAllocationResult allocate(
       UUID debtorPersonId, BigDecimal amount, boolean skipTier2, UUID payingAuthorityOrgId) {
+    return allocate(debtorPersonId, amount, false, skipTier2, payingAuthorityOrgId);
+  }
+
+  /**
+   * Allocates the available amount across the three tiers with explicit tier omission flags.
+   *
+   * @param skipTier1 if true, omit tier-1 allocation entirely
+   * @param skipTier2 if true, omit tier-2 allocation entirely
+   */
+  public TierAllocationResult allocate(
+      UUID debtorPersonId,
+      BigDecimal amount,
+      boolean skipTier1,
+      boolean skipTier2,
+      UUID payingAuthorityOrgId) {
 
     AllocationStep step1 =
-        allocateSimpleTier(
-            fordringQueryPort.getActiveFordringer(debtorPersonId, 1, payingAuthorityOrgId),
-            amount,
-            1);
+        skipTier1
+            ? new AllocationStep(List.of(), amount)
+            : allocateSimpleTier(
+                fordringQueryPort.getActiveFordringer(debtorPersonId, 1, payingAuthorityOrgId),
+                amount,
+                1);
     if (step1.remaining().compareTo(BigDecimal.ZERO) <= 0) {
       return new TierAllocationResult(step1.allocations(), List.of(), List.of(), BigDecimal.ZERO);
     }

@@ -87,12 +87,14 @@ Residual payout:
   valid `waiverReason` and `caseworkerId`.
 
 **Expected waiver behaviour**
-- `tier2WaiverApplied` is set to `true` on the `ModregningEvent`.
-- The three-tier ordering engine re-runs for this event, skipping tier-2.
-- Each `CollectionMeasureEntity` for covered fordringer carries `waiverApplied = true` and
-  the `caseworkerId`.
+- A new **superseding waiver decision** is created in the same `lineageReference`.
+- The earlier operative decision remains in history with its original notice and appeal metadata.
+- The ordering engine re-runs only for the post-tier-1 residual, skipping tier-2.
+- The new decision carries its own `decisionReference`, notice outcome, and `klageFristDato`.
+- Each `CollectionMeasureEntity` for covered fordringer in the superseding decision carries
+  `waiverApplied = true` and the `caseworkerId`.
 - A CLS audit log entry is written with `gilParagraf = "GIL § 4, stk. 11"`,
-  `caseworkerId`, `waiverReason`, and `modregningEventId`.
+  `caseworkerId`, `waiverReason`, and the predecessor/superseding decision references.
 
 **Expected authorization behaviour**
 - A caller without `modregning:waiver` scope receives HTTP 403.
@@ -102,6 +104,8 @@ Residual payout:
 - A caller without `modregning:waiver` scope is permitted to submit a waiver.
 - The CLS audit log entry is missing `gilParagraf = "GIL § 4, stk. 11"`.
 - The ordering engine does not re-run after the waiver is applied.
+- A waiver rewrites the earlier operative decision in place instead of creating a superseding
+  debtor-facing decision.
 - `waiverApplied = true` is absent from the `CollectionMeasureEntity` after a waiver.
 
 ---
@@ -125,7 +129,10 @@ Residual payout:
 - The remaining surplus (after Step 1) is applied to other fordringer under inddrivelse using
   the P057 `DaekningsRaekkefoeigenService` ordering.
 - Fordringer covered by the same `inddrivelsesindsats` type are prioritised.
-- No Digital Post notice is sent for gendækning.
+- Purely internal gendækning sends no Digital Post notice.
+- If material gendækning becomes the operative allocation outcome without a later settlement
+  decision, a debtor-facing **gendækning reallocation decision** is created with its own notice,
+  appeal deadline, and predecessor link.
 - When RIM opts out of gendækning (correctionPoolTarget = `DMI`, or DMI-originated fordring,
   or retroactive partial coverage), gendækning is skipped and all surplus proceeds to Step 3.
 
@@ -135,14 +142,18 @@ Residual payout:
   `renteGodtgoerelseStartDate`.
 - `boerneYdelseRestriction = true` if the original disbursement `paymentType` was
   `BOERNE_OG_UNGEYDELSE`.
+- A `KorrektionspuljeEntry` is an internal accounting state, not a debtor-facing decision.
 
 **Expected settlement behaviour — monthly job**
 - Pool entries with `surplusAmount ≥ 50.00 DKK` are settled in the monthly
   `KorrektionspuljeSettlementJob` run.
 - Pool entries with `surplusAmount < 50.00 DKK` are skipped in monthly runs and settled only
   in the annual run.
-- At settlement: the surplus + accrued `renteGodtgoerelseAccrued` is treated as a new
-  independent Nemkonto payment and processed through FR-1 (three-tier modregning).
+- At settlement: the surplus + accrued `renteGodtgoerelseAccrued` creates a new
+  **correction-pool settlement decision** in the same `lineageReference`.
+- The settlement decision preserves the original payment category for category-based
+  restrictions, uses settlement-time timing for timing-sensitive rules, and applies tier-2 then
+  tier-3 ordering unless law explicitly restores tier-1.
 - Transporter/udlæg restrictions from the original payment do NOT transfer to the settled
   amount (except for transporter notified before 1 October 2021).
 - A `KorrektionspuljeEntry` with `boerneYdelseRestriction = true` retains the børne-og-
@@ -156,6 +167,8 @@ Residual payout:
   (where no pre-1-October-2021 transporter is present).
 - `renteGodtgoerelseStartDate` is missing from a `KorrektionspuljeEntry`.
 - Gendækning is performed without delegating to `DaekningsRaekkefoeigenService` (P057).
+- A material gendækning outcome changes the operative allocation without creating a debtor-facing
+  gendækning reallocation decision.
 
 ---
 
@@ -203,33 +216,41 @@ Residual payout:
 ### FR-5: Klage (appeal) deadline tracking
 
 **Preconditions**
-- A `ModregningEvent` has been persisted with `noticeDelivered` set (true or false).
+- A debtor-facing set-off decision has been persisted with `noticeDelivered` set (true or false).
 
 **Trigger**
-- `klageFristDato` is computed at modregning decision time and stored on the `ModregningEvent`.
+- `klageFristDato` is computed at decision time and stored on the debtor-facing set-off decision.
 
 **Expected klage deadline computation**
 - `noticeDelivered = true`: `klageFristDato` = notice delivery date + 3 calendar months.
 - `noticeDelivered = false`: `klageFristDato` = `decisionDate` + 1 calendar year.
+- Superseded decisions retain their own `klageFristDato` and remain appealable by their own
+  `decisionReference` until that deadline expires.
 
 **Expected read-model API behaviour**
 - `GET /debtors/{debtorId}/modregning-events` returns HTTP 200 with a paginated array.
-- Each entry in the array contains: `eventId`, `decisionDate`, `totalOffsetAmount`,
-  `tier1Amount`, `tier2Amount`, `tier3Amount`, `residualPayoutAmount`, `klageFristDato`,
-  `noticeDelivered`, `tier2WaiverApplied`.
+- The default list contains operative decisions, not a flat list of every historical row.
+- Each entry in the array contains: `decisionReference`, `lineageReference`, `decisionKind`,
+  `operative`, `supersedesDecisionReference`, `hasHistory`, `decisionDate`,
+  `totalOffsetAmount`, `tier1Amount`, `tier2Amount`, `tier3Amount`,
+  `residualPayoutAmount`, `klageFristDato`, and `noticeDelivered`.
 - Returns HTTP 404 if the debtor does not exist.
 - Returns HTTP 403 if the caller lacks access to the debtor.
 
 **Expected caseworker portal behaviour**
-- Events with `klageFristDato` within 14 calendar days are displayed with an amber indicator.
-- Events with `klageFristDato` in the past are displayed with a red indicator.
-- Events with `klageFristDato` more than 14 days away have no special indicator.
+- Operative decisions with `klageFristDato` within 14 calendar days are displayed with an amber
+  indicator.
+- Operative decisions with `klageFristDato` in the past are displayed with a red indicator.
+- Operative decisions with `klageFristDato` more than 14 days away have no special indicator.
+- Caseworkers can open full decision history for the `lineageReference`.
 
 **Failure conditions (FR-5)**
 - `klageFristDato` is computed as 3 months from `decisionDate` when `noticeDelivered = true`
   (instead of from the notice delivery date).
-- `klageFristDato` is absent from any `ModregningEvent`.
-- `GET /debtors/{id}/modregning-events` omits `klageFristDato` from any response entry.
+- `klageFristDato` is absent from any debtor-facing set-off decision.
+- `GET /debtors/{id}/modregning-events` omits lineage-summary fields from the default operative
+  read model.
+- Appeals are not targeted to a specific `decisionReference`.
 - The portal does not highlight events within 14 days.
 
 ---
@@ -260,7 +281,8 @@ per covered fordring)*
 NFR-4). *(Gherkin scenario: idempotent genbehandling — duplikat nemkontoReferenceId)*
 
 **AC-6:** A caseworker with `modregning:waiver` scope successfully applies a tier-2 waiver;
-the ordering engine re-runs skipping tier-2; the CLS audit log entry carries
+a new superseding waiver decision is created in the same lineage, the post-tier-1 ordering
+re-runs skipping tier-2, and the CLS audit log entry carries
 `gilParagraf = "GIL § 4, stk. 11"` (FR-2). *(Gherkin scenario: sagsbehandler fravælger
 tier-2 prioritet)*
 
@@ -276,10 +298,12 @@ gendækning efter fordring-nedskrivning)*
 the monthly `KorrektionspuljeSettlementJob` run and IS settled in the annual run (FR-3).
 *(Gherkin scenario: korrektionspulje beløb under 50 DKK — kun årsafregning)*
 
-**AC-10:** At monthly settlement, the settled `KorrektionspuljeEntry` amount is re-applied
-via FR-1 (three-tier modregning), without transporter/udlæg restrictions from the original
-payment (FR-3). *(Gherkin scenario: korrektionspulje månedlig afregning — Nemkonto
-udbetaling)*
+**AC-10:** At monthly settlement, the settled `KorrektionspuljeEntry` amount creates a new
+correction-pool settlement decision in the same lineage, preserving the original payment
+category, using settlement-time timing, applying tier-2 then tier-3 ordering, and omitting
+tier-1 unless law explicitly restores it; transporter/udlæg restrictions from the original
+payment do not carry over (FR-3). *(Gherkin scenario: korrektionspulje månedlig afregning —
+Nemkonto udbetaling)*
 
 **AC-11:** A `KorrektionspuljeEntry` with `boerneYdelseRestriction = true` retains the
 børne-og-ungeydelse restriction after monthly settlement and is NOT treated as an
@@ -300,12 +324,15 @@ scenarios — verified by field presence check in each scenario)*
 
 **AC-15:** When `noticeDelivered = true` on delivery date 2025-03-15,
 `klageFristDato = 2025-06-15`; when `noticeDelivered = false` and
-`decisionDate = 2025-03-15`, `klageFristDato = 2026-03-15` (FR-5). *(Gherkin scenario:
-klage-deadline registreres korrekt på modregning-event)*
-
-**AC-16:** `GET /debtors/{debtorId}/modregning-events` returns HTTP 200 with all required
-fields including `klageFristDato`, `noticeDelivered`, and `tier2WaiverApplied` (FR-5).
+`decisionDate = 2025-03-15`, `klageFristDato = 2026-03-15`; superseded decisions retain
+their own appeal windows and remain appealable by their own `decisionReference` (FR-5).
 *(Gherkin scenario: klage-deadline registreres korrekt på modregning-event)*
+
+**AC-16:** `GET /debtors/{debtorId}/modregning-events` returns HTTP 200 with operative
+decisions by default and all required lineage summary fields including `decisionReference`,
+`lineageReference`, `decisionKind`, `operative`, `supersedesDecisionReference`, `hasHistory`,
+`klageFristDato`, and `noticeDelivered` (FR-5). *(Gherkin scenario: klage-deadline
+registreres korrekt på modregning-event)*
 
 **AC-17:** The caseworker portal highlights a `klageFristDato` 10 days away with an amber
 indicator (FR-5). *(Gherkin scenario: klage-deadline registreres korrekt på modregning-event)*
