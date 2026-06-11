@@ -1,0 +1,56 @@
+petition_id: 058
+agent: code-minimality-reviewer
+verdict: APPROVED
+timestamp: "2026-06-10T23:18:43.8224994+02:00"
+keep_count: 12
+discard_count: 0
+escalate_count: 0
+findings:
+  - id: ModregningController
+    decision: KEEP
+    severity: info
+    justification: "FR-2 and FR-5 require a debtor-scoped waiver endpoint plus operative lineage-summary response fields; the controller diff adds only those surfaces (petitions/petition058-modregning-korrektionspulje-outcome-contract.md:89-107,233-245; petitions/specs/petition058-modregning-korrektionspulje-specs.md:230-240,711-729; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/controller/ModregningController.java:42-116)."
+  - id: ModregningEvent
+    decision: KEEP
+    severity: info
+    justification: "The lineage identity and supersession fields are the minimum persistence shape needed by the amended decision model and read contract (petitions/petition058-modregning-korrektionspulje.md:73-80; petitions/petition058-modregning-korrektionspulje-outcome-contract.md:89-97,152-160,233-245; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/entity/ModregningEvent.java:34-108)."
+  - id: ModregningEventRepository
+    decision: KEEP
+    severity: info
+    justification: "The added queries are directly consumed by the debtor-scoped waiver precondition and the FR-5 operative/history read model, with no generic repository widening (petitions/specs/petition058-modregning-korrektionspulje-specs.md:231-239,713-729; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/repository/ModregningEventRepository.java:15-26)."
+  - id: FordringQueryPort
+    decision: KEEP
+    severity: info
+    justification: "Child-benefit eligibility helpers are required to keep `boerneYdelseRestriction` behavior real at settlement time; they are not speculative plumbing (petitions/petition058-modregning-korrektionspulje.md:102-103; petitions/petition058-modregning-korrektionspulje-outcome-contract.md:152-160; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/FordringQueryPort.java:58-78; opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/ModregningServiceTest.java:959-1041)."
+  - id: KorrektionspuljeService
+    decision: KEEP
+    severity: info
+    justification: "The settlement changes compute accrual and delegate one same-lineage settlement decision with the preserved restriction flag, exactly as spec §3.3 requires (petitions/specs/petition058-modregning-korrektionspulje-specs.md:303-313; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/KorrektionspuljeService.java:125-157)."
+  - id: ModregningResult
+    decision: KEEP
+    severity: info
+    justification: "The added result fields are all mandatory FR-5 response fields for decision and lineage identity; no unrelated transport or portal convenience data was introduced (petitions/petition058-modregning-korrektionspulje-outcome-contract.md:233-245; petitions/specs/petition058-modregning-korrektionspulje-specs.md:682-729,742-759; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/ModregningResult.java:8-29)."
+  - id: ModregningService
+    decision: KEEP
+    severity: info
+    justification: "The changed runtime logic stays on the governed CR surface: lineage-aware root persistence, debtor-scoped waiver supersession, same-lineage settlement, and restricted re-application. No extra feature surface appears in the diff (petitions/petition058-modregning-korrektionspulje-outcome-contract.md:89-97,147-160,233-245; petitions/specs/petition058-modregning-korrektionspulje-specs.md:220-240,303-313; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/ModregningService.java:69-129,131-265,353-386)."
+  - id: ModregningsRaekkefoeigenEngine
+    decision: KEEP
+    severity: info
+    justification: "The explicit skip-tier overload is directly required by waiver reruns and settlement omission rules; it is not generic future-proofing (petitions/petition058-modregning-korrektionspulje-outcome-contract.md:90-97,152-160; petitions/specs/petition058-modregning-korrektionspulje-specs.md:236-239,313; opendebt-debt-service/src/main/java/dk/ufst/opendebt/debtservice/service/ModregningsRaekkefoeigenEngine.java:42-88)."
+  - id: KorrektionspuljeServiceTest
+    decision: KEEP
+    severity: info
+    justification: "The added test covers only the amended settlement contract: accrual, same-lineage settlement invocation, and restriction handoff (petitions/specs/petition058-modregning-korrektionspulje-specs.md:303-313; opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/KorrektionspuljeServiceTest.java:410-445)."
+  - id: ModregningServiceTest
+    decision: KEEP
+    severity: info
+    justification: "The added regressions map one-to-one to the two final governed behaviors: superseding waiver execution and restricted settlement that excludes ineligible debts (petitions/specs/petition058-modregning-korrektionspulje-specs.md:230-240,303-313; opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/offsetting/ModregningServiceTest.java:671-804,955-1041)."
+  - id: Petition058Steps
+    decision: KEEP
+    severity: info
+    justification: "The step-definition delta seeds mixed eligible/ineligible debts and resolves the operative settlement decision before asserting AC-11; that is the minimum executable BDD harness required by the amended feature (opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/steps/Petition058Steps.java:242-290,1309-1344,1682-1716; opendebt-debt-service/src/test/resources/features/petition058.feature:184-194)."
+  - id: petition058-feature
+    decision: KEEP
+    severity: info
+    justification: "The feature delta replaces a proxy child-benefit assertion with one real AC-11 settlement scenario and does not widen the petition beyond that proof obligation (petitions/petition058-modregning-korrektionspulje-outcome-contract.md:147-160; opendebt-debt-service/src/test/resources/features/petition058.feature:184-194)."

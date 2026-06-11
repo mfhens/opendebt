@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +27,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import dk.ufst.opendebt.debtservice.client.DaekningsRaekkefoeigenServiceClient;
 import dk.ufst.opendebt.debtservice.entity.KorrektionspuljeEntry;
+import dk.ufst.opendebt.debtservice.entity.ModregningEvent;
 import dk.ufst.opendebt.debtservice.repository.KorrektionspuljeEntryRepository;
 import dk.ufst.opendebt.debtservice.repository.ModregningEventRepository;
 import dk.ufst.opendebt.debtservice.service.FordringQueryPort;
 import dk.ufst.opendebt.debtservice.service.KorrektionspuljeResult;
 import dk.ufst.opendebt.debtservice.service.KorrektionspuljeService;
+import dk.ufst.opendebt.debtservice.service.ModregningDecisionKind;
 import dk.ufst.opendebt.debtservice.service.ModregningResult;
 import dk.ufst.opendebt.debtservice.service.ModregningService;
 import dk.ufst.opendebt.debtservice.service.OffsettingReversalEvent;
@@ -345,7 +348,7 @@ class KorrektionspuljeServiceTest {
       job.runMonthlySettlement();
 
       verify(modregningService, never())
-          .initiateModregning(any(), any(), any(), any(), anyBoolean());
+          .createCorrectionPoolSettlementDecision(any(), any(), any(), any(), anyBoolean());
     }
   }
 
@@ -357,6 +360,12 @@ class KorrektionspuljeServiceTest {
 
     private ModregningResult mockModregningResult() {
       return new ModregningResult(
+          "DEC-MOCK",
+          "LIN-MOCK",
+          ModregningDecisionKind.CORRECTION_POOL_SETTLEMENT_DECISION,
+          true,
+          "DEC-ROOT",
+          true,
           UUID.randomUUID(),
           UUID.randomUUID(),
           LocalDate.now(),
@@ -374,6 +383,25 @@ class KorrektionspuljeServiceTest {
           List.of());
     }
 
+    private ModregningEvent originEvent(
+        UUID originEventId, UUID debtorPersonId, PaymentType paymentType, BigDecimal amount) {
+      return ModregningEvent.builder()
+          .id(originEventId)
+          .nemkontoReferenceId("NKR-" + originEventId)
+          .decisionReference("DEC-" + originEventId)
+          .lineageReference("LIN-" + originEventId)
+          .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+          .operative(true)
+          .debtorPersonId(debtorPersonId)
+          .receiptDate(LocalDate.of(2025, 1, 1))
+          .decisionDate(LocalDate.of(2025, 1, 1))
+          .paymentType(paymentType)
+          .disbursementAmount(amount)
+          .klageFristDato(LocalDate.of(2026, 1, 1))
+          .renteGodtgoerelseNonTaxable(true)
+          .build();
+    }
+
     /**
      * AC-10: settleEntry computes renteGodtgoerelseAccrued and calls initiateModregning with total.
      * surplusAmount=750.00, rate=5.0%, startDate=2025-01-01, settlementDate=2025-04-01. 90 days:
@@ -381,22 +409,42 @@ class KorrektionspuljeServiceTest {
      */
     @Test
     @DisplayName(
-        "AC-10: settleEntry computes renteGodtgoerelseAccrued and calls initiateModregning with total")
-    void settleEntry_computesAccrualAndCallsInitiateModregning() {
+        "CR-002: settleEntry computes accrual and creates same-lineage settlement decision")
+    void settleEntry_computesAccrualAndCallsSettlementDecisionCreation() {
+      UUID originEventId = UUID.randomUUID();
       KorrektionspuljeEntry entry =
           KorrektionspuljeEntry.builder()
               .id(UUID.randomUUID())
               .debtorPersonId(UUID.randomUUID())
-              .originEventId(UUID.randomUUID())
+              .originEventId(originEventId)
               .surplusAmount(new BigDecimal("750.00"))
               .correctionPoolTarget("PSRM")
               .renteGodtgoerelseStartDate(LocalDate.of(2025, 1, 1))
               .boerneYdelseRestriction(false)
               .build();
 
+      ModregningEvent originEvent =
+          ModregningEvent.builder()
+              .id(originEventId)
+              .nemkontoReferenceId("NKR-5812-001")
+              .decisionReference("DEC-NKR-5812-001")
+              .lineageReference("LIN-NKR-5812-001")
+              .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+              .operative(true)
+              .debtorPersonId(entry.getDebtorPersonId())
+              .receiptDate(LocalDate.of(2025, 1, 1))
+              .decisionDate(LocalDate.of(2025, 1, 1))
+              .paymentType(PaymentType.BOERNE_OG_UNGEYDELSE)
+              .disbursementAmount(new BigDecimal("750.00"))
+              .klageFristDato(LocalDate.of(2026, 1, 1))
+              .renteGodtgoerelseNonTaxable(true)
+              .build();
+
+      when(modregningEventRepository.findById(originEventId)).thenReturn(Optional.of(originEvent));
       when(renteGodtgoerelseService.computeRate(LocalDate.of(2025, 4, 1)))
           .thenReturn(new BigDecimal("5.00"));
-      when(modregningService.initiateModregning(any(), any(), any(), any(), anyBoolean()))
+      when(modregningService.createCorrectionPoolSettlementDecision(
+              any(), any(), any(), any(), anyBoolean()))
           .thenReturn(mockModregningResult());
       when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -406,12 +454,12 @@ class KorrektionspuljeServiceTest {
       // Days from 2025-01-01 to 2025-04-01 = 90 days
       ArgumentCaptor<BigDecimal> amountCaptor = ArgumentCaptor.forClass(BigDecimal.class);
       verify(modregningService)
-          .initiateModregning(
-              any(),
+          .createCorrectionPoolSettlementDecision(
+              eq(entry),
+              eq(originEvent),
               amountCaptor.capture(),
-              eq(PaymentType.KORREKTIONSPULJE_SETTLEMENT),
-              any(),
-              anyBoolean());
+              eq(LocalDate.of(2025, 4, 1)),
+              eq(false));
 
       BigDecimal total = amountCaptor.getValue();
       assertThat(total)
@@ -427,18 +475,28 @@ class KorrektionspuljeServiceTest {
     @Test
     @DisplayName("AC-10: null renteGodtgoerelseStartDate → renteGodtgoerelseAccrued stays 0.00")
     void settleEntry_withNullStartDate_noAccrual() {
+      UUID originEventId = UUID.randomUUID();
       KorrektionspuljeEntry entry =
           KorrektionspuljeEntry.builder()
               .id(UUID.randomUUID())
               .debtorPersonId(UUID.randomUUID())
-              .originEventId(UUID.randomUUID())
+              .originEventId(originEventId)
               .surplusAmount(new BigDecimal("500.00"))
               .correctionPoolTarget("PSRM")
               .renteGodtgoerelseStartDate(null)
               .boerneYdelseRestriction(false)
               .build();
 
-      when(modregningService.initiateModregning(any(), any(), any(), any(), anyBoolean()))
+      when(modregningEventRepository.findById(originEventId))
+          .thenReturn(
+              Optional.of(
+                  originEvent(
+                      originEventId,
+                      entry.getDebtorPersonId(),
+                      PaymentType.STANDARD_PAYMENT,
+                      new BigDecimal("500.00"))));
+      when(modregningService.createCorrectionPoolSettlementDecision(
+              any(), any(), any(), any(), anyBoolean()))
           .thenReturn(mockModregningResult());
       when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -449,7 +507,8 @@ class KorrektionspuljeServiceTest {
 
       ArgumentCaptor<BigDecimal> amountCaptor = ArgumentCaptor.forClass(BigDecimal.class);
       verify(modregningService)
-          .initiateModregning(any(), amountCaptor.capture(), any(), any(), anyBoolean());
+          .createCorrectionPoolSettlementDecision(
+              any(), any(), amountCaptor.capture(), any(), anyBoolean());
 
       assertThat(amountCaptor.getValue())
           .as("When startDate is null, total must equal surplusAmount only (no accrual, AC-10)")
@@ -460,18 +519,28 @@ class KorrektionspuljeServiceTest {
     @Test
     @DisplayName("AC-10: settleEntry sets settledAt to non-null Instant on completion")
     void settleEntry_setsSettledAt() {
+      UUID originEventId = UUID.randomUUID();
       KorrektionspuljeEntry entry =
           KorrektionspuljeEntry.builder()
               .id(UUID.randomUUID())
               .debtorPersonId(UUID.randomUUID())
-              .originEventId(UUID.randomUUID())
+              .originEventId(originEventId)
               .surplusAmount(new BigDecimal("200.00"))
               .correctionPoolTarget("PSRM")
               .renteGodtgoerelseStartDate(null)
               .boerneYdelseRestriction(false)
               .build();
 
-      when(modregningService.initiateModregning(any(), any(), any(), any(), anyBoolean()))
+      when(modregningEventRepository.findById(originEventId))
+          .thenReturn(
+              Optional.of(
+                  originEvent(
+                      originEventId,
+                      entry.getDebtorPersonId(),
+                      PaymentType.STANDARD_PAYMENT,
+                      new BigDecimal("200.00"))));
+      when(modregningService.createCorrectionPoolSettlementDecision(
+              any(), any(), any(), any(), anyBoolean()))
           .thenReturn(mockModregningResult());
       when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -515,6 +584,12 @@ class KorrektionspuljeServiceTest {
 
     private ModregningResult mockModregningResult() {
       return new ModregningResult(
+          "DEC-MOCK",
+          "LIN-MOCK",
+          ModregningDecisionKind.CORRECTION_POOL_SETTLEMENT_DECISION,
+          true,
+          "DEC-ROOT",
+          true,
           UUID.randomUUID(),
           UUID.randomUUID(),
           LocalDate.now(),
@@ -533,60 +608,102 @@ class KorrektionspuljeServiceTest {
     }
 
     /**
-     * AC-11: boerneYdelseRestriction=true → initiateModregning called with restrictedPayment=true.
-     * Ref: SPEC-058 §3.3 settleEntry restrictedPayment parameter
+     * AC-11: boerneYdelseRestriction=true → settlement decision creation receives
+     * restrictedPayment=true. Ref: SPEC-058 §3.3 settleEntry restrictedPayment parameter
      */
     @Test
     @DisplayName(
-        "AC-11: boerneYdelseRestriction=true → initiateModregning called with restrictedPayment=true")
+        "AC-11: boerneYdelseRestriction=true → settlement decision creation receives restrictedPayment=true")
     void boerneYdelseRestriction_propagatedToInitiateModregning() {
+      UUID originEventId = UUID.randomUUID();
       KorrektionspuljeEntry entry =
           KorrektionspuljeEntry.builder()
               .id(UUID.randomUUID())
               .debtorPersonId(UUID.randomUUID())
-              .originEventId(UUID.randomUUID())
+              .originEventId(originEventId)
               .surplusAmount(new BigDecimal("300.00"))
               .correctionPoolTarget("PSRM")
               .renteGodtgoerelseStartDate(null)
               .boerneYdelseRestriction(true)
               .build();
 
-      when(modregningService.initiateModregning(any(), any(), any(), any(), anyBoolean()))
+      ModregningEvent originEvent =
+          ModregningEvent.builder()
+              .id(originEventId)
+              .nemkontoReferenceId("NKR-BOERNE-001")
+              .decisionReference("DEC-NKR-BOERNE-001")
+              .lineageReference("LIN-NKR-BOERNE-001")
+              .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+              .operative(true)
+              .debtorPersonId(entry.getDebtorPersonId())
+              .receiptDate(LocalDate.now().minusDays(10))
+              .decisionDate(LocalDate.now().minusDays(10))
+              .paymentType(PaymentType.BOERNE_OG_UNGEYDELSE)
+              .disbursementAmount(new BigDecimal("300.00"))
+              .klageFristDato(LocalDate.now().plusYears(1))
+              .renteGodtgoerelseNonTaxable(true)
+              .build();
+
+      when(modregningEventRepository.findById(originEventId)).thenReturn(Optional.of(originEvent));
+      when(modregningService.createCorrectionPoolSettlementDecision(
+              any(), any(), any(), any(), anyBoolean()))
           .thenReturn(mockModregningResult());
       when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
       underTest.settleEntry(entry, LocalDate.of(2025, 4, 1));
 
       // Verify 5th argument (restrictedPayment=true) — AC-11
-      verify(modregningService).initiateModregning(any(), any(), any(), any(), eq(true));
+      verify(modregningService)
+          .createCorrectionPoolSettlementDecision(any(), any(), any(), any(), eq(true));
     }
 
     /**
-     * AC-11: boerneYdelseRestriction=false → initiateModregning called with
+     * AC-11: boerneYdelseRestriction=false → settlement decision creation receives
      * restrictedPayment=false. Ref: SPEC-058 §3.3
      */
     @Test
     @DisplayName(
-        "AC-11: boerneYdelseRestriction=false → initiateModregning called with restrictedPayment=false")
+        "AC-11: boerneYdelseRestriction=false → settlement decision creation receives restrictedPayment=false")
     void boerneYdelseRestriction_falseNotPropagated() {
+      UUID originEventId = UUID.randomUUID();
       KorrektionspuljeEntry entry =
           KorrektionspuljeEntry.builder()
               .id(UUID.randomUUID())
               .debtorPersonId(UUID.randomUUID())
-              .originEventId(UUID.randomUUID())
+              .originEventId(originEventId)
               .surplusAmount(new BigDecimal("300.00"))
               .correctionPoolTarget("PSRM")
               .renteGodtgoerelseStartDate(null)
               .boerneYdelseRestriction(false)
               .build();
 
-      when(modregningService.initiateModregning(any(), any(), any(), any(), anyBoolean()))
+      ModregningEvent originEvent =
+          ModregningEvent.builder()
+              .id(originEventId)
+              .nemkontoReferenceId("NKR-STANDARD-001")
+              .decisionReference("DEC-NKR-STANDARD-001")
+              .lineageReference("LIN-NKR-STANDARD-001")
+              .decisionKind(ModregningDecisionKind.EXTERNAL_DISBURSEMENT_DECISION)
+              .operative(true)
+              .debtorPersonId(entry.getDebtorPersonId())
+              .receiptDate(LocalDate.now().minusDays(10))
+              .decisionDate(LocalDate.now().minusDays(10))
+              .paymentType(PaymentType.STANDARD_PAYMENT)
+              .disbursementAmount(new BigDecimal("300.00"))
+              .klageFristDato(LocalDate.now().plusYears(1))
+              .renteGodtgoerelseNonTaxable(true)
+              .build();
+
+      when(modregningEventRepository.findById(originEventId)).thenReturn(Optional.of(originEvent));
+      when(modregningService.createCorrectionPoolSettlementDecision(
+              any(), any(), any(), any(), anyBoolean()))
           .thenReturn(mockModregningResult());
       when(entryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
       underTest.settleEntry(entry, LocalDate.of(2025, 4, 1));
 
-      verify(modregningService).initiateModregning(any(), any(), any(), any(), eq(false));
+      verify(modregningService)
+          .createCorrectionPoolSettlementDecision(any(), any(), any(), any(), eq(false));
     }
   }
 }

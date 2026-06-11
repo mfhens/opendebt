@@ -1,0 +1,63 @@
+scope: "petition058 debt-service local runtime path"
+agent: "runtime-integration-conductor"
+mode: "enforce"
+status: "success"
+verdict: "PASS-WITH-WARNINGS"
+startup_path:
+  - "docker compose up -d postgres keycloak"
+  - "cd opendebt-debt-service && mvn spring-boot:run"
+runtime_boundary: "local"
+services_expected:
+  - "postgres"
+  - "keycloak"
+  - "debt-service"
+services_observed:
+  - "postgres healthy on 5432"
+  - "keycloak healthy on 8080"
+  - "debt-service started on 8082 with context path /debt-service"
+surfaces_checked:
+  - "startup"
+  - "migrations"
+  - "health"
+  - "api"
+  - "docs"
+artifacts:
+  - "petitions/reviews/petition058-runtime-integration-conductor.yaml"
+evidence_checked:
+  - claim: "The documented local startup path boots debt-service against local infrastructure."
+    proof:
+      - "docker compose up -d postgres keycloak -> both services healthy"
+      - "mvn spring-boot:run -> Tomcat started on port 8082 with context path '/debt-service'"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Runtime persistence is aligned with the lineage migration."
+    proof:
+      - "Flyway validated 14 migrations"
+      - "Schema migrated from version 13 to 14 - modregning lineage model"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Health and representative petition058 route are reachable."
+    proof:
+      - "GET http://localhost:8082/debt-service/actuator/health -> 200 / {\"status\":\"UP\"}"
+      - "GET http://localhost:8082/debt-service/api/v1/debtors/00000000-0000-0000-0000-000000000000/modregning-events -> 401"
+    freshness: "2026-06-10"
+    result: "pass"
+  - claim: "Developer-facing API docs surface is runtime-clean."
+    proof:
+      - "GET http://localhost:8082/debt-service/swagger-ui.html -> 302 /debt-service/swagger-ui/index.html"
+      - "GET http://localhost:8082/debt-service/api-docs -> 500 INTERNAL_ERROR"
+    freshness: "2026-06-10"
+    result: "warning"
+findings:
+  - severity: "warning"
+    drift_class: "API smoke drift"
+    source_surface: "docs"
+    target_surface: "api"
+    symbol: "/debt-service/api-docs"
+    description: "The service boots and petition058's secured route reaches the security boundary, but the Springdoc JSON route returns 500 INTERNAL_ERROR in the local runtime."
+    remediation_target: "docs"
+warnings:
+  - "Swagger UI entry redirects correctly, but the backing /api-docs JSON endpoint returns 500 and remains unresolved in this run."
+escalations: []
+next_action: "Proceed to code-review and verification gates; keep runtime docs warning visible."
+handoff_target: "verification-gate"

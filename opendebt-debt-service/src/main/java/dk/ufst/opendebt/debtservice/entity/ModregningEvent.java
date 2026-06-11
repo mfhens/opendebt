@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
+import dk.ufst.opendebt.debtservice.service.ModregningDecisionKind;
 import dk.ufst.opendebt.debtservice.service.PaymentType;
 
 import lombok.*;
@@ -15,7 +16,9 @@ import lombok.*;
     name = "modregning_event",
     indexes = {
       @Index(name = "idx_me_debtor", columnList = "debtor_person_id"),
-      @Index(name = "idx_me_decision_date", columnList = "decision_date")
+      @Index(name = "idx_me_decision_date", columnList = "decision_date"),
+      @Index(name = "idx_me_lineage_reference", columnList = "lineage_reference"),
+      @Index(name = "idx_me_operative", columnList = "operative")
     })
 @Getter
 @Setter
@@ -30,6 +33,23 @@ public class ModregningEvent {
 
   @Column(name = "nemkonto_reference_id", nullable = false, unique = true, length = 100)
   private String nemkontoReferenceId;
+
+  @Column(name = "decision_reference", nullable = false, unique = true, length = 180)
+  private String decisionReference;
+
+  @Column(name = "lineage_reference", nullable = false, length = 180)
+  private String lineageReference;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "decision_kind", nullable = false, length = 80)
+  private ModregningDecisionKind decisionKind;
+
+  @Column(name = "supersedes_event_id")
+  private UUID supersedesEventId;
+
+  @Builder.Default
+  @Column(name = "operative", nullable = false)
+  private boolean operative = true;
 
   @Column(name = "debtor_person_id", nullable = false)
   private UUID debtorPersonId;

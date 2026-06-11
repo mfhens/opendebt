@@ -54,4 +54,26 @@ public class FordringQueryPort {
         .map(d -> d.getOutstandingBalance() != null ? d.getOutstandingBalance() : BigDecimal.ZERO)
         .orElse(BigDecimal.ZERO);
   }
+
+  /**
+   * Returns whether the fordring is eligible for child-benefit-restricted re-application.
+   *
+   * <p>The current reference data models this restricted category as maintenance claims ({@code
+   * UNDERHOLDSBIDRAG}).
+   */
+  public boolean isChildBenefitOffsetEligible(UUID fordringId) {
+    return debtRepository
+        .findById(fordringId)
+        .map(debt -> debt.getDebtTypeCode())
+        .map("UNDERHOLDSBIDRAG"::equalsIgnoreCase)
+        .orElse(false);
+  }
+
+  /** Returns active fordringer eligible for child-benefit-restricted re-application. */
+  public List<FordringProjection> getActiveChildBenefitEligibleFordringer(
+      UUID debtorPersonId, int tier, UUID payingAuthorityOrgId) {
+    return getActiveFordringer(debtorPersonId, tier, payingAuthorityOrgId).stream()
+        .filter(fordring -> isChildBenefitOffsetEligible(fordring.fordringId()))
+        .toList();
+  }
 }

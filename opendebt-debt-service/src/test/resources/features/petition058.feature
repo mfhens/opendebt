@@ -190,9 +190,17 @@ Feature: Modregning i udbetalinger fra det offentlige og korrektionspulje (G.A.2
   Scenario: Børne-og-ungeydelse begrænsning bevaret efter korrektionspulje-afregning
     Given debtor "SKY-5809" had a fordring "FDR-58091" previously offset by modregning
     And the original disbursement had paymentType "BOERNE_OG_UNGEYDELSE"
+    And debtor "SKY-5809" has the following tier-2 fordringer under RIM inddrivelse:
+      | fordringId | tilbaestaaendeBeloeb | debtTypeCode     |
+      | FDR-58092  | 120.00               | UNDERHOLDSBIDRAG |
+      | FDR-58093  | 120.00               | SKAT             |
     And fordring "FDR-58091" has been written down generating an OffsettingReversalEvent with surplusAmount 200.00 DKK
     And gendækning exhausts 0.00 DKK of the surplus (no eligible fordringer exist)
     And a KorrektionspuljeEntry exists with surplusAmount 200.00 DKK and boerneYdelseRestriction true
+    And for debtor "SKY-5809", the payment-service DaekningsRaekkefoeigenService would return:
+      | fordringId | amountCovered | tier |
+      | FDR-58092  | 120.00        | 2    |
+      | FDR-58093  | 80.00         | 2    |
     When the KorrektionspuljeSettlementJob runs its monthly settlement for debtor "SKY-5809"
     Then the settled amount of 200.00 DKK is NOT treated as an unrestricted Nemkonto payment
     And the boerneYdelseRestriction flag is true on the settled amount
@@ -214,7 +222,7 @@ Feature: Modregning i udbetalinger fra det offentlige og korrektionspulje (G.A.2
     And Step 2: DaekningsRaekkefoeigenService is called with remaining surplus 1300.00 DKK for gendækning
     And fordring "FDR-58102" is gendækket with 1000.00 DKK
     And a KorrektionspuljeEntry is created with surplusAmount 300.00 DKK
-    And no Digital Post notice is sent for the gendækning
+    And no debtor-facing gendækning reallocation decision is created because a residual KorrektionspuljeEntry remains
     And the ModregningEvent has renteGodtgoerelseNonTaxable set to true
 
   # ==============================================================================
@@ -251,9 +259,10 @@ Feature: Modregning i udbetalinger fra det offentlige og korrektionspulje (G.A.2
     And debtor "SKY-5812" has an active tier-2 fordring "FDR-58121" with tilbaestaaendeBeloeb 900.00 DKK
     When the KorrektionspuljeSettlementJob runs its monthly settlement
     Then the KorrektionspuljeEntry is settled with total amount 762.50 DKK (surplus + rentegodtgørelse)
-    And a new PublicDisbursementEvent equivalent is created with disbursementAmount 762.50 DKK for debtor "SKY-5812"
-    And the FR-1 three-tier modregning workflow is invoked for the settled amount
-    And fordring "FDR-58121" receives dækning from the settled amount without transporter restrictions from the original payment
+    And a new correction-pool settlement decision is created in the same lineage as the origin event
+    And the settlement decision preserves the original payment category while using settlement-time timing
+    And the settlement decision applies tier-2 then tier-3 ordering with tier-1 omitted
+    And fordring "FDR-58121" receives dækning from the settlement decision without transporter restrictions from the original payment
     And the KorrektionspuljeEntry is marked as settled
     And the ModregningEvent has renteGodtgoerelseNonTaxable set to true
 
@@ -280,7 +289,7 @@ Feature: Modregning i udbetalinger fra det offentlige og korrektionspulje (G.A.2
     # Read model
     When a caseworker calls GET /debtors/SKY-5813/modregning-events
     Then the response contains both modregning events with their klageFristDato values
-    And each event in the response includes fields: eventId, decisionDate, totalOffsetAmount, tier1Amount, tier2Amount, tier3Amount, residualPayoutAmount, klageFristDato, noticeDelivered, tier2WaiverApplied
+    And each event in the response includes fields: decisionReference, lineageReference, decisionKind, operative, supersedesDecisionReference, hasHistory, decisionDate, totalOffsetAmount, tier1Amount, tier2Amount, tier3Amount, residualPayoutAmount, klageFristDato, noticeDelivered
 
     # Portal highlighting
     And the caseworker portal displays the event for "NKR-5813-001" with an amber indicator if klageFristDato is within 14 days
@@ -301,14 +310,16 @@ Feature: Modregning i udbetalinger fra det offentlige og korrektionspulje (G.A.2
     And a ModregningEvent "EVT-5814-001" exists for debtor "SKY-5814" with tier2WaiverApplied false
     And caseworker "CSW-001" holds OAuth2 scope "modregning:waiver"
     When caseworker "CSW-001" calls POST /debtors/SKY-5814/modregning-events/EVT-5814-001/tier2-waiver with waiverReason "Særlige omstændigheder godkendt af leder"
-    Then the ModregningEvent "EVT-5814-001" has tier2WaiverApplied set to true
-    And the three-tier ordering engine re-runs for "EVT-5814-001" skipping tier-2
-    And fordring "FDR-58142" receives no dækning in the re-processed event
-    And each SET_OFF CollectionMeasureEntity for this event has waiverApplied set to true
+    Then a new ModregningEvent "EVT-5814-002" is created as a superseding waiver decision in the same lineage
+    And the ModregningEvent "EVT-5814-002" has tier2WaiverApplied set to true
+    And the three-tier ordering engine re-runs for "EVT-5814-002" skipping tier-2 while preserving the original tier-1 allocation
+    And fordring "FDR-58142" receives no dækning in the superseding decision
+    And the ModregningEvent "EVT-5814-001" remains in history with its original notice and klage deadline
+    And each SET_OFF CollectionMeasureEntity for this superseding decision has waiverApplied set to true
     And the CLS audit log contains an entry with:
       | field             | value                |
       | gilParagraf       | GIL § 4, stk. 11    |
-      | modregningEventId | EVT-5814-001         |
+      | decisionReference | EVT-5814-002         |
       | caseworkerId      | CSW-001              |
       | waiverReason      | Særlige omstændigheder godkendt af leder |
     And the HTTP response status is 200
