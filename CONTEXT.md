@@ -141,3 +141,109 @@ _Avoid_: Soft reject, best-effort decision
 **Classification decision**:
 An auditable human decision that resolves a quarantined disbursement into a statutory payment category before any set-off decision is created.
 _Avoid_: Hidden release, debtor-facing set-off decision
+
+## Attachment workflow
+
+**Attachment workflow**:
+The PSRM-side process for requesting, tracking, and closing an attachment case against fogedret.
+_Avoid_: Generic collection measure lifecycle
+
+**Attachment workflow status**:
+The legally meaningful state of an attachment workflow, modeled as REQUESTED, IN_COURT_PROCESS, COMPLETED, UNSUCCESSFUL, or WITHDRAWN.
+_Avoid_: INITIATED, IN_PROGRESS, PLANNED, ACTIVE
+
+**Attachment outcome date**:
+The court outcome date used as the legal interruption event date for limitation handling.
+_Avoid_: Processing timestamp, fallback event date
+
+**Attachment terminal idempotency**:
+The rule that each attachment workflow terminal status is processed once, with exactly one legal interruption emission for that terminal transition.
+_Avoid_: Retry-driven duplicate interruption events
+
+**Attachment workflow scope**:
+A debtor or case level attachment process that references the explicit set of covered claims.
+_Avoid_: Isolated per-debt workflows for one court process
+
+**Attachment outcome qualifier**:
+The terminal result marker (`completed` or `unsuccessful`) attached to a UDLAEG interruption record without changing its interruption type.
+_Avoid_: Separate interruption types for each terminal outcome
+
+**Attachment eligibility gate**:
+An all-or-nothing validation step where every covered claim must be eligible before workflow creation is accepted.
+_Avoid_: Partial acceptance with dropped claims
+
+**Attachment workflow owner**:
+Debt-service is the single writer and legal source of truth for attachment workflow state and interruption emission; case-service is a projection consumer.
+_Avoid_: Dual-write ownership across services
+
+**Attachment integration mode**:
+Attachment workflow dispatch is asynchronous: dispatch acceptance moves to IN_COURT_PROCESS and terminal outcomes arrive later through callback/events.
+_Avoid_: Synchronous court finalization assumptions
+
+**Attachment workflow reference**:
+The OpenDebt-generated immutable identifier used as the primary correlation key between outbound dispatch and inbound court callbacks.
+_Avoid_: External case number as primary identity
+
+**Attachment callback validation**:
+Inbound court callbacks must follow strict workflow transition rules; illegal transitions are rejected, while exact duplicate terminal callbacks are no-op.
+_Avoid_: Last-write-wins callback processing
+
+**Attachment interruption emission granularity**:
+Interruption emission is performed once per covered claim complex group (or standalone claim), relying on petition059 complex propagation for member expansion.
+_Avoid_: Per-claim duplicate emission inside the same complex
+
+**Unsuccessful outcome reason code**:
+A required standardized code describing why an attachment workflow ended unsuccessfully, with optional free-text detail for context.
+_Avoid_: Free-text-only outcome reasons
+
+**Attachment withdrawal**:
+A caseworker-initiated termination state with mandatory reason, used when PSRM withdraws the workflow before court outcome.
+_Avoid_: Soft-delete, mapping withdrawal to unsuccessful outcome
+
+**Attachment scope immutability**:
+The covered claim set is immutable from REQUESTED onward; scope changes require workflow withdrawal and recreation.
+_Avoid_: Mid-flight scope mutation
+
+**Attachment withdrawal prescription effect**:
+Workflow withdrawal has no legal interruption effect and must not emit a UDLAEG interruption event.
+_Avoid_: Treating administrative withdrawal as legal udlaeg outcome
+
+**Attachment workflow aggregate**:
+A dedicated domain aggregate stores attachment workflow state and legal metadata as the source of truth.
+_Avoid_: Overloading generic collection measure rows for attachment-specific semantics
+
+**Attachment terminal atomicity**:
+Terminal workflow persistence and UDLAEG interruption registration commit atomically in one transaction.
+_Avoid_: Terminal/interruption split across separate commits
+
+**Attachment legal reference policy**:
+UDLAEG interruption legal references are derived by the policy engine and not overridden by workflow input.
+_Avoid_: Per-workflow legal reference overrides
+
+**Unsuccessful reason code source**:
+Attachment unsuccessful reason codes are canonical static enum values versioned in code.
+_Avoid_: Runtime-configurable legal outcome code sets
+
+**Unsuccessful reason code set (v1)**:
+The initial canonical enum values are NO_ATTACHABLE_ASSETS, INSOLVENCY_DECLARED, LEGAL_OR_PROCEDURAL_DEFECT, THIRD_PARTY_RIGHT_BLOCK, and COURT_REJECTION.
+_Avoid_: Ad hoc reason values outside the canonical set
+
+**Attachment command scope**:
+Attachment workflow commands are debtor-scoped even when the workflow references one or more covered claims.
+_Avoid_: Mixing case- and debtor-scoped command ownership
+
+**Attachment callback scope integrity**:
+Inbound callbacks must match both workflow reference and debtor scope; mismatches are rejected without state change.
+_Avoid_: Reference-only callback acceptance in debtor-scoped API
+
+**Attachment dispatch idempotency**:
+Dispatch is processed once per workflow; repeated dispatch commands return existing dispatch metadata without issuing a new outbound court request.
+_Avoid_: Duplicate outbound dispatch submission for the same workflow
+
+**Attachment external boundary**:
+External court dispatch and callback traffic terminates at integration-gateway, which invokes internal debtor-scoped debt-service APIs.
+_Avoid_: Direct external exposure of debt-service attachment endpoints
+
+**Attachment callback trust model**:
+Court callbacks are accepted through OCES3 mTLS at integration-gateway with replay protection on callback identity fields.
+_Avoid_: Callback processing without replay safeguards

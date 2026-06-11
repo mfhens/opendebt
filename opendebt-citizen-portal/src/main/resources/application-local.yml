@@ -1,0 +1,5 @@
+# Local/demo profile overrides.
+# Keep citizen routes reachable directly on localhost without requiring /borger prefix.
+server:
+  servlet:
+    context-path: /
