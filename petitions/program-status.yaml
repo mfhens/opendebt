@@ -650,7 +650,7 @@ program:
       last_reviewed: 2026-06-09
       evidence:
         - Authenticated `/min-gaeld` implemented in opendebt-citizen-portal with accessible table, empty state, service-unavailable state, and landing/login navigation.
-        - `GET /api/v1/citizen/debts` now delivers creditorDisplayName, citizenStatus, explanation codes, effectiveInterestRates, and explicit bearerAuth contract.
+        - "`GET /api/v1/citizen/debts` now delivers creditorDisplayName, citizenStatus, explanation codes, effectiveInterestRates, and explicit bearerAuth contract."
         - Targeted JDK 21 validation passed for citizen-portal, debt-service, petition026 debt BDD, and creditor-service.
       notes: >
         Petition026 is now implemented end-to-end across citizen-portal, debt-service, and creditor-service.
@@ -2499,6 +2499,7 @@ program:
         Only Oces3SoapSecurityInterceptor.java in integration-gateway needed import updates.
         All 59 integration-gateway tests pass (29 scenarios).
         References: ADR-0030, architecture/overview.md (TB-042 note).
+        2 classes, zero cross-module dependencies beyond Spring Security and Java crypto.
       description: |
         The OCES3 X.509 certificate parsing logic in opendebt-common is fully reusable
         by any Danish e-government system using SOAP/mTLS. Handles RFC2253 DN parsing,
@@ -2516,9 +2517,6 @@ program:
         - Publish to GitHub Packages or UFST internal Maven registry
 
         Effort: SMALL (2-3 days). Reuse estimate: 5+ e-gov/tax projects.
-      implementation_notes: |
-        2 classes, zero cross-module dependencies beyond Spring Security and Java crypto.
-
     - id: TB-043
       title: "Extract Keycloak/OAuth2 Spring Boot Starter"
       status: done
