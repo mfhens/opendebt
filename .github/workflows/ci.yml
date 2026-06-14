@@ -89,6 +89,7 @@ jobs:
           catala typecheck --language en --no-stdlib catala/ga_2_5_retskraftvurdering.catala_da
           catala typecheck --language en --no-stdlib catala/ga_3_1_1_afdragsordninger.catala_da
           catala typecheck --language en --no-stdlib catala/ga_3_1_2_loenindeholdelse_pct.catala_da
+          catala typecheck --language en --no-stdlib catala/ga_3_2_udlaeg_psrm_workflow.catala_da
           # Test files (each uses "> Include:" to pull in its source file)
           catala typecheck --language en --no-stdlib catala/tests/ga_afdragsordninger_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_daekningsraekkefoeigen_tests.catala_da
@@ -96,6 +97,7 @@ jobs:
           catala typecheck --language en --no-stdlib catala/tests/ga_ikkeinddrivelsesparate_ophoer_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_loenindeholdelse_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_modregning_korrektionspulje_tests.catala_da
+          catala typecheck --language en --no-stdlib catala/tests/ga_udlaeg_psrm_workflow_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_opskrivning_nedskrivning_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_retskraftvurdering_tests.catala_da
           catala typecheck --language en --no-stdlib catala/tests/ga_suspension_tilbagekaldelse_tests.catala_da
@@ -172,6 +174,13 @@ jobs:
                        LoenindeholdelseTest8 LoenindeholdelseTest9; do
             catala interpret --language en --no-stdlib --scope "$scope" \
               catala/tests/ga_loenindeholdelse_tests.catala_da
+          done
+          # Udlæg PSRM workflow tests (8 scopes — petition066 G.A.3.2)
+          for scope in UdlaegWorkflowTest1 UdlaegWorkflowTest2 UdlaegWorkflowTest3 \
+                       UdlaegWorkflowTest4 UdlaegWorkflowTest5 UdlaegWorkflowTest6 \
+                       UdlaegWorkflowTest7 UdlaegWorkflowTest8; do
+            catala interpret --language en --no-stdlib --scope "$scope" \
+              catala/tests/ga_udlaeg_psrm_workflow_tests.catala_da
           done
 
   dependency-review:

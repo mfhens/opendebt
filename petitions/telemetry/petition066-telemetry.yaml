@@ -1,0 +1,330 @@
+subject_type: petition
+subject_id: petition066
+title: Telemetry for petition066
+schema_version: 1
+status: active
+measurement_window:
+  started_at: 2026-06-12T13:06:59.661Z
+  ended_at: 2026-06-12T14:04:20.760Z
+writer:
+  mode: harness_append_only
+  producer: pi-alice
+  updated_at: 2026-06-12T14:04:20.760Z
+coverage:
+  status: measured
+rollups:
+  total_runs: 16
+  measured_runs: 16
+  input_tokens: 23960
+  output_tokens: 11136
+  cached_input_tokens: 1136640
+  total_tokens: 35096
+  estimated_cost_usd: 0
+  tool_calls: 260
+  retry_runs: 4
+  escalated_runs: 0
+runs:
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:06:59.661Z
+    ended_at: 2026-06-12T13:08:22.602Z
+    input_tokens: 131
+    output_tokens: 767
+    cached_input_tokens: 41344
+    total_tokens: 898
+    tool_calls: 21
+    estimated_cost_usd: 0
+    outcome: blocked
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3:8ed086879b1b038c
+    notes: /skill:bdd-test-generator
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:12:15.666Z
+    ended_at: 2026-06-12T13:15:56.881Z
+    input_tokens: 95
+    output_tokens: 562
+    cached_input_tokens: 69248
+    total_tokens: 657
+    tool_calls: 25
+    estimated_cost_usd: 0
+    outcome: blocked
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3:f3f6a11ea0930e3e
+    notes: /skill:bdd-test-generator
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:29:17.622Z
+    ended_at: 2026-06-12T13:31:49.727Z
+    input_tokens: 96
+    output_tokens: 756
+    cached_input_tokens: 85760
+    total_tokens: 852
+    tool_calls: 33
+    estimated_cost_usd: 0
+    outcome: blocked
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3:748fa0f11e7a05b8
+    notes: /skill:bdd-test-generator
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:37:20.896Z
+    ended_at: 2026-06-12T13:39:08.079Z
+    input_tokens: 555
+    output_tokens: 741
+    cached_input_tokens: 43136
+    total_tokens: 1296
+    tool_calls: 25
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.1.3:144d85b5895b5066
+    notes: /skill:bdd-test-generator
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.2.1
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:39:08.079Z
+    ended_at: 2026-06-12T13:39:54.099Z
+    input_tokens: 6282
+    output_tokens: 779
+    cached_input_tokens: 50816
+    total_tokens: 7061
+    tool_calls: 8
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.2.1:7b0ceebd7b958ca7
+    notes: /skill:bdd-test-coverage-auditor
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.3.1
+    phase: test-generation
+    phase_name: Test Generation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:39:54.099Z
+    ended_at: 2026-06-12T13:40:50.092Z
+    input_tokens: 789
+    output_tokens: 777
+    cached_input_tokens: 64256
+    total_tokens: 1566
+    tool_calls: 8
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:test-generation:8.3.1:cc44fedcfe556cda
+    notes: /skill:unit-test-minimality-reviewer
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:implementation:9.1.1
+    phase: implementation
+    phase_name: Implementation
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:40:50.092Z
+    ended_at: 2026-06-12T13:43:30.585Z
+    input_tokens: 643
+    output_tokens: 990
+    cached_input_tokens: 109440
+    total_tokens: 1633
+    tool_calls: 41
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:implementation:9.1.1:c0be4d50c6ed0a8c
+    notes: /skill:tdd-enforcer
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:e2e-acceptance:10.1.1
+    phase: e2e-acceptance
+    phase_name: E2E Acceptance
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:43:30.585Z
+    ended_at: 2026-06-12T13:45:40.945Z
+    input_tokens: 335
+    output_tokens: 622
+    cached_input_tokens: 135552
+    total_tokens: 957
+    tool_calls: 16
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:e2e-acceptance:10.1.1:a195652a1d717c9a
+    notes: /skill:user-testing-flow-validator
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.1
+    phase: documentation-sync
+    phase_name: Documentation Sync
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:45:40.945Z
+    ended_at: 2026-06-12T13:48:06.644Z
+    input_tokens: 2286
+    output_tokens: 539
+    cached_input_tokens: 94592
+    total_tokens: 2825
+    tool_calls: 22
+    estimated_cost_usd: 0
+    outcome: retry
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.1:ee5c4be2d0efd21d
+    notes: /skill:implementation-doc-sync
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.2
+    phase: documentation-sync
+    phase_name: Documentation Sync
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:48:06.644Z
+    ended_at: 2026-06-12T13:48:30.235Z
+    input_tokens: 4162
+    output_tokens: 378
+    cached_input_tokens: 104192
+    total_tokens: 4540
+    tool_calls: 7
+    estimated_cost_usd: 0
+    outcome: retry
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.2:04a66b08fd42dd94
+    notes: /skill:implementation-doc-sync
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.3
+    phase: documentation-sync
+    phase_name: Documentation Sync
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T13:48:30.235Z
+    ended_at: 2026-06-12T13:48:37.059Z
+    input_tokens: 1113
+    output_tokens: 356
+    cached_input_tokens: 108672
+    total_tokens: 1469
+    tool_calls: 0
+    estimated_cost_usd: 0
+    outcome: blocked
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.3:31486f87133a4232
+    notes: /skill:implementation-doc-sync
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.3
+    phase: documentation-sync
+    phase_name: Documentation Sync
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T14:00:03.381Z
+    ended_at: 2026-06-12T14:00:31.999Z
+    input_tokens: 95
+    output_tokens: 937
+    cached_input_tokens: 16640
+    total_tokens: 1032
+    tool_calls: 5
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:documentation-sync:11.1.3:31f9cf873935cba5
+    notes: /skill:implementation-doc-sync
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:contract-drift-gate:12.1.1
+    phase: contract-drift-gate
+    phase_name: Contract Drift Gate
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T14:00:31.999Z
+    ended_at: 2026-06-12T14:01:44.671Z
+    input_tokens: 3680
+    output_tokens: 903
+    cached_input_tokens: 32128
+    total_tokens: 4583
+    tool_calls: 18
+    estimated_cost_usd: 0
+    outcome: success
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:contract-drift-gate:12.1.1:508d34abd74f316c
+    notes: /skill:contract-drift-auditor
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.1
+    phase: runtime-integration-gate
+    phase_name: Runtime Integration Gate
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T14:01:44.671Z
+    ended_at: 2026-06-12T14:03:04.027Z
+    input_tokens: 110
+    output_tokens: 706
+    cached_input_tokens: 52224
+    total_tokens: 816
+    tool_calls: 15
+    estimated_cost_usd: 0
+    outcome: retry
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.1:ab6970fe14bb8075
+    notes: /skill:runtime-integration-conductor
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.2
+    phase: runtime-integration-gate
+    phase_name: Runtime Integration Gate
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T14:03:04.027Z
+    ended_at: 2026-06-12T14:03:46.478Z
+    input_tokens: 2016
+    output_tokens: 683
+    cached_input_tokens: 59904
+    total_tokens: 2699
+    tool_calls: 10
+    estimated_cost_usd: 0
+    outcome: retry
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.2:2c321f9fa63583ed
+    notes: /skill:runtime-integration-conductor
+    subject_type: petition
+    subject_id: petition066
+  - run_id: pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.3
+    phase: runtime-integration-gate
+    phase_name: Runtime Integration Gate
+    agent: pipeline-conductor
+    model: dev_default
+    started_at: 2026-06-12T14:03:46.478Z
+    ended_at: 2026-06-12T14:04:20.760Z
+    input_tokens: 1572
+    output_tokens: 640
+    cached_input_tokens: 68736
+    total_tokens: 2212
+    tool_calls: 6
+    estimated_cost_usd: 0
+    outcome: blocked
+    source: harness_measured
+    measurement_uri: urn:pi-alice:telemetry:pipeline-conductor:d0a94d69-d0c9-4b17-b833-6cae274957ce:runtime-integration-gate:13.1.3:779d7752144eeca9
+    notes: /skill:runtime-integration-conductor
+    subject_type: petition
+    subject_id: petition066

@@ -1,0 +1,19 @@
+reviewer: petition-translator-reviewer
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: requirements-review
+invocation: 2/2
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Requirements translation review executed in this run; petition intent, acceptance criteria, and feature remain semantically aligned for PSRM-side udlaeg workflow delivery.
+reviewed_at: 2026-06-12T11:56:05.408797+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, and feature in this run before reaching verdict.
+  - Verified petition functional requirements cover single-writer ownership, immutable covered claim scope, idempotent dispatch/callback handling, terminal interruption coupling, debtor-scoped reads, and gateway security boundaries.
+  - Verified outcome contract preserves those intents across AC-01..AC-17 without contradiction or loss of scope.
+  - Verified feature scenarios express the same business language and lifecycle states REQUESTED, IN_COURT_PROCESS, COMPLETED, UNSUCCESSFUL, and WITHDRAWN.
+  - Confirmed cross-artifact consistency for workflowReference correlation, petition059 UDLAEG interruption, and integration-gateway OCES3 mTLS plus replay protection.
+findings: []
+recommendations: []

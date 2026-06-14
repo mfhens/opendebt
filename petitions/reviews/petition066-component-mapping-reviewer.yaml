@@ -1,0 +1,32 @@
+reviewer: component-mapping-reviewer
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: architecture-stage
+invocation: 2/5
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Component mapping review executed successfully in this run and confirms petition066 responsibilities are mapped coherently across debt-service, integration-gateway, petition059 limitation seam, and projection-only consumers.
+reviewed_at: 2026-06-12T12:00:04.319736+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, feature, solution architecture, component manifests, and canonical architecture/workspace.dsl in this run before issuing the mapping verdict.
+  - Confirmed debt-service remains the single workflow writer for create, dispatch idempotency, callback state validation, terminal atomicity, debtor-scoped reads, and petition059 interruption coupling required by FR-01 through FR-15.
+  - Confirmed integration-gateway remains the only external fogedret boundary for callback ingress, OCES3 mTLS, replay protection, and transport-to-internal command translation required by FR-15 through FR-17.
+  - Reverified in the repaired canonical C4 model that petition066 debt-service components, gateway components, petition059 coupling, callback boundary, dispatch boundary, dedicated P066 component view, and deployment coverage are all present.
+findings: []
+mapping_assertions:
+  - capability: attachment-workflow-lifecycle
+    owner: opendebt-debt-service
+    rationale: Single-writer aggregate ownership is required for immutable covered scope, idempotent dispatch, callback transition validation, and atomic terminal interruption coupling.
+  - capability: fogedret-boundary-and-replay-protection
+    owner: opendebt-integration-gateway
+    rationale: OCES3 mTLS, callback replay blocking, and external/internal payload translation are transport-boundary concerns and must not mutate workflow truth directly.
+  - capability: petition059-interruption-registration
+    owner: opendebt-debt-service
+    rationale: petition066 must reuse the existing limitation seam in debt-service instead of introducing a second legal writer.
+  - capability: case-visibility
+    owner: projection-only consumers
+    rationale: case-service and any caseworker portal experience may consume reads or projections but do not own workflow state.
+recommendations:
+  - Proceed to solution-architect and solution-architecture-reviewer with the updated canonical C4 model as architecture baseline.

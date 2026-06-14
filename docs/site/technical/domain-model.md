@@ -174,6 +174,26 @@ erDiagram
 | `Section50WorklistEntryEntity` | debt-service | Ranked entry within one petition060 worklist | `worklistId`, `rankOrder`, `claimId`, `itemType`, `claimCategory`, `withinAmountWindow`, `selectionReason`, `prioritisationFactors`, `amount` |
 | `Section50DecisionSnapshotEntity` | debt-service | Reproducible decision metadata for audit and caseworker inspection | `worklistId`, `rulePath`, `inputHash`, `selectedNextItemId`, `legalReference`, `auditEventId`, `origin`, `occurredAt`, `notes` |
 
+## Attachment workflow entities (petition066)
+
+| Entity / DTO | Service | Purpose | Key fields |
+|--------------|---------|---------|------------|
+| `AttachmentWorkflowDto` | debt-service | Debtor-scoped read model for one attachment workflow | `workflowId`, `debtorId`, `workflowReference`, `status`, `coveredFordringIds`, `dispatchMetadata`, `history`, `outcomeQualifier`, `interruptionLinkageMetadata` |
+| `AttachmentWorkflowHistoryEntry` | debt-service | Chronological audit/history record for state transitions and idempotent replays | `status`, `occurredAt`, `actor`, `note` |
+| `AttachmentWorkflowDispatchMetadata` | debt-service | Dispatch correlation data stored when the workflow enters court processing | `workflowReference`, `externalCaseNumber`, `dispatchedAt` |
+| `AttachmentWorkflowCallbackRequest` | debt-service | Internal debtor-scoped callback command received from integration-gateway | `debtorId`, `workflowReference`, `status`, `outcomeDate`, `reasonCode`, `callbackMessageId` |
+| `CreateAttachmentWorkflowRequest` | debt-service | Create command for a new debtor-scoped attachment workflow | `coveredFordringIds` |
+| `WithdrawAttachmentWorkflowRequest` | debt-service | Withdraw command for an existing workflow without interruption side effects | `reason` |
+| `FogedretAttachmentDispatchRequest` | integration-gateway | Internal dispatch trigger that identifies the workflow to send toward fogedret | `debtorId`, `workflowId` |
+| `FogedretAttachmentCallbackRequest` | integration-gateway | External callback payload protected by OCES3 mTLS and replay guard before internal forwarding | `debtorId`, `workflowReference`, `outcomeDate`, `callbackMessageId`, `status`, `reasonCode`, `externalCaseNumber` |
+
+### Attachment workflow enums
+
+| Enum | Values | Notes |
+|------|--------|-------|
+| `AttachmentWorkflowStatus` | `REQUESTED`, `IN_COURT_PROCESS`, `COMPLETED`, `UNSUCCESSFUL`, `WITHDRAWN` | Canonical petition066 workflow state machine |
+| `AttachmentWorkflowOutcomeQualifier` | `NONE`, `COMPLETED`, `NO_ATTACHABLE_ASSETS`, `INSOLVENCY_DECLARED`, `LEGAL_OR_PROCEDURAL_DEFECT`, `THIRD_PARTY_RIGHT_BLOCK`, `COURT_REJECTION`, `WITHDRAWN` | Read-model qualifier used to expose terminal outcome semantics without parsing free text |
+
 ### Limitation enums
 
 | Enum | Values | Notes |

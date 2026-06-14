@@ -1,0 +1,29 @@
+reviewer: solution-architecture-reviewer
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: architecture-stage
+invocation: 4/5
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Solution architecture review executed successfully in this run and accepts the petition066 architecture package on the updated canonical C4 baseline.
+reviewed_at: 2026-06-12T12:01:04.809287+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, feature, solution architecture, prior architecture-stage review artifacts, and canonical architecture/workspace.dsl in this run before issuing the review verdict.
+  - Reconfirmed the architecture package stays on-petition: debt-service owns the dedicated attachment workflow aggregate and petition059 interruption coupling, while integration-gateway remains the only external fogedret boundary with replay protection and OCES3 mTLS.
+  - Reconfirmed the architecture document includes explicit slice ownership, interface contracts, terminal state machine, one-transaction interruption coupling, NFR alignment, and OpenAPI handoff constraints needed before implementation.
+  - Reconfirmed the repaired canonical C4 model now supplies the petition066 component view and the gateway callback plus petition059 interruption-bridge relationships referenced by the architecture package.
+findings: []
+review_assertions:
+  - claim: architecture avoids split writers
+    result: pass
+    rationale: debt-service remains the only workflow writer and case-service/portal roles remain read or projection oriented.
+  - claim: architecture preserves external boundary integrity
+    result: pass
+    rationale: integration-gateway terminates fogedret traffic and owns mTLS plus replay protection without taking workflow ownership.
+  - claim: architecture is implementation-handoff ready
+    result: pass
+    rationale: the package includes concrete interface surfaces, state transitions, transaction rules, NFR expectations, and canonical C4 references for downstream validation.
+recommendations:
+  - Proceed to c4-model-validator to complete the final architecture-stage validation pass for petition066.

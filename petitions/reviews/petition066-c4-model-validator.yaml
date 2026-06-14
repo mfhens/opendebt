@@ -1,0 +1,31 @@
+reviewer: c4-model-validator
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: architecture-stage
+invocation: 5/5
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Canonical C4 validation executed successfully in this run and confirms petition066 architecture coverage is present in architecture/workspace.dsl.
+reviewed_at: 2026-06-12T12:01:35.151223+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, feature, solution architecture, prior architecture-stage review artifacts, and canonical architecture/workspace.dsl in this run before executing validation.
+  - Verified all required petition066 debt-service components exist in architecture/workspace.dsl: AttachmentWorkflowApi, AttachmentWorkflowApplicationService, AttachmentEligibilityGate, AttachmentDispatchCoordinator, AttachmentCallbackValidator, AttachmentInterruptionBridge, and AttachmentWorkflowHistoryProjector.
+  - Verified all required petition066 integration-gateway components exist in architecture/workspace.dsl: FogedretCallbackController, FogedretReplayGuard, and AttachmentGatewayClient.
+  - Verified required petition066 relationships exist in architecture/workspace.dsl for debt-service orchestration, petition059 interruption bridging, gateway replay checking, callback forwarding, external fogedret dispatch, and gateway-to-debt-service callback delivery.
+  - Verified dedicated petition066 component view DebtService_P066_Components and production deployment coverage for debt-service and integration-gateway are present in the canonical model.
+findings: []
+validation_checks:
+  - id: c4-p066-components-debt-service
+    result: pass
+  - id: c4-p066-components-gateway
+    result: pass
+  - id: c4-p066-relationships
+    result: pass
+  - id: c4-p066-component-view
+    result: pass
+  - id: c4-p066-deployment-coverage
+    result: pass
+recommendations:
+  - None. The architecture-stage package for petition066 is now complete on the canonical C4 baseline.

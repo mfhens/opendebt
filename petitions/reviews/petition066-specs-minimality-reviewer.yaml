@@ -1,0 +1,43 @@
+petition_id: petition066
+agent: specs-minimality-reviewer
+status: success
+verdict: APPROVED
+summary: >-
+  Approved. The petition066 specs package contains only the minimum necessary implementation
+  content justified by the petition, outcome contract, feature file, ADR-0040, and the
+  applicable NFR register: one debt-service workflow surface, one integration-gateway court
+  boundary surface, one validation handoff package, and no speculative portal or court-internal
+  workflow expansion.
+artifacts:
+  - petitions/specs/petition066-specs.yaml
+  - petitions/validation/petition066/validation-contract.md
+  - petitions/reviews/petition066-specs-minimality-reviewer.yaml
+evidence_checked:
+  - claim: each retained module is required by the petition package
+    proof: >-
+      debt-service workflow ownership is required by FR-01..FR-14, gateway transport protection is
+      required by FR-15..FR-16, and validation handoff is required by the pipeline's explicit
+      verification discipline for observable outcome assertions.
+    freshness: '2026-06-12T12:00:00+02:00'
+    result: pass
+  - claim: the package avoids speculative scope growth
+    proof: >-
+      No direct external debt-service contract, no court-procedure internals, no extra case-service
+      writer role, and no unconditional browser module were added beyond what the petition and
+      architecture justify.
+    freshness: '2026-06-12T12:00:00+02:00'
+    result: pass
+  - claim: validation scope is minimal and complete
+    proof: >-
+      The validation contract mirrors the 16 scenarios exactly and keeps UI proof conditional
+      instead of inventing a browser flow that has not been specified yet.
+    freshness: '2026-06-12T12:00:00+02:00'
+    result: pass
+warnings: []
+escalations: []
+next_action: Proceed to test generation.
+handoff_target: test_generation
+timestamp: '2026-06-12T12:00:00+02:00'
+keep_count: 6
+discard_count: 0
+escalate_count: 0

@@ -1,0 +1,148 @@
+# Testfil — Udlæg PSRM workflow Catala-testpakke
+
+> Include: ../ga_3_2_udlaeg_psrm_workflow.catala_da
+
+(* Testpakke for petition066 Catala-encoding.
+   Dækker de juridisk materielle grene:
+   - COMPLETED → terminal afbrydelse med UDLAEG
+   - UNSUCCESSFUL kræver standardiseret reason code
+   - WITHDRAWN er terminal uden afbrydelse
+   - Udlæg på særligt retsgrundlag giver 10-årig frist
+   - Én emission per kompleks/standalone-gruppe
+   - Legal reference er policy-afledt og caller-override ignoreres *)
+
+---
+
+## Test 1 — COMPLETED medfører terminal afbrydelse
+
+```catala
+declaration scope UdlaegWorkflowTest1:
+  comp scope UdlaegWorkflowJuridiskVirkning
+
+scope UdlaegWorkflowTest1:
+  definition comp.workflowStatus equals COMPLETED
+  definition comp.hasReasonCode equals false
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.erTerminal = true
+  assertion comp.kræverReasonCode = false
+  assertion comp.reasonCodeGyldig = true
+  assertion comp.interruptionType = UDLAEG
+  assertion comp.interruptionSkalRegistreres = true
+  assertion comp.qualifier = TERMINAL_MED_AFBRYDELSE
+  assertion comp.nyFristAar = 3
+```
+
+---
+
+## Test 2 — UNSUCCESSFUL uden reason code afvises som interruptiv virkning
+
+```catala
+declaration scope UdlaegWorkflowTest2:
+  comp scope UdlaegWorkflowJuridiskVirkning
+
+scope UdlaegWorkflowTest2:
+  definition comp.workflowStatus equals UNSUCCESSFUL
+  definition comp.hasReasonCode equals false
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.erTerminal = true
+  assertion comp.kræverReasonCode = true
+  assertion comp.reasonCodeGyldig = false
+  assertion comp.interruptionSkalRegistreres = false
+  assertion comp.qualifier = TERMINAL_MED_AFBRYDELSE
+```
+
+---
+
+## Test 3 — UNSUCCESSFUL med reason code medfører afbrydelse
+
+```catala
+declaration scope UdlaegWorkflowTest3:
+  comp scope UdlaegWorkflowJuridiskVirkning
+
+scope UdlaegWorkflowTest3:
+  definition comp.workflowStatus equals UNSUCCESSFUL
+  definition comp.hasReasonCode equals true
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.erTerminal = true
+  assertion comp.kræverReasonCode = true
+  assertion comp.reasonCodeGyldig = true
+  assertion comp.interruptionType = UDLAEG
+  assertion comp.interruptionSkalRegistreres = true
+  assertion comp.nyFristAar = 3
+```
+
+---
+
+## Test 4 — WITHDRAWN er terminal uden afbrydelse
+
+```catala
+declaration scope UdlaegWorkflowTest4:
+  comp scope UdlaegWorkflowJuridiskVirkning
+
+scope UdlaegWorkflowTest4:
+  definition comp.workflowStatus equals WITHDRAWN
+  definition comp.hasReasonCode equals false
+  definition comp.retsgrundlag equals ORDINARY
+  assertion comp.erTerminal = true
+  assertion comp.interruptionSkalRegistreres = false
+  assertion comp.qualifier = TERMINAL_UDEN_AFBRYDELSE
+```
+
+---
+
+## Test 5 — Særligt retsgrundlag giver 10-årig frist ved interruptivt udlæg
+
+```catala
+declaration scope UdlaegWorkflowTest5:
+  comp scope UdlaegWorkflowJuridiskVirkning
+
+scope UdlaegWorkflowTest5:
+  definition comp.workflowStatus equals COMPLETED
+  definition comp.hasReasonCode equals false
+  definition comp.retsgrundlag equals SAERLIGT_RETSGRUNDLAG
+  assertion comp.interruptionSkalRegistreres = true
+  assertion comp.nyFristAar = 10
+```
+
+---
+
+## Test 6 — Emission count følger antal komplekser/standalone når interruption registreres
+
+```catala
+declaration scope UdlaegWorkflowTest6:
+  comp scope UdlaegWorkflowKompleksEmission
+
+scope UdlaegWorkflowTest6:
+  definition comp.interruptionSkalRegistreres equals true
+  definition comp.antalKomplekserEllerStandalone equals 2
+  assertion comp.emissionCount = 2
+```
+
+---
+
+## Test 7 — Ingen interruption giver nul emissioner
+
+```catala
+declaration scope UdlaegWorkflowTest7:
+  comp scope UdlaegWorkflowKompleksEmission
+
+scope UdlaegWorkflowTest7:
+  definition comp.interruptionSkalRegistreres equals false
+  definition comp.antalKomplekserEllerStandalone equals 2
+  assertion comp.emissionCount = 0
+```
+
+---
+
+## Test 8 — Policy-afledt legal reference er påkrævet og caller override ignoreres
+
+```catala
+declaration scope UdlaegWorkflowTest8:
+  comp scope UdlaegWorkflowLegalReferenceGuard
+
+scope UdlaegWorkflowTest8:
+  definition comp.interruptionSkalRegistreres equals true
+  definition comp.callerOverridesLegalReference equals true
+  assertion comp.policyDerivedReferenceRequired = true
+  assertion comp.callerOverrideIgnored = true
+```

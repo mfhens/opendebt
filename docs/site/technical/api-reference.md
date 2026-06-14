@@ -78,6 +78,17 @@ authoritative claim state.
 | `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override` | Persist a caseworker-documented override or expedited deviation on the existing worklist. |
 | `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision` | Record a partial/no-modregning outcome for the current payout context with visible rationale. |
 
+#### Attachment workflows (petition 066)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/internal/debtors/{debtorId}/attachment-workflows` | Create a debtor-scoped attachment workflow with immutable `coveredFordringIds`; rejects atomically if any covered claim is ineligible. |
+| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}/dispatch` | Idempotently dispatch a requested workflow to fogedret and persist `workflowReference` plus optional external case metadata. |
+| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}/withdraw` | Withdraw a non-terminal workflow with mandatory caseworker reason and no petition059 interruption emission. |
+| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/callbacks` | Apply a fogedret callback correlated by debtor scope and `workflowReference`; legal terminal transitions trigger atomic petition059 `UDLAEG` interruption handling. |
+| `GET` | `/internal/debtors/{debtorId}/attachment-workflows` | List debtor-scoped attachment workflows with current status, history, outcome qualifier, and interruption linkage metadata. |
+| `GET` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}` | Read one debtor-scoped attachment workflow by workflow ID. |
+
 #### Readiness
 
 | Method | Endpoint | Purpose |
@@ -208,6 +219,8 @@ Legal basis: GIL § 4 stk. 1–4, GIL § 10b, Gæld.bekendtg. § 4 stk. 3, Retsp
 | `POST` | `/api/v1/creditor-m2m/claims/submit` | M2M claim submission via DUPLA |
 | `POST` | `/api/v1/skb/cremul/parse` | Parse SKB CREMUL payment file |
 | `POST` | `/api/v1/skb/debmul/generate` | Generate SKB DEBMUL file |
+| `POST` | `/api/external/v1/fogedret/attachment-dispatch` | Petition066 external dispatch ingress/egress boundary for fogedret attachment traffic. |
+| `POST` | `/api/external/v1/fogedret/attachment-callbacks` | Petition066 external callback ingress protected by OCES3 mTLS and replay detection before forwarding to debt-service. |
 
 #### SOAP endpoints (petition019 — legacy OIO/SKAT protocols)
 

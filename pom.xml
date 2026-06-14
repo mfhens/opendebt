@@ -330,6 +330,33 @@
         </pluginManagement>
 
         <plugins>
+            <!-- Fail fast on unsupported local JDKs before formatter/compiler plugins touch javac internals. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[3.9.0,)</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[21,22)</version>
+                                    <message>OpenDebt must be built with JDK 21.x. The current JDK is incompatible with the configured Spotless/google-java-format and Lombok toolchain. Set JAVA_HOME to a Java 21 installation before running Maven.</message>
+                                </requireJavaVersion>
+                                <dependencyConvergence/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Code formatting with Spotless -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
@@ -428,30 +455,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Maven enforcer for build consistency -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>3.9.0</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>21</version>
-                                </requireJavaVersion>
-                                <dependencyConvergence/>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 

@@ -1,0 +1,21 @@
+reviewer: pipeline-depth-decision
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: pipeline-depth-decision
+invocation: 1/1
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+decision: full
+verdict: success
+summary: Full architecture path remains required for petition066 because the workflow introduces cross-service orchestration, legal interruption coupling, gateway security constraints, and architecture/spec artifacts are now present.
+reviewed_at: 2026-06-12T11:56:23.912752+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, and feature in this run before deciding path depth.
+  - Petition scope includes dedicated debt-service aggregate ownership, integration-gateway external boundary, petition059 interruption coupling, replay protection, and debtor-scoped read APIs.
+  - Outcome contract spans 17 acceptance criteria covering workflow lifecycle, idempotency, legal interruption semantics, gateway authentication, and replay rejection.
+  - Feature scenarios exercise the full lifecycle and integration boundaries rather than a local isolated change.
+  - Supporting full-path artifacts are present in this repository: design/solution-architecture-p066-udlaeg-psrm-workflow.md, petitions/specs/petition066-specs.yaml, and petitions/validation/petition066/validation-contract.md.
+findings: []
+recommendations:
+  - Continue the run on the full architecture path.

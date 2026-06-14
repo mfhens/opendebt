@@ -7,7 +7,7 @@ status: draft
 
 - AC-01: Given a debtor and covered claims where all claims are eligible, when workflow creation is requested, then a new workflow is stored in debt-service `attachment_workflow` with status `REQUESTED` and unique `workflowReference`.
 - AC-02: Given a creation request where at least one covered claim is ineligible, when workflow creation is submitted, then the request is rejected and no workflow is created.
-- AC-03: Given a workflow in status `REQUESTED`, when dispatch is requested and accepted, then status becomes `IN_COURT_PROCESS` and dispatch metadata is persisted.
+- AC-03: Given a workflow in status `REQUESTED`, when dispatch is requested and accepted, then status becomes `IN_COURT_PROCESS` and dispatch metadata is persisted including OpenDebt `workflowReference` and optional external case number when supplied by the court channel.
 - AC-04: Given a workflow already dispatched, when dispatch is requested again, then no new outbound dispatch is sent and existing dispatch metadata is returned.
 - AC-05: Given a workflow in `REQUESTED` or `IN_COURT_PROCESS`, when scope mutation is requested, then mutation is rejected and caller is instructed to use `WITHDRAWN` + recreate.
 - AC-06: Given callback payload with debtor scope and matching `workflowReference`, when transition is legal, then callback is applied; otherwise callback is rejected with no state change.
@@ -20,12 +20,13 @@ status: draft
 - AC-13: Given interruption emission from petition066, when request is sent to petition059 handling, then `type=UDLAEG` is used for both `COMPLETED` and `UNSUCCESSFUL` and policy-engine legal reference is applied.
 - AC-14: Given caseworker read request on debtor scope, when workflows are returned, then response includes current status, chronological history, outcome qualifier, and interruption linkage metadata.
 - AC-15: Given external fogedret callback traffic, when callback is received, then integration-gateway terminates external request and calls internal debtor-scoped debt-service API.
-- AC-16: Given callback ingress at integration-gateway, when callback identity tuple (`workflowReference`, `outcomeDate`, `callbackMessageId`) has already been processed, then callback is rejected as replay and no downstream state change occurs.
+- AC-16: Given callback ingress at integration-gateway, when the callback is received from fogedret, then OCES3 mTLS client authentication is required before the callback is accepted for processing.
+- AC-17: Given callback ingress at integration-gateway, when callback identity tuple (`workflowReference`, `outcomeDate`, `callbackMessageId`) has already been processed, then callback is rejected as replay and no downstream state change occurs.
 
 ## Definition of Done
 
 - [ ] All acceptance criteria pass
-- [ ] Gherkin scenarios covering AC-01 through AC-16 pass
+- [ ] Gherkin scenarios covering AC-01 through AC-17 pass
 - [ ] Fogedret dispatch and callback contract shape is documented and versioned
 - [ ] Petition059 prescription-interruption linkage is observable in integration tests
 - [ ] Debtor-scoped API surface is documented with workflow-reference correlation rules

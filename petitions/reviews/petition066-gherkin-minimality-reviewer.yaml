@@ -1,0 +1,17 @@
+reviewer: gherkin-minimality-reviewer
+run_id: 1078a0f7-9572-41e9-bf35-bb75971404d1
+stage_id: requirements-review
+invocation: 1/2
+petition_id: petition066
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+verdict: success
+summary: Requirements review executed in this run; petition intent is coherent and feature minimality is aligned with complete AC coverage including valid AC-13 UNSUCCESSFUL reason code.
+fresh_evidence:
+  - Reopened petition, outcome contract, and feature during this stage execution.
+  - Verified petition intent markers for single-writer ownership, idempotent dispatch, and petition059 interruption coupling.
+  - Re-verified feature annotations cover AC-01..AC-17 with 18 scenarios and no missing AC references.
+  - Confirmed AC-13 uses UNSUCCESSFUL reason code COURT_REJECTION, which is a valid FR-09 enum member.
+findings: []
+recommendations: []

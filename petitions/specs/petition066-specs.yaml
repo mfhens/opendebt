@@ -1,0 +1,321 @@
+specification_id: SPEC-P066
+petition_id: petition066
+status: success
+summary: >-
+  Minimal package-level specification for petition066 PSRM-side attachment workflow
+  ownership, gateway callback protection, petition059 interruption coupling, debtor-scoped
+  read APIs, and browser-validation handoff requirements.
+source_artifacts:
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+  - design/solution-architecture-p066-udlaeg-psrm-workflow.md
+  - architecture/adr/0040-attachment-workflow-boundary-and-prescription-linkage.md
+  - CONTEXT.md
+  - docs/site/technical/architecture.md
+  - docs/site/technical/domain-model.md
+nfr_injection_summary:
+  applied:
+    - NFR-SEC-001
+    - NFR-SEC-002
+    - NFR-SEC-003
+    - NFR-SEC-004
+    - NFR-SEC-005
+    - NFR-SEC-006
+    - NFR-GDPR-001
+    - NFR-GDPR-002
+    - NFR-GDPR-003
+    - NFR-GDPR-004
+    - NFR-GDPR-005
+    - NFR-AUDIT-001
+    - NFR-RIGS-001
+    - NFR-RIGS-002
+    - NFR-PERF-001
+    - NFR-PERF-002
+    - NFR-PERF-003
+    - NFR-RES-001
+    - NFR-RES-002
+    - NFR-RES-003
+    - NFR-OBS-001
+    - NFR-OBS-002
+    - NFR-OBS-003
+    - NFR-API-001
+    - NFR-API-002
+    - NFR-ACC-001
+    - NFR-ACC-002
+    - NFR-ARCH-001
+    - NFR-ARCH-002
+    - NFR-ARCH-003
+    - NFR-ARCH-004
+  skipped_scope_mismatch:
+    - NFR-AUDIT-002
+    - NFR-AUDIT-003
+  register_gaps:
+    - id: NFR-SEC-006
+      reason: requires explicit dependency/security review evidence outside default stage hooks
+    - id: NFR-ACC-001
+      reason: requires explicit accessibility review if a caseworker browser surface is implemented
+warnings:
+  - Petition066 has browser UI signals at pipeline level, but no confirmed caseworker route yet; validation contract therefore mixes API-observable assertions with explicit UI-optional notes.
+  - Legal footprint is present, but no Catala companion exists yet for petition066; any later legal-oracle demand must be introduced by fresh evidence rather than assumed here.
+modules:
+  - module: opendebt-debt-service.attachment_workflow
+    source_requirement:
+      petition_refs: [FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-12, FR-13, FR-14]
+      outcome_contract_refs: [AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10, AC-11, AC-12, AC-13, AC-14]
+      gherkin_scenarios:
+        - Create workflow with eligible covered claims
+        - Reject creation when any covered claim is ineligible
+        - Accepted dispatch moves workflow to IN_COURT_PROCESS
+        - Repeated dispatch command is idempotent
+        - Covered claim scope is immutable after REQUESTED
+        - Callback requires both debtor scope and workflow reference match
+        - Callback with mismatched workflow reference is rejected
+        - COMPLETED callback persists terminal state and policy-derived interruption atomically
+        - UNSUCCESSFUL callback requires reason code and registers interruption
+        - UNSUCCESSFUL callback without reason code is rejected
+        - WITHDRAWN requires reason and emits no interruption
+        - Interruption emission occurs once per covered complex group
+        - Duplicate terminal callback is idempotent no-op
+        - Legal reference is policy-derived and not caller-overridden
+        - Debtor-scoped read returns status history and interruption linkage
+    api_contracts:
+      - artifact: api-specs/openapi-debt-service-attachment-workflow-internal.yaml
+        reason: OpenAPI 3.1 contract for the debtor-scoped attachment workflow commands and reads.
+    interface:
+      inputs:
+        rest_endpoints:
+          - method: POST
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows
+            request:
+              path_params: [debtorId]
+              body_fields: [coveredFordringIds]
+          - method: POST
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows/{workflowId}/dispatch
+            request:
+              path_params: [debtorId, workflowId]
+              body: none
+          - method: POST
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows/{workflowId}/withdraw
+            request:
+              path_params: [debtorId, workflowId]
+              body_fields: [reason]
+          - method: POST
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows/callbacks
+            request:
+              body_fields: [debtorId, workflowReference, callbackMessageId, callbackStatus, outcomeDate]
+              optional_body_fields: [externalCaseNumber, unsuccessfulReasonCode, unsuccessfulReasonDetail, callerProvidedLegalReference]
+          - method: GET
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows
+            request:
+              path_params: [debtorId]
+              body: none
+          - method: GET
+            path: /api/internal/v1/debtors/{debtorId}/attachment-workflows/{workflowId}
+            request:
+              path_params: [debtorId, workflowId]
+              body: none
+      outputs:
+        response_models:
+          - name: AttachmentWorkflowDto
+            fields:
+              - workflowId
+              - debtorId
+              - coveredFordringIds
+              - workflowReference
+              - status
+              - dispatchMetadata
+              - outcomeQualifier
+              - unsuccessfulReasonCode
+              - unsuccessfulReasonDetail
+              - withdrawalReason
+              - terminalOutcomeDate
+              - interruptionLinkage
+              - statusHistory
+          - name: AttachmentWorkflowSummaryDto
+            fields:
+              - workflowId
+              - workflowReference
+              - status
+              - outcomeQualifier
+              - terminalOutcomeDate
+          - name: AttachmentDispatchResultDto
+            fields:
+              - workflowId
+              - workflowReference
+              - status
+              - dispatchMetadata
+              - idempotentReplay
+      error_handling:
+        - create rejects when any covered claim is ineligible and returns per-claim reasons with no workflow created
+        - scope mutation after creation is rejected with instruction to withdraw and recreate
+        - repeated dispatch returns existing dispatch metadata and does not create duplicate outbound dispatch
+        - callback requires matching debtor scope and workflowReference; mismatch returns rejection with no state change
+        - callback UNSUCCESSFUL without unsuccessfulReasonCode returns HTTP 422
+        - WITHDRAWN requires non-empty reason
+        - duplicate terminal callback with same terminal status is accepted as idempotent no-op and must not duplicate interruption emission
+        - callerProvidedLegalReference is ignored and must not override policy-derived legal reference
+    data_models:
+      - name: AttachmentWorkflow
+        fields:
+          - workflowId
+          - debtorId
+          - coveredFordringIds
+          - workflowReference
+          - status
+          - dispatchMetadata
+          - outcomeQualifier
+          - unsuccessfulReasonCode
+          - unsuccessfulReasonDetail
+          - withdrawalReason
+          - terminalOutcomeDate
+          - interruptionLinkage
+          - statusHistory
+      - name: AttachmentStatusHistoryEntry
+        fields:
+          - occurredAt
+          - fromStatus
+          - toStatus
+          - source
+          - note
+          - idempotentReplay
+      - name: AttachmentInterruptionLinkage
+        fields:
+          - sourceWorkflowId
+          - interruptionType
+          - eventDate
+          - legalReference
+          - emittedForFordringskompleksOrFordring
+      - name: AttachmentDispatchMetadata
+        fields:
+          - dispatchedAt
+          - workflowReference
+          - externalCaseNumber
+          - transportReference
+    persistence:
+      - attachment workflow state is stored in a dedicated debt-service aggregate and is the sole write source of truth
+      - coveredFordringIds are immutable from REQUESTED onward
+      - COMPLETED and UNSUCCESSFUL transitions persist terminal state and petition059 interruption linkage atomically
+      - interruption emission occurs once per claim complex group or standalone claim
+      - WITHDRAWN persists reason and emits no interruption
+      - stored data uses technical identifiers only; no CPR, name, address, email, or phone is allowed
+    non_functional:
+      petition_specific:
+        - id: P066-NFR-01
+          description: create, dispatch, and callback handling are deterministic and idempotent under retry
+          source: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md#Functional Requirements
+        - id: P066-NFR-02
+          description: terminal workflow persistence and petition059 interruption registration commit atomically
+          source: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md#Functional Requirements
+        - id: P066-NFR-03
+          description: debtor-scoped attachment APIs and stored records use technical identifiers only
+          source: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md#Constraints and Assumptions
+        - id: P066-NFR-04
+          description: synchronous command/read paths should meet p95 under 1 second or trigger redesign review
+          source: design/solution-architecture-p066-udlaeg-psrm-workflow.md#7-nfr-alignment
+      register_refs:
+        - NFR-SEC-001
+        - NFR-SEC-002
+        - NFR-SEC-003
+        - NFR-SEC-004
+        - NFR-SEC-005
+        - NFR-SEC-006
+        - NFR-GDPR-001
+        - NFR-GDPR-002
+        - NFR-GDPR-003
+        - NFR-GDPR-004
+        - NFR-GDPR-005
+        - NFR-AUDIT-001
+        - NFR-RIGS-001
+        - NFR-RIGS-002
+        - NFR-PERF-001
+        - NFR-PERF-002
+        - NFR-PERF-003
+        - NFR-RES-001
+        - NFR-RES-002
+        - NFR-RES-003
+        - NFR-OBS-001
+        - NFR-OBS-002
+        - NFR-OBS-003
+        - NFR-API-001
+        - NFR-API-002
+        - NFR-ACC-001
+        - NFR-ACC-002
+        - NFR-ARCH-001
+        - NFR-ARCH-002
+        - NFR-ARCH-003
+        - NFR-ARCH-004
+  - module: integration-gateway.fogedret_attachment_boundary
+    source_requirement:
+      petition_refs: [FR-15, FR-16]
+      outcome_contract_refs: [AC-15, AC-16, AC-17]
+      gherkin_scenarios:
+        - Integration-gateway is the external callback boundary
+        - Callback ingress requires OCES3 mTLS at gateway
+        - Callback replay is blocked at gateway
+    api_contracts:
+      - artifact: api-specs/openapi-integration-gateway-fogedret-attachment.yaml
+        reason: OpenAPI 3.1 contract for external court dispatch/callback traffic and replay-safe ingress.
+    interface:
+      inputs:
+        rest_endpoints:
+          - method: POST
+            path: /api/external/v1/fogedret/attachment-dispatch
+            request:
+              body_fields: [workflowReference, debtorId, coveredFordringIds]
+              optional_body_fields: [externalCaseNumber]
+          - method: POST
+            path: /api/external/v1/fogedret/attachment-callbacks
+            request:
+              body_fields: [workflowReference, debtorId, callbackMessageId, callbackStatus, outcomeDate]
+              optional_body_fields: [externalCaseNumber, unsuccessfulReasonCode, unsuccessfulReasonDetail]
+      outputs:
+        response_models:
+          - name: FogedretCallbackReceipt
+            fields: [accepted, replayRejected, forwardedCommandId]
+      error_handling:
+        - callback ingress requires successful OCES3 mTLS authentication
+        - replay tuple workflowReference+outcomeDate+callbackMessageId is rejected with no downstream state change
+        - gateway forwards only to internal debtor-scoped debt-service API
+    non_functional:
+      petition_specific:
+        - id: P066-NFR-05
+          description: callback ingress enforces mTLS and replay protection before internal mutation
+          source: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md#Functional Requirements
+  - module: petitions.validation_handoff
+    source_requirement:
+      petition_refs: [FR-14, FR-15, FR-16]
+      outcome_contract_refs: [AC-14, AC-15, AC-16, AC-17]
+      gherkin_scenarios:
+        - Debtor-scoped read returns status history and interruption linkage
+        - Integration-gateway is the external callback boundary
+        - Callback ingress requires OCES3 mTLS at gateway
+        - Callback replay is blocked at gateway
+    notes:
+      - Browser validation remains optional until a concrete caseworker route exists.
+      - API-observable assertions are still required through the validation contract for phase 6.5 evidence.
+performance_classification:
+  mode: synchronous
+  target:
+    create_dispatch_read_p95_ms: 1000
+    callback_apply_p95_ms: 1000
+  redesign_trigger:
+    description: if measured p95 exceeds 1000 ms or callback application requires async compensation, reopen architecture before closure
+acceptance_trace:
+  AC-01: create workflow stores REQUESTED state and unique workflowReference
+  AC-02: ineligible covered claim rejects create atomically
+  AC-03: accepted dispatch moves to IN_COURT_PROCESS and stores metadata
+  AC-04: repeated dispatch is idempotent
+  AC-05: scope mutation is rejected after REQUESTED
+  AC-06: callback requires debtor scope and workflowReference match
+  AC-07: COMPLETED persists terminal state and policy-derived interruption atomically
+  AC-08: UNSUCCESSFUL persists terminal state and interruption atomically
+  AC-09: UNSUCCESSFUL requires reason code
+  AC-10: WITHDRAWN requires reason and emits no interruption
+  AC-11: interruption emission occurs once per complex group or standalone claim
+  AC-12: duplicate terminal callback is idempotent no-op
+  AC-13: legal reference is policy-derived and not caller-overridden
+  AC-14: debtor-scoped reads include status history and interruption linkage
+  AC-15: integration-gateway is external callback boundary
+  AC-16: callback ingress requires OCES3 mTLS at gateway
+  AC-17: replay tuple is rejected at gateway

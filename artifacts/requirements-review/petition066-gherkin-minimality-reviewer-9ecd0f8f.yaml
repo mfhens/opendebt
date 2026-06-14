@@ -1,0 +1,39 @@
+run_id: 9ecd0f8f-3a35-48de-a7eb-595bb19a68db
+stage_id: requirements-review
+skill: gherkin-minimality-reviewer
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+reviewed_at_utc: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+verdict: success
+summary: "Feature is minimally expressed, traceable to petition/outcome contract intent, and now covers the remaining FR-07 and terminal/legal-reference boundaries."
+findings:
+  - id: GMR-01
+    severity: pass
+    area: behavioral-coverage
+    evidence:
+      - feature includes debtor-mismatch rejection and separate mismatched workflowReference rejection for AC-06 / FR-07
+      - callback rejection scenarios preserve unchanged workflow state
+    recommendation: "None."
+  - id: GMR-02
+    severity: pass
+    area: terminal-consistency
+    evidence:
+      - COMPLETED scenario now asserts policy-derived legal reference for UDLAEG
+      - UNSUCCESSFUL scenario plus AC-13 continue to cover policy-derived legal reference and caller override rejection
+    recommendation: "None."
+  - id: GMR-03
+    severity: pass
+    area: minimality
+    evidence:
+      - gateway boundary scenario now asserts delivery to internal attachment-workflow handling boundary rather than over-specifying routing shape
+      - mTLS rejection scenario keeps the required observable outcome without unnecessary timing wording
+    recommendation: "None."
+  - id: GMR-04
+    severity: pass
+    area: traceability
+    evidence:
+      - AC-01 through AC-17 remain represented in the feature file after edits
+      - dispatch, callback validation, interruption semantics, idempotency, read API, gateway auth, and replay protection all remain covered
+    recommendation: "None."
+conclusion: "Requirements review passes for gherkin minimality and petition translation fidelity in this run."

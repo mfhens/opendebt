@@ -1,0 +1,27 @@
+petition_id: petition066
+stage: test-generation
+status: needs_more_evidence
+summary: >-
+  Petition066 test-generation executed in this run and repaired missing executable BDD coverage
+  surfaces in debt-service and integration-gateway, but truthful same-run execution evidence remains
+  blocked by the repository Java/Spotless toolchain on this machine.
+evidence:
+  - Reopened the canonical petition, outcome contract, feature, specs, and validation contract in this run before issuing the verdict.
+  - Generated fresh petition066 executable BDD feature files and step definitions in both opendebt-debt-service and opendebt-integration-gateway during this run.
+  - The generated debt-service dry-run pack binds missing command/read seams to AC-01 through AC-14, workflowReference correlation, and petition059 interruption type UDLAEG.
+  - The generated integration-gateway dry-run pack binds missing callback/replay/mTLS seams to AC-15 through AC-17, workflowReference correlation, replay protection, and OCES3 mTLS ingress.
+  - Attempted same-run Maven execution with `mvn -pl opendebt-debt-service,opendebt-integration-gateway -Dtest=RunCucumberTest test`, which failed before test execution in Spotless with `java.lang.NoSuchMethodError` against google-java-format/javac internals.
+  - Retried same-run Maven execution with `-Dspotless.check.skip=true`; compilation still failed with `java.lang.ExceptionInInitializerError: com.sun.tools.javac.code.TypeTag :: UNKNOWN`, confirming the remaining blocker is toolchain execution rather than missing generated tests.
+artifacts:
+  - artifacts/pipeline/petition066-bdd-test-generation-run-d0a94d69-inv1-remediation5.md
+  - opendebt-debt-service/src/test/resources/features/petition066.feature
+  - opendebt-debt-service/src/test/java/dk/ufst/opendebt/debtservice/steps/Petition066Steps.java
+  - opendebt-integration-gateway/src/test/resources/features/petition066.feature
+  - opendebt-integration-gateway/src/test/java/dk/ufst/opendebt/gateway/steps/Petition066Steps.java
+blocking_reason: >-
+  Same-run executable evidence cannot be completed automatically in this environment because the Maven
+  Java/Spotless toolchain is incompatible with the repository on this machine, stopping before Cucumber
+  execution even after skipping Spotless.
+next_action: >-
+  Rerun petition066 test-generation on a compatible JDK/Maven formatter toolchain so the freshly generated
+  debt-service and integration-gateway BDD packs can execute and produce failing or pending runtime evidence.

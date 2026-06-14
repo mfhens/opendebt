@@ -1,0 +1,20 @@
+reviewer: component-assigner
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: architecture-stage
+invocation: 1/5
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Component assignment reran successfully in this run after repairing the canonical C4 model with petition066 debt-service and integration-gateway components plus a dedicated component view.
+reviewed_at: 2026-06-12T11:59:15.280478+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, and feature in this run before rerunning the component assignment stage.
+  - Reopened design/solution-architecture-p066-udlaeg-psrm-workflow.md and confirmed the required petition066 C4 elements to merge into the canonical model.
+  - Repaired architecture/workspace.dsl in this run by adding AttachmentWorkflowApi, AttachmentWorkflowApplicationService, AttachmentEligibilityGate, AttachmentDispatchCoordinator, AttachmentCallbackValidator, AttachmentInterruptionBridge, AttachmentWorkflowHistoryProjector, FogedretCallbackController, FogedretReplayGuard, and AttachmentGatewayClient.
+  - Added petition066-specific component relationships for gateway callback ingress, replay protection, debtor-scoped workflow API calls, petition059 interruption bridge usage, and fogedret dispatch flow.
+  - Added dedicated canonical component view DebtService_P066_Components and verified all required petition066 C4 names are now present in architecture/workspace.dsl.
+findings: []
+recommendations:
+  - Proceed to the remaining architecture-stage executors using the updated canonical C4 model.

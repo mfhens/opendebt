@@ -134,6 +134,13 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
                 surplusWindowSelector = component "SurplusWindowSelector" "Calculates remaining amount windows and candidate sets for voluntary-payment and modregning contexts." "Domain service" "Component"
                 paymentCoverageOrderClient = component "PaymentCoverageOrderClient" "Read-only internal client to payment-service simulation for petition057 ordering reuse." "HTTP client" "Component"
                 section50AuditPublisher = component "Section50AuditPublisher" "Publishes section-50 ranking and deviation audit events through the shared audit pipeline." "Audit publisher" "Component"
+                attachmentWorkflowApi = component "AttachmentWorkflowApi" "Internal/public debtor-scoped REST surface for attachment workflow create, dispatch, callback, withdraw, and read operations for petition066." "REST API" "Component"
+                attachmentWorkflowApplicationService = component "AttachmentWorkflowApplicationService" "Application service orchestrating attachment workflow validation, transaction boundaries, and result assembly." "Application service" "Component"
+                attachmentEligibilityGate = component "AttachmentEligibilityGate" "Evaluates covered claims for attachment-workflow eligibility and returns per-claim rejection reasons." "Domain service" "Component"
+                attachmentDispatchCoordinator = component "AttachmentDispatchCoordinator" "Coordinates idempotent fogedret dispatch and stores workflow dispatch metadata including workflowReference." "Application service" "Component"
+                attachmentCallbackValidator = component "AttachmentCallbackValidator" "Validates debtor scope, workflowReference correlation, legal state transitions, and terminal idempotency for attachment callbacks." "Domain service" "Component"
+                attachmentInterruptionBridge = component "AttachmentInterruptionBridge" "Registers petition059 UDLAEG interruption effects for terminal attachment outcomes with correct complex grouping and legal metadata." "Application service" "Component"
+                attachmentWorkflowHistoryProjector = component "AttachmentWorkflowHistoryProjector" "Builds debtor-scoped attachment workflow read models with chronological status history and interruption linkage metadata." "Projection component" "Component"
             }
 
             letterService = container "Letter Service" "Document generation and delivery. Produces legally required notices, decisions, and correspondence." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service"
@@ -152,7 +159,11 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
 
             rulesEngine = container "Rules Engine" "Business rule evaluation. Evaluates case eligibility, enforcement thresholds, interest rules, and priority logic using Drools." "Java 21 / Spring Boot 3.3, Drools" "Service"
 
-            integrationGateway = container "Integration Gateway" "SOAP/EDIFACT legacy protocol adapter. Translates between OpenDebt's internal REST APIs and external systems using legacy protocols (SOAP, EDIFACT). Built on Apache Camel." "Java 21 / Spring Boot 3.3, Apache Camel" "Service"
+            integrationGateway = container "Integration Gateway" "SOAP/EDIFACT legacy protocol adapter. Translates between OpenDebt's internal REST APIs and external systems using legacy protocols (SOAP, EDIFACT). Built on Apache Camel." "Java 21 / Spring Boot 3.3, Apache Camel" "Service" {
+                fogedretCallbackController = component "FogedretCallbackController" "External callback ingress controller for petition066 fogedret attachment callbacks under OCES3 mTLS." "REST API" "Component"
+                fogedretReplayGuard = component "FogedretReplayGuard" "Transport-layer replay protection for petition066 callback identity tuples before forwarding to debt-service." "Gateway guard" "Component"
+                attachmentGatewayClient = component "AttachmentGatewayClient" "Internal client forwarding validated attachment dispatch and callback payloads to debtor-scoped debt-service APIs." "HTTP client" "Component"
+            }
 
             personRegistry = container "Person Registry" "GDPR-isolated PII store. The ONLY container that persists personal data (CPR, CVR, names, addresses, contact details). All other services reference persons by technical UUID only. See ADR 0014." "Java 21 / Spring Boot 3.3, PostgreSQL" "Service" {
                 tags "pii:true"
@@ -217,12 +228,13 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         // ---------------------------------------------------------------
         // Relationships — Integration Gateway to External Systems
         // ---------------------------------------------------------------
-        integrationGateway -> dupla "Submits enforcement orders" "SOAP/HTTPS"
+        integrationGateway -> dupla "Submits enforcement orders and petition066 attachment dispatch traffic" "SOAP/HTTPS"
         integrationGateway -> psrm "Exchanges debt data" "SOAP/HTTPS"
         integrationGateway -> edifact "Receives creditor batch submissions" "EDIFACT/SFTP"
         caseService -> integrationGateway "Routes external integrations through" "HTTPS/REST"
         integrationGateway -> nemkonto "Receives disbursement interception events from" "HTTPS/Event"
         integrationGateway -> debtService "Forwards PublicDisbursementEvent for modregning processing" "Async/Messaging"
+        integrationGateway -> debtService "Forwards validated petition066 attachment callbacks to debtor-scoped workflow APIs" "HTTPS/REST"
 
         // ---------------------------------------------------------------
         // Relationships — Cross-cutting Infrastructure
@@ -288,6 +300,23 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
         wageGarnishmentFactClient -> limitationFactApi "Calls to obtain decision and inactivity facts" "HTTPS/REST"
         limitationAuditPublisher -> cls "Ships limitation audit events to" "Structured audit pipeline"
         objectionAuditPublisher -> cls "Ships workflow audit events to" "Structured audit pipeline"
+
+        // ---------------------------------------------------------------
+        // Component relationships — P066
+        // ---------------------------------------------------------------
+        attachmentWorkflowApi -> attachmentWorkflowApplicationService "Delegates attachment workflow commands and reads to" "Java method call"
+        attachmentWorkflowApplicationService -> attachmentEligibilityGate "Evaluates covered-claim eligibility through" "Java method call"
+        attachmentWorkflowApplicationService -> attachmentDispatchCoordinator "Delegates accepted dispatch handling to" "Java method call"
+        attachmentWorkflowApplicationService -> attachmentCallbackValidator "Validates callback correlation and legal transitions through" "Java method call"
+        attachmentWorkflowApplicationService -> attachmentInterruptionBridge "Registers petition059 interruption effects through" "Java method call"
+        attachmentWorkflowApplicationService -> attachmentWorkflowHistoryProjector "Builds debtor-scoped status history and linkage responses through" "Java method call"
+        attachmentInterruptionBridge -> limitationStateApplicationService "Registers UDLAEG interruption effects on petition059 limitation state through" "Java method call"
+        attachmentDispatchCoordinator -> attachmentGatewayClient "Sends idempotent fogedret dispatch requests through" "Java method call"
+        fogedretCallbackController -> fogedretReplayGuard "Checks callback replay identity through" "Java method call"
+        fogedretCallbackController -> attachmentGatewayClient "Forwards validated fogedret callback payloads through" "Java method call"
+        fogedretReplayGuard -> cls "Ships replay rejection and transport audit evidence to" "Structured audit pipeline"
+        attachmentGatewayClient -> attachmentWorkflowApi "Calls debtor-scoped attachment workflow APIs on" "HTTPS/REST"
+        attachmentGatewayClient -> dupla "Submits petition066 attachment dispatch traffic to" "SOAP/HTTPS"
 
         // ---------------------------------------------------------------
         // Component relationships — P060
@@ -415,6 +444,26 @@ workspace "OpenDebt" "Architecture model for OpenDebt — open-source debt colle
             include daekningsRaekkefoelgeSimulationApi
             include caseworkerPortal
             include paymentService
+            include cls
+            autoLayout lr
+        }
+
+        component debtService "DebtService_P066_Components" "P066 component view — attachment workflow ownership, gateway callback boundary, petition059 interruption coupling, and replay protection." {
+            include attachmentWorkflowApi
+            include attachmentWorkflowApplicationService
+            include attachmentEligibilityGate
+            include attachmentDispatchCoordinator
+            include attachmentCallbackValidator
+            include attachmentInterruptionBridge
+            include attachmentWorkflowHistoryProjector
+            include limitationStateApplicationService
+            include fogedretCallbackController
+            include fogedretReplayGuard
+            include attachmentGatewayClient
+            include caseworkerPortal
+            include integrationGateway
+            include debtService
+            include dupla
             include cls
             autoLayout lr
         }

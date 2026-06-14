@@ -27,6 +27,8 @@ Feature: PSRM-side attachment workflow (G.A.3.2)
     When dispatch is accepted for workflow "AW-66003"
     Then workflow "AW-66003" status becomes "IN_COURT_PROCESS"
     And dispatch metadata is stored
+    And dispatch metadata includes workflowReference "WR-66003"
+    And dispatch metadata includes external case number "FG-2026-66003" when supplied by the court channel
 
   # AC-04
   Scenario: Repeated dispatch command is idempotent
@@ -50,14 +52,22 @@ Feature: PSRM-side attachment workflow (G.A.3.2)
     Then callback is rejected
     And workflow "AW-66006" state is unchanged
 
-  # AC-07
-  Scenario: COMPLETED callback persists terminal state and interruption atomically
+  # AC-06
+  Scenario: Callback with mismatched workflow reference is rejected
+    Given workflow "AW-66006B" belongs to debtor "P-66006B" and has workflowReference "WR-66006B"
+    When callback is received on debtor "P-66006B" with workflowReference "WR-OTHER"
+    Then callback is rejected
+    And workflow "AW-66006B" state is unchanged
+
+  # AC-07 and AC-13
+  Scenario: COMPLETED callback persists terminal state and policy-derived interruption atomically
     Given workflow "AW-66007" for debtor "P-66007" is in status "IN_COURT_PROCESS"
     When callback "COMPLETED" is received with court outcome date "2026-07-10"
     Then workflow "AW-66007" status becomes "COMPLETED"
     And a petition059 interruption is registered in the same transaction
     And interruption type is "UDLAEG"
     And interruption event date is "2026-07-10"
+    And interruption uses the policy-derived legal reference for "UDLAEG"
 
   # AC-08 and AC-09
   Scenario: UNSUCCESSFUL callback requires reason code and registers interruption
@@ -101,7 +111,7 @@ Feature: PSRM-side attachment workflow (G.A.3.2)
   # AC-13
   Scenario: Legal reference is policy-derived and not caller-overridden
     Given workflow "AW-66013" for debtor "P-66013" is in status "IN_COURT_PROCESS"
-    When terminal callback "UNSUCCESSFUL" is received with court outcome date "2026-07-14"
+    When terminal callback "UNSUCCESSFUL" is received with court outcome date "2026-07-14" and reason code "COURT_REJECTION"
     Then interruption is registered with policy-derived legal reference for "UDLAEG"
     And caller-provided legal reference overrides are ignored
 
@@ -111,6 +121,7 @@ Feature: PSRM-side attachment workflow (G.A.3.2)
     When the caseworker requests attachment workflows for debtor "P-66014"
     Then each workflow includes current status
     And each workflow includes chronological status history
+    And each workflow includes outcome qualifier
     And each terminal workflow includes interruption linkage metadata
 
   # AC-15
@@ -118,11 +129,18 @@ Feature: PSRM-side attachment workflow (G.A.3.2)
     Given an external fogedret callback for workflowReference "WR-66015"
     When the callback is received from an external court channel
     Then integration-gateway terminates the external request
-    And integration-gateway forwards the callback to internal debt-service debtor-scoped API
+    And the callback is delivered to the internal attachment-workflow handling boundary
 
   # AC-16
+  Scenario: Callback ingress requires OCES3 mTLS at gateway
+    Given an external fogedret callback for workflowReference "WR-66016"
+    When the callback is received without valid OCES3 mTLS client authentication
+    Then integration-gateway rejects the callback
+    And no downstream workflow state is changed
+
+  # AC-17
   Scenario: Callback replay is blocked at gateway
-    Given callback message "CB-66016" for workflowReference "WR-66016" and outcome date "2026-07-15" was already processed
+    Given callback message "CB-66017" for workflowReference "WR-66017" and outcome date "2026-07-15" was already processed
     When the same callback tuple is received again
     Then callback is rejected as replay
     And no downstream workflow state is changed
