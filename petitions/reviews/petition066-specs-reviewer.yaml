@@ -1,0 +1,53 @@
+petition_id: petition066
+agent: specs-reviewer
+status: success
+verdict: APPROVED
+summary: >-
+  Approved in this run. The specification package now covers petition066 workflow ownership,
+  mismatched callback rejection, terminal interruption coupling, gateway OCES3 mTLS and replay
+  protection, and debtor-scoped reads without exceeding the approved architecture.
+artifacts:
+  - petitions/specs/petition066-specs.yaml
+  - petitions/validation/petition066/validation-contract.md
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+  - petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+  - design/solution-architecture-p066-udlaeg-psrm-workflow.md
+  - petitions/reviews/petition066-specs-reviewer.yaml
+evidence_checked:
+  - claim: specs cover the petition and outcome contract without orphaning required scope
+    proof: >-
+      The debt-service module covers FR-01..FR-14 and AC-01..AC-14, while the
+      integration-gateway and validation-handoff modules cover AC-15..AC-17 including
+      OCES3 mTLS ingress and replay blocking, and all 18 current feature scenarios are now traced.
+    freshness: '2026-06-12T12:00:00Z'
+    result: pass
+  - claim: specs reflect the approved architecture and name concrete API artifact paths
+    proof: >-
+      The spec names concrete OpenAPI targets for the debt-service internal attachment workflow
+      surface and the integration-gateway fogedret boundary surface, staying implementation-facing
+      and aligned with the approved petition066 architecture package.
+    freshness: '2026-06-12T12:00:00Z'
+    result: pass
+  - claim: the validation contract is complete and testable for the current feature package
+    proof: >-
+      petitions/validation/petition066/validation-contract.md now contains validation blocks covering
+      all 18 current scenarios, including mismatched workflowReference rejection and OCES3 mTLS
+      gateway rejection, while keeping evidence API/network-observable unless a future UI route appears.
+    freshness: '2026-06-12T12:00:00Z'
+    result: pass
+warnings:
+  - >-
+    Browser UI is still only a project-level signal here; if implementation introduces a concrete
+    petition066 caseworker route, the validation contract should be extended with screenshot-backed
+    assertions rather than treating network evidence alone as sufficient.
+  - >-
+    Local review in this run validated artifact alignment structurally; if repository policy later
+    requires machine-checked spec linting, add that gate explicitly rather than assuming it here.
+escalations: []
+next_action: Proceed to specs-minimality-reviewer.
+handoff_target: specs-minimality-reviewer
+timestamp: '2026-06-12T12:00:00Z'
+findings_count: 4
+blocking_count: 0
+warning_count: 2

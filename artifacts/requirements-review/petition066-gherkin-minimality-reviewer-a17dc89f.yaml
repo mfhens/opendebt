@@ -1,0 +1,40 @@
+run_id: a17dc89f-7cdd-43c4-bd59-5f56959e91f4
+stage_id: requirements-review
+skill: gherkin-minimality-reviewer
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+reviewed_at_utc: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+verdict: success
+summary: "Feature remains minimally expressed and traceable to the petition and outcome contract in this run."
+findings:
+  - id: GMR-01
+    severity: pass
+    area: traceability
+    evidence:
+      - petition FR-01 through FR-16 map to acceptance criteria and scenarios present in the feature
+      - AC-01 through AC-17 remain represented after reopening the canonical artifacts in this run
+    recommendation: "None."
+  - id: GMR-02
+    severity: pass
+    area: FR-07-negative-coverage
+    evidence:
+      - feature includes one debtor-scope mismatch rejection scenario
+      - feature includes one mismatched workflowReference rejection scenario
+      - both rejection scenarios assert unchanged workflow state
+    recommendation: "None."
+  - id: GMR-03
+    severity: pass
+    area: terminal-consistency
+    evidence:
+      - COMPLETED path asserts atomic interruption registration, event date, type UDLAEG, and policy-derived legal reference
+      - UNSUCCESSFUL path asserts reason-code requirement and interruption registration, while AC-13 covers policy-derived legal reference and caller override rejection
+    recommendation: "None."
+  - id: GMR-04
+    severity: pass
+    area: minimality
+    evidence:
+      - gateway boundary scenario asserts external termination plus delivery to internal attachment-workflow handling boundary without overspecifying internal routing mechanics
+      - mTLS scenario asserts rejection and no downstream state change without unnecessary implementation-timing detail
+    recommendation: "None."
+conclusion: "Requirements review executed successfully in this run with sufficient evidence for minimality and petition-translation fidelity."

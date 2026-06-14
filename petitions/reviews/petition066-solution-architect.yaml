@@ -1,0 +1,29 @@
+reviewer: solution-architect
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: architecture-stage
+invocation: 3/5
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: Solution architecture executed successfully in this run and remains aligned to petition066 requirements, petition059 interruption reuse, and the repaired canonical C4 baseline.
+reviewed_at: 2026-06-12T12:00:34.998948+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, feature, solution architecture, prior architecture-stage artifacts, and canonical architecture/workspace.dsl in this run before issuing the architecture verdict.
+  - Reconfirmed the architecture preserves debt-service as the single writer for the attachment workflow aggregate with immutable covered scope, idempotent dispatch, callback validation, terminal atomicity, and debtor-scoped reads required by FR-01 through FR-14.
+  - Reconfirmed the architecture preserves integration-gateway as the only external fogedret boundary with OCES3 mTLS, replay protection, and transport translation required by FR-15 through FR-17.
+  - Reconfirmed the solution architecture documents the terminal state machine, one-transaction interruption coupling to petition059 using type=UDLAEG and court outcome date, synchronous NFR expectations, and OpenAPI handoff constraints for later specs work.
+  - Revalidated that the repaired canonical C4 model now contains the petition066 component view and required petition066 debt-service and gateway elements referenced by the architecture document.
+findings: []
+architecture_assertions:
+  - decision: keep debt-service as single writer
+    rationale: Prevents split workflow ownership and is required for atomic terminal persistence plus petition059 interruption registration.
+  - decision: keep integration-gateway as sole fogedret ingress/egress boundary
+    rationale: Preserves transport trust concerns, OCES3 mTLS enforcement, and replay protection outside the domain aggregate.
+  - decision: reuse petition059 limitation seam rather than clone interruption logic
+    rationale: Ensures legal reference derivation, complex propagation, and interruption ownership stay canonical.
+  - decision: keep case-service and portal roles projection/read-only
+    rationale: Avoids accidental second writers while still allowing case visibility and future UI composition.
+recommendations:
+  - Proceed to solution-architecture-reviewer and c4-model-validator to close the architecture package on the updated canonical baseline.

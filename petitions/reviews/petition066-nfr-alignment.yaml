@@ -1,0 +1,21 @@
+reviewer: solution-architect
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: nfr-alignment
+invocation: 1/1
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: success
+summary: NFR alignment executed in this run; applicable non-functional requirements are explicitly resolved and carried forward for petition066.
+reviewed_at: 2026-06-12T11:58:01.587272+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, and feature in this run before confirming NFR coverage.
+  - Reopened design/solution-architecture-p066-udlaeg-psrm-workflow.md and verified explicit NFR alignment coverage for security, auditability, resilience, API governance, performance, and architecture constraints.
+  - Confirmed security NFRs are driven by petition requirements for OCES3 mTLS callback ingress, replay protection, authenticated internal APIs, and technical-ID-only payloads.
+  - Confirmed resilience and auditability NFRs are carried by idempotent dispatch/callback semantics plus traceable dispatch, callback, withdrawal, and terminal decisions.
+  - Confirmed API-governance and architecture NFRs are carried forward through explicit internal/external API surfaces, OpenAPI handoff expectations, preserved gateway boundary, debt-service single-writer ownership, and no cross-service database access.
+  - Confirmed performance classification is explicitly recorded as synchronous flows with a review trigger if callback or create/dispatch processing exceeds 1 second p95.
+findings: []
+recommendations:
+  - Carry these NFR classes unchanged into architecture review, specs, and implementation validation.

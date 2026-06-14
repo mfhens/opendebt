@@ -1,0 +1,14 @@
+Run: 1078a0f7-9572-41e9-bf35-bb75971404d1
+Stage: requirements-review
+Invocation: 1/2
+Reviewer: gherkin-minimality-reviewer
+
+Canonical artifacts reopened in this run:
+- petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+- petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+- petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+
+Fresh validation results:
+- Petition intent remains coherent for single-writer aggregate ownership, idempotent dispatch, and petition059 interruption coupling.
+- Feature covers AC-01..AC-17 with 18 scenarios and no missing AC references.
+- AC-13 scenario includes reason code "COURT_REJECTION", satisfying FR-09 / AC-09 while preserving AC-13 legal-reference intent.

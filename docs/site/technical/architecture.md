@@ -210,6 +210,20 @@ The ordering engine supports four paths: default section-50 ordering, discretion
 
 The caseworker-facing petition060 surface now lives in `caseworker-portal` at `/debtors/{debtorId}/retskraft-worklists/{worklistId}` (under the portal context path `/caseworker-portal`). That page is intentionally a direct inspection route: it renders override reason, deviation reason, modregning outcome, ranked entries, and the decision snapshot using technical identifiers only, while debt-service remains the sole owner of the legal state and persistence.
 
+## Attachment workflow capability (petition066)
+
+ADR-0040 defines the petition066 boundary: **debt-service** owns a dedicated debtor-scoped attachment workflow aggregate, **integration-gateway** is the only external fogedret ingress/egress boundary, and petition059 limitation handling remains the authoritative sink for legally effective `UDLAEG` interruption effects.
+
+| Service | Petition066 responsibility |
+|---------|----------------------------|
+| `debt-service` | Authoritative attachment workflow aggregate, debtor-scoped create/dispatch/callback/withdraw/read APIs, status history, correlation by `workflowReference`, and atomic terminal interruption coupling |
+| `integration-gateway` | External fogedret dispatch and callback boundary, OCES3 mTLS termination, replay protection on callback identity tuples, and forwarding to internal debtor-scoped debt-service APIs |
+| `caseworker-portal` | No dedicated petition066 UI yet; current validation is seam-level only until a caseworker-facing workflow route is implemented |
+
+The workflow state machine is `REQUESTED` → `IN_COURT_PROCESS` → terminal `COMPLETED` / `UNSUCCESSFUL`, with `WITHDRAWN` available as a non-interrupting withdrawal path that requires a caseworker reason. Covered claim scope (`coveredFordringIds`) is immutable from `REQUESTED` onward, so any scope change must be modeled as withdraw-and-recreate rather than in-place mutation.
+
+Terminal `COMPLETED` and `UNSUCCESSFUL` callbacks use the court outcome date as the petition059 interruption event date and must register exactly one `UDLAEG` interruption per covered claim complex group (or standalone claim) in the same transaction as the workflow state change. Legal references are policy-derived inside debt-service and cannot be overridden by callback payloads.
+
 ## Key architectural decisions
 
 See the [ADR Index](adr-index.md) for all decisions. The most impactful are:

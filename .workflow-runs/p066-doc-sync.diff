@@ -1,0 +1,87 @@
+diff --git a/docs/site/technical/api-reference.md b/docs/site/technical/api-reference.md
+index 244e254..b7aea1a 100644
+--- a/docs/site/technical/api-reference.md
++++ b/docs/site/technical/api-reference.md
+@@ -78,6 +78,17 @@ authoritative claim state.
+ | `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/override` | Persist a caseworker-documented override or expedited deviation on the existing worklist. |
+ | `POST` | `/api/v1/debtors/{debtorId}/retskraft-worklists/{worklistId}/modregning-decision` | Record a partial/no-modregning outcome for the current payout context with visible rationale. |
+ 
++#### Attachment workflows (petition 066)
++
++| Method | Endpoint | Purpose |
++|--------|----------|---------|
++| `POST` | `/internal/debtors/{debtorId}/attachment-workflows` | Create a debtor-scoped attachment workflow with immutable `coveredFordringIds`; rejects atomically if any covered claim is ineligible. |
++| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}/dispatch` | Idempotently dispatch a requested workflow to fogedret and persist `workflowReference` plus optional external case metadata. |
++| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}/withdraw` | Withdraw a non-terminal workflow with mandatory caseworker reason and no petition059 interruption emission. |
++| `POST` | `/internal/debtors/{debtorId}/attachment-workflows/callbacks` | Apply a fogedret callback correlated by debtor scope and `workflowReference`; legal terminal transitions trigger atomic petition059 `UDLAEG` interruption handling. |
++| `GET` | `/internal/debtors/{debtorId}/attachment-workflows` | List debtor-scoped attachment workflows with current status, history, outcome qualifier, and interruption linkage metadata. |
++| `GET` | `/internal/debtors/{debtorId}/attachment-workflows/{workflowId}` | Read one debtor-scoped attachment workflow by workflow ID. |
++
+ #### Readiness
+ 
+ | Method | Endpoint | Purpose |
+@@ -208,6 +219,8 @@ Legal basis: GIL § 4 stk. 1–4, GIL § 10b, Gæld.bekendtg. § 4 stk. 3, Retsp
+ | `POST` | `/api/v1/creditor-m2m/claims/submit` | M2M claim submission via DUPLA |
+ | `POST` | `/api/v1/skb/cremul/parse` | Parse SKB CREMUL payment file |
+ | `POST` | `/api/v1/skb/debmul/generate` | Generate SKB DEBMUL file |
++| `POST` | `/api/external/v1/fogedret/attachment-dispatch` | Petition066 external dispatch ingress/egress boundary for fogedret attachment traffic. |
++| `POST` | `/api/external/v1/fogedret/attachment-callbacks` | Petition066 external callback ingress protected by OCES3 mTLS and replay detection before forwarding to debt-service. |
+ 
+ #### SOAP endpoints (petition019 — legacy OIO/SKAT protocols)
+ 
+diff --git a/docs/site/technical/architecture.md b/docs/site/technical/architecture.md
+index 568a19e..995b665 100644
+--- a/docs/site/technical/architecture.md
++++ b/docs/site/technical/architecture.md
+@@ -210,6 +210,20 @@ The ordering engine supports four paths: default section-50 ordering, discretion
+ 
+ The caseworker-facing petition060 surface now lives in `caseworker-portal` at `/debtors/{debtorId}/retskraft-worklists/{worklistId}` (under the portal context path `/caseworker-portal`). That page is intentionally a direct inspection route: it renders override reason, deviation reason, modregning outcome, ranked entries, and the decision snapshot using technical identifiers only, while debt-service remains the sole owner of the legal state and persistence.
+ 
++## Attachment workflow capability (petition066)
++
++ADR-0040 defines the petition066 boundary: **debt-service** owns a dedicated debtor-scoped attachment workflow aggregate, **integration-gateway** is the only external fogedret ingress/egress boundary, and petition059 limitation handling remains the authoritative sink for legally effective `UDLAEG` interruption effects.
++
++| Service | Petition066 responsibility |
++|---------|----------------------------|
++| `debt-service` | Authoritative attachment workflow aggregate, debtor-scoped create/dispatch/callback/withdraw/read APIs, status history, correlation by `workflowReference`, and atomic terminal interruption coupling |
++| `integration-gateway` | External fogedret dispatch and callback boundary, OCES3 mTLS termination, replay protection on callback identity tuples, and forwarding to internal debtor-scoped debt-service APIs |
++| `caseworker-portal` | No dedicated petition066 UI yet; current validation is seam-level only until a caseworker-facing workflow route is implemented |
++
++The workflow state machine is `REQUESTED` → `IN_COURT_PROCESS` → terminal `COMPLETED` / `UNSUCCESSFUL`, with `WITHDRAWN` available as a non-interrupting withdrawal path that requires a caseworker reason. Covered claim scope (`coveredFordringIds`) is immutable from `REQUESTED` onward, so any scope change must be modeled as withdraw-and-recreate rather than in-place mutation.
++
++Terminal `COMPLETED` and `UNSUCCESSFUL` callbacks use the court outcome date as the petition059 interruption event date and must register exactly one `UDLAEG` interruption per covered claim complex group (or standalone claim) in the same transaction as the workflow state change. Legal references are policy-derived inside debt-service and cannot be overridden by callback payloads.
++
+ ## Key architectural decisions
+ 
+ See the [ADR Index](adr-index.md) for all decisions. The most impactful are:
+diff --git a/docs/site/technical/domain-model.md b/docs/site/technical/domain-model.md
+index 264190a..8e20c19 100644
+--- a/docs/site/technical/domain-model.md
++++ b/docs/site/technical/domain-model.md
+@@ -174,6 +174,26 @@ erDiagram
+ | `Section50WorklistEntryEntity` | debt-service | Ranked entry within one petition060 worklist | `worklistId`, `rankOrder`, `claimId`, `itemType`, `claimCategory`, `withinAmountWindow`, `selectionReason`, `prioritisationFactors`, `amount` |
+ | `Section50DecisionSnapshotEntity` | debt-service | Reproducible decision metadata for audit and caseworker inspection | `worklistId`, `rulePath`, `inputHash`, `selectedNextItemId`, `legalReference`, `auditEventId`, `origin`, `occurredAt`, `notes` |
+ 
++## Attachment workflow entities (petition066)
++
++| Entity / DTO | Service | Purpose | Key fields |
++|--------------|---------|---------|------------|
++| `AttachmentWorkflowDto` | debt-service | Debtor-scoped read model for one attachment workflow | `workflowId`, `debtorId`, `workflowReference`, `status`, `coveredFordringIds`, `dispatchMetadata`, `history`, `outcomeQualifier`, `interruptionLinkageMetadata` |
++| `AttachmentWorkflowHistoryEntry` | debt-service | Chronological audit/history record for state transitions and idempotent replays | `status`, `occurredAt`, `actor`, `note` |
++| `AttachmentWorkflowDispatchMetadata` | debt-service | Dispatch correlation data stored when the workflow enters court processing | `workflowReference`, `externalCaseNumber`, `dispatchedAt` |
++| `AttachmentWorkflowCallbackRequest` | debt-service | Internal debtor-scoped callback command received from integration-gateway | `debtorId`, `workflowReference`, `status`, `outcomeDate`, `reasonCode`, `callbackMessageId` |
++| `CreateAttachmentWorkflowRequest` | debt-service | Create command for a new debtor-scoped attachment workflow | `coveredFordringIds` |
++| `WithdrawAttachmentWorkflowRequest` | debt-service | Withdraw command for an existing workflow without interruption side effects | `reason` |
++| `FogedretAttachmentDispatchRequest` | integration-gateway | Outbound dispatch payload from OpenDebt toward fogedret | `debtorId`, `workflowReference`, `coveredFordringIds`, `externalCaseNumber` |
++| `FogedretAttachmentCallbackRequest` | integration-gateway | External callback payload protected by OCES3 mTLS and replay guard before internal forwarding | `workflowReference`, `outcomeDate`, `callbackMessageId`, `status`, `reasonCode` |
++
++### Attachment workflow enums
++
++| Enum | Values | Notes |
++|------|--------|-------|
++| `AttachmentWorkflowStatus` | `REQUESTED`, `IN_COURT_PROCESS`, `COMPLETED`, `UNSUCCESSFUL`, `WITHDRAWN` | Canonical petition066 workflow state machine |
++| `AttachmentWorkflowOutcomeQualifier` | `NONE`, `COMPLETED`, `NO_ATTACHABLE_ASSETS`, `INSOLVENCY_DECLARED`, `LEGAL_OR_PROCEDURAL_DEFECT`, `THIRD_PARTY_RIGHT_BLOCK`, `COURT_REJECTION`, `WITHDRAWN` | Read-model qualifier used to expose terminal outcome semantics without parsing free text |
++
+ ### Limitation enums
+ 
+ | Enum | Values | Notes |

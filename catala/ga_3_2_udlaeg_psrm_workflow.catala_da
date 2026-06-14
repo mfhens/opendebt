@@ -1,0 +1,220 @@
+# G.A.3.2 — Udlæg PSRM workflow — petition066
+
+(* Catala kildedialekt: catala_da
+   G.A. snapshot v3.16, dated 2026-06-12
+   Juridisk grundlag: petition066 functional requirements and outcome contract,
+   with legal coupling to petition059/P070 limitation interruption handling.
+   Formål: Formalisere de juridisk materielle regler for PSRM-side udlægsworkflow:
+           terminale udfald, krav til unsuccessful-grundkode, afbrydelsesvirkning,
+           og 10-årig frist ved udlæg på særligt retsgrundlag.
+   Petition: petition066 — Implement PSRM-side udlaeg workflow
+   Status: Pipeline-generated compliance artefakt. *)
+
+## Artikel: G.A.3.2 — Udlæg workflow med petition059-kobling
+
+### Baggrund
+
+Petition066 introducerer et dedikeret PSRM-workflow for udlæg. De juridisk materielle
+regler i Catala-scope er begrænset til de dele der bærer retsvirkning:
+
+- hvilke workflowstatusser der må medføre afbrydelse,
+- at `UNSUCCESSFUL` kræver en standardiseret grundkode,
+- at `WITHDRAWN` aldrig medfører afbrydelse,
+- at afbrydelsestypen ved terminalt udlæg altid er `UDLAEG`, og
+- at petition059/P070's 10-årsregel ved udlæg på særligt retsgrundlag fortsat gælder.
+
+Transportforhold som OCES3 mTLS, replay-beskyttelse og debtor-scope-match ligger udenfor
+Catala-scope, fordi de er gateway-/applikationsregler og ikke selvstændige materielle
+retsregler der beregner et juridisk udfald.
+
+---
+
+## Enumerationer
+
+### ENUM-1: WorkflowStatus
+
+```catala
+declaration enumeration WorkflowStatus:
+  -- REQUESTED
+  -- IN_COURT_PROCESS
+  -- COMPLETED
+  -- UNSUCCESSFUL
+  -- WITHDRAWN
+```
+
+### ENUM-2: UnsuccessfulReasonCode
+
+```catala
+declaration enumeration UnsuccessfulReasonCode:
+  -- NO_ATTACHABLE_ASSETS
+  -- INSOLVENCY_DECLARED
+  -- LEGAL_OR_PROCEDURAL_DEFECT
+  -- THIRD_PARTY_RIGHT_BLOCK
+  -- COURT_REJECTION
+```
+
+### ENUM-3: RetsgrundlagType
+
+```catala
+declaration enumeration RetsgrundlagType:
+  -- ORDINARY
+  -- SAERLIGT_RETSGRUNDLAG
+```
+
+### ENUM-4: InterruptionType
+
+```catala
+declaration enumeration InterruptionType:
+  -- UDLAEG
+```
+
+### ENUM-5: TerminalOutcomeQualifier
+
+```catala
+declaration enumeration TerminalOutcomeQualifier:
+  -- IKKE_TERMINAL
+  -- TERMINAL_MED_AFBRYDELSE
+  -- TERMINAL_UDEN_AFBRYDELSE
+```
+
+---
+
+## SCOPE-1: UdlaegWorkflowJuridiskVirkning
+
+### Baggrund
+
+Dette scope afgør den juridiske virkning af et workflow-udfald. Et terminalt udfald i
+`COMPLETED` eller `UNSUCCESSFUL` medfører afbrydelse af typen `UDLAEG`. `WITHDRAWN`
+er terminalt uden afbrydelse. Ikke-terminale statusser medfører ingen afbrydelse.
+
+```catala
+declaration scope UdlaegWorkflowJuridiskVirkning:
+  context workflowStatus content WorkflowStatus
+  context hasReasonCode content boolean
+  context retsgrundlag content RetsgrundlagType
+  context output erTerminal content boolean
+  context output kræverReasonCode content boolean
+  context output reasonCodeGyldig content boolean
+  context output interruptionType content InterruptionType
+  context output interruptionSkalRegistreres content boolean
+  context output qualifier content TerminalOutcomeQualifier
+  context output nyFristAar content integer
+```
+
+```catala
+scope UdlaegWorkflowJuridiskVirkning:
+  # Basis: ikke-terminale statusser er ikke terminale og kræver ingen reason code.
+  definition erTerminal equals false
+  definition kræverReasonCode equals false
+  definition reasonCodeGyldig equals true
+  definition interruptionType equals UDLAEG
+  definition interruptionSkalRegistreres equals false
+  definition qualifier equals IKKE_TERMINAL
+  definition nyFristAar equals 3
+
+  # COMPLETED er terminalt og medfører afbrydelse.
+  exception definition erTerminal
+    under condition workflowStatus = COMPLETED
+    consequence equals true
+
+  exception definition interruptionSkalRegistreres
+    under condition workflowStatus = COMPLETED
+    consequence equals true
+
+  exception definition qualifier
+    under condition workflowStatus = COMPLETED
+    consequence equals TERMINAL_MED_AFBRYDELSE
+
+  # UNSUCCESSFUL er også terminalt og medfører afbrydelse, men kun med gyldig reason code.
+  exception definition erTerminal
+    under condition workflowStatus = UNSUCCESSFUL
+    consequence equals true
+
+  exception definition kræverReasonCode
+    under condition workflowStatus = UNSUCCESSFUL
+    consequence equals true
+
+  exception definition reasonCodeGyldig
+    under condition workflowStatus = UNSUCCESSFUL and hasReasonCode
+    consequence equals true
+
+  exception definition reasonCodeGyldig
+    under condition workflowStatus = UNSUCCESSFUL and not hasReasonCode
+    consequence equals false
+
+  exception definition interruptionSkalRegistreres
+    under condition workflowStatus = UNSUCCESSFUL and hasReasonCode
+    consequence equals true
+
+  exception definition interruptionSkalRegistreres
+    under condition workflowStatus = UNSUCCESSFUL and not hasReasonCode
+    consequence equals false
+
+  exception definition qualifier
+    under condition workflowStatus = UNSUCCESSFUL
+    consequence equals TERMINAL_MED_AFBRYDELSE
+
+  # WITHDRAWN er terminalt men ikke interruptivt.
+  exception definition erTerminal
+    under condition workflowStatus = WITHDRAWN
+    consequence equals true
+
+  exception definition qualifier
+    under condition workflowStatus = WITHDRAWN
+    consequence equals TERMINAL_UDEN_AFBRYDELSE
+
+  # Udlæg på særligt retsgrundlag udløser 10-årig frist, ellers 3 år.
+  exception definition nyFristAar
+    under condition interruptionSkalRegistreres and retsgrundlag = SAERLIGT_RETSGRUNDLAG
+    consequence equals 10
+```
+
+---
+
+## SCOPE-2: UdlaegWorkflowKompleksEmission
+
+### Baggrund
+
+Petition066 kræver én interruption-emission per dækket fordringskompleks eller per
+standalone-fordring. Den konkrete ekspansion af kompleksets medlemmer ejes fortsat af
+petition059. Catala-scope formaliserer derfor kun emissionstællingen.
+
+```catala
+declaration scope UdlaegWorkflowKompleksEmission:
+  context interruptionSkalRegistreres content boolean
+  context antalKomplekserEllerStandalone content integer
+  context output emissionCount content integer
+```
+
+```catala
+scope UdlaegWorkflowKompleksEmission:
+  definition emissionCount equals 0
+
+  exception definition emissionCount
+    under condition interruptionSkalRegistreres
+    consequence equals antalKomplekserEllerStandalone
+```
+
+---
+
+## SCOPE-3: UdlaegWorkflowLegalReferenceGuard
+
+### Baggrund
+
+Petition066 kræver at den juridiske reference er policy-afledt og ikke kan overstyres
+af kalderen. Dette scope udtrykker kravet som et binært resultat: når afbrydelse skal
+registreres, skal policy-reference anvendes.
+
+```catala
+declaration scope UdlaegWorkflowLegalReferenceGuard:
+  context interruptionSkalRegistreres content boolean
+  context callerOverridesLegalReference content boolean
+  context output policyDerivedReferenceRequired content boolean
+  context output callerOverrideIgnored content boolean
+```
+
+```catala
+scope UdlaegWorkflowLegalReferenceGuard:
+  definition policyDerivedReferenceRequired equals interruptionSkalRegistreres
+  definition callerOverrideIgnored equals interruptionSkalRegistreres and callerOverridesLegalReference
+```

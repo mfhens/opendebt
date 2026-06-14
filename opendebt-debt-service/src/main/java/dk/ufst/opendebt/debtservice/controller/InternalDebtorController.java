@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dk.ufst.opendebt.debtservice.attachment.AttachmentWorkflowApi;
+import dk.ufst.opendebt.debtservice.attachment.AttachmentWorkflowCallbackRequest;
+import dk.ufst.opendebt.debtservice.attachment.AttachmentWorkflowDto;
+import dk.ufst.opendebt.debtservice.attachment.CreateAttachmentWorkflowRequest;
+import dk.ufst.opendebt.debtservice.attachment.WithdrawAttachmentWorkflowRequest;
 import dk.ufst.opendebt.debtservice.dto.ActiveFordringResponseDto;
 import dk.ufst.opendebt.debtservice.service.ActiveFordringService;
 
@@ -41,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 public class InternalDebtorController {
 
   private final ActiveFordringService activeFordringService;
+  private final AttachmentWorkflowApi attachmentWorkflowApi;
 
   /**
    * Returns all active fordringer for the given debtor, ordered for dækningsrækkefølge (P057).
@@ -65,5 +71,49 @@ public class InternalDebtorController {
       @Parameter(description = "Debtor person-registry UUID (never CPR)") @PathVariable
           UUID debtorId) {
     return ResponseEntity.ok(activeFordringService.getActiveFordringer(debtorId));
+  }
+
+  @PostMapping("/{debtorId}/attachment-workflows")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<AttachmentWorkflowDto> createAttachmentWorkflow(
+      @PathVariable UUID debtorId, @org.springframework.web.bind.annotation.RequestBody CreateAttachmentWorkflowRequest request) {
+    return ResponseEntity.ok(attachmentWorkflowApi.createWorkflow(debtorId, request));
+  }
+
+  @PostMapping("/{debtorId}/attachment-workflows/{workflowId}/dispatch")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<AttachmentWorkflowDto> dispatchAttachmentWorkflow(
+      @PathVariable UUID debtorId, @PathVariable UUID workflowId) {
+    return ResponseEntity.ok(attachmentWorkflowApi.dispatchWorkflow(debtorId, workflowId));
+  }
+
+  @PostMapping("/{debtorId}/attachment-workflows/{workflowId}/withdraw")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<AttachmentWorkflowDto> withdrawAttachmentWorkflow(
+      @PathVariable UUID debtorId,
+      @PathVariable UUID workflowId,
+      @org.springframework.web.bind.annotation.RequestBody WithdrawAttachmentWorkflowRequest request) {
+    return ResponseEntity.ok(attachmentWorkflowApi.withdrawWorkflow(debtorId, workflowId, request));
+  }
+
+  @PostMapping("/{debtorId}/attachment-workflows/callbacks")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<AttachmentWorkflowDto> processAttachmentWorkflowCallback(
+      @PathVariable UUID debtorId,
+      @org.springframework.web.bind.annotation.RequestBody AttachmentWorkflowCallbackRequest request) {
+    return ResponseEntity.ok(attachmentWorkflowApi.processCallback(debtorId, request));
+  }
+
+  @GetMapping("/{debtorId}/attachment-workflows")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<List<AttachmentWorkflowDto>> getAttachmentWorkflows(@PathVariable UUID debtorId) {
+    return ResponseEntity.ok(attachmentWorkflowApi.getWorkflows(debtorId));
+  }
+
+  @GetMapping("/{debtorId}/attachment-workflows/{workflowId}")
+  @PreAuthorize("hasRole('SERVICE')")
+  public ResponseEntity<AttachmentWorkflowDto> getAttachmentWorkflow(
+      @PathVariable UUID debtorId, @PathVariable UUID workflowId) {
+    return ResponseEntity.ok(attachmentWorkflowApi.getWorkflow(debtorId, workflowId));
   }
 }

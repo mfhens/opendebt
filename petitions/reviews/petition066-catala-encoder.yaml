@@ -1,0 +1,28 @@
+reviewer: catala-encoder
+run_id: 9b0c256c-610c-47af-954b-a022cf17cbe4
+stage_id: catala-encoding
+invocation: 1/1
+petition_id: petition066
+petition: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.md
+outcome_contract: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow-outcome-contract.md
+feature: petitions/petition066-udlaeg-skaerpet-inddrivelse-psrm-workflow.feature
+verdict: blocked
+summary: Petition066 Catala encoding artifacts and CI wiring are present, but executable Catala validation is still blocked because neither catala nor opam is available in this environment.
+reviewed_at: 2026-06-12T12:05:23.730648+00:00
+fresh_evidence:
+  - Reopened the canonical petition, outcome contract, feature, petition066 Catala source, and petition066 Catala test file in this run before issuing the verdict.
+  - Confirmed the petition066 Catala source at catala/ga_3_2_udlaeg_psrm_workflow.catala_da encodes the legally material petition rules for COMPLETED and UNSUCCESSFUL terminal interruption, reason-code requirement, WITHDRAWN non-interruption, one-per-complex emission, and policy-derived legal-reference guard.
+  - Confirmed the petition066 Catala test suite at catala/tests/ga_udlaeg_psrm_workflow_tests.catala_da contains 8 fresh test scopes covering the encoded legal branches for this petition.
+  - Confirmed .github/workflows/ci.yml now includes the petition066 Catala source and test files in both Catala typecheck and Catala interpret steps, so repository-side execution wiring has been repaired.
+  - Re-ran environment checks in this run and confirmed both catala and opam are absent from PATH (`which catala` and `which opam` returned no executable), so the newly created artifacts still cannot be typechecked or interpreted in this run.
+findings:
+  - id: repository-artifacts-ready
+    severity: info
+    detail: Petition066 Catala source, tests, and CI coverage are present and consistent in the repository.
+  - id: no-local-catala-runtime
+    severity: critical
+    detail: The execution environment does not provide catala or opam, preventing automatic installation or executable validation in this run.
+blocking_reason: The remaining blocker is environmental rather than repository state. Because neither catala nor opam is available in PATH, this run cannot install the Catala toolchain or produce truthful typecheck/interpret evidence for the petition066 Catala artifacts.
+recommendations:
+  - Provide a Catala-capable environment with catala and opam available on PATH, or preinstall the Catala CLI.
+  - Rerun /skill:catala-encoder in that environment so the petition066 Catala source and tests can be typechecked and interpreted in the same run.
